@@ -5,15 +5,10 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
-
-  // 1. ถ้าไม่มี code ส่งมา (เช่น มาเป็น # แทน) ให้ดีดกลับหน้า login ทันที
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=no_code_detected`)
-  }
-
-  try {
-    const cookieStore = await cookies()
+  
+  // 🌟 ถ้าเจอเครื่องหมาย ?code= ให้ทำงานตามปกติ
+  if (code) {
+    const cookieStore = await cookies() 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -29,18 +24,10 @@ export async function GET(request: Request) {
         },
       }
     )
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-
-    console.error('Auth Error:', error.message)
-    return NextResponse.redirect(`${origin}/login?error=exchange_failed`)
-
-  } catch (err) {
-    console.error('Runtime Error:', err)
-    return NextResponse.redirect(`${origin}/login?error=callback_crash`)
+    await supabase.auth.exchangeCodeForSession(code)
+    return NextResponse.redirect(`${origin}/`)
   }
+
+  return NextResponse.redirect(`${origin}/`)
 }
