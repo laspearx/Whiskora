@@ -1,7 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+// 🌟 เพิ่ม useRef เข้ามา
+import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase'; 
 
@@ -10,6 +11,9 @@ export default function Navbar() {
   const [session, setSession] = useState<any>(null); 
   const pathname = usePathname();
   const router = useRouter(); 
+  
+  // 🌟 สร้าง Ref สำหรับอ้างอิงพื้นที่ของ Navbar
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -21,6 +25,24 @@ export default function Navbar() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // 🌟 useEffect สำหรับตรวจจับการคลิกนอก Navbar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // ถ้า Navbar มีอยู่จริง และ จุดที่คลิก "ไม่ได้อยู่ข้างใน" Navbar
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setIsOpen(false); // สั่งหุบเมนู
+      }
+    };
+
+    // เปิดเรดาร์ตรวจจับการคลิก
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    // ปิดเรดาร์เมื่อ Component ถูกทำลาย (ทำความสะอาด Memory)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const isActive = (path: string) => pathname === path;
@@ -41,7 +63,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+    // 🌟 ใส่ ref={navRef} ที่ตัวคลุมชั้นนอกสุด เพื่อกำหนดอาณาเขต
+    <nav ref={navRef} className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex justify-between items-center h-16">
           
@@ -52,7 +75,6 @@ export default function Navbar() {
 
           {/* เมนูสำหรับจอคอม (Desktop) */}
           <div className="hidden md:flex gap-6 items-center font-medium text-gray-600 text-sm">
-            {/* 🌟 เพิ่มเมนูหน้าแรก */}
             <Link href="/" className={`hover:text-pink-500 transition ${isActive('/') ? 'text-pink-500 font-bold underline underline-offset-8 decoration-2' : ''}`}>หน้าแรก</Link>
             
             <button onClick={() => handleProtectedAction('/profile')} className={`hover:text-pink-500 transition ${isActive('/profile') ? 'text-pink-500 font-bold' : ''}`}>โปรไฟล์ของฉัน</button>
@@ -99,7 +121,6 @@ export default function Navbar() {
         {isOpen && (
           <div className="md:hidden absolute top-14 right-4 w-48 bg-white rounded-2xl shadow-xl border border-pink-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex flex-col py-2">
-              {/* 🌟 เพิ่มเมนูหน้าแรกสำหรับมือถือ */}
               <Link href="/" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>หน้าแรก</Link>
               
               <button onClick={() => handleProtectedAction('/profile')} className={`px-4 py-2.5 text-left text-sm font-medium transition ${isActive('/profile') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>โปรไฟล์ของฉัน</button>
