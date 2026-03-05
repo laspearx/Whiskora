@@ -12,17 +12,17 @@ function FarmDashboardContent() {
   const searchParams = useSearchParams();
   const farmId = params.id as string;
   
+  // 🌟 ดึงค่าจาก URL ว่าเรามาจากหน้าไหน (profile หรือ partner)
   const fromPage = searchParams.get("from") || "profile"; 
 
   const [farm, setFarm] = useState<any>(null);
   const [petStats, setPetStats] = useState({ breeders: 0, kids: 0, ready: 0, retired: 0, booked: 0 });
   const [financeStats, setFinanceStats] = useState({ income: 0, expense: 0, profit: 0 });
   const [activeLitters, setActiveLitters] = useState<any[]>([]);
-  
-  // 🌟 เพิ่ม State สำหรับเก็บครอกทั้งหมด
   const [allLitters, setAllLitters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 🌟 ฟังก์ชันย้อนกลับ
   const handleBackToParent = () => {
     if (fromPage === 'partner') {
       router.push('/partner');
@@ -82,16 +82,16 @@ function FarmDashboardContent() {
           setFinanceStats({ income: totalIncome, expense: totalExpense, profit: totalIncome - totalExpense });
         }
 
-        // 🌟 ปรับการดึงข้อมูล ให้ดึง "ทั้งหมด" แล้วเรียงจากใหม่ไปเก่า
+        // ดึงครอกทั้งหมด
         const { data: littersData } = await supabase
           .from("litters")
           .select(`*, sire:pets!sire_id(name, image_url), dam:pets!dam_id(name, image_url)`)
           .eq("farm_id", farmId)
-          .order("mating_date", { ascending: false }); // ใหม่ล่าสุดขึ้นก่อน
+          .order("mating_date", { ascending: false });
           
         if (littersData) {
-          setAllLitters(littersData); // เก็บทั้งหมดไว้แสดงในประวัติ
-          setActiveLitters(littersData.filter(l => l.status === "รอคลอด")); // กรองเฉพาะรอคลอดไปแสดงข้างบน
+          setAllLitters(littersData);
+          setActiveLitters(littersData.filter(l => l.status === "รอคลอด"));
         }
 
       } catch (error) {
@@ -288,7 +288,6 @@ function FarmDashboardContent() {
                   </div>
 
                   <div className="flex justify-center mt-auto gap-2">
-                    {/* 🌟 เพิ่มปุ่มดูรายละเอียดตรงนี้ด้วย */}
                     <Link 
                       href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`} 
                       className="w-1/3 text-center py-3.5 rounded-2xl text-xs font-black bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all shadow-sm active:scale-[0.98]"
@@ -310,68 +309,34 @@ function FarmDashboardContent() {
         </div>
       </section>
 
-      {/* 📜 Section 4: ประวัติครอกทั้งหมด (ที่เพิ่มใหม่) */}
+      {/* 📜 Section 4: ประวัติครอกทั้งหมด (อัปเดตดีไซน์ให้เหมือนภาพตัวอย่างเป๊ะๆ) */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-gray-800 flex items-center gap-2"><span>📜</span> สรุปครอกทั้งหมด</h2>
-          <span className="text-xs font-bold text-gray-400">ทั้งหมด {allLitters.length} ครอก</span>
+          <h2 className="text-lg font-black text-gray-800 flex items-center gap-2"><span>🐾</span> ประวัติครอกทั้งหมด</h2>
         </div>
 
-        <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+        <div className="bg-white px-2 py-2 md:px-4 md:py-4 rounded-[2rem] border border-pink-100 shadow-sm">
           {allLitters.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm font-bold text-gray-400">ยังไม่มีประวัติการบรีดในฟาร์มนี้ 🐾</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-col divide-y divide-gray-100">
               {allLitters.map(litter => (
-                <Link 
-                  key={litter.id} 
-                  href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`}
-                  className="block p-4 rounded-[1.5rem] border border-gray-100 hover:border-pink-300 hover:shadow-md transition-all group relative bg-gray-50/50 hover:bg-white"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="font-black text-gray-800 text-sm md:text-base group-hover:text-pink-500 transition">
-                      ครอก {litter.litter_code || 'ไม่ระบุ'}
-                    </span>
-                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
-                      litter.status === 'รอคลอด' ? 'bg-orange-50 text-orange-600 border-orange-200' : 
-                      litter.status === 'คลอดแล้ว' ? 'bg-green-50 text-green-600 border-green-200' : 
-                      'bg-gray-100 text-gray-600 border-gray-200'
-                    }`}>
-                      {litter.status}
+                <div key={litter.id} className="flex justify-between items-center px-4 py-4 md:py-5 hover:bg-pink-50/30 transition-colors rounded-xl">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-lg md:text-xl font-black text-gray-800">{litter.litter_code || 'ไม่ระบุ'}</span>
+                    <span className={`text-xs md:text-sm font-bold ${litter.status === 'คลอดแล้ว' ? 'text-teal-500' : 'text-pink-500'}`}>
+                      สถานะ: {litter.status}
                     </span>
                   </div>
-                  
-                  <div className="flex items-center gap-3 mb-4 bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
-                    <div className="flex -space-x-3">
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 overflow-hidden flex items-center justify-center text-xs relative z-10">
-                        {litter.sire?.image_url ? <img src={litter.sire.image_url} className="w-full h-full object-cover"/> : '♂'}
-                      </div>
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-pink-50 overflow-hidden flex items-center justify-center text-xs relative z-0">
-                        {litter.dam?.image_url ? <img src={litter.dam.image_url} className="w-full h-full object-cover"/> : '♀'}
-                      </div>
-                    </div>
-                    <div className="text-[10px] sm:text-xs font-bold text-gray-500 truncate flex-1">
-                      {litter.sire?.name || '?'} x {litter.dam?.name || '?'}
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] font-medium text-gray-400 space-y-1">
-                    <p className="flex justify-between">
-                      <span>วันที่ทับ:</span> 
-                      <span className="text-gray-600">{new Date(litter.mating_date).toLocaleDateString('th-TH')}</span>
-                    </p>
-                    <p className="flex justify-between">
-                      <span>{litter.status === 'คลอดแล้ว' ? 'คลอดจริง:' : 'กำหนดคลอด:'}</span> 
-                      <span className={litter.status === 'คลอดแล้ว' ? 'text-green-500 font-bold' : 'text-pink-500 font-bold'}>
-                        {litter.status === 'คลอดแล้ว' && litter.actual_birth_date 
-                          ? new Date(litter.actual_birth_date).toLocaleDateString('th-TH') 
-                          : new Date(litter.expected_birth_date).toLocaleDateString('th-TH')}
-                      </span>
-                    </p>
-                  </div>
-                </Link>
+                  <Link 
+                    href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`}
+                    className="px-4 py-2 bg-pink-50 text-pink-500 hover:bg-pink-100 rounded-xl text-xs md:text-sm font-bold transition-colors"
+                  >
+                    ดูรายละเอียด
+                  </Link>
+                </div>
               ))}
             </div>
           )}

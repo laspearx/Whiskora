@@ -69,91 +69,116 @@ export default function LitterDetailsPage() {
   if (!litter) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-6">
+    <div className="max-w-3xl mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-5 md:space-y-6">
       
-      {/* 🔙 Navigation Bar */}
-      <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-gray-100 sticky top-4 z-20">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-pink-500 font-bold flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:bg-pink-50 text-sm">
-          ← ย้อนกลับ
-        </button>
-        <div className="flex gap-2">
-          {litter.status === 'รอคลอด' && (
-            <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="bg-pink-500 text-white hover:bg-pink-600 px-4 py-2 rounded-xl font-black text-xs transition shadow-sm shadow-pink-100">
-              ✨ คลอดแล้ว
-            </Link>
-          )}
-          <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="bg-gray-50 text-gray-500 border border-gray-200 hover:border-pink-300 hover:text-pink-500 px-4 py-2 rounded-xl font-bold text-xs transition">
-            ✎ แก้ไข
-          </Link>
-        </div>
-      </div>
-
-      {/* 🏆 Litter Header */}
-      <div className="bg-white rounded-[2.5rem] border border-pink-100 p-8 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-bl-full opacity-50 -z-0"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-3">
-            🐾 ครอก <span className="text-pink-500">{litter.litter_code}</span>
-          </h1>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <span className={`px-3 py-1 text-[10px] font-black rounded-full border ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-               สถานะ: {litter.status}
-            </span>
-            <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-full border border-gray-100">
-               บรีดเมื่อ: {new Date(litter.mating_date).toLocaleDateString('th-TH')}
-            </span>
+      {/* 🔙 Header (ปรับเป็นแบบเดียวกับหน้า Dashboard) */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center justify-center w-10 h-10 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-600 rounded-xl transition shadow-sm border border-gray-100 flex-shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight flex items-center gap-2">
+              🐾 ครอก <span className="text-pink-500">{litter.litter_code || 'ไม่ระบุ'}</span>
+            </h1>
+            <p className="text-[10px] md:text-xs font-bold text-gray-500 mt-0.5">รายละเอียดข้อมูลครอก</p>
           </div>
         </div>
+        
+        <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="bg-white text-gray-500 border border-gray-200 hover:border-pink-300 hover:text-pink-500 px-3 py-2 md:px-4 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5">
+          <span>✎</span> <span className="hidden sm:inline">แก้ไข</span>
+        </Link>
       </div>
 
-      {/* 👨‍👩‍👦 พ่อแม่พันธุ์ */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
-        <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 text-center">Parental Match</h2>
-        <div className="flex items-center justify-center gap-6 md:gap-12">
-          {/* พ่อ */}
-          <Link href={`/pets/${sire?.id}`} className="flex flex-col items-center group">
-            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-white shadow-md overflow-hidden bg-blue-50 group-hover:scale-105 transition-transform">
-              {sire?.image_url ? <img src={sire.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl">♂</div>}
+      {/* 📋 Status & Info Card (ดีไซน์ใหม่ กระชับขึ้น) */}
+      <div className="bg-white p-4 md:p-5 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 flex-shrink-0 ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 border-green-100 text-green-500' : 'bg-orange-50 border-orange-100 text-orange-500'}`}>
+            <span className="text-xl">{litter.status === 'คลอดแล้ว' ? '🎉' : '⏳'}</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                สถานะ: {litter.status}
+              </span>
             </div>
-            <p className="mt-3 font-black text-gray-800 text-sm md:text-base">{sire?.name || 'ไม่ทราบชื่อพ่อ'}</p>
-            <span className="text-[10px] font-bold text-blue-400">SIRE</span>
+            <p className="text-[11px] font-bold text-gray-500 mt-1.5 flex gap-2">
+              <span>ทับ: {new Date(litter.mating_date).toLocaleDateString('th-TH')}</span>
+              <span className="text-gray-300">|</span>
+              <span className={litter.status === 'คลอดแล้ว' ? 'text-green-500' : 'text-pink-500'}>
+                {litter.status === 'คลอดแล้ว' && litter.actual_birth_date ? `คลอด: ${new Date(litter.actual_birth_date).toLocaleDateString('th-TH')}` : `กำหนด: ${new Date(litter.expected_birth_date).toLocaleDateString('th-TH')}`}
+              </span>
+            </p>
+          </div>
+        </div>
+        
+        {litter.status === 'รอคลอด' && (
+          <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="bg-pink-500 text-white hover:bg-pink-600 px-5 py-2.5 rounded-xl font-black text-xs transition shadow-sm text-center shrink-0 w-full sm:w-auto">
+            ✨ บันทึกคลอด
+          </Link>
+        )}
+      </div>
+
+      {/* 👨‍👩‍👦 พ่อแม่พันธุ์ (Parental Match - ย่อส่วนลง) */}
+      <div className="bg-white rounded-[1.5rem] border border-gray-100 p-5 shadow-sm">
+        <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">Parental Match</h2>
+        <div className="flex items-center justify-center gap-6 md:gap-10">
+          {/* พ่อ */}
+          <Link href={`/pets/${sire?.id}`} className="flex flex-col items-center group w-20 md:w-24">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-blue-50 group-hover:scale-105 transition-transform">
+              {sire?.image_url ? <img src={sire.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl">♂</div>}
+            </div>
+            <p className="mt-2 font-black text-gray-800 text-xs md:text-sm truncate w-full text-center">{sire?.name || 'ไม่ระบุ'}</p>
+            <span className="text-[9px] font-bold text-blue-400">SIRE</span>
           </Link>
 
-          <div className="text-2xl animate-pulse text-pink-200">❤️</div>
+          <div className="text-xl animate-pulse text-pink-300">❤️</div>
 
           {/* แม่ */}
-          <Link href={`/pets/${dam?.id}`} className="flex flex-col items-center group">
-            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-white shadow-md overflow-hidden bg-pink-50 group-hover:scale-105 transition-transform">
-              {dam?.image_url ? <img src={dam.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl">♀</div>}
+          <Link href={`/pets/${dam?.id}`} className="flex flex-col items-center group w-20 md:w-24">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-pink-50 group-hover:scale-105 transition-transform">
+              {dam?.image_url ? <img src={dam.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl">♀</div>}
             </div>
-            <p className="mt-3 font-black text-gray-800 text-sm md:text-base">{dam?.name || 'ไม่ทราบชื่อแม่'}</p>
-            <span className="text-[10px] font-bold text-pink-400">DAM</span>
+            <p className="mt-2 font-black text-gray-800 text-xs md:text-sm truncate w-full text-center">{dam?.name || 'ไม่ระบุ'}</p>
+            <span className="text-[9px] font-bold text-pink-400">DAM</span>
           </Link>
         </div>
       </div>
 
-      {/* 🍼 รายชื่อลูกๆ */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-black text-gray-800 flex items-center gap-2 px-2">
-          <span>🍼</span> สมาชิกในครอก ({babies.length})
-        </h2>
+      {/* 🍼 รายชื่อลูกๆ (ปรับ Grid ให้สวยงามขึ้น) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+           <h2 className="text-sm md:text-base font-black text-gray-800 flex items-center gap-1.5">
+             <span>🍼</span> สมาชิกในครอก
+           </h2>
+           <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{babies.length} ตัว</span>
+        </div>
+        
         {babies.length === 0 ? (
-          <div className="bg-gray-50/50 rounded-[2rem] py-12 text-center border-2 border-dashed border-gray-200">
-            <p className="text-gray-400 font-bold">ยังไม่มีข้อมูลการคลอด</p>
+          <div className="bg-white rounded-[1.5rem] py-10 text-center border border-gray-100 shadow-sm">
+            <p className="text-xs font-bold text-gray-400">ยังไม่มีข้อมูลสมาชิกในครอก</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
             {babies.map(baby => (
-              <Link key={baby.id} href={`/pets/${baby.id}`} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:border-pink-300 transition-all group">
-                <div className="aspect-square rounded-2xl bg-gray-50 overflow-hidden mb-3">
-                  {baby.image_url ? <img src={baby.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl">🐾</div>}
+              <Link key={baby.id} href={`/pets/${baby.id}`} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 transition-all group relative">
+                <div className="aspect-square rounded-xl bg-gray-50 overflow-hidden mb-2.5 relative">
+                  {baby.image_url ? <img src={baby.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full flex items-center justify-center text-3xl opacity-10">🐾</div>}
+                  <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur rounded-md px-1.5 py-0.5 text-[8px] font-bold shadow-sm text-gray-600">
+                    {baby.weight ? `${baby.weight}g` : '-'}
+                  </div>
                 </div>
-                <h4 className="font-black text-gray-800 text-sm truncate">{baby.name}</h4>
-                <div className="flex items-center justify-between mt-1">
-                  <span className={`text-[10px] font-bold ${baby.gender === 'male' || baby.gender === 'ตัวผู้' ? 'text-blue-500' : 'text-pink-500'}`}>
+                <h4 className="font-black text-gray-800 text-[11px] md:text-xs truncate mb-1.5">{baby.name || 'ยังไม่ตั้งชื่อ'}</h4>
+                <div className="flex items-center justify-between">
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${baby.gender === 'male' || baby.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
                     {baby.gender === 'male' || baby.gender === 'ตัวผู้' ? '♂ ผู้' : '♀ เมีย'}
                   </span>
-                  <span className="text-[9px] text-gray-400 font-bold">{baby.weight}g</span>
+                  <span className="text-[9px] font-bold text-gray-400 truncate max-w-[50px] text-right">{baby.status || 'เด็ก'}</span>
                 </div>
               </Link>
             ))}
