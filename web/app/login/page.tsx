@@ -8,10 +8,11 @@ import Link from "next/link";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 🌟 State สำหรับแสดง/ซ่อนรหัสผ่าน
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // 📧 เข้าสู่ระบบด้วย Email/Password
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,6 +24,17 @@ export default function LoginPage() {
       router.refresh();
     }
     setLoading(false);
+  };
+
+  // 🌐 ฟังก์ชันสำหรับ Social Login
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) alert(error.message);
   };
 
   return (
@@ -49,16 +61,15 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase">รหัสผ่าน</label>
-            <div className="relative"> {/* 🌟 ใส่ relative เพื่อวางปุ่มลูกตา */}
+            <div className="relative">
               <input
-                type={showPassword ? "text" : "password"} // 🌟 สลับ Type ตาม State
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm pr-12"
                 required
               />
-              {/* 👁️ ปุ่มสลับการแสดงรหัสผ่าน */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -86,6 +97,36 @@ export default function LoginPage() {
             {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
         </form>
+
+        {/* 🌟 ส่วนที่เพิ่มเข้ามา: ปุ่ม Social Login */}
+        <div className="mt-6">
+          <div className="relative flex items-center justify-center mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-100"></div>
+            </div>
+            <span className="relative px-4 bg-white text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+              หรือเชื่อมต่อด้วย
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => handleSocialLogin('google')}
+              className="w-full flex items-center justify-center gap-3 bg-white border border-gray-100 py-3.5 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] text-sm font-bold text-gray-700"
+            >
+              <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+              ดำเนินการต่อด้วย Google
+            </button>
+
+            <button
+              onClick={() => handleSocialLogin('facebook')}
+              className="w-full flex items-center justify-center gap-3 bg-[#1877F2] py-3.5 rounded-2xl hover:opacity-90 transition-all active:scale-[0.98] text-sm font-bold text-white shadow-lg shadow-blue-100"
+            >
+              <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              ดำเนินการต่อด้วย Facebook
+            </button>
+          </div>
+        </div>
 
         <div className="mt-8 text-center border-t border-gray-50 pt-6">
           <p className="text-gray-400 text-sm font-medium">
