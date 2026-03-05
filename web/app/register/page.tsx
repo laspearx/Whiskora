@@ -20,6 +20,37 @@ export default function RegisterPage() {
     symbol: false,
   });
 
+  // 🌟 ดักจับ Session เพื่อแยก "คนเก่า" กับ "คนใหม่"
+  useEffect(() => {
+    const checkUserStatus = (user: any) => {
+      const createdAt = new Date(user.created_at).getTime();
+      const lastSignInAt = new Date(user.last_sign_in_at).getTime();
+
+      // ถ้าเวลาล็อกอินล่าสุด กับเวลาสร้างบัญชี ห่างกันเกิน 5 วินาที = มีบัญชีอยู่แล้ว
+      if (lastSignInAt - createdAt > 5000) {
+        alert("บัญชีนี้เคยลงทะเบียนไว้แล้ว ระบบจะพาคุณเข้าสู่หน้าโปรไฟล์ 🐾");
+        router.push("/profile");
+      } else {
+        // เพิ่งสมัครใหม่สดๆ ร้อนๆ
+        router.push("/profile");
+      }
+    };
+
+    // เช็คตอนโหลดหน้า (เผื่อเด้งกลับมาจากหน้า Callback)
+    const initCheck = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) checkUserStatus(session.user);
+    };
+    initCheck();
+
+    // เช็คจังหวะที่มีการอัปเดต Auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) checkUserStatus(session.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
   useEffect(() => {
     setValidation({
       lowercase: /[a-z]/.test(password),
@@ -57,15 +88,15 @@ export default function RegisterPage() {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      // 🌟 ต้องระบุ redirectTo เหมือนหน้า Login เพื่อให้วิ่งไปที่ route.ts ตัวเดียวกัน
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  });
-  if (error) alert(error.message);
-};
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        // 🌟 เพิ่ม ?next=/register เข้าไป เพื่อให้มันเด้งกลับมาหน้านี้ก่อนเพื่อโชว์ Alert
+        redirectTo: `${window.location.origin}/auth/callback?next=/register`,
+      },
+    });
+    if (error) alert(error.message);
+  };
 
   return (
     <div className="min-h-[90vh] flex flex-col justify-center items-center px-4 py-8">
@@ -146,7 +177,7 @@ export default function RegisterPage() {
             onClick={() => handleSocialLogin('google')}
             className="w-full flex items-center justify-center gap-3 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-bold text-gray-600 text-sm shadow-sm"
           >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+            <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
             ดำเนินการต่อด้วย Google
           </button>
 
@@ -154,7 +185,7 @@ export default function RegisterPage() {
             onClick={() => handleSocialLogin('facebook')}
             className="w-full flex items-center justify-center gap-3 py-3 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl transition-all font-bold text-sm shadow-sm shadow-blue-100"
           >
-            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" className="w-5 h-5 brightness-0 invert" alt="Facebook" />
+            <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             ดำเนินการต่อด้วย Facebook
           </button>
         </div>

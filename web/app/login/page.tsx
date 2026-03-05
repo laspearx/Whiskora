@@ -18,7 +18,8 @@ export default function LoginPage() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/");
+        // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
+        router.push("/profile");
         router.refresh();
       }
     };
@@ -27,7 +28,8 @@ export default function LoginPage() {
     // ดักจับจังหวะที่ Supabase อ่าน Token จาก URL สำเร็จ
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        router.push("/");
+        // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
+        router.push("/profile");
         router.refresh();
       }
     });
@@ -43,7 +45,8 @@ export default function LoginPage() {
     if (error) {
       alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     } else {
-      router.push("/");
+      // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
+      router.push("/profile");
       router.refresh();
     }
     setLoading(false);
@@ -54,7 +57,8 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`, 
+        // 🌟 เพิ่ม ?next=/profile เพื่อให้ไฟล์ route.ts รู้ว่าต้องเด้งไปไหนต่อ
+        redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
       },
     });
     if (error) alert(error.message);
