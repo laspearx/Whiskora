@@ -5,9 +5,10 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // 🌟 เพิ่มการดึง 'next' เผื่อชัชอยากให้มัน Redirect กลับไปหน้าเดิมที่จากมา
+  const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    // 🌟 จุดสำคัญ: ต้องใส่ await หน้า cookies() สำหรับ Next.js เวอร์ชั่นใหม่ 🌟
     const cookieStore = await cookies() 
     
     const supabase = createServerClient(
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
             return cookieStore.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
+            // 🌟 ปรับปรุงการเซ็ตค่าให้รองรับ Next.js context
             cookieStore.set({ name, value, ...options })
           },
           remove(name: string, options: CookieOptions) {
@@ -28,15 +30,15 @@ export async function GET(request: Request) {
       }
     )
     
-    // แลกเปลี่ยน Code เป็น Session เพื่อล็อกอิน
+    // 🔐 แลกเปลี่ยน Code เป็น Session (สมัคร/ล็อกอินให้อัตโนมัติที่จุดนี้)
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // ล็อกอินสำเร็จ พากลับหน้าแรก
-      return NextResponse.redirect(`${origin}`)
+      // ✅ ล็อกอินสำเร็จ พากลับหน้าแรก หรือหน้าที่ระบุไว้ใน 'next'
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // ถ้ามีปัญหา ให้เด้งกลับไปหน้า Login
+  // ❌ ถ้ามีปัญหา (เช่น Code หมดอายุ หรือ User ยกเลิก) ให้เด้งกลับหน้า Login
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
