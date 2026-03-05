@@ -8,6 +8,9 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const router = useRouter();
   const [session, setSession] = useState<any>(null);
+  
+  // 🌟 เพิ่ม State สำหรับเก็บคำค้นหา
+  const [searchQuery, setSearchQuery] = useState("");
 
   // เช็คสถานะการล็อกอิน
   useEffect(() => {
@@ -22,6 +25,20 @@ export default function Home() {
       router.push("/login");
     } else {
       router.push("/register-farm");
+    }
+  };
+
+  // 🌟 ฟังก์ชันจัดการการค้นหา
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return; // ถ้าไม่ได้พิมพ์อะไร ไม่ต้องทำอะไร
+    // ส่งคำค้นหาไปที่หน้า marketplace (ชัชสามารถเปลี่ยนเป็นหน้าอื่นได้ถ้ามีหน้า search รวม)
+    router.push(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
+  // 🌟 ฟังก์ชันดักจับการกดปุ่ม Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
@@ -46,9 +63,15 @@ export default function Home() {
             <input 
               type="text" 
               placeholder="ค้นหาสายพันธุ์ หรือบริการ..." 
+              value={searchQuery} // 🌟 ผูกค่ากับ State
+              onChange={(e) => setSearchQuery(e.target.value)} // 🌟 อัปเดต State เมื่อพิมพ์
+              onKeyDown={handleKeyDown} // 🌟 ดักการกด Enter
               className="w-full bg-transparent outline-none px-3 py-2 text-sm text-gray-700 placeholder-gray-400"
             />
-            <button className="bg-gray-900 hover:bg-black text-white font-bold py-2 px-5 rounded-lg transition text-sm">
+            <button 
+              onClick={handleSearch} // 🌟 สั่งทำงานเมื่อกดปุ่ม
+              className="bg-gray-900 hover:bg-black text-white font-bold py-2 px-5 rounded-lg transition text-sm shrink-0"
+            >
               ค้นหา
             </button>
           </div>
@@ -75,15 +98,15 @@ export default function Home() {
            <p className="text-xs text-gray-500 mt-0.5">ฟาร์ม & หาบ้าน</p>
         </Link>
 
-        {/* 🏥 เปลี่ยนจาก /services เป็น /service-hub */}
-        <Link href="/service-hub" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+        {/* 🏥 ชี้ไป Service Hub พร้อมส่งค่าหมวดหมู่คลินิก */}
+        <Link href="/service-hub?category=คลินิก/โรงพยาบาล" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
            <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🏥</div>
            <h3 className="font-bold text-gray-800 text-base">คลินิก</h3>
            <p className="text-xs text-gray-500 mt-0.5">รักษาสัตว์</p>
         </Link>
 
-        {/* ✂️ เปลี่ยนจาก /services เป็น /service-hub และส่งค่าหมวดหมู่ */}
-        <Link href="/service-hub" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+        {/* ✂️ ชี้ไป Service Hub พร้อมส่งค่าหมวดหมู่กรูมมิ่ง */}
+        <Link href="/service-hub?category=อาบน้ำ-ตัดขน" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
            <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">✂️</div>
            <h3 className="font-bold text-gray-800 text-base">กรูมมิ่ง</h3>
            <p className="text-xs text-gray-500 mt-0.5">อาบน้ำตัดขน</p>
@@ -91,7 +114,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 🌟 ป้ายแบนเนอร์ชวนเปิดฟาร์ม (เพิ่ม Logic ตรวจสอบการล็อกอิน) */}
+      {/* 🌟 ป้ายแบนเนอร์ชวนเปิดฟาร์ม */}
       <section className="max-w-4xl mx-auto px-4 pb-8">
         <div className="bg-gray-900 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 relative overflow-hidden">
           <div className="absolute -right-8 -bottom-8 text-[8rem] opacity-5 pointer-events-none">✨</div>
@@ -100,7 +123,6 @@ export default function Home() {
             <p className="text-gray-400 text-xs sm:text-sm font-medium">จัดการสายพันธุ์และเข้าถึงคนรักสัตว์ได้ฟรี</p>
           </div>
           <div className="relative z-10 w-full md:w-auto mt-2 md:mt-0">
-            {/* เปลี่ยนจาก Link เป็น button เพื่อใส่ Logic */}
             <button 
               onClick={handleStartFarm}
               className="block w-full md:w-auto text-center bg-pink-500 hover:bg-pink-600 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-sm text-sm"
