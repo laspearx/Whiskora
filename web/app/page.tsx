@@ -61,34 +61,34 @@ export default function Home() {
           <h2 className="text-lg md:text-xl font-bold text-gray-800 tracking-tight">หมวดหมู่ยอดฮิต</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-  {/* 🐶 ชี้ไป Marketplace พร้อมส่งค่า pet=dog */}
-  <Link href="/marketplace?pet=dog" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
-    <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🐶</div>
-    <h3 className="font-bold text-gray-800 text-base">สุนัข</h3>
-    <p className="text-xs text-gray-500 mt-0.5">ฟาร์ม & หาบ้าน</p>
-  </Link>
+        {/* 🐶 ชี้ไป Marketplace พร้อมส่งค่า pet=dog */}
+        <Link href="/marketplace?pet=dog" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+           <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🐶</div>
+           <h3 className="font-bold text-gray-800 text-base">สุนัข</h3>
+           <p className="text-xs text-gray-500 mt-0.5">ฟาร์ม & หาบ้าน</p>
+        </Link>
 
-  {/* 🐱 ชี้ไป Marketplace พร้อมส่งค่า pet=cat */}
-  <Link href="/marketplace?pet=cat" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
-    <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🐱</div>
-    <h3 className="font-bold text-gray-800 text-base">แมว</h3>
-    <p className="text-xs text-gray-500 mt-0.5">ฟาร์ม & หาบ้าน</p>
-  </Link>
+        {/* 🐱 ชี้ไป Marketplace พร้อมส่งค่า pet=cat */}
+        <Link href="/marketplace?pet=cat" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+           <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🐱</div>
+           <h3 className="font-bold text-gray-800 text-base">แมว</h3>
+           <p className="text-xs text-gray-500 mt-0.5">ฟาร์ม & หาบ้าน</p>
+        </Link>
 
-  {/* 🏥 เปลี่ยนจาก /services เป็น /service-hub */}
-  <Link href="/service-hub?category=คลินิก/โรงพยาบาล" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
-    <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🏥</div>
-    <h3 className="font-bold text-gray-800 text-base">คลินิก</h3>
-    <p className="text-xs text-gray-500 mt-0.5">รักษาสัตว์</p>
-  </Link>
+        {/* 🏥 เปลี่ยนจาก /services เป็น /service-hub */}
+        <Link href="/service-hub" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+           <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">🏥</div>
+           <h3 className="font-bold text-gray-800 text-base">คลินิก</h3>
+           <p className="text-xs text-gray-500 mt-0.5">รักษาสัตว์</p>
+        </Link>
 
-  {/* ✂️ เปลี่ยนจาก /services เป็น /service-hub และส่งค่าหมวดหมู่ */}
-  <Link href="/service-hub?category=อาบน้ำ-ตัดขน" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
-    <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">✂️</div>
-    <h3 className="font-bold text-gray-800 text-base">กรูมมิ่ง</h3>
-    <p className="text-xs text-gray-500 mt-0.5">อาบน้ำตัดขน</p>
-  </Link>
-</div>
+        {/* ✂️ เปลี่ยนจาก /services เป็น /service-hub และส่งค่าหมวดหมู่ */}
+        <Link href="/service-hub" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-pink-300 hover:shadow-md transition text-center group">
+           <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition duration-300">✂️</div>
+           <h3 className="font-bold text-gray-800 text-base">กรูมมิ่ง</h3>
+           <p className="text-xs text-gray-500 mt-0.5">อาบน้ำตัดขน</p>
+        </Link>
+        </div>
       </section>
 
       {/* 🌟 ป้ายแบนเนอร์ชวนเปิดฟาร์ม (เพิ่ม Logic ตรวจสอบการล็อกอิน) */}
