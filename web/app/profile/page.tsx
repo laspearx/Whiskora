@@ -19,7 +19,7 @@ export default function ProfilePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState<any[]>([]);
 
-  // 🗓️ 🌟 ประกาศตัวแปรคำนวณปฏิทินไว้ที่นี่ (เพื่อแก้ Error)
+  // 🗓️ 🌟 ประกาศตัวแปรคำนวณปฏิทิน
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
   // ปรับให้วันจันทร์เป็นวันแรกของสัปดาห์ (0=จันทร์, 6=อาทิตย์)
@@ -56,7 +56,7 @@ export default function ProfilePage() {
           const petIds = petsRes.data.map((p: any) => p.id);
           const { data: vacData } = await supabase
             .from("vaccines")
-            .select("next_due, vaccine_name, pet_id")
+            .select("next_due, vaccine_name, pet_id") // 🌟 ตรวจสอบว่าใน DB ใช้ pet_id หรือ cat_id นะครับ
             .in("pet_id", petIds)
             .not("next_due", "is", null);
           if (vacData) setAppointments(vacData);
@@ -73,33 +73,27 @@ export default function ProfilePage() {
   if (loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">🐾 WHISKORA...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-12 pb-20 animate-in fade-in duration-700 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-10 pb-20 animate-in fade-in duration-700 space-y-6">
       
-      {/* 👤 Profile Header */}
-      <section className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-pink-50 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full -mr-16 -mt-16 opacity-40"></div>
-        <div className="w-24 h-24 bg-gray-50 rounded-full overflow-hidden flex items-center justify-center text-5xl shadow-inner border-4 border-white shrink-0 relative z-10">
+      {/* 👤 Profile Header (ปรับให้กระชับขึ้น) */}
+      <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-pink-50 flex items-center gap-5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-pink-50 rounded-full -mr-10 -mt-10 opacity-40"></div>
+        <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-50 rounded-full overflow-hidden flex items-center justify-center text-4xl shadow-inner border-[3px] border-white shrink-0 relative z-10">
           {profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> : "👤"}
         </div>
-        <div className="flex-1 text-center md:text-left relative z-10">
-          <h1 className="text-2xl font-black text-gray-800 leading-tight mb-1">
+        <div className="flex-1 relative z-10">
+          <h1 className="text-xl md:text-2xl font-black text-gray-800 leading-tight mb-0.5 truncate">
             {profile?.username || profile?.full_name || user?.email?.split('@')[0]}
           </h1>
-          <p className="text-gray-400 text-sm mb-4">{user?.email}</p>
-          <Link href="/profile/edit" className="inline-block text-xs font-bold text-gray-500 bg-gray-50 px-4 py-2 rounded-full hover:bg-gray-100 transition border border-gray-100">
+          <p className="text-gray-400 text-xs mb-3 truncate">{user?.email}</p>
+          <Link href="/profile/edit" className="inline-block text-[11px] font-bold text-gray-500 bg-gray-50 px-4 py-1.5 rounded-full hover:bg-gray-100 transition border border-gray-100">
             แก้ไขโปรไฟล์ ✎
-          </Link>
-          <Link 
-          href="/pets/vaccines/bulk-add" 
-          className="flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-100 font-bold rounded-xl transition-all shadow-sm text-sm"
-          >
-          <span className="text-lg">💉</span> เพิ่มวัคซีนแบบกลุ่ม
           </Link>
         </div>
       </section>
 
       {/* 📊 Stats */}
-      <div className="grid grid-cols-3 gap-3 md:gap-6">
+      <div className="grid grid-cols-3 gap-3">
         <Link href="/profile/pets" className="block transform transition hover:scale-[1.03] active:scale-95">
           <StatCard label="สัตว์เลี้ยง" value={pets.length.toString()} color="text-pink-500" />
         </Link>
@@ -108,91 +102,110 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        {/* 📅 ปฏิทินนัดหมาย (แก้ไขลอจิกอิโมจิและลิงก์กลับมาให้ครบ) */}
-        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 h-full">
-          <div className="flex justify-between items-center mb-6 px-1">
-            <h3 className="font-black text-gray-800 text-sm md:text-base flex items-center gap-2"><span>📅</span> ปฏิทินนัดหมาย</h3>
-            <div className="flex items-center gap-2">
-              <button onClick={handlePrevMonth} className="p-1.5 text-gray-400 hover:text-pink-500 transition active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
-              </button>
-              <div className="text-[10px] font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full text-center min-w-[100px] select-none">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
+        
+        {/* 📅 ปฏิทินนัดหมาย + ปุ่มเพิ่มวัคซีน */}
+        <div className="space-y-4">
+          <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 h-full">
+            <div className="flex justify-between items-center mb-6 px-1">
+              <h3 className="font-black text-gray-800 text-sm md:text-base flex items-center gap-2"><span>📅</span> ปฏิทินนัดหมาย</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={handlePrevMonth} className="p-1.5 text-gray-400 hover:text-pink-500 transition active:scale-90">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <div className="text-[10px] font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full text-center min-w-[90px] select-none">
+                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
+                </div>
+                <button onClick={handleNextMonth} className="p-1.5 text-gray-400 hover:text-pink-500 transition active:scale-90">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                </button>
               </div>
-              <button onClick={handleNextMonth} className="p-1.5 text-gray-400 hover:text-pink-500 transition active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
-              </button>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-7 text-center gap-1">
-            {['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'].map(d => <div key={d} className="text-[10px] font-bold text-gray-300 mb-2">{d}</div>)}
-            {[...Array(firstDayOfMonth)].map((_, i) => <div key={`empty-${i}`} className="aspect-square"></div>)}
-            {[...Array(daysInMonth)].map((_, i) => {
-              const day = i + 1;
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
+            
+            <div className="grid grid-cols-7 text-center gap-1">
+              {['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'].map(d => <div key={d} className="text-[10px] font-bold text-gray-300 mb-2">{d}</div>)}
+              {[...Array(firstDayOfMonth)].map((_, i) => <div key={`empty-${i}`} className="aspect-square"></div>)}
+              {[...Array(daysInMonth)].map((_, i) => {
+                const day = i + 1;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-              const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const currentCellDate = new Date(dateStr);
-              currentCellDate.setHours(0, 0, 0, 0);
+                const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const currentCellDate = new Date(dateStr);
+                currentCellDate.setHours(0, 0, 0, 0);
 
-              const dayAppts = appointments.filter(a => a.next_due && a.next_due.split('T')[0] === dateStr);
-              const hasAppt = dayAppts.length > 0;
-              const isPast = currentCellDate < today;
-              const isToday = currentCellDate.getTime() === today.getTime();
+                const dayAppts = appointments.filter(a => a.next_due && a.next_due.split('T')[0] === dateStr);
+                const hasAppt = dayAppts.length > 0;
+                const isPast = currentCellDate < today;
+                const isToday = currentCellDate.getTime() === today.getTime();
 
-              return (
-                <Link 
-                  key={day} 
-                  href={hasAppt ? `/pets/vaccines/all?date=${dateStr}` : "#"}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-[11px] font-bold relative transition-all ${
-                    isToday ? 'bg-pink-500 text-white shadow-lg shadow-pink-100 z-10' : 
-                    hasAppt ? (isPast ? 'bg-gray-100 text-gray-400' : 'bg-pink-50 hover:bg-pink-100 text-gray-800') : 
-                    'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className={isPast && hasAppt ? "line-through opacity-50" : ""}>{day}</span>
-                  {hasAppt && (
-                    <div className={`flex gap-0.5 mt-0.5 ${isPast ? 'grayscale opacity-50' : ''}`}>
-                      {dayAppts.slice(0, 2).map((appt, idx) => {
-                        let emoji = '💉';
-                        if (appt.vaccine_name.includes('เห็บ') || appt.vaccine_name.includes('หยด')) emoji = '💧';
-                        else if (appt.vaccine_name.includes('พยาธิ')) emoji = '💊';
-                        return <span key={idx} className="text-[9px]">{emoji}</span>;
-                      })}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+                return (
+                  <Link 
+                    key={day} 
+                    href={hasAppt ? `/pets/vaccines/all?date=${dateStr}` : "#"}
+                    className={`aspect-square flex flex-col items-center justify-center rounded-xl text-[11px] font-bold relative transition-all ${
+                      isToday ? 'bg-pink-500 text-white shadow-lg shadow-pink-100 z-10' : 
+                      hasAppt ? (isPast ? 'bg-gray-100 text-gray-400' : 'bg-pink-50 hover:bg-pink-100 text-gray-800') : 
+                      'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={isPast && hasAppt ? "line-through opacity-50" : ""}>{day}</span>
+                    {hasAppt && (
+                      <div className={`flex gap-0.5 mt-0.5 ${isPast ? 'grayscale opacity-50' : ''}`}>
+                        {dayAppts.slice(0, 2).map((appt, idx) => {
+                          let emoji = '💉';
+                          if (appt.vaccine_name.includes('เห็บ') || appt.vaccine_name.includes('หยด')) emoji = '💧';
+                          else if (appt.vaccine_name.includes('พยาธิ')) emoji = '💊';
+                          return <span key={idx} className="text-[9px]">{emoji}</span>;
+                        })}
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 🌟 ปุ่มเพิ่มวัคซีนแบบกลุ่ม ย้ายมาอยู่ใต้ปฏิทิน */}
+          <Link 
+            href="/pets/vaccines/bulk-add" 
+            className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">💉</span>
+              <div>
+                <p className="text-sm font-black">เพิ่มวัคซีนแบบกลุ่ม</p>
+                <p className="text-[10px] font-bold opacity-70">บันทึกหลายตัวพร้อมกัน</p>
+              </div>
+            </div>
+            <span className="opacity-50 group-hover:translate-x-1 transition-transform">➔</span>
+          </Link>
+        </div>
 
         {/* 🏢 จัดการธุรกิจ */}
-<section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden">
-  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full opacity-40"></div>
-  <h3 className="font-black text-gray-800 text-sm mb-4 relative z-10 flex items-center gap-2"><span>🤝</span> จัดการธุรกิจ</h3>
-  <div className="space-y-2 relative z-10">
-    
-    {/* 🌟 แก้ไข: เติม ?from=profile ต่อท้ายทุกลิงก์ */}
-    {myFarms.map(f => (
-      <BusinessLink key={f.id} href={`/farm-dashboard/${f.id}?from=profile`} label={`ฟาร์ม : ${f.farm_name}`} icon="🏡" theme="pink" />
-    ))}
-    
-    {myShops.map(s => (
-      <BusinessLink key={s.id} href={`/shop-dashboard/${s.id}?from=profile`} label={`ร้านค้า : ${s.shop_name}`} icon="🛍️" theme="teal" />
-    ))}
-    
-    {myServices.map(v => (
-      <BusinessLink key={v.id} href={`/service-dashboard/${v.id}?from=profile`} label={`บริการ : ${v.service_name}`} icon="🏥" theme="blue" />
-    ))}
+        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden h-full">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full opacity-40"></div>
+          <h3 className="font-black text-gray-800 text-sm mb-4 relative z-10 flex items-center gap-2"><span>🤝</span> จัดการธุรกิจ</h3>
+          <div className="space-y-3 relative z-10">
+            
+            {myFarms.map(f => (
+              <BusinessLink key={f.id} href={`/farm-dashboard/${f.id}?from=profile`} label={`ฟาร์ม : ${f.farm_name}`} icon="🏡" theme="pink" />
+            ))}
+            
+            {myShops.map(s => (
+              <BusinessLink key={s.id} href={`/shop-dashboard/${s.id}?from=profile`} label={`ร้านค้า : ${s.shop_name}`} icon="🛍️" theme="teal" />
+            ))}
+            
+            {myServices.map(v => (
+              <BusinessLink key={v.id} href={`/service-dashboard/${v.id}?from=profile`} label={`บริการ : ${v.service_name}`} icon="🏥" theme="blue" />
+            ))}
 
-    {(myFarms.length === 0 && myShops.length === 0 && myServices.length === 0) && (
-      <Link href="/partner" className="block p-8 border-2 border-dashed border-gray-100 rounded-[1.5rem] text-center text-xs font-bold text-gray-400 hover:border-pink-200 transition">+ สมัครเป็นพาร์ทเนอร์</Link>
-    )}
-  </div>
-</section>
+            {(myFarms.length === 0 && myShops.length === 0 && myServices.length === 0) && (
+              <Link href="/partner" className="block p-8 border-2 border-dashed border-gray-100 rounded-[1.5rem] text-center text-xs font-bold text-gray-400 hover:border-pink-200 hover:text-pink-500 transition-all bg-gray-50/50 hover:bg-pink-50/30">
+                + สมัครเป็นพาร์ทเนอร์
+              </Link>
+            )}
+          </div>
+        </section>
 
       </div>
 
@@ -212,7 +225,8 @@ export default function ProfilePage() {
         </Link>
       </section>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* 🛒 Quick Links */}
+      <div className="grid grid-cols-2 gap-3">
         <QuickLink icon="❤️" title="Wishlist" href="/wishlist" />
         <QuickLink icon="🛒" title="ออเดอร์" href="/history" />
       </div>
@@ -224,9 +238,9 @@ export default function ProfilePage() {
 // Helper Components
 function StatCard({ label, value, color = "text-gray-800" }: { label: string, value: string, color?: string }) {
   return (
-    <div className="bg-white py-6 rounded-[2rem] border border-gray-100 text-center shadow-sm transition-all bg-gradient-to-b from-white to-gray-50/30">
+    <div className="bg-white py-5 rounded-[1.5rem] border border-gray-100 text-center shadow-sm transition-all bg-gradient-to-b from-white to-gray-50/30">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className={`text-3xl font-black ${color}`}>{value}</p>
+      <p className={`text-2xl md:text-3xl font-black ${color}`}>{value}</p>
     </div>
   );
 }
@@ -238,8 +252,8 @@ function BusinessLink({ href, label, icon, theme }: { href: string, label: strin
     blue: "bg-blue-50 text-blue-500 border-blue-100 hover:bg-blue-100"
   };
   return (
-    <Link href={href} className={`flex items-center gap-3 p-4 rounded-2xl border transition font-bold text-xs ${styles[theme]}`}>
-      <span className="text-xl">{icon}</span>
+    <Link href={href} className={`flex items-center gap-3 p-3.5 rounded-[1rem] border transition font-bold text-xs shadow-sm ${styles[theme]}`}>
+      <span className="text-lg bg-white w-8 h-8 flex items-center justify-center rounded-lg shadow-sm">{icon}</span>
       <span className="truncate flex-1">{label}</span>
       <span className="opacity-40">➔</span>
     </Link>
@@ -248,8 +262,8 @@ function BusinessLink({ href, label, icon, theme }: { href: string, label: strin
 
 function QuickLink({ icon, title, href }: { icon: string, title: string, href: string }) {
   return (
-    <Link href={href} className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-pink-200 transition shadow-sm group">
-      <span className="text-2xl group-hover:scale-110 transition">{icon}</span>
+    <Link href={href} className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 hover:border-pink-200 transition shadow-sm group">
+      <span className="text-xl md:text-2xl group-hover:scale-110 transition">{icon}</span>
       <p className="text-sm font-bold text-gray-800">{title}</p>
     </Link>
   );
