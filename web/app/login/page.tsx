@@ -26,16 +26,22 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 🌐 ฟังก์ชันสำหรับ Social Login
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+  // 🌐 ฟังก์ชันสำหรับ Social Login (โค้ดเดิมของชัชใช้ได้เลย)
+const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      // มั่นใจว่า path นี้มีไฟล์ route.ts หรือ callback จัดการ session อยู่
+      redirectTo: `${window.location.origin}/auth/callback`, 
+      // เพิ่ม query string เพื่อระบุว่าถ้าสมัครใหม่ให้ทำอะไร (ถ้าต้องการ)
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'select_account',
       },
-    });
-    if (error) alert(error.message);
-  };
+    },
+  });
+  if (error) alert(error.message);
+};
 
   return (
     <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
