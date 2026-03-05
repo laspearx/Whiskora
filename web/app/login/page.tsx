@@ -5,7 +5,30 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// เพิ่ม useEffect และเรียกใช้ที่ด้านบนของ LoginPage
+import { useEffect } from "react"; // 🌟 เพิ่ม import
+
 export default function LoginPage() {
+  // ... state เดิมของชัช ...
+  const router = useRouter();
+
+  // 🌟 เพิ่มส่วนนี้เข้าไปครับ เพื่อดักจับ Session ที่แอบเข้ามา
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        // ถ้าเจอ Session (แม้จะมาจาก fragment #) ให้พาวิ่งไปหน้าแรกเลย
+        router.push("/");
+        router.refresh();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  // ... rest of your code ...
+} 
+
+{
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,13 +52,14 @@ const handleSocialLogin = async (provider: 'google' | 'facebook') => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
+      // 🌟 ใช้แค่ redirectTo อย่างเดียวเหมือนหน้า Register ครับ
       redirectTo: `${window.location.origin}/auth/callback`, 
     },
   });
   if (error) alert(error.message);
 };
 
-  return (
+  (
     <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-[400px] bg-white p-8 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500">
         
