@@ -8,32 +8,39 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    const cookieStore = await cookies() // 🌟 await cookies ตามที่ชัชทำ ถูกต้องแล้วครับ
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+    try {
+      const cookieStore = await cookies() // 🌟 มั่นใจว่าใช้ await ถ้าเป็น Next.js 15
+      
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              cookieStore.set({ name, value, ...options })
+            },
+            remove(name: string, options: CookieOptions) {
+              cookieStore.set({ name, value: '', ...options })
+            },
           },
-          set(name: string, value: string, options: CookieOptions) {
-            // 🌟 ปรับตรงนี้ให้ปลอดภัยขึ้น
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            // 🌟 ปรับตรงนี้ให้ปลอดภัยขึ้น
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
+        }
+      )
+      
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (!error) {
+        return NextResponse.redirect(`${origin}${next}`)
       }
-    )
-    
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error) {
-      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+      
+      console.error('Exchange Code Error:', error.message)
+    } catch (err) {
+      console.error('Server Runtime Error:', err)
     }
   }
+
+  // 🛡️ ถ้าพัง ให้กลับหน้า Login พร้อมติด Error บอก จะได้ไม่ขึ้นหน้า 500 ขาวๆ
+  return NextResponse.redirect(`${origin}/login?error=auth_runtime_error`)
 }
