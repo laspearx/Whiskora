@@ -89,6 +89,12 @@ export default function ProfilePage() {
           <Link href="/profile/edit" className="inline-block text-xs font-bold text-gray-500 bg-gray-50 px-4 py-2 rounded-full hover:bg-gray-100 transition border border-gray-100">
             แก้ไขโปรไฟล์ ✎
           </Link>
+          <Link 
+          href="/pets/vaccines/bulk-add" 
+          className="flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-100 font-bold rounded-xl transition-all shadow-sm text-sm"
+          >
+          <span className="text-lg">💉</span> เพิ่มวัคซีนแบบกลุ่ม
+          </Link>
         </div>
       </section>
 
