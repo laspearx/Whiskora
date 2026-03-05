@@ -90,8 +90,10 @@ export default function LitterDetailsPage() {
           </div>
         </div>
         
-        <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="bg-white text-gray-500 border border-gray-200 hover:border-pink-300 hover:text-pink-500 px-3 py-2 md:px-4 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5">
-          <span>✎</span> <span className="hidden sm:inline">แก้ไข</span>
+        <Link 
+            href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`}
+            className="text-[11px] font-bold text-gray-400 hover:text-pink-500 bg-gray-50 hover:bg-pink-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+            >✎ แก้ไข
         </Link>
       </div>
 
