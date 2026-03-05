@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 📧 เข้าสู่ระบบด้วย Email/Password
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,18 +25,12 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 🌐 ฟังก์ชันสำหรับ Social Login (โค้ดเดิมของชัชใช้ได้เลย)
 const handleSocialLogin = async (provider: 'google' | 'facebook') => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      // มั่นใจว่า path นี้มีไฟล์ route.ts หรือ callback จัดการ session อยู่
-      redirectTo: `${window.location.origin}/auth/callback`, 
-      // เพิ่ม query string เพื่อระบุว่าถ้าสมัครใหม่ให้ทำอะไร (ถ้าต้องการ)
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'select_account',
-      },
+      // 🌟 ใช้ redirectTo ไปที่ callback ของเรา
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   });
   if (error) alert(error.message);

@@ -20,7 +20,6 @@ export default function RegisterPage() {
     symbol: false,
   });
 
-  // 🌟 ตรวจสอบเงื่อนไขทุกครั้งที่รหัสผ่านเปลี่ยน
   useEffect(() => {
     setValidation({
       lowercase: /[a-z]/.test(password),
@@ -33,7 +32,6 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // เช็คว่าผ่านทุกเงื่อนไขหรือยังก่อนส่งข้อมูล
     const isAllValid = Object.values(validation).every(Boolean);
     if (!isAllValid) {
       alert("กรุณาตั้งรหัสผ่านให้ตรงตามเงื่อนไขที่กำหนด");
@@ -59,8 +57,15 @@ export default function RegisterPage() {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    await supabase.auth.signInWithOAuth({ provider });
-  };
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      // 🌟 ต้องระบุ redirectTo เหมือนหน้า Login เพื่อให้วิ่งไปที่ route.ts ตัวเดียวกัน
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  if (error) alert(error.message);
+};
 
   return (
     <div className="min-h-[90vh] flex flex-col justify-center items-center px-4 py-8">
