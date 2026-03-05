@@ -1,22 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// เพิ่ม useEffect และเรียกใช้ที่ด้านบนของ LoginPage
-import { useEffect } from "react"; // 🌟 เพิ่ม import
-
 export default function LoginPage() {
-  // ... state เดิมของชัช ...
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 🌟 เพิ่มส่วนนี้เข้าไปครับ เพื่อดักจับ Session ที่แอบเข้ามา
+  // 🌟 พระเอกของเรา: ดักจับ Session ที่ติดมากับ URL (เครื่องหมาย #) ทันทีที่เปิดหน้าเว็บ
   useEffect(() => {
+    // เช็คตอนโหลดหน้าเว็บทันที
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/");
+        router.refresh();
+      }
+    };
+    checkSession();
+
+    // ดักจับจังหวะที่ Supabase อ่าน Token จาก URL สำเร็จ
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        // ถ้าเจอ Session (แม้จะมาจาก fragment #) ให้พาวิ่งไปหน้าแรกเลย
         router.push("/");
         router.refresh();
       }
@@ -25,16 +35,7 @@ export default function LoginPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  // ... rest of your code ...
-} 
-
-{
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
+  // 📧 ฟังก์ชันเข้าสู่ระบบด้วยอีเมล
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -48,18 +49,18 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      // 🌟 ใช้แค่ redirectTo อย่างเดียวเหมือนหน้า Register ครับ
-      redirectTo: `${window.location.origin}/auth/callback`, 
-    },
-  });
-  if (error) alert(error.message);
-};
+  // 🌐 ฟังก์ชันเข้าสู่ระบบด้วย Social
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, 
+      },
+    });
+    if (error) alert(error.message);
+  };
 
-  (
+  return (
     <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-[400px] bg-white p-8 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500">
         
@@ -120,7 +121,6 @@ const handleSocialLogin = async (provider: 'google' | 'facebook') => {
           </button>
         </form>
 
-        {/* 🌟 ส่วนที่เพิ่มเข้ามา: ปุ่ม Social Login */}
         <div className="mt-6">
           <div className="relative flex items-center justify-center mb-6">
             <div className="absolute inset-0 flex items-center">
