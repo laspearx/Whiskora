@@ -29,8 +29,7 @@ const handleSocialLogin = async (provider: 'google' | 'facebook') => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      // 🌟 ใช้ redirectTo ไปที่ callback ของเรา
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${window.location.origin}/auth/callback`, 
     },
   });
   if (error) alert(error.message);
