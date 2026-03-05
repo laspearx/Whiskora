@@ -33,11 +33,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
   }
-
-  // ❌ ถ้า Error ให้ลองเปลี่ยนจาก redirect กลับไปหน้า login อย่างเดียว 
-  // เป็นการ redirect พร้อมแจ้ง error ที่ชัดเจนขึ้น
-  // return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
