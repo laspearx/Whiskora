@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
 
-// 🎨 คืนชีพ circle1 และ circle2 กลับมา เพื่อแก้อาการ Error แถบแดง และใช้ทำวงกลมตกแต่งบัตร
 const THEMES = {
   pink: { primary: '#db2777', secondary: '#ec4899', bg: '#fdf2f8', circle1: '#fbcfe8', circle2: '#fce7f3' },
   blue: { primary: '#2563eb', secondary: '#3b82f6', bg: '#eff6ff', circle1: '#bfdbfe', circle2: '#dbeafe' },
@@ -77,7 +76,6 @@ export default function PetIdCardPage() {
           
         if (profileData) setProfile(profileData);
 
-        // 🌟 ดึงโลโก้อุ้งเท้าจากไฟล์ mini-logo.png ในโฟลเดอร์ public
         const logoB64 = await fetchImageAsBase64('/mini-logo.png');
         setBase64Logo(logoB64);
 
@@ -230,7 +228,6 @@ export default function PetIdCardPage() {
             position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: -1, pointerEvents: 'none',
           }} 
         >
-          {/* 🌟 พื้นหลังกลับมาใช้วงกลมเรียบๆ คลีนๆ ไม่ลายตา */}
           <div className="absolute inset-0 opacity-60" style={{ backgroundColor: t.bg }}></div>
           <div className="absolute top-0 right-0 w-44 h-44 rounded-full opacity-50 -mr-16 -mt-16" style={{ backgroundColor: t.circle1 }}></div>
           <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full opacity-50 -ml-12 -mb-12" style={{ backgroundColor: t.circle2 }}></div>
@@ -240,8 +237,8 @@ export default function PetIdCardPage() {
             {/* Header */}
             <div className="flex justify-between items-start mb-3 border-b border-gray-200/50 pb-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-white rounded-full p-1 shadow-sm border border-gray-100">
-                  {/* 🌟 แสดงโลโก้อุ้งเท้า mini-logo.png */}
+                {/* 🌟 แก้ไขตรงนี้: เอา bg-white และ border ออกแล้ว! */}
+                <div className="w-8 h-8 shrink-0 flex items-center justify-center">
                   {base64Logo ? (
                     <img src={base64Logo} alt="Whiskora Logo" className="w-full h-full object-contain" />
                   ) : (
@@ -259,11 +256,10 @@ export default function PetIdCardPage() {
               </div>
             </div>
             
-            {/* Content (ย้าย QR Code มาแทรกไว้ตรงมุมขวาใน Layout นี้เลย จะได้ไม่ตกขอบ) */}
+            {/* Content */}
             <div className="flex-1 flex gap-4 relative">
               
-              {/* 📸 รูปภาพน้อง */}
-              <div className="w-[88px] h-[112px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
+              <div className="w-[88px] h-[112px] rounded-xl overflow-hidden border-[3px] shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
                 {base64Avatar ? (
                   <img src={base64Avatar} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
@@ -271,13 +267,11 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
-              {/* 📝 ข้อมูลต่างๆ */}
               <div className="flex-1 flex flex-col justify-between pt-0.5">
                 <div>
                   <p className="text-[7.5px] font-bold uppercase tracking-wider mb-0.5" style={{ color: t.secondary }}>ชื่อสัตว์เลี้ยง (Name)</p>
                   <p className="text-[16px] font-black leading-none mb-2" style={{ color: '#1f2937' }}>{pet.name}</p>
                   
-                  {/* เว้นที่ด้านขวา (pr-[55px]) ไม่ให้ตัวหนังสือทับกับ QR Code */}
                   <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 pr-[55px]">
                     <div>
                       <p className="text-[6px] font-bold text-gray-400 mb-0.5">สายพันธุ์ (Breed)</p>
@@ -309,10 +303,10 @@ export default function PetIdCardPage() {
                 </div>
               </div>
 
-              {/* 🌟 QR Code ย้ายมาอยู่ตำแหน่ง "ขวาล่าง" ของพื้นที่เนื้อหา (ไม่ตกขอบ 100%) */}
+              {/* QR Code (มุมขวาล่าง) */}
               <div className="absolute bottom-1 right-0 flex flex-col items-center">
                 <div className="text-[4.5px] font-bold text-gray-400 mb-1 tracking-widest text-center leading-[1.2]">SCAN TO<br/>VIEW PROFILE</div>
-                <div className="w-[48px] h-[48px] bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                <div className="w-[48px] h-[48px] bg-white p-1 rounded-lg border border-gray-200">
                   {base64Qr && <img src={base64Qr} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply opacity-90" />}
                 </div>
               </div>
