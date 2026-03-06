@@ -47,12 +47,12 @@ export default function PetDetailPage() {
       if (petError) throw petError;
       setPet(petData);
 
-      // 🌟 ดึงข้อมูลวัคซีน (เปลี่ยนจาก pet_id เป็น cat_id ตามฐานข้อมูลของชัช)
+      // 🌟 ดึงข้อมูลวัคซีน
       const { data: vaccineData } = await supabase
         .from('vaccines')
         .select('*')
         .eq('pet_id', petId)
-        .order('date_given', { ascending: false }); // ดึงโดยเรียงจากใหม่ไปเก่า
+        .order('date_given', { ascending: false }); 
         
       if (vaccineData) setVaccines(vaccineData);
 
@@ -66,8 +66,9 @@ export default function PetDetailPage() {
   };
 
   const calculateAgeDetail = (birthDate: string | null) => {
-    if (!birthDate) return 'ไม่ระบุวันเกิด';
+    if (!birthDate) return 'ไม่ระบุอายุ';
     const dob = new Date(birthDate);
+    if (isNaN(dob.getTime())) return 'ไม่ระบุอายุ';
     const today = new Date();
     
     let years = today.getFullYear() - dob.getFullYear();
@@ -93,11 +94,9 @@ export default function PetDetailPage() {
     return ageParts.join(' ');
   };
 
-  // 🌟 ฟังก์ชันจัดกลุ่มวัคซีน (ดึงประเภทที่ไม่ซ้ำกัน และหารายการล่าสุดของแต่ละประเภท)
   const getGroupedVaccines = () => {
     const uniqueTypes = [...new Set(vaccines.map(v => v.vaccine_name))];
     return uniqueTypes.map(type => {
-      // เนื่องจากเรา order descending มาแล้ว ตัวแรกที่เจอ (index 0) คือตัวล่าสุด
       const records = vaccines.filter(v => v.vaccine_name === type);
       return {
         name: type,
@@ -115,18 +114,18 @@ export default function PetDetailPage() {
   const breeds = formatBreed(pet.breed);
 
   return (
-    <div className="min-h-screen bg-white pb-20 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-gray-50 pb-20 animate-in fade-in duration-700">
 
       <div className="max-w-3xl mx-auto px-4 mt-4 md:mt-8 space-y-6">
         
-        {/* 🔙 Header แบบใหม่ (ย้ายโค้ดปุ่มที่หลุดเข้ามาใส่ตรงนี้) */}
+        {/* 🔙 Header */}
         <div className="flex items-center gap-4">
           <button 
             onClick={() => {
               if (pet?.farm_id && pet.farm_id !== 'PERSONAL') {
-                router.push(`/farm-dashboard/${pet.farm_id}/pets`); // กลับไปลิสต์สมาชิกฟาร์ม
+                router.push(`/farm-dashboard/${pet.farm_id}/pets`); 
               } else {
-                router.push('/profile/pets'); // สัตว์เลี้ยงส่วนตัว ให้กลับหน้าสรุปสัตว์เลี้ยงโปรไฟล์
+                router.push('/profile/pets'); 
               }
             }}
             className="w-10 h-10 flex items-center justify-center bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-600 rounded-xl transition shadow-sm border border-gray-100"
@@ -140,89 +139,94 @@ export default function PetDetailPage() {
           </div>
         </div>
         
-        {/* Pet Hero Card */}
-        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start relative shadow-sm">
+        {/* 🌟 Pet Hero Card (ดีไซน์ใหม่ คลีน เป็นระเบียบ ไม่รก) */}
+        <div className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm">
           
-          <Link href={`/pets/${pet.id}/edit`} className="absolute top-5 right-5 text-xs bg-blue-50 text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-xl font-bold transition-all border border-blue-100 shadow-sm">
-            แก้ไขข้อมูล ✎
-          </Link>
-
-          <div className="w-32 h-32 md:w-36 md:h-36 shrink-0 relative rounded-full overflow-hidden bg-gray-50 border-4 border-white shadow-md mt-6 md:mt-0">
-            {pet.image_url ? (
-              <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-5xl">🐾</div>
-            )}
-          </div>
-          
-          <div className="flex-1 w-full text-center md:text-left">
-            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-              <h1 className="text-2xl md:text-3xl font-black text-gray-800">{pet.name}</h1>
-              <span className={`inline-block px-3 py-0.5 rounded-full text-xs font-bold border self-center md:self-auto ${
-                pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-pink-50 text-pink-500 border-pink-100'
-              }`}>
-                {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? '♂ ตัวผู้' : '♀ ตัวเมีย'}
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-gray-700 font-bold text-base leading-tight">{breeds.th}</p>
-              <p className="text-gray-400 font-medium text-xs mt-0.5 leading-relaxed">{breeds.en}</p>
+          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+            
+            {/* 📸 รูปโปรไฟล์น้อง */}
+            <div className="w-28 h-28 md:w-32 md:h-32 shrink-0 relative rounded-full overflow-hidden bg-gray-50 border-4 border-pink-50 shadow-sm">
+              {pet.image_url ? (
+                <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-5xl">🐾</div>
+              )}
             </div>
             
-            <div className="space-y-3">
-              <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start">
-                <div className="w-full md:w-auto text-center md:text-left">
-                  <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">วันเกิด & อายุละเอียด</p>
-                  <p className="text-gray-700 font-bold text-sm">
-                    {(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ไม่ระบุ'} 
-                    <span className="text-pink-500 ml-1.5 font-black">({calculateAgeDetail(pet.birth_date || pet.birthdate)})</span>
-                  </p>
-                </div>
-
-                <div className="w-full md:w-auto text-center md:text-left">
-                  <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">ประเภทสัตว์เลี้ยง</p>
-                  <p className="text-gray-700 font-black text-sm">
+            {/* 📝 ข้อมูลหลัก & ปุ่ม Action */}
+            <div className="flex-1 w-full text-center md:text-left space-y-5">
+              
+              <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
+                <div>
+                  <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">{pet.name}</h1>
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase ${
+                      pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'
+                    }`}>
+                      {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? '♂ Male' : '♀ Female'}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-400">
                     {pet.species === 'cat' ? '🐱 แมว' : pet.species === 'dog' ? '🐶 หมา' : `🐾 ${pet.species || 'ไม่ระบุ'}`}
                   </p>
                 </div>
+
+                {/* 🔘 ปุ่มจัดการ */}
+                <div className="flex items-center gap-2">
+                  <Link href={`/pets/${pet.id}/edit`} className="bg-gray-50 hover:bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl font-bold transition-all border border-gray-100 text-xs flex items-center gap-2">
+                    แก้ไข ✎
+                  </Link>
+                  <Link href={`/pets/${pet.id}/id-card`} className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-4 py-2.5 rounded-xl font-black transition-all border border-pink-100 text-xs flex items-center gap-2">
+                    <span className="text-base leading-none">🪪</span> บัตรประจำตัว
+                  </Link>
+                </div>
               </div>
 
+              {/* 📊 กล่องข้อมูล (Grid แบบคลีนๆ) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-left">
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">สายพันธุ์</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{breeds.th}</p>
+                </div>
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">สี</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{pet.color || '-'}</p>
+                </div>
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">วันเกิด</p>
+                  <p className="text-sm font-black text-gray-800">{(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}</p>
+                </div>
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">อายุ</p>
+                  <p className="text-xs font-black text-pink-500">{calculateAgeDetail(pet.birth_date || pet.birthdate)}</p>
+                </div>
+              </div>
+
+              {/* ⚠️ ข้อมูลเพิ่มเติม (สิ่งที่แพ้ / หมายเหตุ) แยกกล่องสีให้ชัดเจน */}
               {(pet.allergies || pet.traits) && (
-                 <div className="flex flex-col md:flex-row gap-4 md:gap-8">                  
-                    {pet.traits && (
-                    <div className="w-full md:w-auto text-center md:text-left mt-2">
-                      <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">หมายเหตุ</p>
-                      <p className="text-gray-600 font-bold text-sm">{pet.traits}</p>
+                <div className="flex flex-col sm:flex-row gap-3 text-left">
+                  {pet.traits && (
+                    <div className="flex-1 bg-blue-50/50 border border-blue-100 rounded-2xl p-3.5">
+                      <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">📝 หมายเหตุ / นิสัย</p>
+                      <p className="text-sm font-bold text-blue-900">{pet.traits}</p>
                     </div>
                   )}
                   {pet.allergies && (
-                    <div className="w-full md:w-auto text-center md:text-left mt-2">
-                      <p className="text-xs text-red-400 font-bold uppercase mb-0.5">สิ่งที่แพ้</p>
-                      <p className="text-red-600 font-bold text-sm">{pet.allergies}</p>
+                    <div className="flex-1 bg-red-50/50 border border-red-100 rounded-2xl p-3.5">
+                      <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-1">⚠️ สิ่งที่แพ้</p>
+                      <p className="text-sm font-bold text-red-900">{pet.allergies}</p>
                     </div>
                   )}
                 </div>
               )}
-            </div>
 
-            {/* 🌟 ปุ่มสร้างบัตรประจำตัวสัตว์เลี้ยง (เพิ่มใหม่) */}
-            <div className="mt-6">
-              <Link 
-                href={`/pets/${pet.id}/id-card`} 
-                className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-pink-200 hover:scale-[1.02] active:scale-95 text-sm"
-              >
-                <span className="text-lg">🪪</span> สร้างบัตรประจำตัวน้อง {pet.name}
-              </Link>
             </div>
-
           </div>
         </div>
 
-        {/* 🌟 Vaccine Section (Updated Layout) */}
+        {/* 🌟 Vaccine Section (คงเดิม 100%) */}
         <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
           
-          {/* Header & Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h2 className="text-lg font-black text-teal-600 flex items-center gap-2">
               💉 สมุดวัคซีน
@@ -246,7 +250,6 @@ export default function PetDetailPage() {
               {groupedVaccines.map((group, idx) => (
                 <Link key={idx} href={`/pets/${pet.id}/vaccines?type=${encodeURIComponent(group.name)}`} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4 hover:border-teal-300 hover:shadow-md transition-all group block">
                   
-                  {/* หัวการ์ด */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-teal-50 text-teal-500 rounded-xl flex items-center justify-center text-lg shrink-0 border border-teal-50 group-hover:scale-110 transition-transform">
                       {group.name.includes('เห็บ') ? '💧' : group.name.includes('พยาธิ') ? '💊' : '💉'}
@@ -262,7 +265,6 @@ export default function PetDetailPage() {
                     </div>
                   </div>
 
-                  {/* สรุปข้อมูลล่าสุด */}
                   <div className="bg-gray-50/50 rounded-xl p-3 flex justify-between items-center border border-gray-50">
                     <div>
                       <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">ฉีดล่าสุด</p>
