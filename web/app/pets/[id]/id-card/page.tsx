@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
-// 🌟 นำเข้าแบบปกติกลับมา (เสถียรสุดบน Vercel)
-import html2canvas from 'html2canvas';
 
 export default function PetIdCardPage() {
   const router = useRouter();
@@ -61,13 +59,15 @@ export default function PetIdCardPage() {
     setSaving(true);
     
     try {
-      // 🌟 แคปหน้าจอ (ใส่ allowTaint เผื่อกรณีรูปจากภายนอกโหลดไม่เต็ม)
+      // 🌟 ใช้ Dynamic Import เพื่อความปลอดภัย 100% บน Vercel
+      const html2canvas = (await import('html2canvas')).default;
+
       const canvas = await html2canvas(cardRef.current, {
         scale: 3, 
         useCORS: true, 
         allowTaint: true, 
         backgroundColor: null, 
-      } as any); // สยบ TypeScript ด้วย as any
+      } as any);
 
       // แปลง Canvas เป็น Data URL (รูปภาพ PNG)
       const image = canvas.toDataURL("image/png");
@@ -82,7 +82,6 @@ export default function PetIdCardPage() {
       
     } catch (error: any) {
       console.error("Error generating image:", error);
-      // 🌟 เพิ่ม Alert บอกสาเหตุชัดๆ เผื่อมันพังอีก จะได้รู้ว่าเป็นเพราะอะไร
       alert(`โหลดรูปไม่สำเร็จครับ: ${error.message}`);
     } finally {
       setSaving(false);
@@ -92,9 +91,19 @@ export default function PetIdCardPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังพิมพ์บัตรประชาชน... 🐾</div>;
   if (!pet) return null;
 
-  // สร้างรหัสบัตรจำลอง 13 หลัก
-  const fakeIdNumber = pet.id ? parseInt(pet.id.replace(/\D/g, '').substring(0, 13) || "1234567890123", 10).toString().padStart(13, '0') : "0000000000000";
-  const formattedId = `${fakeIdNumber.substring(0,1)}-${fakeIdNumber.substring(1,5)}-${fakeIdNumber.substring(5,10)}-${fakeIdNumber.substring(10,12)}-${fakeIdNumber.substring(12,13)}`;
+  // 🌟 [แก้ Error ตรงนี้] แปลง ID ให้เป็น String ก่อนเสมอเพื่อป้องกันเว็บแครช
+  const safeIdString = String(pet.id || "0");
+  const numericOnly = safeIdString.replace(/\D/g, ''); // ดึงมาเฉพาะตัวเลข
+  const paddedId = (numericOnly + "1234567890123").substring(0, 13); // ถ้าเลขไม่ครบ 13 หลัก ให้เติมจนครบ
+  const formattedId = `${paddedId.substring(0,1)}-${paddedId.substring(1,5)}-${paddedId.substring(5,10)}-${paddedId.substring(10,12)}-${paddedId.substring(12,13)}`;
+
+  // 🌟 [แก้ Error ตรงนี้] ฟังก์ชันแปลงวันที่แบบปลอดภัย ป้องกัน RangeError
+  const safeFormatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('th-TH');
+  };
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-8">
@@ -119,7 +128,7 @@ export default function PetIdCardPage() {
           className="w-full max-w-[380px] bg-white rounded-[1.5rem] overflow-hidden relative border border-gray-200"
           style={{ aspectRatio: '85.6 / 53.98' }} 
         >
-          {/* 🌟 พื้นหลังบัตรแบบใหม่ เอา blur-3xl ออกเพื่อป้องกัน html2canvas แครช */}
+          {/* พื้นหลังบัตร */}
           <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 opacity-90"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-200 to-transparent rounded-full opacity-50 -mr-10 -mt-10"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-200 to-transparent rounded-full opacity-50 -ml-10 -mb-10"></div>
@@ -174,7 +183,7 @@ export default function PetIdCardPage() {
                   <div>
                     <p className="text-[7px] font-bold text-gray-400 uppercase">วันเกิด (DOB)</p>
                     <p className="text-[9px] font-bold text-gray-800">
-                      {(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}
+                      {safeFormatDate(pet.birth_date || pet.birthdate)}
                     </p>
                   </div>
                   <div>
