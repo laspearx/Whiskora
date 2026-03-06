@@ -179,7 +179,7 @@ export default function ProfilePage() {
           </section>
 
           {/* 🌟 การ์ดสรุปจำนวนสัตว์เลี้ยง (ดีไซน์ใหม่ แนวนอนสวยๆ) */}
-          <Link href="/profile/pets" className="flex items-center justify-between p-4 bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-100 rounded-2xl transition-all shadow-sm group">
+          <Link href="/profile/pets" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:border-pink-300 hover:shadow-md transition-all group">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-pink-50 text-pink-500 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm">
                 🐾

@@ -62,7 +62,7 @@ export default function PetIdCardPage() {
         scale: 3, 
         useCORS: true, 
         allowTaint: true, 
-        backgroundColor: '#ffffff', // 🌟 บังคับพื้นหลังเป็นสีขาว เพื่อเลี่ยงการเกิดจอดำหรือโปร่งใส
+        backgroundColor: '#ffffff',
       } as any);
 
       const image = canvas.toDataURL("image/png");
@@ -82,6 +82,19 @@ export default function PetIdCardPage() {
     }
   };
 
+  // 🌟 ฟังก์ชันสกัดเอาเฉพาะภาษาอังกฤษในวงเล็บ (เช่น "ขาว (White)" -> "White")
+  const extractEnglish = (text: string | null) => {
+    if (!text) return '-';
+    const match = text.match(/\(([^)]+)\)/); // หาข้อความในวงเล็บ ()
+    return match ? match[1] : text; // ถ้าเจอให้คืนค่าในวงเล็บ ถ้าไม่เจอให้คืนค่าเดิม
+  };
+
+  // 🌟 ฟังก์ชันสกัดเอาเฉพาะภาษาไทย (เช่น "ขาว (White)" -> "ขาว")
+  const extractThai = (text: string | null) => {
+    if (!text) return '-';
+    return text.split('(')[0].trim(); 
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังพิมพ์บัตรประชาชน... 🐾</div>;
   if (!pet) return null;
 
@@ -94,7 +107,7 @@ export default function PetIdCardPage() {
     if (!dateString) return '-';
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('th-TH');
+    return d.toLocaleDateString('en-GB'); // 🌟 บัตรอินเตอร์ ขอใช้วันที่เป็นแบบสากล (DD/MM/YYYY)
   };
 
   return (
@@ -113,15 +126,14 @@ export default function PetIdCardPage() {
         </div>
       </div>
 
-      {/* 💳 ส่วนแสดงบัตร (ที่จะถูกแคปเจอร์) */}
+      {/* 💳 ส่วนแสดงบัตร */}
       <div className="flex justify-center drop-shadow-2xl">
         <div 
           ref={cardRef} 
           className="w-full max-w-[380px] rounded-[1.5rem] overflow-hidden relative border border-gray-200"
-          // 🌟 บังคับใช้สี HEX ป้องกันบั๊ก lab() ของ Safari
           style={{ aspectRatio: '85.6 / 53.98', backgroundColor: '#ffffff' }} 
         >
-          {/* 🌟 พื้นหลังบัตรแบบใหม่ ใช้สีรหัส HEX (ไม่ใช้ Gradient) แก้บั๊กชัวร์ 100% */}
+          {/* พื้นหลัง */}
           <div className="absolute inset-0 opacity-80" style={{ backgroundColor: '#fdf2f8' }}></div>
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-40 -mr-10 -mt-10" style={{ backgroundColor: '#fbcfe8' }}></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-40 -ml-10 -mb-10" style={{ backgroundColor: '#bfdbfe' }}></div>
@@ -137,7 +149,7 @@ export default function PetIdCardPage() {
                   <p className="text-[6px] font-bold text-gray-400">PET IDENTIFICATION CARD</p>
                 </div>
               </div>
-              <p className="text-[8px] font-bold text-gray-400">เลขประจำตัวสัตว์เลี้ยง</p>
+              <p className="text-[8px] font-bold text-gray-400">Identification No.</p>
             </div>
             
             <div className="text-right mb-2">
@@ -155,39 +167,46 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
-              {/* ข้อมูล */}
+              {/* ข้อมูล 🌟 ปรับให้มีทั้ง 2 ภาษา และมีสี */}
               <div className="flex-1 space-y-1.5">
                 <div>
                   <p className="text-[7px] font-bold text-pink-500 uppercase tracking-wider">ชื่อ (Name)</p>
                   <p className="text-base font-black text-gray-800 leading-none mt-0.5">{pet.name}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                   <div>
                     <p className="text-[7px] font-bold text-gray-400 uppercase">สายพันธุ์ (Breed)</p>
-                    <p className="text-[9px] font-bold text-gray-800 truncate">{pet.breed || '-'}</p>
+                    {/* 🌟 แสดง Eng เป็นหลัก ตัวใหญ่กว่า และ Th เป็นตัวเล็กด้านล่าง */}
+                    <p className="text-[9px] font-bold text-gray-800 truncate">{extractEnglish(pet.breed)}</p>
+                    <p className="text-[6px] font-bold text-gray-400 truncate">{extractThai(pet.breed)}</p>
                   </div>
+                  
+                  <div>
+                    <p className="text-[7px] font-bold text-gray-400 uppercase">สี (Color)</p>
+                    {/* 🌟 แสดงสีที่เพิ่มเข้ามาใหม่ */}
+                    <p className="text-[9px] font-bold text-gray-800 truncate">{extractEnglish(pet.color)}</p>
+                    <p className="text-[6px] font-bold text-gray-400 truncate">{extractThai(pet.color)}</p>
+                  </div>
+
                   <div>
                     <p className="text-[7px] font-bold text-gray-400 uppercase">เพศ (Gender)</p>
                     <p className="text-[9px] font-bold text-gray-800">
-                      {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'ผู้ (Male)' : 'เมีย (Female)'}
+                      {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'Male (♂)' : 'Female (♀)'}
                     </p>
                   </div>
+                  
                   <div>
                     <p className="text-[7px] font-bold text-gray-400 uppercase">วันเกิด (DOB)</p>
                     <p className="text-[9px] font-bold text-gray-800">
                       {safeFormatDate(pet.birth_date || pet.birthdate)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[7px] font-bold text-gray-400 uppercase">สี (Color)</p>
-                    <p className="text-[9px] font-bold text-gray-800 truncate">{pet.color || '-'}</p>
-                  </div>
                 </div>
 
-                <div className="pt-1">
+                <div className="pt-0.5">
                   <p className="text-[7px] font-bold text-gray-400 uppercase">เจ้าของ (Owner)</p>
-                  <p className="text-[10px] font-black text-pink-500 truncate">{profile?.full_name || profile?.username || 'ผู้ใช้ Whiskora'}</p>
+                  <p className="text-[10px] font-black text-pink-500 truncate">{profile?.full_name || profile?.username || 'Whiskora User'}</p>
                 </div>
               </div>
             </div>
@@ -195,7 +214,7 @@ export default function PetIdCardPage() {
             {/* บาร์โค้ดตกแต่งด้านล่าง */}
             <div className="mt-auto flex justify-between items-end">
               <div className="text-[6px] font-bold text-gray-400">
-                ออกโดย Whiskora App • ใช้เพื่อสะสมเท่านั้น
+                Issue By Whiskora App • For Collector's Edition Only
               </div>
               <div className="font-[barcode] text-2xl text-gray-800 opacity-50 tracking-widest leading-none">
                 ||| |||| | || |||||
