@@ -22,7 +22,6 @@ export default function PetIdCardPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return router.push('/login');
 
-        // ดึงข้อมูลสัตว์เลี้ยง
         const { data: petData, error: petError } = await supabase
           .from('pets')
           .select('*')
@@ -32,7 +31,6 @@ export default function PetIdCardPage() {
         if (petError) throw petError;
         setPet(petData);
 
-        // ดึงข้อมูลเจ้าของ (User)
         const { data: profileData } = await supabase
           .from('profiles')
           .select('username, full_name')
@@ -53,26 +51,22 @@ export default function PetIdCardPage() {
     fetchPetData();
   }, [petId, router]);
 
-  // 📸 ฟังก์ชันแคปหน้าจอและเซฟเป็นรูปภาพ
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
     setSaving(true);
     
     try {
-      // 🌟 ใช้ Dynamic Import เพื่อความปลอดภัย 100% บน Vercel
       const html2canvas = (await import('html2canvas')).default;
 
       const canvas = await html2canvas(cardRef.current, {
         scale: 3, 
         useCORS: true, 
         allowTaint: true, 
-        backgroundColor: null, 
+        backgroundColor: '#ffffff', // 🌟 บังคับพื้นหลังเป็นสีขาว เพื่อเลี่ยงการเกิดจอดำหรือโปร่งใส
       } as any);
 
-      // แปลง Canvas เป็น Data URL (รูปภาพ PNG)
       const image = canvas.toDataURL("image/png");
 
-      // สร้างลิงก์จำลองเพื่อกดดาวน์โหลด
       const link = document.createElement("a");
       link.href = image;
       link.download = `whiskora-id-${pet?.name || 'pet'}.png`; 
@@ -91,13 +85,11 @@ export default function PetIdCardPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังพิมพ์บัตรประชาชน... 🐾</div>;
   if (!pet) return null;
 
-  // 🌟 [แก้ Error ตรงนี้] แปลง ID ให้เป็น String ก่อนเสมอเพื่อป้องกันเว็บแครช
   const safeIdString = String(pet.id || "0");
-  const numericOnly = safeIdString.replace(/\D/g, ''); // ดึงมาเฉพาะตัวเลข
-  const paddedId = (numericOnly + "1234567890123").substring(0, 13); // ถ้าเลขไม่ครบ 13 หลัก ให้เติมจนครบ
+  const numericOnly = safeIdString.replace(/\D/g, ''); 
+  const paddedId = (numericOnly + "1234567890123").substring(0, 13); 
   const formattedId = `${paddedId.substring(0,1)}-${paddedId.substring(1,5)}-${paddedId.substring(5,10)}-${paddedId.substring(10,12)}-${paddedId.substring(12,13)}`;
 
-  // 🌟 [แก้ Error ตรงนี้] ฟังก์ชันแปลงวันที่แบบปลอดภัย ป้องกัน RangeError
   const safeFormatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     const d = new Date(dateString);
@@ -125,13 +117,14 @@ export default function PetIdCardPage() {
       <div className="flex justify-center drop-shadow-2xl">
         <div 
           ref={cardRef} 
-          className="w-full max-w-[380px] bg-white rounded-[1.5rem] overflow-hidden relative border border-gray-200"
-          style={{ aspectRatio: '85.6 / 53.98' }} 
+          className="w-full max-w-[380px] rounded-[1.5rem] overflow-hidden relative border border-gray-200"
+          // 🌟 บังคับใช้สี HEX ป้องกันบั๊ก lab() ของ Safari
+          style={{ aspectRatio: '85.6 / 53.98', backgroundColor: '#ffffff' }} 
         >
-          {/* พื้นหลังบัตร */}
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 opacity-90"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-200 to-transparent rounded-full opacity-50 -mr-10 -mt-10"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-200 to-transparent rounded-full opacity-50 -ml-10 -mb-10"></div>
+          {/* 🌟 พื้นหลังบัตรแบบใหม่ ใช้สีรหัส HEX (ไม่ใช้ Gradient) แก้บั๊กชัวร์ 100% */}
+          <div className="absolute inset-0 opacity-80" style={{ backgroundColor: '#fdf2f8' }}></div>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-40 -mr-10 -mt-10" style={{ backgroundColor: '#fbcfe8' }}></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-40 -ml-10 -mb-10" style={{ backgroundColor: '#bfdbfe' }}></div>
 
           <div className="relative z-10 p-4 h-full flex flex-col">
             
@@ -154,7 +147,7 @@ export default function PetIdCardPage() {
             {/* เนื้อหาบัตร */}
             <div className="flex gap-4">
               {/* รูปโปรไฟล์ */}
-              <div className="w-[85px] h-[105px] bg-gray-100 rounded-lg overflow-hidden border-2 border-white shadow-sm shrink-0 relative">
+              <div className="w-[85px] h-[105px] rounded-lg overflow-hidden border-2 border-white shadow-sm shrink-0 relative" style={{ backgroundColor: '#f3f4f6' }}>
                 {pet.image_url ? (
                   <img src={pet.image_url} alt={pet.name} crossOrigin="anonymous" className="w-full h-full object-cover" />
                 ) : (
@@ -202,7 +195,7 @@ export default function PetIdCardPage() {
             {/* บาร์โค้ดตกแต่งด้านล่าง */}
             <div className="mt-auto flex justify-between items-end">
               <div className="text-[6px] font-bold text-gray-400">
-                ออกโดย Whiskora App • ใช้เพื่อการสะสมเท่านั้น
+                ออกโดย Whiskora App • ใช้เพื่อสะสมเท่านั้น
               </div>
               <div className="font-[barcode] text-2xl text-gray-800 opacity-50 tracking-widest leading-none">
                 ||| |||| | || |||||
