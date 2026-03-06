@@ -179,7 +179,7 @@ export default function ProfilePage() {
           </section>
 
           {/* 🌟 การ์ดสรุปจำนวนสัตว์เลี้ยง (ดีไซน์ใหม่ แนวนอนสวยๆ) */}
-          <Link href="/profile/pets" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:border-pink-300 hover:shadow-md transition-all group">
+          <Link href="/profile/pets" className="flex items-center justify-between p-4 bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-100 rounded-2xl transition-all shadow-sm group">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-pink-50 text-pink-500 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm">
                 🐾
@@ -198,8 +198,7 @@ export default function ProfilePage() {
           {pets.length > 0 && (
             <Link 
               href="/pets/vaccines/bulk-add" 
-              className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group"
-            >
+              className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group">
               <div className="flex items-center gap-3">
                 <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">💉</span>
                 <div>
@@ -252,14 +251,7 @@ export default function ProfilePage() {
             <div className="text-3xl bg-white/20 w-14 h-14 flex items-center justify-center rounded-2xl group-hover:rotate-12 transition">🧾</div>
           </Link>
         </section>
-
-        {/* 🛒 Quick Links */}
-        <div className="grid grid-cols-2 gap-3">
-          <QuickLink icon="❤️" title="Wishlist" href="/wishlist" />
-          <QuickLink icon="🛒" title="ออเดอร์" href="/history" />
-        </div>
       </div>
-
     </div>
   );
 }
