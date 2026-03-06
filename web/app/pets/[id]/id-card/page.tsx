@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import html2canvas from 'html2canvas';
 
 export default function PetIdCardPage() {
   const router = useRouter();
@@ -16,7 +14,6 @@ export default function PetIdCardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // 🌟 พระเอกของเรา: useRef ใช้สำหรับล็อคเป้าหมายว่าเราจะ "แคปเจอร์" รูปตรงส่วนไหน
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,12 +59,15 @@ export default function PetIdCardPage() {
     setSaving(true);
     
     try {
+      // 🌟 แก้ Error Vercel: โหลด html2canvas เฉพาะตอนที่กดปุ่มเท่านั้น (Dynamic Import)
+      const html2canvas = (await import('html2canvas')).default;
+
       // ใช้ html2canvas แปลง div เป็น canvas
       const canvas = await html2canvas(cardRef.current, {
         scale: 3, // เพิ่มความคมชัดของรูป (3 เท่า)
-        useCORS: true, // อนุญาตให้โหลดรูปจาก URL ภายนอก (เช่นรูปจาก Supabase)
-        backgroundColor: null, // พื้นหลังโปร่งใส (ให้ใช้สีของบัตรแทน)
-      } as any); // 🌟 เติม as any ตรงนี้เพื่อสั่งให้ TypeScript เลิกบ่นครับ!
+        useCORS: true, // อนุญาตให้โหลดรูปจาก URL ภายนอก
+        backgroundColor: null, // พื้นหลังโปร่งใส
+      } as any);
 
       // แปลง Canvas เป็น Data URL (รูปภาพ PNG)
       const image = canvas.toDataURL("image/png");
@@ -113,11 +113,10 @@ export default function PetIdCardPage() {
 
       {/* 💳 ส่วนแสดงบัตร (ที่จะถูกแคปเจอร์) */}
       <div className="flex justify-center drop-shadow-2xl">
-        {/* 🌟 ref={cardRef} คือการตั้งเป้าหมายให้ html2canvas รู้ว่าต้องถ่ายรูปตรงนี้ */}
         <div 
           ref={cardRef} 
           className="w-full max-w-[380px] bg-white rounded-[1.5rem] overflow-hidden relative border border-gray-200"
-          style={{ aspectRatio: '85.6 / 53.98' }} // สัดส่วนบัตรประชาชนจริง (บัตรเครดิต)
+          style={{ aspectRatio: '85.6 / 53.98' }} // สัดส่วนบัตรประชาชนจริง
         >
           {/* พื้นหลังบัตร */}
           <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 opacity-80"></div>
@@ -174,7 +173,7 @@ export default function PetIdCardPage() {
                   <div>
                     <p className="text-[7px] font-bold text-gray-400 uppercase">วันเกิด (DOB)</p>
                     <p className="text-[9px] font-bold text-gray-800">
-                      {pet.birth_date ? new Date(pet.birth_date).toLocaleDateString('th-TH') : '-'}
+                      {(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}
                     </p>
                   </div>
                   <div>
