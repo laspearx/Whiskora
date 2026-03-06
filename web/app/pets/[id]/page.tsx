@@ -114,23 +114,31 @@ export default function PetDetailPage() {
 
   const breeds = formatBreed(pet.breed);
 
-<button 
-  onClick={() => {
-    if (pet?.farm_id && pet.farm_id !== 'PERSONAL') {
-      router.push(`/farm-dashboard/${pet.farm_id}/pets`); // 🌟 กลับไปลิสต์สมาชิกฟาร์ม
-    } else {
-      router.push('/profile/pets'); // 🌟 ถ้าเป็นสัตว์เลี้ยงส่วนตัว ให้กลับหน้าสรุปสัตว์เลี้ยงโปรไฟล์
-    }
-  }}
-  className="..."
->
-  {/* icon svg */}
-</button>
-
   return (
     <div className="min-h-screen bg-white pb-20 animate-in fade-in duration-700">
 
-      <div className="max-w-3xl mx-auto px-4 mt-4 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 mt-4 md:mt-8 space-y-6">
+        
+        {/* 🔙 Header แบบใหม่ (ย้ายโค้ดปุ่มที่หลุดเข้ามาใส่ตรงนี้) */}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => {
+              if (pet?.farm_id && pet.farm_id !== 'PERSONAL') {
+                router.push(`/farm-dashboard/${pet.farm_id}/pets`); // กลับไปลิสต์สมาชิกฟาร์ม
+              } else {
+                router.push('/profile/pets'); // สัตว์เลี้ยงส่วนตัว ให้กลับหน้าสรุปสัตว์เลี้ยงโปรไฟล์
+              }
+            }}
+            className="w-10 h-10 flex items-center justify-center bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-600 rounded-xl transition shadow-sm border border-gray-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">โปรไฟล์สัตว์เลี้ยง</h1>
+          </div>
+        </div>
         
         {/* Pet Hero Card */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start relative shadow-sm">
@@ -139,7 +147,7 @@ export default function PetDetailPage() {
             แก้ไขข้อมูล ✎
           </Link>
 
-          <div className="w-32 h-32 md:w-36 md:h-36 shrink-0 relative rounded-full overflow-hidden bg-gray-50 border-4 border-white shadow-md">
+          <div className="w-32 h-32 md:w-36 md:h-36 shrink-0 relative rounded-full overflow-hidden bg-gray-50 border-4 border-white shadow-md mt-6 md:mt-0">
             {pet.image_url ? (
               <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
             ) : (
@@ -151,9 +159,9 @@ export default function PetDetailPage() {
             <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
               <h1 className="text-2xl md:text-3xl font-black text-gray-800">{pet.name}</h1>
               <span className={`inline-block px-3 py-0.5 rounded-full text-xs font-bold border self-center md:self-auto ${
-                pet.gender === 'male' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-pink-50 text-pink-500 border-pink-100'
+                pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-pink-50 text-pink-500 border-pink-100'
               }`}>
-                {pet.gender === 'male' ? '♂ ตัวผู้' : '♀ ตัวเมีย'}
+                {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? '♂ ตัวผู้' : '♀ ตัวเมีย'}
               </span>
             </div>
 
@@ -183,21 +191,31 @@ export default function PetDetailPage() {
               {(pet.allergies || pet.traits) && (
                  <div className="flex flex-col md:flex-row gap-4 md:gap-8">                  
                     {pet.traits && (
-                    <div className="w-full md:w-auto text-center md:text-left">
+                    <div className="w-full md:w-auto text-center md:text-left mt-2">
                       <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">หมายเหตุ</p>
                       <p className="text-gray-600 font-bold text-sm">{pet.traits}</p>
                     </div>
                   )}
                   {pet.allergies && (
-                    <div className="w-full md:w-auto text-center md:text-left">
+                    <div className="w-full md:w-auto text-center md:text-left mt-2">
                       <p className="text-xs text-red-400 font-bold uppercase mb-0.5">สิ่งที่แพ้</p>
                       <p className="text-red-600 font-bold text-sm">{pet.allergies}</p>
                     </div>
                   )}
                 </div>
               )}
-
             </div>
+
+            {/* 🌟 ปุ่มสร้างบัตรประจำตัวสัตว์เลี้ยง (เพิ่มใหม่) */}
+            <div className="mt-6">
+              <Link 
+                href={`/pets/${pet.id}/id-card`} 
+                className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-pink-200 hover:scale-[1.02] active:scale-95 text-sm"
+              >
+                <span className="text-lg">🪪</span> สร้างบัตรประจำตัวน้อง {pet.name}
+              </Link>
+            </div>
+
           </div>
         </div>
 
@@ -226,7 +244,6 @@ export default function PetDetailPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {groupedVaccines.map((group, idx) => (
-                // 🌟 กดที่การ์ดแล้วส่ง type ไปใน URL
                 <Link key={idx} href={`/pets/${pet.id}/vaccines?type=${encodeURIComponent(group.name)}`} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4 hover:border-teal-300 hover:shadow-md transition-all group block">
                   
                   {/* หัวการ์ด */}
