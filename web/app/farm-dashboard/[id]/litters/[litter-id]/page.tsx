@@ -71,7 +71,7 @@ export default function LitterDetailsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-5 md:space-y-6">
       
-      {/* 🔙 Header (ปรับเป็นแบบเดียวกับหน้า Dashboard) */}
+      {/* 🔙 Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button 
@@ -97,7 +97,7 @@ export default function LitterDetailsPage() {
         </Link>
       </div>
 
-      {/* 📋 Status & Info Card (ดีไซน์ใหม่ กระชับขึ้น) */}
+      {/* 📋 Status & Info Card */}
       <div className="bg-white p-4 md:p-5 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 flex-shrink-0 ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 border-green-100 text-green-500' : 'bg-orange-50 border-orange-100 text-orange-500'}`}>
@@ -126,7 +126,7 @@ export default function LitterDetailsPage() {
         )}
       </div>
 
-      {/* 👨‍👩‍👦 พ่อแม่พันธุ์ (Parental Match - ย่อส่วนลง) */}
+      {/* 👨‍👩‍👦 พ่อแม่พันธุ์ */}
       <div className="bg-white rounded-[1.5rem] border border-gray-100 p-5 shadow-sm">
         <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">Parental Match</h2>
         <div className="flex items-center justify-center gap-6 md:gap-10">
@@ -152,7 +152,7 @@ export default function LitterDetailsPage() {
         </div>
       </div>
 
-      {/* 🍼 รายชื่อลูกๆ (ปรับ Grid ให้สวยงามขึ้น) */}
+      {/* 🍼 รายชื่อลูกๆ (ปรับเป็น 3 การ์ดต่อแถว) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
            <h2 className="text-sm md:text-base font-black text-gray-800 flex items-center gap-1.5">
@@ -166,21 +166,27 @@ export default function LitterDetailsPage() {
             <p className="text-xs font-bold text-gray-400">ยังไม่มีข้อมูลสมาชิกในครอก</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+          /* 🌟 แก้ไขตรงนี้: grid-cols-3 เป็นมาตรฐาน 3 คอลัมน์บนมือถือ */
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-4">
             {babies.map(baby => (
-              <Link key={baby.id} href={`/pets/${baby.id}`} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 transition-all group relative">
-                <div className="aspect-square rounded-xl bg-gray-50 overflow-hidden mb-2.5 relative">
-                  {baby.image_url ? <img src={baby.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full flex items-center justify-center text-3xl opacity-10">🐾</div>}
-                  <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur rounded-md px-1.5 py-0.5 text-[8px] font-bold shadow-sm text-gray-600">
+              <Link key={baby.id} href={`/pets/${baby.id}`} className="bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 transition-all group relative flex flex-col">
+                <div className="aspect-square rounded-xl bg-gray-50 overflow-hidden mb-2 relative">
+                  {baby.image_url ? <img src={baby.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-10">🐾</div>}
+                  {/* กล่องน้ำหนัก */}
+                  <div className="absolute top-1 right-1 bg-white/90 backdrop-blur rounded px-1 py-0.5 text-[8px] font-black shadow-sm text-gray-600">
                     {baby.weight ? `${baby.weight}g` : '-'}
                   </div>
                 </div>
-                <h4 className="font-black text-gray-800 text-[11px] md:text-xs truncate mb-1.5">{baby.name || 'ยังไม่ตั้งชื่อ'}</h4>
-                <div className="flex items-center justify-between">
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${baby.gender === 'male' || baby.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
+                
+                {/* ชื่อ */}
+                <h4 className="font-black text-gray-800 text-[10px] md:text-xs truncate mb-1">{baby.name || 'ยังไม่ตั้งชื่อ'}</h4>
+                
+                {/* เพศ และ สถานะ (ลดขนาดฟอนต์เพื่อป้องกันการทับซ้อนใน 3 คอลัมน์) */}
+                <div className="flex items-center justify-between gap-1 mt-auto">
+                  <span className={`text-[8px] md:text-[9px] font-bold px-1.5 py-0.5 rounded ${baby.gender === 'male' || baby.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
                     {baby.gender === 'male' || baby.gender === 'ตัวผู้' ? '♂ ผู้' : '♀ เมีย'}
                   </span>
-                  <span className="text-[9px] font-bold text-gray-400 truncate max-w-[50px] text-right">{baby.status || 'เด็ก'}</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-gray-400 truncate w-full text-right">{baby.status || 'เด็ก'}</span>
                 </div>
               </Link>
             ))}
