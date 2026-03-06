@@ -230,27 +230,33 @@ export default function CreatePetPage() {
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : (species === 'cat' ? 'แมว' : 'หมา');
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
-    const finalColor = color === 'อื่นๆ' ? customColor : color; // 🌟 จัดการสีที่พิมพ์เอง
+    const finalColor = color === 'อื่นๆ' ? customColor : color;
 
-    const { error } = await supabase.from("pets").insert({
+    // 🌟 แก้ไขตรงนี้: เพิ่ม .select() เพื่อให้ Supabase คืนค่า data กลับมา
+    const { data, error } = await supabase.from("pets").insert({
       user_id: userId,
       name,
       species: finalSpecies,
       breed: finalBreed || null,
-      color: finalColor || null, // 🌟 บันทึกลง Database
+      color: finalColor || null,
       gender,
       birth_date: birthdate || null,
       image_url: avatarUrl,
       status: "personal",
       allergies: allergies || null,
       traits: traits || null,
-    });
+    }).select(); // <--- ใส่ .select() เพิ่มเข้าไปครับ
 
     if (error) {
+      console.error("Insert Error:", error);
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
-    } else {
-      router.push("/profile");
+    } else if (data && data.length > 0) {
+      // 🌟 ดึง ID ของสัตว์เลี้ยงที่เพิ่งสร้างเสร็จ
+      const newPetId = data[0].id;
+      
+      // 🚀 เด้งไปหน้าดูรายละเอียดสัตว์เลี้ยงตัวนั้นทันที เพื่อให้ชัชเห็นปุ่มสร้างบัตรต่อได้เลย
+      router.push(`/pets/${newPetId}`);
       router.refresh();
     }
   };

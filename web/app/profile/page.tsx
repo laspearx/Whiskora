@@ -198,7 +198,8 @@ export default function ProfilePage() {
           {pets.length > 0 && (
             <Link 
               href="/pets/vaccines/bulk-add" 
-              className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group">
+              className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">💉</span>
                 <div>
