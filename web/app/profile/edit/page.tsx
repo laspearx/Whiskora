@@ -15,8 +15,9 @@ export default function EditProfilePage() {
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  // 🌟 State สำหรับที่อยู่
+  const [address, setAddress] = useState("");
 
-  // 🌟 State สำหรับระบบคร็อปรูป
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -43,6 +44,8 @@ export default function EditProfilePage() {
         setFullName(data.full_name || "");
         setAvatarUrl(data.avatar_url || null);
         setPhone(data.phone || "");
+        // 🌟 ดึงข้อมูลที่อยู่จาก DB
+        setAddress(data.address || "");
       }
       setLoading(false);
     };
@@ -129,12 +132,14 @@ export default function EditProfilePage() {
 
     const { data: { session } } = await supabase.auth.getSession();
     
+    // 🌟 บันทึกข้อมูลที่อยู่ลงในคอลัมน์ address
     const { error } = await supabase.from("profiles").upsert({
       id: session?.user.id,
       username,
       full_name: fullName,
       avatar_url: avatarUrl,
       phone,
+      address, // 🌟 เพิ่มที่นี่
       updated_at: new Date(),
     });
 
@@ -158,7 +163,6 @@ export default function EditProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
            </svg>
         </Link>
-        {/* ปรับขนาด Font หัวข้อลง */}
         <h1 className="text-lg md:text-2xl font-black text-gray-800 tracking-tight">แก้ไขโปรไฟล์</h1>
       </div>
 
@@ -178,24 +182,16 @@ export default function EditProfilePage() {
               <button type="button" className="absolute bottom-0 right-0 bg-pink-500 text-white p-2 md:p-2.5 rounded-full shadow-lg border-2 border-white active:scale-90 transition pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  {/* 🌟 วงกลมด้านในกลับมาแล้วครับ */}
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
               
-              <input 
-                type="file" 
-                accept="image/*" 
-                ref={fileInputRef} 
-                onChange={onFileChange} 
-                className="hidden" 
-              />
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} className="hidden" />
             </div>
-            {/* ปรับขนาด Font คำอธิบายลง */}
             <p className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">แตะที่รูปเพื่อเปลี่ยน</p>
           </div>
 
-          {/* 📝 ฟิลด์ข้อมูล: ลดขนาด Font และ Padding */}
+          {/* 📝 ฟิลด์ข้อมูล */}
           <div className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">ชื่อผู้ใช้งาน (Username)</label>
@@ -229,9 +225,21 @@ export default function EditProfilePage() {
                 placeholder="08x-xxx-xxxx"
               />
             </div>
+
+            {/* 🌟 ฟิลด์ที่อยู่ (เพิ่มใหม่) */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">ที่อยู่ปัจจุบัน</label>
+              <textarea
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm md:text-base font-medium text-gray-700 resize-none"
+                placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..."
+              />
+              <p className="text-[9px] text-gray-300 ml-1 italic">* ข้อมูลนี้จะนำไปแสดงบนบัตรประจำตัวสัตว์เลี้ยง</p>
+            </div>
           </div>
 
-          {/* ปุ่มบันทึก: ลดขนาด Font และ Padding */}
           <div className="flex gap-3 pt-4">
             <Link href="/profile" className="flex-1 text-center py-3 md:py-3.5 rounded-xl font-bold text-gray-400 bg-gray-50 hover:bg-gray-100 transition text-xs md:text-sm">
               ยกเลิก
@@ -247,7 +255,7 @@ export default function EditProfilePage() {
         </form>
       </div>
 
-      {/* ✂️ Modal คร็อปรูป (ปรับ Font ให้เล็กลงด้วย) */}
+      {/* ✂️ Modal คร็อปรูป */}
       {imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden flex flex-col">
