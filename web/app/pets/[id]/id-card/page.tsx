@@ -21,16 +21,16 @@ export default function PetIdCardPage() {
   const [pet, setPet] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   
   const [activeTheme, setActiveTheme] = useState<keyof typeof THEMES>('pink');
-  
-  // 🌟 State สำหรับเก็บรูปภาพที่เจนเสร็จแล้ว
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
+    // เก็บ Base URL เพื่อเอาไปทำ QR Code
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+
     const fetchPetData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -65,54 +65,22 @@ export default function PetIdCardPage() {
     fetchPetData();
   }, [petId, router]);
 
-  // 🌟 ฟังก์ชันเจนรูปภาพ
-  const handleGenerateImage = async () => {
-    if (!cardRef.current) return;
-    setSaving(true);
-    
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-
-      const options: any = {
-        scale: 3, // ความคมชัดระดับสูง
-        useCORS: true, 
-        allowTaint: true, 
-        backgroundColor: '#ffffff',
-      };
-
-      const canvas = await html2canvas(cardRef.current, options);
-      const dataUrl = canvas.toDataURL("image/png");
-
-      // เอา Data URL ที่ได้ไปเก็บใน State เพื่อโชว์ใน Modal
-      setGeneratedImage(dataUrl);
-      
-    } catch (error: any) {
-      console.error("Error generating image:", error);
-      alert(`โหลดรูปไม่สำเร็จครับ: ${error.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // 🌟 ฟังก์ชันกดปุ่มแชร์ (เรียก Share Sheet ของเครื่อง)
-  const handleNativeShare = async () => {
-    if (!generatedImage || !navigator.share) {
-      alert("เบราว์เซอร์ของคุณไม่รองรับการแชร์โดยตรง แนะนำให้แตะค้างที่รูปเพื่อบันทึกแทนครับ");
-      return;
-    }
+  // 🌟 ฟังก์ชันแชร์ลิงก์โปรไฟล์
+  const handleShare = async () => {
+    const petUrl = `${baseUrl}/pets/${petId}`;
+    const shareData = {
+      title: `บัตรประจำตัวของ ${pet?.name} 🐾`,
+      text: `ดูประวัติความน่ารักของ ${pet?.name} ได้ที่นี่เลย!`,
+      url: petUrl
+    };
 
     try {
-      const blob = await (await fetch(generatedImage)).blob();
-      const file = new File([blob], `whiskora-id-${pet?.name || 'pet'}.png`, { type: 'image/png' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Pet ID Card',
-          text: 'ดูบัตรประจำตัวน้องของฉันสิ! 🐾',
-        });
+      if (navigator.share) {
+        await navigator.share(shareData);
       } else {
-         alert("ระบบแชร์ไฟล์รูปไม่รองรับในแอปนี้ แตะค้างที่รูปเพื่อบันทึกแทนนะครับ");
+        // ถ้าไม่รองรับการแชร์ ให้ก๊อปปี้ลิงก์แทน
+        await navigator.clipboard.writeText(petUrl);
+        alert("✅ คัดลอกลิงก์โปรไฟล์น้องเรียบร้อยแล้ว เอาไปแปะส่งให้เพื่อนได้เลย!");
       }
     } catch (err) {
       console.log("Share cancelled or failed", err);
@@ -130,14 +98,21 @@ export default function PetIdCardPage() {
     return text.split('(')[0].trim(); 
   };
 
+  // 🌟 ฟังก์ชันแปลง UUID เป็นเลข 13 หลักแบบตายตัว (แทร็กได้)
+  const generate13DigitId = (uuid: string) => {
+    let hash = 0;
+    for (let i = 0; i < uuid.length; i++) {
+      hash = uuid.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const absoluteHash = Math.abs(hash).toString();
+    const paddedId = (absoluteHash + "1098765432109").substring(0, 13);
+    return `${paddedId.substring(0,1)}-${paddedId.substring(1,5)}-${paddedId.substring(5,10)}-${paddedId.substring(10,12)}-${paddedId.substring(12,13)}`;
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังพิมพ์บัตรประชาชน... 🐾</div>;
   if (!pet) return null;
 
-  const safeIdString = String(pet.id || "0");
-  const numericOnly = safeIdString.replace(/\D/g, ''); 
-  const paddedId = (numericOnly + "1234567890123").substring(0, 13); 
-  const formattedId = `${paddedId.substring(0,1)}-${paddedId.substring(1,5)}-${paddedId.substring(5,10)}-${paddedId.substring(10,12)}-${paddedId.substring(12,13)}`;
-
+  const formattedId = generate13DigitId(pet.id);
   const safeFormatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     const d = new Date(dateString);
@@ -146,6 +121,7 @@ export default function PetIdCardPage() {
   };
 
   const t = THEMES[activeTheme];
+  const petProfileUrl = `${baseUrl}/pets/${petId}`;
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-6">
@@ -176,10 +152,9 @@ export default function PetIdCardPage() {
         ))}
       </div>
 
-      {/* 💳 ส่วนที่ใช้โชว์และถูกแคปหน้าจอ */}
+      {/* 💳 ส่วนแสดงบัตร */}
       <div className="flex justify-center drop-shadow-2xl">
         <div 
-          ref={cardRef} 
           className="w-full max-w-[380px] rounded-[1.5rem] overflow-hidden relative border"
           style={{ aspectRatio: '85.6 / 53.98', backgroundColor: '#ffffff', borderColor: '#e5e7eb' }} 
         >
@@ -190,6 +165,7 @@ export default function PetIdCardPage() {
 
           <div className="relative z-10 p-4 h-full flex flex-col">
             
+            {/* 📍 Header บัตร */}
             <div className="flex justify-between items-start mb-3 border-b border-gray-200/50 pb-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ backgroundColor: t.primary, color: 'white' }}>🐾</div>
@@ -204,7 +180,9 @@ export default function PetIdCardPage() {
               </div>
             </div>
             
+            {/* 📍 Content บัตร */}
             <div className="flex gap-4 items-center">
+              {/* รูปโปรไฟล์ซ้ายมือ */}
               <div className="w-[85px] h-[105px] rounded-lg overflow-hidden border-2 shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
                 {pet.image_url ? (
                   <img src={pet.image_url} alt={pet.name} crossOrigin="anonymous" className="w-full h-full object-cover" />
@@ -213,6 +191,7 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
+              {/* ข้อมูลขวามือ */}
               <div className="flex-1 space-y-1.5">
                 <div>
                   <p className="text-[7px] font-bold uppercase tracking-wider" style={{ color: t.secondary }}>ชื่อ (Name)</p>
@@ -256,12 +235,18 @@ export default function PetIdCardPage() {
               </div>
             </div>
 
-            <div className="mt-auto flex justify-between items-end border-t border-gray-200/50 pt-1">
-              <div className="text-[5px] font-bold tracking-widest" style={{ color: '#9ca3af' }}>
-                FOR COLLECTOR'S EDITION ONLY
+            {/* 📍 Footer บัตร & 🌟 QR Code ของจริง */}
+            <div className="mt-auto flex justify-between items-end border-t border-gray-200/50 pt-1.5">
+              <div className="text-[5px] font-bold tracking-widest pb-1" style={{ color: '#9ca3af' }}>
+                SCAN TO VIEW PROFILE
               </div>
-              <div className="font-[barcode] text-xl opacity-40 tracking-widest leading-none" style={{ color: '#1f2937' }}>
-                ||| |||| | || |||||
+              <div className="w-10 h-10 bg-white p-0.5 rounded-md shadow-sm border border-gray-200">
+                {/* 🌟 ใช้ API เจน QR Code ฟรี ดึงลิงก์ไปหน้าโปรไฟล์สัตว์เลี้ยงจริง */}
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(petProfileUrl)}`} 
+                  alt="QR Code" 
+                  className="w-full h-full object-contain mix-blend-multiply opacity-80"
+                />
               </div>
             </div>
 
@@ -269,74 +254,25 @@ export default function PetIdCardPage() {
         </div>
       </div>
 
-      {/* 🔘 ปุ่มสร้างรูปภาพ */}
+      {/* 🔘 ปุ่มแชร์ (เปลี่ยนจากปุ่มโหลดรูป) */}
       <div className="px-4">
         <button 
-          onClick={handleGenerateImage}
-          disabled={saving}
-          className="w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+          onClick={handleShare}
+          className="w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           style={{ backgroundColor: t.primary, boxShadow: `0 10px 15px -3px ${t.circle1}` }}
         >
-          {saving ? (
-            "📸 กำลังสร้างรูปภาพ..."
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              เจเนอเรทรูปบัตร 🪪
-            </>
-          )}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          แชร์โปรไฟล์น้อง 🔗
         </button>
-      </div>
-
-      {/* 🖼️ ป๊อปอัป (Modal) โชว์รูปที่เจนเสร็จแล้วให้ผู้ใช้กดเซฟหรือแชร์ */}
-      {generatedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-in fade-in zoom-in duration-300">
-          <div className="bg-white p-4 rounded-[2rem] w-full max-w-sm flex flex-col items-center gap-4 relative">
-            
-            {/* ปุ่มปิด */}
-            <button 
-              onClick={() => setGeneratedImage(null)}
-              className="absolute -top-12 right-0 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl font-bold hover:bg-white/30"
-            >
-              ✕
-            </button>
-
-            <div className="text-center w-full">
-              <h3 className="text-lg font-black text-gray-800">บัตรพร้อมแล้ว! ✨</h3>
-              <p className="text-[11px] font-bold text-pink-500 mt-1 bg-pink-50 py-1.5 px-3 rounded-lg inline-block">
-                👆 แตะค้างที่รูปแล้วกด "บันทึกรูปภาพ (Save Image)"
-              </p>
-            </div>
-
-            {/* รูปภาพที่เจนมา (เป็น <img /> แท้ๆ ทำให้แตะค้างเพื่อเซฟได้) */}
-            <div className="w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100 relative">
-              <img src={generatedImage} alt="Pet ID Card" className="w-full h-auto" />
-            </div>
-
-            <div className="flex gap-2 w-full pt-2">
-              <button 
-                onClick={() => setGeneratedImage(null)}
-                className="flex-1 py-3.5 bg-gray-100 text-gray-500 font-bold rounded-xl text-sm"
-              >
-                ปิดหน้าต่าง
-              </button>
-              
-              {/* ปุ่มเรียก Share Sheet (ถ้าเบราว์เซอร์รองรับ) */}
-              <button 
-                onClick={handleNativeShare}
-                className="flex-1 py-3.5 bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-200 text-sm flex items-center justify-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                แชร์เลย
-              </button>
-            </div>
-          </div>
+        <div className="bg-gray-50 rounded-xl p-4 mt-4 text-center border border-gray-100">
+          <p className="text-[11px] md:text-xs font-bold text-gray-500">
+            📸 <span className="text-gray-800">อยากเซฟรูปบัตร?</span><br/>
+            คุณสามารถใช้มือถือ <span className="text-pink-500 underline">"แคปหน้าจอ (Screenshot)"</span> บัตรเก็บไว้ได้เลยครับ ภาพชัดเป๊ะแถมเอาไปสแกน QR Code ได้จริงด้วย!
+          </p>
         </div>
-      )}
+      </div>
 
     </div>
   );
