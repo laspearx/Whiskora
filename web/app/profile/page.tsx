@@ -56,7 +56,7 @@ export default function ProfilePage() {
           const petIds = petsRes.data.map((p: any) => p.id);
           const { data: vacData } = await supabase
             .from("vaccines")
-            .select("next_due, vaccine_name, pet_id") // 🌟 ตรวจสอบว่าใน DB ใช้ pet_id หรือ cat_id นะครับ
+            .select("next_due, vaccine_name, pet_id") 
             .in("pet_id", petIds)
             .not("next_due", "is", null);
           if (vacData) setAppointments(vacData);
@@ -72,10 +72,13 @@ export default function ProfilePage() {
 
   if (loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">🐾 WHISKORA...</div>;
 
+  // 🌟 เช็คว่ายูสเซอร์เป็นพาร์ทเนอร์หรือเปล่า
+  const isPartner = myFarms.length > 0 || myShops.length > 0 || myServices.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-10 pb-20 animate-in fade-in duration-700 space-y-6">
       
-      {/* 👤 Profile Header (ปรับให้กระชับขึ้น) */}
+      {/* 👤 Profile Header */}
       <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-pink-50 flex items-center gap-5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 bg-pink-50 rounded-full -mr-10 -mt-10 opacity-40"></div>
         <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-50 rounded-full overflow-hidden flex items-center justify-center text-4xl shadow-inner border-[3px] border-white shrink-0 relative z-10">
@@ -92,19 +95,29 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* 📊 Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Link href="/profile/pets" className="block transform transition hover:scale-[1.03] active:scale-95">
-          <StatCard label="สัตว์เลี้ยง" value={pets.length.toString()} color="text-pink-500" />
+      {/* 🌟 ปุ่มเพิ่มสัตว์เลี้ยงตัวแรก (โชว์เฉพาะตอนยังไม่มีสัตว์เลี้ยง) */}
+      {pets.length === 0 && (
+        <Link 
+          href="/profile/pets" 
+          className="flex items-center justify-between p-4 bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-100 rounded-2xl transition-all shadow-sm group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">🐾</span>
+            <div>
+              <p className="text-sm font-black">เพิ่มสัตว์เลี้ยงตัวแรก</p>
+              <p className="text-[10px] font-bold opacity-70">เริ่มต้นสร้างสมุดพกให้น้องๆ</p>
+            </div>
+          </div>
+          <span className="opacity-50 group-hover:translate-x-1 transition-transform">➔</span>
         </Link>
-        <StatCard label="สนใจ" value="0" />
-        <StatCard label="การจอง" value="0" />
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className={`grid grid-cols-1 gap-6 items-start ${isPartner ? 'md:grid-cols-2' : 'max-w-xl mx-auto'}`}>
         
-        {/* 📅 ปฏิทินนัดหมาย + ปุ่มเพิ่มวัคซีน */}
-        <div className="space-y-4">
+        {/* 📅 ฝั่งซ้าย: ปฏิทิน + สรุปสัตว์เลี้ยง + ปุ่มเพิ่มวัคซีน */}
+        <div className="space-y-4 w-full">
+          
+          {/* ปฏิทิน */}
           <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 h-full">
             <div className="flex justify-between items-center mb-6 px-1">
               <h3 className="font-black text-gray-800 text-sm md:text-base flex items-center gap-2"><span>📅</span> ปฏิทินนัดหมาย</h3>
@@ -165,70 +178,86 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* 🌟 ปุ่มเพิ่มวัคซีนแบบกลุ่ม ย้ายมาอยู่ใต้ปฏิทิน */}
-          <Link 
-            href="/pets/vaccines/bulk-add" 
-            className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">💉</span>
+          {/* 🌟 การ์ดสรุปจำนวนสัตว์เลี้ยง (ดีไซน์ใหม่ แนวนอนสวยๆ) */}
+          <Link href="/profile/pets" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:border-pink-300 hover:shadow-md transition-all group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-pink-50 text-pink-500 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-sm">
+                🐾
+              </div>
               <div>
-                <p className="text-sm font-black">เพิ่มวัคซีนแบบกลุ่ม</p>
-                <p className="text-[10px] font-bold opacity-70">บันทึกหลายตัวพร้อมกัน</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">สัตว์เลี้ยงทั้งหมด</p>
+                <p className="text-xl md:text-2xl font-black text-gray-800 leading-none">
+                  {pets.length} <span className="text-sm text-pink-500 ml-1">ตัว</span>
+                </p>
               </div>
             </div>
-            <span className="opacity-50 group-hover:translate-x-1 transition-transform">➔</span>
+            <div className="text-gray-300 group-hover:text-pink-400 group-hover:translate-x-1 transition-all">➔</div>
           </Link>
+
+          {/* ปุ่มเพิ่มวัคซีนแบบกลุ่ม */}
+          {pets.length > 0 && (
+            <Link 
+              href="/pets/vaccines/bulk-add" 
+              className="flex items-center justify-between p-4 bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100 rounded-2xl transition-all shadow-sm group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl bg-white w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">💉</span>
+                <div>
+                  <p className="text-sm font-black">เพิ่มวัคซีนแบบกลุ่ม</p>
+                  <p className="text-[10px] font-bold opacity-70">บันทึกหลายตัวพร้อมกัน</p>
+                </div>
+              </div>
+              <span className="opacity-50 group-hover:translate-x-1 transition-transform">➔</span>
+            </Link>
+          )}
         </div>
 
-        {/* 🏢 จัดการธุรกิจ */}
-        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden h-full">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full opacity-40"></div>
-          <h3 className="font-black text-gray-800 text-sm mb-4 relative z-10 flex items-center gap-2"><span>🤝</span> จัดการธุรกิจ</h3>
-          <div className="space-y-3 relative z-10">
-            
-            {myFarms.map(f => (
-              <BusinessLink key={f.id} href={`/farm-dashboard/${f.id}?from=profile`} label={`ฟาร์ม : ${f.farm_name}`} icon="🏡" theme="pink" />
-            ))}
-            
-            {myShops.map(s => (
-              <BusinessLink key={s.id} href={`/shop-dashboard/${s.id}?from=profile`} label={`ร้านค้า : ${s.shop_name}`} icon="🛍️" theme="teal" />
-            ))}
-            
-            {myServices.map(v => (
-              <BusinessLink key={v.id} href={`/service-dashboard/${v.id}?from=profile`} label={`บริการ : ${v.service_name}`} icon="🏥" theme="blue" />
-            ))}
-
-            {(myFarms.length === 0 && myShops.length === 0 && myServices.length === 0) && (
-              <Link href="/partner" className="block p-8 border-2 border-dashed border-gray-100 rounded-[1.5rem] text-center text-xs font-bold text-gray-400 hover:border-pink-200 hover:text-pink-500 transition-all bg-gray-50/50 hover:bg-pink-50/30">
-                + สมัครเป็นพาร์ทเนอร์
-              </Link>
-            )}
-          </div>
-        </section>
+        {/* 🏢 ฝั่งขวา: จัดการธุรกิจ (โชว์เฉพาะคนที่เป็น Partner เท่านั้น) */}
+        {isPartner && (
+          <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden h-full">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full opacity-40"></div>
+            <h3 className="font-black text-gray-800 text-sm mb-4 relative z-10 flex items-center gap-2"><span>🤝</span> จัดการธุรกิจ</h3>
+            <div className="space-y-3 relative z-10">
+              
+              {myFarms.map(f => (
+                <BusinessLink key={f.id} href={`/farm-dashboard/${f.id}?from=profile`} label={`ฟาร์ม : ${f.farm_name}`} icon="🏡" theme="pink" />
+              ))}
+              
+              {myShops.map(s => (
+                <BusinessLink key={s.id} href={`/shop-dashboard/${s.id}?from=profile`} label={`ร้านค้า : ${s.shop_name}`} icon="🛍️" theme="teal" />
+              ))}
+              
+              {myServices.map(v => (
+                <BusinessLink key={v.id} href={`/service-dashboard/${v.id}?from=profile`} label={`บริการ : ${v.service_name}`} icon="🏥" theme="blue" />
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>
 
-      {/* 💸 บัญชีสัตว์เลี้ยง */}
-      <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full opacity-50"></div>
-        <div className="flex justify-between items-center mb-4 relative z-10">
-          <h3 className="font-black text-gray-800 text-sm flex items-center gap-2"><span>💸</span> บัญชีสัตว์เลี้ยง</h3>
-          <Link href="/profile/finance" className="text-xs font-bold text-green-500 bg-green-50 px-3 py-1.5 rounded-full">จัดการบัญชี ➔</Link>
-        </div>
-        <Link href="/profile/finance" className="bg-gradient-to-r from-emerald-400 to-teal-500 p-6 rounded-[1.5rem] text-white shadow-lg shadow-green-100 hover:scale-[1.01] transition flex items-center justify-between group relative z-10">
-          <div>
-            <h3 className="text-lg font-black mb-1">บันทึกรายรับ-รายจ่าย 📝</h3>
-            <p className="text-[10px] font-medium opacity-90">ติดตามค่าอาหาร ค่ารักษา และต้นทุนฟาร์ม</p>
+      <div className={`${!isPartner ? 'max-w-xl mx-auto space-y-6' : 'space-y-6'}`}>
+        {/* 💸 บัญชีสัตว์เลี้ยง */}
+        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full opacity-50"></div>
+          <div className="flex justify-between items-center mb-4 relative z-10">
+            <h3 className="font-black text-gray-800 text-sm flex items-center gap-2"><span>💸</span> บัญชีสัตว์เลี้ยง</h3>
+            <Link href="/profile/finance" className="text-xs font-bold text-green-500 bg-green-50 px-3 py-1.5 rounded-full">จัดการบัญชี ➔</Link>
           </div>
-          <div className="text-3xl bg-white/20 w-14 h-14 flex items-center justify-center rounded-2xl group-hover:rotate-12 transition">🧾</div>
-        </Link>
-      </section>
+          <Link href="/profile/finance" className="bg-gradient-to-r from-emerald-400 to-teal-500 p-6 rounded-[1.5rem] text-white shadow-lg shadow-green-100 hover:scale-[1.01] transition flex items-center justify-between group relative z-10">
+            <div>
+              <h3 className="text-lg font-black mb-1">บันทึกรายรับ-รายจ่าย 📝</h3>
+              <p className="text-[10px] font-medium opacity-90">ติดตามค่าอาหาร ค่ารักษา และต้นทุนต่างๆ</p>
+            </div>
+            <div className="text-3xl bg-white/20 w-14 h-14 flex items-center justify-center rounded-2xl group-hover:rotate-12 transition">🧾</div>
+          </Link>
+        </section>
 
-      {/* 🛒 Quick Links */}
-      <div className="grid grid-cols-2 gap-3">
-        <QuickLink icon="❤️" title="Wishlist" href="/wishlist" />
-        <QuickLink icon="🛒" title="ออเดอร์" href="/history" />
+        {/* 🛒 Quick Links */}
+        <div className="grid grid-cols-2 gap-3">
+          <QuickLink icon="❤️" title="Wishlist" href="/wishlist" />
+          <QuickLink icon="🛒" title="ออเดอร์" href="/history" />
+        </div>
       </div>
 
     </div>
@@ -236,15 +265,6 @@ export default function ProfilePage() {
 }
 
 // Helper Components
-function StatCard({ label, value, color = "text-gray-800" }: { label: string, value: string, color?: string }) {
-  return (
-    <div className="bg-white py-5 rounded-[1.5rem] border border-gray-100 text-center shadow-sm transition-all bg-gradient-to-b from-white to-gray-50/30">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className={`text-2xl md:text-3xl font-black ${color}`}>{value}</p>
-    </div>
-  );
-}
-
 function BusinessLink({ href, label, icon, theme }: { href: string, label: string, icon: string, theme: string }) {
   const styles: any = {
     pink: "bg-pink-50 text-pink-500 border-pink-100 hover:bg-pink-100",
