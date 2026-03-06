@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
+// 🌟 นำเข้าแบบปกติกลับมา (เสถียรสุดบน Vercel)
+import html2canvas from 'html2canvas';
 
 export default function PetIdCardPage() {
   const router = useRouter();
@@ -59,15 +61,13 @@ export default function PetIdCardPage() {
     setSaving(true);
     
     try {
-      // 🌟 แก้ Error Vercel: โหลด html2canvas เฉพาะตอนที่กดปุ่มเท่านั้น (Dynamic Import)
-      const html2canvas = (await import('html2canvas')).default;
-
-      // ใช้ html2canvas แปลง div เป็น canvas
+      // 🌟 แคปหน้าจอ (ใส่ allowTaint เผื่อกรณีรูปจากภายนอกโหลดไม่เต็ม)
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // เพิ่มความคมชัดของรูป (3 เท่า)
-        useCORS: true, // อนุญาตให้โหลดรูปจาก URL ภายนอก
-        backgroundColor: null, // พื้นหลังโปร่งใส
-      } as any);
+        scale: 3, 
+        useCORS: true, 
+        allowTaint: true, 
+        backgroundColor: null, 
+      } as any); // สยบ TypeScript ด้วย as any
 
       // แปลง Canvas เป็น Data URL (รูปภาพ PNG)
       const image = canvas.toDataURL("image/png");
@@ -75,14 +75,15 @@ export default function PetIdCardPage() {
       // สร้างลิงก์จำลองเพื่อกดดาวน์โหลด
       const link = document.createElement("a");
       link.href = image;
-      link.download = `whiskora-id-${pet?.name || 'pet'}.png`; // ชื่อไฟล์ที่ดาวน์โหลด
+      link.download = `whiskora-id-${pet?.name || 'pet'}.png`; 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating image:", error);
-      alert("เกิดข้อผิดพลาดในการเซฟรูปภาพครับ");
+      // 🌟 เพิ่ม Alert บอกสาเหตุชัดๆ เผื่อมันพังอีก จะได้รู้ว่าเป็นเพราะอะไร
+      alert(`โหลดรูปไม่สำเร็จครับ: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -91,7 +92,7 @@ export default function PetIdCardPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังพิมพ์บัตรประชาชน... 🐾</div>;
   if (!pet) return null;
 
-  // สร้างรหัสบัตรจำลอง 13 หลัก จาก ID ของสัตว์เลี้ยง
+  // สร้างรหัสบัตรจำลอง 13 หลัก
   const fakeIdNumber = pet.id ? parseInt(pet.id.replace(/\D/g, '').substring(0, 13) || "1234567890123", 10).toString().padStart(13, '0') : "0000000000000";
   const formattedId = `${fakeIdNumber.substring(0,1)}-${fakeIdNumber.substring(1,5)}-${fakeIdNumber.substring(5,10)}-${fakeIdNumber.substring(10,12)}-${fakeIdNumber.substring(12,13)}`;
 
@@ -116,12 +117,12 @@ export default function PetIdCardPage() {
         <div 
           ref={cardRef} 
           className="w-full max-w-[380px] bg-white rounded-[1.5rem] overflow-hidden relative border border-gray-200"
-          style={{ aspectRatio: '85.6 / 53.98' }} // สัดส่วนบัตรประชาชนจริง
+          style={{ aspectRatio: '85.6 / 53.98' }} 
         >
-          {/* พื้นหลังบัตร */}
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 opacity-80"></div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-pink-200 rounded-full blur-3xl opacity-40 -mr-10 -mt-10"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-200 rounded-full blur-3xl opacity-40 -ml-10 -mb-10"></div>
+          {/* 🌟 พื้นหลังบัตรแบบใหม่ เอา blur-3xl ออกเพื่อป้องกัน html2canvas แครช */}
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-white to-pink-100 opacity-90"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-200 to-transparent rounded-full opacity-50 -mr-10 -mt-10"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-200 to-transparent rounded-full opacity-50 -ml-10 -mb-10"></div>
 
           <div className="relative z-10 p-4 h-full flex flex-col">
             
