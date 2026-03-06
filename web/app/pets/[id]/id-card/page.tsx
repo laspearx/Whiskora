@@ -5,13 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
 
-// 🎨 ธีมสี (ปรับให้สีวงกลมเดิมเข้มขึ้นนิดนึง เพื่อเอามาทำสีรอยเท้าจางๆ)
+// 🎨 คืนชีพ circle1 และ circle2 กลับมา เพื่อแก้อาการ Error แถบแดง และใช้ทำวงกลมตกแต่งบัตร
 const THEMES = {
-  pink: { primary: '#db2777', secondary: '#ec4899', bg: '#fdf2f8', watermark: '#fbcfe8' },
-  blue: { primary: '#2563eb', secondary: '#3b82f6', bg: '#eff6ff', watermark: '#bfdbfe' },
-  green: { primary: '#059669', secondary: '#10b981', bg: '#ecfdf5', watermark: '#a7f3d0' },
-  purple: { primary: '#7c3aed', secondary: '#8b5cf6', bg: '#f5f3ff', watermark: '#ddd6fe' },
-  yellow: { primary: '#d97706', secondary: '#f59e0b', bg: '#fffbeb', watermark: '#fde68a' },
+  pink: { primary: '#db2777', secondary: '#ec4899', bg: '#fdf2f8', circle1: '#fbcfe8', circle2: '#fce7f3' },
+  blue: { primary: '#2563eb', secondary: '#3b82f6', bg: '#eff6ff', circle1: '#bfdbfe', circle2: '#dbeafe' },
+  green: { primary: '#059669', secondary: '#10b981', bg: '#ecfdf5', circle1: '#a7f3d0', circle2: '#d1fae5' },
+  purple: { primary: '#7c3aed', secondary: '#8b5cf6', bg: '#f5f3ff', circle1: '#ddd6fe', circle2: '#ede9fe' },
+  yellow: { primary: '#d97706', secondary: '#f59e0b', bg: '#fffbeb', circle1: '#fde68a', circle2: '#fef3c7' },
 };
 
 const fetchImageAsBase64 = async (url: string) => {
@@ -46,7 +46,6 @@ export default function PetIdCardPage() {
   
   const [base64Avatar, setBase64Avatar] = useState<string | null>(null);
   const [base64Qr, setBase64Qr] = useState<string | null>(null);
-  // 🌟 เพิ่ม state เก็บ base64 ของโลโก้
   const [base64Logo, setBase64Logo] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -78,8 +77,8 @@ export default function PetIdCardPage() {
           
         if (profileData) setProfile(profileData);
 
-        // โหลดโลโก้
-        const logoB64 = await fetchImageAsBase64('https://i.imgur.com/9k8655x.png');
+        // 🌟 ดึงโลโก้อุ้งเท้าจากไฟล์ mini-logo.png ในโฟลเดอร์ public
+        const logoB64 = await fetchImageAsBase64('/mini-logo.png');
         setBase64Logo(logoB64);
 
         if (petData.image_url) {
@@ -109,8 +108,7 @@ export default function PetIdCardPage() {
   }, [petId, router]);
 
   useEffect(() => {
-    // เพิ่ม base64Logo ใน dependency
-    if (loading || !pet || !base64Logo) return;
+    if (loading || !pet) return;
 
     const generateImage = async () => {
       setIsGeneratingImage(true);
@@ -232,30 +230,23 @@ export default function PetIdCardPage() {
             position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: -1, pointerEvents: 'none',
           }} 
         >
-          {/* พื้นหลังสีอ่อน */}
+          {/* 🌟 พื้นหลังกลับมาใช้วงกลมเรียบๆ คลีนๆ ไม่ลายตา */}
           <div className="absolute inset-0 opacity-60" style={{ backgroundColor: t.bg }}></div>
-          
-          {/* 🌟 รอยเท้าปั๊มจางๆ (Watermark Emojis) แทนวงกลมเดิม */}
-          <div className="absolute top-0 right-0 -mr-6 -mt-8 text-[100px] opacity-10 select-none pointer-events-none rotate-12" style={{ color: t.watermark }}>
-            🐾
-          </div>
-          <div className="absolute bottom-0 left-0 -ml-6 -mb-6 text-[80px] opacity-10 select-none pointer-events-none -rotate-12" style={{ color: t.watermark }}>
-            🐾
-          </div>
-          {/* เพิ่มอีกอันตรงกลางขวาเพื่อความสมดุล */}
-           <div className="absolute bottom-16 right-2 text-[50px] opacity-5 select-none pointer-events-none rotate-45" style={{ color: t.primary }}>
-            🐾
-          </div>
+          <div className="absolute top-0 right-0 w-44 h-44 rounded-full opacity-50 -mr-16 -mt-16" style={{ backgroundColor: t.circle1 }}></div>
+          <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full opacity-50 -ml-12 -mb-12" style={{ backgroundColor: t.circle2 }}></div>
 
-
-          <div className="relative z-10 p-4 h-full flex flex-col justify-between">
+          <div className="relative z-10 p-4 h-full flex flex-col">
             
-            {/* Header with Custom Logo */}
-            <div className="flex justify-between items-start mb-2 border-b border-gray-200/50 pb-2">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-3 border-b border-gray-200/50 pb-2">
               <div className="flex items-center gap-2">
-                {/* 🌟 ใส่โลโก้จริงตรงนี้ */}
-                <div className="w-8 h-8 shrink-0">
-                  {base64Logo && <img src={base64Logo} alt="Whiskora Logo" className="w-full h-full object-contain" />}
+                <div className="w-8 h-8 shrink-0 flex items-center justify-center bg-white rounded-full p-1 shadow-sm border border-gray-100">
+                  {/* 🌟 แสดงโลโก้อุ้งเท้า mini-logo.png */}
+                  {base64Logo ? (
+                    <img src={base64Logo} alt="Whiskora Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-[12px] opacity-50">🐾</div>
+                  )}
                 </div>
                 <div>
                   <h2 className="text-[12px] font-black tracking-wide leading-none" style={{ color: t.primary }}>WHISKORA</h2>
@@ -268,9 +259,11 @@ export default function PetIdCardPage() {
               </div>
             </div>
             
-            <div className="flex gap-4 items-center">
+            {/* Content (ย้าย QR Code มาแทรกไว้ตรงมุมขวาใน Layout นี้เลย จะได้ไม่ตกขอบ) */}
+            <div className="flex-1 flex gap-4 relative">
               
-              <div className="w-[88px] h-[110px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.watermark }}>
+              {/* 📸 รูปภาพน้อง */}
+              <div className="w-[88px] h-[112px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
                 {base64Avatar ? (
                   <img src={base64Avatar} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
@@ -278,52 +271,53 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
-              <div className="flex-1 space-y-1.5">
+              {/* 📝 ข้อมูลต่างๆ */}
+              <div className="flex-1 flex flex-col justify-between pt-0.5">
                 <div>
                   <p className="text-[7.5px] font-bold uppercase tracking-wider mb-0.5" style={{ color: t.secondary }}>ชื่อสัตว์เลี้ยง (Name)</p>
-                  <p className="text-[16px] font-black leading-none" style={{ color: '#1f2937' }}>{pet.name}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                  <div>
-                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">สายพันธุ์ (Breed)</p>
-                    <p className="text-[9px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.breed)}</p>
-                    <p className="text-[6px] font-bold text-gray-500 truncate">{extractEnglish(pet.breed)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">สี (Color)</p>
-                    <p className="text-[9px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.color)}</p>
-                    <p className="text-[6px] font-bold text-gray-500 truncate">{extractEnglish(pet.color)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">เพศ (Gender)</p>
-                    <p className="text-[9px] font-black" style={{ color: '#1f2937' }}>{pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'ตัวผู้ (Male)' : 'ตัวเมีย (Female)'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">วันเกิด (DOB)</p>
-                    <p className="text-[9px] font-black" style={{ color: '#1f2937' }}>{safeFormatDate(pet.birth_date || pet.birthdate)}</p>
+                  <p className="text-[16px] font-black leading-none mb-2" style={{ color: '#1f2937' }}>{pet.name}</p>
+                  
+                  {/* เว้นที่ด้านขวา (pr-[55px]) ไม่ให้ตัวหนังสือทับกับ QR Code */}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 pr-[55px]">
+                    <div>
+                      <p className="text-[6px] font-bold text-gray-400 mb-0.5">สายพันธุ์ (Breed)</p>
+                      <p className="text-[8px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.breed)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[6px] font-bold text-gray-400 mb-0.5">สี (Color)</p>
+                      <p className="text-[8px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.color)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[6px] font-bold text-gray-400 mb-0.5">เพศ (Gender)</p>
+                      <p className="text-[8px] font-black" style={{ color: '#1f2937' }}>{pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'ตัวผู้ (Male)' : 'ตัวเมีย (Female)'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[6px] font-bold text-gray-400 mb-0.5">วันเกิด (DOB)</p>
+                      <p className="text-[8px] font-black" style={{ color: '#1f2937' }}>{safeFormatDate(pet.birth_date || pet.birthdate)}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-0.5">
+                <div className="pr-[55px] pb-1">
                   <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">เจ้าของ (Owner)</p>
                   <p className="text-[9px] font-black truncate" style={{ color: t.primary }}>{profile?.full_name || profile?.username || 'Whiskora User'}</p>
                   {profile?.address && (
-                    <p className="text-[6px] font-medium leading-tight mt-0.5 line-clamp-2 pr-1" style={{ color: '#4b5563' }}>
+                    <p className="text-[6px] font-medium leading-tight mt-0.5 line-clamp-2" style={{ color: '#4b5563' }}>
                       {profile.address}
                     </p>
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-between items-end border-t border-gray-200/50 pt-1.5 mt-1">
-              <div className="text-[5.5px] font-bold tracking-widest pb-1" style={{ color: '#9ca3af' }}>SCAN TO VIEW PUBLIC PROFILE</div>
-              <div className="w-10 h-10 bg-white p-0.5 rounded-lg shadow-sm border border-gray-200">
-                {base64Qr && <img src={base64Qr} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply opacity-90" />}
+              {/* 🌟 QR Code ย้ายมาอยู่ตำแหน่ง "ขวาล่าง" ของพื้นที่เนื้อหา (ไม่ตกขอบ 100%) */}
+              <div className="absolute bottom-1 right-0 flex flex-col items-center">
+                <div className="text-[4.5px] font-bold text-gray-400 mb-1 tracking-widest text-center leading-[1.2]">SCAN TO<br/>VIEW PROFILE</div>
+                <div className="w-[48px] h-[48px] bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                  {base64Qr && <img src={base64Qr} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply opacity-90" />}
+                </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </div>
         
@@ -337,6 +331,7 @@ export default function PetIdCardPage() {
         <button 
           onClick={handleShare}
           className="w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+          style={{ backgroundColor: t.primary, boxShadow: `0 10px 15px -3px ${t.circle1}` }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
           แชร์ลิงก์หน้าโปรไฟล์ให้น้อง 🔗
