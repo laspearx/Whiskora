@@ -1,5 +1,3 @@
-// app/pets/[id]/id-card/page.tsx
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -7,12 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
 
+// 🎨 ธีมสี (ปรับให้สีวงกลมเดิมเข้มขึ้นนิดนึง เพื่อเอามาทำสีรอยเท้าจางๆ)
 const THEMES = {
-  pink: { primary: '#db2777', secondary: '#ec4899', bg: '#fdf2f8', circle1: '#fbcfe8', circle2: '#fce7f3' },
-  blue: { primary: '#2563eb', secondary: '#3b82f6', bg: '#eff6ff', circle1: '#bfdbfe', circle2: '#dbeafe' },
-  green: { primary: '#059669', secondary: '#10b981', bg: '#ecfdf5', circle1: '#a7f3d0', circle2: '#d1fae5' },
-  purple: { primary: '#7c3aed', secondary: '#8b5cf6', bg: '#f5f3ff', circle1: '#ddd6fe', circle2: '#ede9fe' },
-  yellow: { primary: '#d97706', secondary: '#f59e0b', bg: '#fffbeb', circle1: '#fde68a', circle2: '#fef3c7' },
+  pink: { primary: '#db2777', secondary: '#ec4899', bg: '#fdf2f8', watermark: '#fbcfe8' },
+  blue: { primary: '#2563eb', secondary: '#3b82f6', bg: '#eff6ff', watermark: '#bfdbfe' },
+  green: { primary: '#059669', secondary: '#10b981', bg: '#ecfdf5', watermark: '#a7f3d0' },
+  purple: { primary: '#7c3aed', secondary: '#8b5cf6', bg: '#f5f3ff', watermark: '#ddd6fe' },
+  yellow: { primary: '#d97706', secondary: '#f59e0b', bg: '#fffbeb', watermark: '#fde68a' },
 };
 
 const fetchImageAsBase64 = async (url: string) => {
@@ -47,6 +46,8 @@ export default function PetIdCardPage() {
   
   const [base64Avatar, setBase64Avatar] = useState<string | null>(null);
   const [base64Qr, setBase64Qr] = useState<string | null>(null);
+  // 🌟 เพิ่ม state เก็บ base64 ของโลโก้
+  const [base64Logo, setBase64Logo] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +78,10 @@ export default function PetIdCardPage() {
           
         if (profileData) setProfile(profileData);
 
+        // โหลดโลโก้
+        const logoB64 = await fetchImageAsBase64('https://i.imgur.com/9k8655x.png');
+        setBase64Logo(logoB64);
+
         if (petData.image_url) {
           const b64 = await fetchImageAsBase64(petData.image_url);
           setBase64Avatar(b64);
@@ -104,7 +109,8 @@ export default function PetIdCardPage() {
   }, [petId, router]);
 
   useEffect(() => {
-    if (loading || !pet) return;
+    // เพิ่ม base64Logo ใน dependency
+    if (loading || !pet || !base64Logo) return;
 
     const generateImage = async () => {
       setIsGeneratingImage(true);
@@ -126,7 +132,7 @@ export default function PetIdCardPage() {
     };
 
     generateImage();
-  }, [loading, pet, profile, activeTheme, base64Qr, base64Avatar]);
+  }, [loading, pet, profile, activeTheme, base64Qr, base64Avatar, base64Logo]);
 
   const handleShare = async () => {
     const publicProfileUrl = `${baseUrl}/p/${petId}`;
@@ -226,29 +232,30 @@ export default function PetIdCardPage() {
             position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: -1, pointerEvents: 'none',
           }} 
         >
+          {/* พื้นหลังสีอ่อน */}
           <div className="absolute inset-0 opacity-60" style={{ backgroundColor: t.bg }}></div>
-          <div className="absolute top-0 right-0 w-44 h-44 rounded-full opacity-50 -mr-16 -mt-16" style={{ backgroundColor: t.circle1 }}></div>
-          <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full opacity-50 -ml-12 -mb-12" style={{ backgroundColor: t.circle2 }}></div>
+          
+          {/* 🌟 รอยเท้าปั๊มจางๆ (Watermark Emojis) แทนวงกลมเดิม */}
+          <div className="absolute top-0 right-0 -mr-6 -mt-8 text-[100px] opacity-10 select-none pointer-events-none rotate-12" style={{ color: t.watermark }}>
+            🐾
+          </div>
+          <div className="absolute bottom-0 left-0 -ml-6 -mb-6 text-[80px] opacity-10 select-none pointer-events-none -rotate-12" style={{ color: t.watermark }}>
+            🐾
+          </div>
+          {/* เพิ่มอีกอันตรงกลางขวาเพื่อความสมดุล */}
+           <div className="absolute bottom-16 right-2 text-[50px] opacity-5 select-none pointer-events-none rotate-45" style={{ color: t.primary }}>
+            🐾
+          </div>
+
 
           <div className="relative z-10 p-4 h-full flex flex-col justify-between">
             
+            {/* Header with Custom Logo */}
             <div className="flex justify-between items-start mb-2 border-b border-gray-200/50 pb-2">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7">
-                  <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke={t.secondary} strokeWidth="5" filter="url(#dropShadow)" />
-                    <g transform="scale(0.7) translate(20, 20)">
-                      <path d="M35,10 A10,10 0 1,1 55,10 A10,10 0 1,1 35,10 M15,35 A10,10 0 1,1 35,35 A10,10 0 1,1 15,35 M60,35 A10,10 0 1,1 80,35 A10,10 0 1,1 60,35 M30,50 C20,60 20,80 30,90 C40,100 55,100 65,90 C75,80 75,60 65,50 C55,40 40,40 30,50" fill={t.primary} />
-                    </g>
-                    <defs>
-                      <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feOffset result="offOut" in="SourceGraphic" dx="2" dy="2" />
-                        <feColorMatrix result="matrixOut" in="offOut" type="matrix" values="0.8 0 0 0 0 0 0.8 0 0 0 0 0 0.8 0 0 0 0 0 0.5 0" />
-                        <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="2" />
-                        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
-                      </filter>
-                    </defs>
-                  </svg>
+                {/* 🌟 ใส่โลโก้จริงตรงนี้ */}
+                <div className="w-8 h-8 shrink-0">
+                  {base64Logo && <img src={base64Logo} alt="Whiskora Logo" className="w-full h-full object-contain" />}
                 </div>
                 <div>
                   <h2 className="text-[12px] font-black tracking-wide leading-none" style={{ color: t.primary }}>WHISKORA</h2>
@@ -263,7 +270,7 @@ export default function PetIdCardPage() {
             
             <div className="flex gap-4 items-center">
               
-              <div className="w-[88px] h-[110px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
+              <div className="w-[88px] h-[110px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.watermark }}>
                 {base64Avatar ? (
                   <img src={base64Avatar} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
