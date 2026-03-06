@@ -1,3 +1,5 @@
+// app/pets/[id]/id-card/page.tsx
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -81,11 +83,14 @@ export default function PetIdCardPage() {
         }
 
         if (typeof window !== "undefined") {
-          // 🌟 เปลี่ยน URL ไปที่หน้า Public (ใช้พาร์ท /p/ นำหน้าเพื่อให้สั้นและดูเป็นหน้าแชร์)
           const publicProfileUrl = `${window.location.origin}/p/${petId}`;
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(publicProfileUrl)}`;
-          const qrB64 = await fetchImageAsBase64(qrUrl);
-          setBase64Qr(qrB64);
+          try {
+             const qrB64 = await fetchImageAsBase64(qrUrl);
+             setBase64Qr(qrB64);
+          } catch(e) {
+             console.log("Error loading QR");
+          }
         }
 
       } catch (error) {
@@ -99,12 +104,12 @@ export default function PetIdCardPage() {
   }, [petId, router]);
 
   useEffect(() => {
-    if (loading || !pet || !base64Qr) return;
+    if (loading || !pet) return;
 
     const generateImage = async () => {
       setIsGeneratingImage(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 500)); 
+        await new Promise(resolve => setTimeout(resolve, 600)); 
         if (!cardRef.current) return;
         const dataUrl = await htmlToImage.toPng(cardRef.current, {
           quality: 1.0,
@@ -124,7 +129,6 @@ export default function PetIdCardPage() {
   }, [loading, pet, profile, activeTheme, base64Qr, base64Avatar]);
 
   const handleShare = async () => {
-    // 🌟 แชร์ลิงก์หน้า Public
     const publicProfileUrl = `${baseUrl}/p/${petId}`;
     const shareData = {
       title: `บัตรประจำตัวของ ${pet?.name} 🐾`,
@@ -175,6 +179,7 @@ export default function PetIdCardPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-6">
+      
       <div className="flex items-center justify-between">
          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-400 rounded-xl transition shadow-sm border border-gray-100">
            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
@@ -193,10 +198,9 @@ export default function PetIdCardPage() {
 
       <div>
         <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight text-center">บัตรประจำตัว 🪪</h1>
-        <p className="text-xs font-bold text-gray-500 mt-1 text-center">แตะค้างที่บัตรเพื่อบันทึกรูปภาพ</p>
       </div>
 
-      <div className="flex justify-center drop-shadow-2xl relative min-h-[240px]">
+      <div className="flex flex-col items-center drop-shadow-2xl relative min-h-[240px]">
         {(isGeneratingImage || !cardImageUrl) && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-[1.5rem]">
             <div className="flex flex-col items-center gap-2 text-pink-500">
@@ -214,7 +218,6 @@ export default function PetIdCardPage() {
           />
         )}
 
-        {/* 🌟 ต้นแบบ HTML ที่ปรับสัดส่วนแล้ว */}
         <div 
           ref={cardRef} 
           className="w-full max-w-[380px] rounded-[1.5rem] overflow-hidden relative border select-none"
@@ -227,27 +230,40 @@ export default function PetIdCardPage() {
           <div className="absolute top-0 right-0 w-44 h-44 rounded-full opacity-50 -mr-16 -mt-16" style={{ backgroundColor: t.circle1 }}></div>
           <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full opacity-50 -ml-12 -mb-12" style={{ backgroundColor: t.circle2 }}></div>
 
-          <div className="relative z-10 p-5 h-full flex flex-col">
+          <div className="relative z-10 p-4 h-full flex flex-col justify-between">
             
-            {/* Header */}
-            <div className="flex justify-between items-start mb-4 border-b border-gray-200/50 pb-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px]" style={{ backgroundColor: t.primary, color: 'white' }}>🐾</div>
+            <div className="flex justify-between items-start mb-2 border-b border-gray-200/50 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7">
+                  <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke={t.secondary} strokeWidth="5" filter="url(#dropShadow)" />
+                    <g transform="scale(0.7) translate(20, 20)">
+                      <path d="M35,10 A10,10 0 1,1 55,10 A10,10 0 1,1 35,10 M15,35 A10,10 0 1,1 35,35 A10,10 0 1,1 15,35 M60,35 A10,10 0 1,1 80,35 A10,10 0 1,1 60,35 M30,50 C20,60 20,80 30,90 C40,100 55,100 65,90 C75,80 75,60 65,50 C55,40 40,40 30,50" fill={t.primary} />
+                    </g>
+                    <defs>
+                      <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feOffset result="offOut" in="SourceGraphic" dx="2" dy="2" />
+                        <feColorMatrix result="matrixOut" in="offOut" type="matrix" values="0.8 0 0 0 0 0 0.8 0 0 0 0 0 0.8 0 0 0 0 0 0.5 0" />
+                        <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="2" />
+                        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                      </filter>
+                    </defs>
+                  </svg>
+                </div>
                 <div>
-                  <h2 className="text-[13px] font-black tracking-wide leading-none" style={{ color: t.primary }}>WHISKORA</h2>
-                  <p className="text-[7px] font-bold tracking-widest mt-0.5" style={{ color: '#6b7280' }}>PET IDENTIFICATION CARD</p>
+                  <h2 className="text-[12px] font-black tracking-wide leading-none" style={{ color: t.primary }}>WHISKORA</h2>
+                  <p className="text-[6.5px] font-bold tracking-widest mt-0.5" style={{ color: '#6b7280' }}>PET IDENTIFICATION CARD</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[7px] font-bold uppercase tracking-widest" style={{ color: '#9ca3af' }}>Identification No.</p>
-                <p className="text-[12px] font-black tracking-widest leading-tight mt-0.5" style={{ color: '#1f2937' }}>{formattedId}</p>
+                <p className="text-[6px] font-bold uppercase tracking-widest" style={{ color: '#9ca3af' }}>Identification No.</p>
+                <p className="text-[11px] font-black tracking-widest leading-tight mt-0.5" style={{ color: '#1f2937' }}>{formattedId}</p>
               </div>
             </div>
             
-            {/* Content หลัก */}
-            <div className="flex gap-5 items-center">
-              {/* ขยายรูปให้ใหญ่ขึ้น */}
-              <div className="w-[95px] h-[120px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
+            <div className="flex gap-4 items-center">
+              
+              <div className="w-[88px] h-[110px] rounded-xl overflow-hidden border-[3px] shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
                 {base64Avatar ? (
                   <img src={base64Avatar} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
@@ -255,54 +271,62 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
-              {/* ปรับฟอนต์ไทยให้ใหญ่ อังกฤษให้เล็ก */}
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-1.5">
                 <div>
-                  <p className="text-[8px] font-bold uppercase tracking-wider mb-0.5" style={{ color: t.secondary }}>ชื่อสัตว์เลี้ยง (Name)</p>
-                  <p className="text-[18px] font-black leading-none" style={{ color: '#1f2937' }}>{pet.name}</p>
+                  <p className="text-[7.5px] font-bold uppercase tracking-wider mb-0.5" style={{ color: t.secondary }}>ชื่อสัตว์เลี้ยง (Name)</p>
+                  <p className="text-[16px] font-black leading-none" style={{ color: '#1f2937' }}>{pet.name}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                   <div>
-                    <p className="text-[7px] font-bold text-gray-400 mb-0.5">สายพันธุ์ (Breed)</p>
-                    <p className="text-[10px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.breed)}</p>
-                    <p className="text-[7px] font-bold text-gray-500 truncate">{extractEnglish(pet.breed)}</p>
+                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">สายพันธุ์ (Breed)</p>
+                    <p className="text-[9px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.breed)}</p>
+                    <p className="text-[6px] font-bold text-gray-500 truncate">{extractEnglish(pet.breed)}</p>
                   </div>
                   <div>
-                    <p className="text-[7px] font-bold text-gray-400 mb-0.5">สี (Color)</p>
-                    <p className="text-[10px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.color)}</p>
-                    <p className="text-[7px] font-bold text-gray-500 truncate">{extractEnglish(pet.color)}</p>
+                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">สี (Color)</p>
+                    <p className="text-[9px] font-black truncate" style={{ color: '#1f2937' }}>{extractThai(pet.color)}</p>
+                    <p className="text-[6px] font-bold text-gray-500 truncate">{extractEnglish(pet.color)}</p>
                   </div>
                   <div>
-                    <p className="text-[7px] font-bold text-gray-400 mb-0.5">เพศ (Gender)</p>
-                    <p className="text-[10px] font-black" style={{ color: '#1f2937' }}>{pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'ตัวผู้ (Male)' : 'ตัวเมีย (Female)'}</p>
+                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">เพศ (Gender)</p>
+                    <p className="text-[9px] font-black" style={{ color: '#1f2937' }}>{pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'ตัวผู้ (Male)' : 'ตัวเมีย (Female)'}</p>
                   </div>
                   <div>
-                    <p className="text-[7px] font-bold text-gray-400 mb-0.5">วันเกิด (DOB)</p>
-                    <p className="text-[10px] font-black" style={{ color: '#1f2937' }}>{safeFormatDate(pet.birth_date || pet.birthdate)}</p>
+                    <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">วันเกิด (DOB)</p>
+                    <p className="text-[9px] font-black" style={{ color: '#1f2937' }}>{safeFormatDate(pet.birth_date || pet.birthdate)}</p>
                   </div>
                 </div>
 
-                <div className="pt-1">
-                  <p className="text-[7px] font-bold text-gray-400 mb-0.5">เจ้าของ (Owner)</p>
-                  <p className="text-[10px] font-black truncate" style={{ color: t.primary }}>{profile?.full_name || profile?.username || 'Whiskora User'}</p>
-                  {profile?.address && (<p className="text-[6.5px] font-medium leading-tight mt-0.5 line-clamp-2 w-11/12" style={{ color: '#4b5563' }}>{profile.address}</p>)}
+                <div className="pt-0.5">
+                  <p className="text-[6.5px] font-bold text-gray-400 mb-0.5">เจ้าของ (Owner)</p>
+                  <p className="text-[9px] font-black truncate" style={{ color: t.primary }}>{profile?.full_name || profile?.username || 'Whiskora User'}</p>
+                  {profile?.address && (
+                    <p className="text-[6px] font-medium leading-tight mt-0.5 line-clamp-2 pr-1" style={{ color: '#4b5563' }}>
+                      {profile.address}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-auto flex justify-between items-end border-t border-gray-200/50 pt-2">
-              <div className="text-[6px] font-bold tracking-widest pb-1" style={{ color: '#9ca3af' }}>SCAN TO VIEW PUBLIC PROFILE</div>
-              <div className="w-12 h-12 bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex justify-between items-end border-t border-gray-200/50 pt-1.5 mt-1">
+              <div className="text-[5.5px] font-bold tracking-widest pb-1" style={{ color: '#9ca3af' }}>SCAN TO VIEW PUBLIC PROFILE</div>
+              <div className="w-10 h-10 bg-white p-0.5 rounded-lg shadow-sm border border-gray-200">
                 {base64Qr && <img src={base64Qr} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply opacity-90" />}
               </div>
             </div>
+
           </div>
         </div>
+        
+        <p className="text-[11px] font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full mt-4 animate-bounce">
+          💡 แตะค้างที่บัตรด้านบน เพื่อบันทึกรูปภาพ
+        </p>
+
       </div>
 
-      <div className="px-4 space-y-4">
+      <div className="px-4 space-y-4 pt-2">
         <button 
           onClick={handleShare}
           className="w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
