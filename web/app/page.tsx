@@ -28,7 +28,7 @@ export default function Home() {
 
   return (
     <>
-      {/* 🌟 ท่าไม้ตาย! ฝัง CSS เฉพาะหน้านี้เลย ข้ามตัวเช็คของ Tailwind หมดปัญหา Error 100% */}
+      {/* 🌟 ฝัง CSS เฉพาะหน้านี้เลย ข้ามตัวเช็คของ Tailwind หมดปัญหา Error 100% */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(3deg); }
@@ -70,16 +70,19 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 🌟 ส่วนแสดงกราฟิกบัตรจำลอง (Mockup) ที่จะลอยได้แล้ว! */}
+              {/* 🌟 ส่วนแสดงกราฟิกบัตรจำลอง (Mockup) */}
               <div className="w-full max-w-[280px] md:max-w-[320px] relative animate-float">
                  <div className="bg-white/10 backdrop-blur-md p-2 rounded-3xl border border-white/20 shadow-2xl transition-transform duration-500">
                     <div className="bg-white rounded-2xl p-4 text-gray-800">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-2">
-                           <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center text-[10px]">🐾</div>
-                           <div className="text-[8px] font-black text-pink-500">WHISKORA</div>
+                           {/* 🌟 เปลี่ยนอิโมจิเป็นรูปโลโก้ของชัช (mini-logo.png) */}
+                           <div className="w-6 h-6 flex items-center justify-center">
+                             <img src="/mini-logo.png" alt="Whiskora Logo" className="w-full h-full object-contain" />
+                           </div>
+                           <div className="text-[8px] font-black text-pink-500 mt-0.5">WHISKORA</div>
                         </div>
-                        <div className="text-[10px] font-black text-gray-300">ID CARD</div>
+                        <div className="text-[10px] font-black text-gray-300 mt-0.5">ID CARD</div>
                       </div>
                       <div className="flex gap-3">
                         <div className="w-16 h-20 bg-gray-100 rounded-lg"></div>
