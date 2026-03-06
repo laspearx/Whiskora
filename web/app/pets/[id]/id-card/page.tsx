@@ -23,8 +23,10 @@ export default function PetIdCardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // 🌟 State สำหรับจัดการธีมสี (ค่าเริ่มต้นสีชมพู)
   const [activeTheme, setActiveTheme] = useState<keyof typeof THEMES>('pink');
+  
+  // 🌟 State สำหรับเก็บรูปภาพที่เจนเสร็จแล้ว
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +65,8 @@ export default function PetIdCardPage() {
     fetchPetData();
   }, [petId, router]);
 
-  const handleDownloadImage = async () => {
+  // 🌟 ฟังก์ชันเจนรูปภาพ
+  const handleGenerateImage = async () => {
     if (!cardRef.current) return;
     setSaving(true);
     
@@ -71,7 +74,7 @@ export default function PetIdCardPage() {
       const html2canvas = (await import('html2canvas')).default;
 
       const options: any = {
-        scale: 3, 
+        scale: 3, // ความคมชัดระดับสูง
         useCORS: true, 
         allowTaint: true, 
         backgroundColor: '#ffffff',
@@ -80,46 +83,39 @@ export default function PetIdCardPage() {
       const canvas = await html2canvas(cardRef.current, options);
       const dataUrl = canvas.toDataURL("image/png");
 
-      // 🌟 พยายามใช้ Web Share API ก่อน (สำหรับมือถือ จะมีปุ่ม Save Image เข้าอัลบั้ม)
-      let shared = false;
-      if (navigator.share) {
-        try {
-          const blob = await (await fetch(dataUrl)).blob();
-          const file = new File([blob], `whiskora-id-${pet?.name || 'pet'}.png`, { type: 'image/png' });
-          
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: 'Pet ID Card',
-              text: 'ดูบัตรประจำตัวน้องของฉันสิ! 🐾',
-            });
-            shared = true;
-          }
-        } catch (err) {
-          console.log("Share cancelled or failed", err);
-        }
-      }
-
-      // 🌟 ถ้าไม่ใช่ระบบมือถือ หรือผู้ใช้กดยกเลิก ให้โหลดแบบเดิม
-      if (!shared) {
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = `whiskora-id-${pet?.name || 'pet'}.png`; 
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // 🌟 เพิ่มคำแนะนำกรณีเซฟแบบปกติบนมือถือ
-        if (/Mobi|Android/i.test(navigator.userAgent)) {
-          alert("💡 ระบบได้ดาวน์โหลดรูปลงในเครื่องแล้ว\n(หากหาไม่เจอ ให้ลองแคปหน้าจอ (Screenshot) จะได้รูปเข้าอัลบั้มทันทีครับ!)");
-        }
-      }
+      // เอา Data URL ที่ได้ไปเก็บใน State เพื่อโชว์ใน Modal
+      setGeneratedImage(dataUrl);
       
     } catch (error: any) {
       console.error("Error generating image:", error);
       alert(`โหลดรูปไม่สำเร็จครับ: ${error.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // 🌟 ฟังก์ชันกดปุ่มแชร์ (เรียก Share Sheet ของเครื่อง)
+  const handleNativeShare = async () => {
+    if (!generatedImage || !navigator.share) {
+      alert("เบราว์เซอร์ของคุณไม่รองรับการแชร์โดยตรง แนะนำให้แตะค้างที่รูปเพื่อบันทึกแทนครับ");
+      return;
+    }
+
+    try {
+      const blob = await (await fetch(generatedImage)).blob();
+      const file = new File([blob], `whiskora-id-${pet?.name || 'pet'}.png`, { type: 'image/png' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Pet ID Card',
+          text: 'ดูบัตรประจำตัวน้องของฉันสิ! 🐾',
+        });
+      } else {
+         alert("ระบบแชร์ไฟล์รูปไม่รองรับในแอปนี้ แตะค้างที่รูปเพื่อบันทึกแทนนะครับ");
+      }
+    } catch (err) {
+      console.log("Share cancelled or failed", err);
     }
   };
 
@@ -149,11 +145,12 @@ export default function PetIdCardPage() {
     return d.toLocaleDateString('en-GB'); 
   };
 
-  const t = THEMES[activeTheme]; // ตัวแปรธีมปัจจุบันที่เลือก
+  const t = THEMES[activeTheme];
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-6">
       
+      {/* 🔙 Header */}
       <div className="flex items-center gap-4">
         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-400 rounded-xl transition shadow-sm border border-gray-100">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +176,7 @@ export default function PetIdCardPage() {
         ))}
       </div>
 
-      {/* 💳 ส่วนแสดงบัตร (ดีไซน์ใหม่) */}
+      {/* 💳 ส่วนที่ใช้โชว์และถูกแคปหน้าจอ */}
       <div className="flex justify-center drop-shadow-2xl">
         <div 
           ref={cardRef} 
@@ -193,12 +190,9 @@ export default function PetIdCardPage() {
 
           <div className="relative z-10 p-4 h-full flex flex-col">
             
-            {/* 📍 Header บัตร */}
             <div className="flex justify-between items-start mb-3 border-b border-gray-200/50 pb-2">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ backgroundColor: t.primary, color: 'white' }}>
-                  🐾
-                </div>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ backgroundColor: t.primary, color: 'white' }}>🐾</div>
                 <div>
                   <h2 className="text-[11px] font-black tracking-wide leading-none" style={{ color: t.primary }}>WHISKORA</h2>
                   <p className="text-[6px] font-bold tracking-widest mt-0.5" style={{ color: '#6b7280' }}>PET IDENTIFICATION CARD</p>
@@ -210,9 +204,7 @@ export default function PetIdCardPage() {
               </div>
             </div>
             
-            {/* 📍 Content บัตร */}
             <div className="flex gap-4 items-center">
-              {/* รูปโปรไฟล์ซ้ายมือ */}
               <div className="w-[85px] h-[105px] rounded-lg overflow-hidden border-2 shadow-sm shrink-0 relative bg-white" style={{ borderColor: t.circle1 }}>
                 {pet.image_url ? (
                   <img src={pet.image_url} alt={pet.name} crossOrigin="anonymous" className="w-full h-full object-cover" />
@@ -221,7 +213,6 @@ export default function PetIdCardPage() {
                 )}
               </div>
 
-              {/* ข้อมูลขวามือ */}
               <div className="flex-1 space-y-1.5">
                 <div>
                   <p className="text-[7px] font-bold uppercase tracking-wider" style={{ color: t.secondary }}>ชื่อ (Name)</p>
@@ -234,20 +225,17 @@ export default function PetIdCardPage() {
                     <p className="text-[8px] font-black truncate" style={{ color: '#374151' }}>{extractEnglish(pet.breed)}</p>
                     <p className="text-[5px] font-bold truncate" style={{ color: '#6b7280' }}>{extractThai(pet.breed)}</p>
                   </div>
-                  
                   <div>
                     <p className="text-[6px] font-bold uppercase" style={{ color: '#9ca3af' }}>สี (Color)</p>
                     <p className="text-[8px] font-black truncate" style={{ color: '#374151' }}>{extractEnglish(pet.color)}</p>
                     <p className="text-[5px] font-bold truncate" style={{ color: '#6b7280' }}>{extractThai(pet.color)}</p>
                   </div>
-
                   <div>
                     <p className="text-[6px] font-bold uppercase" style={{ color: '#9ca3af' }}>เพศ (Gender)</p>
                     <p className="text-[8px] font-black" style={{ color: '#374151' }}>
                       {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'Male (♂)' : 'Female (♀)'}
                     </p>
                   </div>
-                  
                   <div>
                     <p className="text-[6px] font-bold uppercase" style={{ color: '#9ca3af' }}>วันเกิด (DOB)</p>
                     <p className="text-[8px] font-black" style={{ color: '#374151' }}>
@@ -268,7 +256,6 @@ export default function PetIdCardPage() {
               </div>
             </div>
 
-            {/* 📍 Footer บัตร */}
             <div className="mt-auto flex justify-between items-end border-t border-gray-200/50 pt-1">
               <div className="text-[5px] font-bold tracking-widest" style={{ color: '#9ca3af' }}>
                 FOR COLLECTOR'S EDITION ONLY
@@ -282,34 +269,74 @@ export default function PetIdCardPage() {
         </div>
       </div>
 
-      {/* 🔘 ปุ่มกดเซฟ */}
+      {/* 🔘 ปุ่มสร้างรูปภาพ */}
       <div className="px-4">
         <button 
-          onClick={handleDownloadImage}
+          onClick={handleGenerateImage}
           disabled={saving}
           className="w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           style={{ backgroundColor: t.primary, boxShadow: `0 10px 15px -3px ${t.circle1}` }}
         >
           {saving ? (
-            "📸 กำลังเตรียมรูป..."
+            "📸 กำลังสร้างรูปภาพ..."
           ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
-              เซฟรูป / แชร์บัตรน้อง
+              เจเนอเรทรูปบัตร 🪪
             </>
           )}
         </button>
-        <div className="bg-gray-50 rounded-xl p-4 mt-4 text-center border border-gray-100">
-          <p className="text-[10px] md:text-xs font-bold text-gray-500">
-            📱 <span className="text-gray-800">สำหรับผู้ใช้มือถือ:</span> กดปุ่มด้านบนแล้วเลือก <span className="text-pink-500 underline">"Save Image / บันทึกรูปภาพ"</span> รูปจะเข้าอัลบั้มทันทีครับ
-          </p>
-          <p className="text-[9px] text-gray-400 mt-1 italic">
-            * หรือใช้วิธีแคปหน้าจอ (Screenshot) เอาก็ภาพชัดเป๊ะเหมือนกันครับ!
-          </p>
-        </div>
       </div>
+
+      {/* 🖼️ ป๊อปอัป (Modal) โชว์รูปที่เจนเสร็จแล้วให้ผู้ใช้กดเซฟหรือแชร์ */}
+      {generatedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white p-4 rounded-[2rem] w-full max-w-sm flex flex-col items-center gap-4 relative">
+            
+            {/* ปุ่มปิด */}
+            <button 
+              onClick={() => setGeneratedImage(null)}
+              className="absolute -top-12 right-0 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl font-bold hover:bg-white/30"
+            >
+              ✕
+            </button>
+
+            <div className="text-center w-full">
+              <h3 className="text-lg font-black text-gray-800">บัตรพร้อมแล้ว! ✨</h3>
+              <p className="text-[11px] font-bold text-pink-500 mt-1 bg-pink-50 py-1.5 px-3 rounded-lg inline-block">
+                👆 แตะค้างที่รูปแล้วกด "บันทึกรูปภาพ (Save Image)"
+              </p>
+            </div>
+
+            {/* รูปภาพที่เจนมา (เป็น <img /> แท้ๆ ทำให้แตะค้างเพื่อเซฟได้) */}
+            <div className="w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100 relative">
+              <img src={generatedImage} alt="Pet ID Card" className="w-full h-auto" />
+            </div>
+
+            <div className="flex gap-2 w-full pt-2">
+              <button 
+                onClick={() => setGeneratedImage(null)}
+                className="flex-1 py-3.5 bg-gray-100 text-gray-500 font-bold rounded-xl text-sm"
+              >
+                ปิดหน้าต่าง
+              </button>
+              
+              {/* ปุ่มเรียก Share Sheet (ถ้าเบราว์เซอร์รองรับ) */}
+              <button 
+                onClick={handleNativeShare}
+                className="flex-1 py-3.5 bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-200 text-sm flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                แชร์เลย
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
