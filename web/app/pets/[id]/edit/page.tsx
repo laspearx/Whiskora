@@ -39,6 +39,26 @@ const PET_DATA = {
   ]
 };
 
+// 🎨 ข้อมูลสีและลวดลาย
+const COLOR_DATA = {
+  cat: [
+    "ขาว (White)", "ดำ (Black)", "เทา / บลู (Grey / Blue)", "ส้ม / แดง (Orange / Red)",
+    "ครีม (Cream)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ไลแลค / เทาอมม่วง (Lilac / Lavender)",
+    "สามสี (Calico)", "สีเปรอะ (Tortoiseshell / Tortie)", "สองสี / ลายวัว (Bicolor / Tuxedo)",
+    "สีพ้อยท์ / ลายแต้ม (Colorpoint)", "ลายสลิด / ลายเสือ (Tabby)", "อื่นๆ"
+  ],
+  dog: [
+    "ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)",
+    "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)",
+    "เทา / บลู (Grey / Blue)", "ฟอว์น / น้ำตาลอ่อน (Fawn)", "สามสี (Tricolor)",
+    "ลายหินอ่อน (Merle / Dapple)", "ลายเสือ (Brindle)", "อื่นๆ"
+  ],
+  other: [
+    "สีเดียวล้วน (Solid Color)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)",
+    "เผือก (Albino)", "อื่นๆ"
+  ]
+};
+
 export default function EditPetPage() {
   const router = useRouter();
   const params = useParams();
@@ -54,6 +74,11 @@ export default function EditPetPage() {
   const [otherPetText, setOtherPetText] = useState("");
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
+  
+  // 🌟 State สำหรับสี
+  const [color, setColor] = useState("");
+  const [customColor, setCustomColor] = useState("");
+
   const [gender, setGender] = useState("male");
   const [birthdate, setBirthdate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -131,6 +156,15 @@ export default function EditPetPage() {
         setCustomBreed(petBreed);
       }
 
+      // 🌟 ตรวจสอบและแยกประเภทสี
+      const petColor = data.color || "";
+      if (COLOR_DATA[currentSpecies].includes(petColor)) {
+        setColor(petColor);
+      } else if (petColor) {
+        setColor("อื่นๆ");
+        setCustomColor(petColor);
+      }
+
       setIsFetching(false);
     };
 
@@ -142,6 +176,8 @@ export default function EditPetPage() {
     setOtherPetText("");
     setBreed("");
     setCustomBreed("");
+    setColor(""); // 🌟 รีเซ็ตสีเมื่อเปลี่ยนชนิดสัตว์
+    setCustomColor("");
   };
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,11 +245,13 @@ export default function EditPetPage() {
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : (species === 'cat' ? 'แมว' : 'หมา');
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
+    const finalColor = color === 'อื่นๆ' ? customColor : color; // 🌟 กำหนดค่าสีที่จะบันทึก
 
     const { error } = await supabase.from("pets").update({
       name,
       species: finalSpecies,
       breed: finalBreed || null,
+      color: finalColor || null, // 🌟 อัปเดตข้อมูลสี
       gender,
       birth_date: birthdate || null,
       image_url: avatarUrl,
@@ -342,8 +380,10 @@ export default function EditPetPage() {
               </div>
             </div>
 
-            {/* ส่วนเลือกสายพันธุ์หรือประเภทสัตว์อื่นๆ */}
+            {/* ส่วนเลือกสายพันธุ์ และ สี */}
             <div className="bg-gray-50/50 rounded-[2rem] p-5 md:p-6 space-y-5 border border-gray-100">
+              
+              {/* สายพันธุ์ / ประเภทสัตว์แปลก */}
               {species === 'other' ? (
                 <div className="space-y-3">
                   <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider italic">โปรดเลือกประเภทสัตว์อื่นๆ</label>
@@ -382,6 +422,29 @@ export default function EditPetPage() {
               {/* กรณีพิมพ์เอง */}
               {(breed === "อื่นๆ" || (species === 'other' && otherPetText === "สัตว์แปลกอื่นๆ")) && (
                 <input type="text" value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="ระบุสายพันธุ์เพิ่มเติม..." />
+              )}
+
+              <hr className="border-gray-100" />
+
+              {/* 🌟 เลือกสี */}
+              <div className="space-y-2">
+                <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี / ลวดลาย</label>
+                <div className="relative">
+                  <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                    <option value="" disabled>เลือกสีจากรายการ...</option>
+                    {COLOR_DATA[species].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🌟 กรณีพิมพ์สีเอง */}
+              {color === "อื่นๆ" && (
+                <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง (แนะนำใส่ภาษาอังกฤษต่อท้าย เช่น ขาวดำ (Black & White))..." />
               )}
             </div>
 
