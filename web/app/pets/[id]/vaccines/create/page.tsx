@@ -57,49 +57,7 @@ export default function CreateVaccinePage() {
     if (petId) fetchPetData();
   }, [petId, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 🌟 เช็คว่าผู้ใช้ได้เลือกประเภทแล้วหรือยัง
-    if (!selectedType) {
-      alert("กรุณาเลือกประเภทบริการด้วยครับ");
-      return;
-    }
-
-    // 🌟 กำหนดชื่อวัคซีนที่จะบันทึก ถ้าเลือก "อื่นๆ" ให้เอาข้อความที่พิมพ์เองมาใช้
-    const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
-
-    if (!finalVaccineName || !dateGiven) {
-      alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("vaccines")
-        .insert([{
-          pet_id: petId, // 🌟 เปลี่ยนจาก pet_id เป็น cat_id ให้ตรงกับ Database ของชัช
-          vaccine_name: finalVaccineName,
-          date_given: dateGiven,
-          next_due: nextDue || null
-        }]);
-
-      if (error) throw error;
-
-      alert("💉 บันทึกประวัติวัคซีนเรียบร้อยแล้ว!");
-      router.push(`/pets/${petId}`); 
-      router.refresh(); 
-    } catch (error: any) {
-      console.error("Error saving vaccine:", error);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
-      setSaving(false);
-    }
-  };
-
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังดึงข้อมูล... ⏳</div>;
-
-  // 🌟 ฟังก์ชันเพิ่มนัดหมายลง Google Calendar
+  // 🌟 ย้ายฟังก์ชัน Google Calendar ขึ้นมาไว้ตรงนี้ เพื่อให้ handleSubmit เรียกใช้ได้
   const addVaccineToGoogleCalendar = async (
     petName: string, 
     vaccineName: string, 
@@ -170,6 +128,61 @@ export default function CreateVaccinePage() {
       return false;
     }
   };
+
+  // 📝 ฟังก์ชันกดปุ่มบันทึก
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // เช็คว่าผู้ใช้ได้เลือกประเภทแล้วหรือยัง
+    if (!selectedType) {
+      alert("กรุณาเลือกประเภทบริการด้วยครับ");
+      return;
+    }
+
+    // กำหนดชื่อวัคซีนที่จะบันทึก ถ้าเลือก "อื่นๆ" ให้เอาข้อความที่พิมพ์เองมาใช้
+    const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
+
+    if (!finalVaccineName || !dateGiven) {
+      alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("vaccines")
+        .insert([{
+          pet_id: petId, // เปลี่ยนจาก pet_id เป็น cat_id ให้ตรงกับ Database ของชัช (ถ้า Database ใช้ cat_id อย่าลืมแก้นะครับ)
+          vaccine_name: finalVaccineName,
+          date_given: dateGiven,
+          next_due: nextDue || null
+        }]);
+
+      if (error) throw error;
+
+      // 🌟 แทรกตรงนี้! เซฟลง Database สำเร็จปุ๊บ ถามลูกค้าว่าอยากแอดลงปฏิทินไหม
+      if (nextDue) {
+        const wantToSync = confirm("💉 บันทึกวัคซีนสำเร็จ! 🐾 \n\nต้องการเพิ่มวันนัดถัดไปลงใน Google Calendar เพื่อแจ้งเตือนด้วยไหมครับ?");
+        if (wantToSync) {
+          // ถ้ายอมรับ ให้ยิง API (รอจนกว่าจะเสร็จ)
+          await addVaccineToGoogleCalendar(petName, finalVaccineName, nextDue);
+        }
+      } else {
+        // ถ้าไม่มีวันนัดครั้งถัดไป ก็ Alert ปกติ
+        alert("💉 บันทึกประวัติวัคซีนเรียบร้อยแล้ว!");
+      }
+
+      // เสร็จกระบวนการทั้งหมด เด้งกลับไปหน้าโปรไฟล์น้อง
+      router.push(`/pets/${petId}`); 
+      router.refresh(); 
+    } catch (error: any) {
+      console.error("Error saving vaccine:", error);
+      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังดึงข้อมูล... ⏳</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-4 md:pt-12 pb-10 animate-in fade-in duration-700">
