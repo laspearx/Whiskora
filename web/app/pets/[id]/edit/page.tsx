@@ -39,7 +39,7 @@ const PET_DATA = {
   ]
 };
 
-// 🎨 ข้อมูลสีและลวดลาย
+// 🎨 ข้อมูลสี
 const COLOR_DATA = {
   cat: [
     "ขาว (White)", "ดำ (Black)", "เทา / บลู (Grey / Blue)", "ส้ม / แดง (Orange / Red)",
@@ -75,7 +75,6 @@ export default function EditPetPage() {
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
   
-  // 🌟 State สำหรับสี
   const [color, setColor] = useState("");
   const [customColor, setCustomColor] = useState("");
 
@@ -85,6 +84,15 @@ export default function EditPetPage() {
   
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
+
+  // 🌟 ข้อมูลฟาร์มและพันธุกรรม (สร้าง State มารับ)
+  const [status, setStatus] = useState("");
+  const [price, setPrice] = useState<number | string>("");
+  const [pattern, setPattern] = useState("");
+  const [coat, setCoat] = useState("");
+  const [ear, setEar] = useState("");
+  const [leg, setLeg] = useState("");
+  const [eyeColor, setEyeColor] = useState("");
 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
@@ -104,7 +112,6 @@ export default function EditPetPage() {
       }
       setUserId(session.user.id);
 
-      // ดึงข้อมูลสัตว์เลี้ยง
       const { data, error } = await supabase
         .from("pets")
         .select("*")
@@ -118,19 +125,27 @@ export default function EditPetPage() {
         return;
       }
 
-      // ตั้งค่าข้อมูลพื้นฐาน
+      // เซ็ตข้อมูลพื้นฐาน
       setName(data.name || "");
       setGender(data.gender || "male");
       setBirthdate(data.birth_date || data.birthdate || "");
       setAllergies(data.allergies || "");
       setTraits(data.traits || "");
 
+      // 🌟 เซ็ตข้อมูลฟาร์มและพันธุกรรม (ดึงจากฐานข้อมูลมาชาร์จลงตัวแปร)
+      setStatus(data.status || "");
+      setPrice(data.price || "");
+      setPattern(data.pattern || "");
+      setCoat(data.coat || "");
+      setEar(data.ear || "");
+      setLeg(data.leg || "");
+      setEyeColor(data.eye_color || "");
+
       if (data.image_url) {
         setAvatarUrl(data.image_url);
         setOriginalImageSrc(data.image_url);
       }
 
-      // ตรวจสอบและแยกประเภทสัตว์เลี้ยง
       let currentSpecies: "cat" | "dog" | "other" = "other";
       if (data.species === "แมว" || data.species === "cat") {
         currentSpecies = "cat";
@@ -143,7 +158,6 @@ export default function EditPetPage() {
         setOtherPetText(data.species || "");
       }
 
-      // ตรวจสอบสายพันธุ์
       const petBreed = data.breed || "";
       if (currentSpecies === "cat" || currentSpecies === "dog") {
         if (PET_DATA[currentSpecies].breeds.includes(petBreed)) {
@@ -156,7 +170,6 @@ export default function EditPetPage() {
         setCustomBreed(petBreed);
       }
 
-      // 🌟 ตรวจสอบและแยกประเภทสี
       const petColor = data.color || "";
       if (COLOR_DATA[currentSpecies].includes(petColor)) {
         setColor(petColor);
@@ -176,7 +189,7 @@ export default function EditPetPage() {
     setOtherPetText("");
     setBreed("");
     setCustomBreed("");
-    setColor(""); // 🌟 รีเซ็ตสีเมื่อเปลี่ยนชนิดสัตว์
+    setColor(""); 
     setCustomColor("");
   };
 
@@ -245,18 +258,27 @@ export default function EditPetPage() {
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : (species === 'cat' ? 'แมว' : 'หมา');
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
-    const finalColor = color === 'อื่นๆ' ? customColor : color; // 🌟 กำหนดค่าสีที่จะบันทึก
+    const finalColor = color === 'อื่นๆ' ? customColor : color;
 
     const { error } = await supabase.from("pets").update({
       name,
       species: finalSpecies,
       breed: finalBreed || null,
-      color: finalColor || null, // 🌟 อัปเดตข้อมูลสี
+      color: finalColor || null,
       gender,
       birth_date: birthdate || null,
       image_url: avatarUrl,
       allergies: allergies || null,
       traits: traits || null,
+      
+      // 🌟 บันทึกข้อมูลฟาร์มและพันธุกรรมเข้า Database
+      status: status || null,
+      price: price === "" ? null : Number(price),
+      pattern: pattern || null,
+      coat: coat || null,
+      ear: ear || null,
+      leg: leg || null,
+      eye_color: eyeColor || null,
     }).eq("id", petId);
 
     if (error) {
@@ -285,7 +307,8 @@ export default function EditPetPage() {
       if (error) throw error;
 
       alert(`🗑️ ลบประวัติ ${name} ออกจากระบบเรียบร้อยแล้วครับ!`);
-      router.push("/profile"); 
+      // กลับไปหน้าก่อนหน้า (ปลอดภัยกว่า)
+      router.back(); 
     } catch (error: any) {
       alert("เกิดข้อผิดพลาดในการลบ: " + error.message);
       console.error(error);
@@ -298,11 +321,11 @@ export default function EditPetPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 pt-1 md:pt-12 pb-10 animate-in fade-in duration-700">
       <div className="flex items-center gap-3 mb-5 md:mb-8">
-        <Link href={`/pets/${petId}`} className="p-2 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition shadow-sm border border-gray-100">
+        <button onClick={() => router.back()} className="p-2 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition shadow-sm border border-gray-100">
            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
            </svg>
-        </Link>
+        </button>
         <h1 className="text-xl md:text-3xl font-black text-gray-800 tracking-tight">แก้ไขข้อมูลสัตว์เลี้ยง</h1>
       </div>
 
@@ -426,9 +449,9 @@ export default function EditPetPage() {
 
               <hr className="border-gray-100" />
 
-              {/* 🌟 เลือกสี */}
+              {/* เลือกสี */}
               <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี / ลวดลาย</label>
+                <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี (Color)</label>
                 <div className="relative">
                   <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
                     <option value="" disabled>เลือกสีจากรายการ...</option>
@@ -442,7 +465,7 @@ export default function EditPetPage() {
                 </div>
               </div>
 
-              {/* 🌟 กรณีพิมพ์สีเอง */}
+              {/* กรณีพิมพ์สีเอง */}
               {color === "อื่นๆ" && (
                 <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง (แนะนำใส่ภาษาอังกฤษต่อท้าย เช่น ขาวดำ (Black & White))..." />
               )}
@@ -484,14 +507,81 @@ export default function EditPetPage() {
               </div>
             </div>
 
+            {/* 🌟🌟 ส่วนข้อมูลฟาร์มและพันธุกรรม (สร้างใหม่) 🌟🌟 */}
+            <div className="space-y-5 pt-6 border-t border-gray-100">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-pink-100 text-pink-600 px-2 py-1 rounded text-xs">👑</span>
+                <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">ข้อมูลฟาร์ม & พันธุกรรม</h3>
+              </div>
+
+              {/* สถานะ และ ราคา */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">สถานะในฟาร์ม</label>
+                  <div className="relative">
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm font-bold text-gray-700 appearance-none">
+                      <option value="" disabled>เลือกประเภท</option>
+                      <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อพันธุ์ / แม่พันธุ์</option>
+                      <option value="เด็ก">เด็ก</option>               
+                      <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
+                      <option value="ติดจอง">ติดจอง</option>  
+                      <option value="ทำหมัน / ปลดระวาง">ทำหมัน / ปลดระวาง</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                  </div>
+                </div>
+
+                {status === "พร้อมย้ายบ้าน" && (
+                  <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-300">
+                    <label className="text-[10px] md:text-xs font-bold text-pink-500 uppercase ml-1 tracking-wider">ค่าตัว / สินสอด (บาท) *</label>
+                    <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-pink-50 border border-pink-200 outline-none focus:border-pink-400 focus:bg-white transition-all text-sm font-black text-pink-600" placeholder="เช่น 15000" />
+                  </div>
+                )}
+              </div>
+
+              {/* ลักษณะพันธุกรรม */}
+              <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลวดลาย (Pattern)</label>
+                  <input type="text" value={pattern} onChange={(e) => setPattern(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น Bicolor, Solid" />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ความยาวขน (Coat)</label>
+                  <input type="text" value={coat} onChange={(e) => setCoat(e.target.value)} list="coat-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ขนสั้น, ขนยาว" />
+                  <datalist id="coat-list"><option value="ขนสั้น (Shorthair)"/><option value="ขนกึ่งยาว (Semi-longhair)"/><option value="ขนยาว (Longhair)"/><option value="ไร้ขน (Hairless)"/></datalist>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลักษณะหู (Ear)</label>
+                  <input type="text" value={ear} onChange={(e) => setEar(e.target.value)} list="ear-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น หูตั้ง, หูพับ" />
+                  <datalist id="ear-list"><option value="หูตั้ง (Straight)"/><option value="หูพับ (Fold)"/><option value="หูม้วน (Curl)"/></datalist>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลักษณะขา (Leg)</label>
+                  <input type="text" value={leg} onChange={(e) => setLeg(e.target.value)} list="leg-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ขาปกติ, ขาสั้น" />
+                  <datalist id="leg-list"><option value="ขาปกติ (Standard)"/><option value="ขาสั้น (Munchkin)"/><option value="ขาสั้นมาก (Rug Hugger)"/></datalist>
+                </div>
+
+                <div className="space-y-1.5 col-span-2 md:col-span-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">สีตา (Eye Color)</label>
+                  <input type="text" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} list="eye-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ฟ้า, สองสี" />
+                  <datalist id="eye-list"><option value="ฟ้า (Blue)"/><option value="เหลือง / ทอง (Gold/Yellow)"/><option value="เขียว (Green)"/><option value="สองสี (Odd-eyed)"/><option value="ทองแดง (Copper)"/></datalist>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* ปุ่มบันทึก และ ลบ */}
           <div className="space-y-6 pt-4">
             <div className="flex gap-3">
-              <Link href={`/pets/${petId}`} className="flex-1 text-center py-3.5 rounded-xl font-bold text-gray-400 bg-gray-100 hover:bg-gray-200 transition text-sm">
+              <button type="button" onClick={() => router.back()} className="flex-1 text-center py-3.5 rounded-xl font-bold text-gray-400 bg-gray-100 hover:bg-gray-200 transition text-sm">
                 ยกเลิก
-              </Link>
+              </button>
               <button type="submit" disabled={saving || isDeleting} className="flex-[2] py-3.5 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 shadow-lg shadow-pink-200 transition-all active:scale-95 disabled:opacity-50 text-sm">
                 {saving ? "กำลังบันทึก..." : "บันทึกการแก้ไข 💾"}
               </button>

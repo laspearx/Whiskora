@@ -121,8 +121,13 @@ export default function PublicFarmProfile() {
                       )}
                       
                       {isBreeder && (
-                        <div className="bg-blue-50 rounded-xl py-1.5 px-2">
-                          <p className="text-xs font-black text-blue-500 mt-1">👑 พ่อแม่พันธุ์</p>
+                        <div className={`rounded-xl py-1.5 px-2 ${pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'bg-blue-50' : 'bg-pink-50'}`}>
+                          {/* 🌟 เช็คเพศแล้วแสดงข้อความ / สีป้ายให้เข้ากับเพศ */}
+                         <p className={`text-xs font-black mt-1 ${pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'text-blue-500' : 'text-pink-500'}`}>
+                            {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? '👑 พ่อพันธุ์' : 
+                             pet.gender === 'female' || pet.gender === 'ตัวเมีย' ? '👑 แม่พันธุ์' : 
+                             '👑 พ่อแม่พันธุ์'}
+                         </p>
                         </div>
                       )}
                     </div>
