@@ -113,14 +113,14 @@ export default function PublicFarmProfile() {
 
                   {/* 🌟 เช็คเงื่อนไขการแสดงราคา */}
                   <div className="mt-3 w-full">
-                    {pet.status === 'พร้อมย้าย' ? (
+                    {pet.status === 'พร้อมย้ายบ้าน' ? (
                       <div className="bg-pink-50 rounded-xl py-1.5 px-2">
                         <p className="text-[9px] text-pink-400 font-bold uppercase tracking-wider">พร้อมย้ายบ้าน</p>
                         <p className="text-sm font-black text-pink-600">
                           {pet.price ? `฿${pet.price.toLocaleString()}` : 'ทักแชทสอบถาม'}
                         </p>
                       </div>
-                    ) : pet.status === 'พ่อแม่พันธุ์' ? (
+                    ) : pet.status === 'พ่อพันธุ์ / แม่พันธุ์' ? (
                       <div className="bg-blue-50 rounded-xl py-1.5 px-2">
                         <p className="text-xs font-black text-blue-500 mt-1">👑 พ่อแม่พันธุ์</p>
                       </div>
