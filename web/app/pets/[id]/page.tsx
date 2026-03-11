@@ -1,3 +1,5 @@
+// app/pets/[id]/page.tsx
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -114,7 +116,8 @@ export default function PetDetailPage() {
   const breeds = formatBreed(pet.breed);
 
   return (
-    <div className="min-h-screen pb-20 animate-in fade-in duration-700">
+    // 🌟 ลบ bg-gray-50 ออก
+    <div className="min-h-screen bg-white pb-20 animate-in fade-in duration-700">
 
       <div className="max-w-3xl mx-auto px-4 mt-4 md:mt-8 space-y-6">
         
@@ -176,14 +179,14 @@ export default function PetDetailPage() {
                   <Link href={`/pets/${pet.id}/edit`} className="bg-gray-50 hover:bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl font-bold transition-all border border-gray-100 text-xs flex items-center gap-2">
                     แก้ไข ✎
                   </Link>
-                  <Link href={`/pets/${pet.id}/id-card`} className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-4 py-2.5 rounded-xl font-black transition-all border border-pink-100 text-xs flex items-center gap-2">
+                  <Link href={`/pets/${pet.id}/id-card`} className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-4 py-2.5 rounded-xl font-bold transition-all border border-pink-100 text-xs flex items-center gap-2">
                     <span className="text-base leading-none">🪪</span> บัตรประจำตัว
                   </Link>
                 </div>
               </div>
 
-              {/* 📊 กล่องข้อมูล (Grid แบบคลีนๆ) */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-left">
+              {/* 📊 กล่องข้อมูล (Grid แบบคลีนๆ) - ปรับสัดส่วนใหม่ */}
+              <div className="grid grid-cols-2 gap-3 text-left">
                 <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">สายพันธุ์</p>
                   <p className="text-sm font-black text-gray-800 truncate">{breeds.th}</p>
@@ -199,6 +202,19 @@ export default function PetDetailPage() {
                 <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">อายุ</p>
                   <p className="text-xs font-black text-pink-500">{calculateAgeDetail(pet.birth_date || pet.birthdate)}</p>
+                </div>
+                 {/* 🌟 เพิ่มข้อมูล พ่อพันธุ์, แม่พันธุ์, เลขไมโครชิป */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">พ่อพันธุ์</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{pet.father_name || '-'}</p>
+                </div>
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">แม่พันธุ์</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{pet.mother_name || '-'}</p>
+                </div>
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 col-span-2">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">เลขไมโครชิป</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{pet.microchip_no || '-'}</p>
                 </div>
               </div>
 
