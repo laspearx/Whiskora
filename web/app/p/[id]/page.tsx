@@ -111,7 +111,7 @@ export default function PublicPetProfilePage() {
       </div>
 
       {/* 🌟 แสดงส่วนสั่งซื้อเฉพาะน้องที่ "พร้อมย้ายบ้าน" */}
-          {(pet.status === 'พร้อมย้าย' || pet.status === 'พร้อมย้ายบ้าน') && (
+          {(pet.status === 'พร้อมย้ายบ้าน') && (
             <div className="mt-8 pt-6 border-t border-gray-100 animate-in slide-in-from-bottom-4">
               <div className="flex items-center justify-between mb-4">
                 <div>

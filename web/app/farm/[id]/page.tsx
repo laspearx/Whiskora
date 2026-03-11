@@ -95,8 +95,8 @@ export default function PublicFarmProfile() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {pets.map(pet => {
                 // 🌟 ตัวแปรเช็คสถานะน้อง
-                const isReadyToMove = pet.status === 'พร้อมย้าย' || pet.status === 'พร้อมย้ายบ้าน';
-                const isBreeder = pet.status === 'พ่อแม่พันธุ์' || pet.status === 'พ่อพันธุ์' || pet.status === 'แม่พันธุ์';
+                const isReadyToMove = pet.status === 'พร้อมย้ายบ้าน' ;
+                const isBreeder = pet.status === 'พ่อพันธุ์ / แม่พันธุ์' ;
 
                 return (
                   <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-pink-300 hover:shadow-md transition-all group">
