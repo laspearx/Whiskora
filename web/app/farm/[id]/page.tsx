@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function PublicFarmProfile() {
   const router = useRouter();
@@ -26,11 +27,12 @@ export default function PublicFarmProfile() {
         if (farmError) throw farmError;
         setFarm(farmData);
 
-        // 2. ดึงข้อมูลสัตว์เลี้ยงในฟาร์มนี้มาโชว์ด้วย (เผื่อไว้โชว์น้องหมาน้องแมวในฟาร์ม)
+        // 2. 🌟 ดึงข้อมูลสัตว์เลี้ยง (ดึงเฉพาะ "พ่อแม่พันธุ์" และ "พร้อมย้าย")
         const { data: petsData } = await supabase
           .from('pets')
-          .select('id, name, breed, image_url, gender')
-          .eq('farm_id', farmId);
+          .select('id, name, breed, image_url, gender, status, price')
+          .eq('farm_id', farmId)
+          .in('status', ['พ่อแม่พันธุ์', 'พร้อมย้าย']); // กรองสถานะตรงนี้!
           
         if (petsData) setPets(petsData);
 
@@ -60,11 +62,12 @@ export default function PublicFarmProfile() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-8 -mt-16 relative z-10">
+        {/* ข้อมูลฟาร์มเบื้องต้น */}
         <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl shadow-pink-100/50 border border-gray-100">
-          
           <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center text-4xl shrink-0 -mt-12 sm:-mt-16">
-              🏡
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center text-4xl shrink-0 -mt-12 sm:-mt-16 overflow-hidden">
+               {/* ถ้ามีโลโก้ฟาร์มก็ใส่ตรงนี้ได้ชัช บัดดี้ใส่ emoji ไว้ก่อน */}
+               🏡
             </div>
             
             <div className="flex-1 space-y-2">
@@ -81,10 +84,9 @@ export default function PublicFarmProfile() {
               </div>
             </div>
           </div>
-          
         </div>
 
-        {/* 🌟 แสดงสัตว์เลี้ยงในฟาร์ม */}
+        {/* 🌟 แสดงสมาชิกในฟาร์ม (แยกตามเงื่อนไขราคา) */}
         <div className="mt-10">
           <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
             🐾 สมาชิกในฟาร์ม ({pets.length})
@@ -92,13 +94,14 @@ export default function PublicFarmProfile() {
           
           {pets.length === 0 ? (
             <div className="bg-white rounded-3xl p-10 text-center border border-gray-100">
-              <p className="text-gray-400 font-bold">ฟาร์มนี้ยังไม่ได้เพิ่มข้อมูลสัตว์เลี้ยงครับ</p>
+              <p className="text-gray-400 font-bold">ยังไม่มีข้อมูลพ่อแม่พันธุ์ หรือเด็กๆ ที่พร้อมย้ายในตอนนี้ครับ</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {pets.map(pet => (
-                <div key={pet.id} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center">
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-50 mb-3">
+                // 🌟 เปลี่ยนจาก div ธรรมดาเป็น Link เพื่อกดเข้าไปดูประวัติ Public ได้ (เช่น ไปที่ /p/[id])
+                <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-pink-300 hover:shadow-md transition-all group">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-50 mb-3 group-hover:scale-105 transition-transform">
                     {pet.image_url ? (
                       <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
                     ) : (
@@ -107,7 +110,23 @@ export default function PublicFarmProfile() {
                   </div>
                   <h3 className="font-black text-gray-800">{pet.name}</h3>
                   <p className="text-[10px] font-bold text-gray-400 mt-1 truncate w-full">{pet.breed || 'ไม่ระบุสายพันธุ์'}</p>
-                </div>
+
+                  {/* 🌟 เช็คเงื่อนไขการแสดงราคา */}
+                  <div className="mt-3 w-full">
+                    {pet.status === 'พร้อมย้าย' ? (
+                      <div className="bg-pink-50 rounded-xl py-1.5 px-2">
+                        <p className="text-[9px] text-pink-400 font-bold uppercase tracking-wider">พร้อมย้ายบ้าน</p>
+                        <p className="text-sm font-black text-pink-600">
+                          {pet.price ? `฿${pet.price.toLocaleString()}` : 'ทักแชทสอบถาม'}
+                        </p>
+                      </div>
+                    ) : pet.status === 'พ่อแม่พันธุ์' ? (
+                      <div className="bg-blue-50 rounded-xl py-1.5 px-2">
+                        <p className="text-xs font-black text-blue-500 mt-1">👑 พ่อแม่พันธุ์</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </Link>
               ))}
             </div>
           )}

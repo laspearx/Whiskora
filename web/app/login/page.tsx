@@ -47,23 +47,13 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social (อัปเกรด Google Calendar)
+  // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     // 1. ตั้งค่าพื้นฐาน (URL เด้งกลับ)
     let oauthOptions: any = {
       redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
     };
 
-    // 2. 🌟 ถ้าเป็น Google ให้ขอสิทธิ์ Calendar เพิ่ม!
-    if (provider === 'google') {
-      oauthOptions.scopes = 'https://www.googleapis.com/auth/calendar.events';
-      oauthOptions.queryParams = {
-        access_type: 'offline', // ขอสิทธิ์เชื่อมต่อแม้ไม่ได้เปิดแอป
-        prompt: 'consent',      // บังคับให้เด้งหน้าต่างกดยืนยันสิทธิ์
-      };
-    }
-
-    // 3. ยิงคำสั่งล็อกอิน
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: oauthOptions,

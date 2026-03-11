@@ -110,6 +110,28 @@ export default function PublicPetProfilePage() {
         </div>
       </div>
 
+      {/* 🌟 เช็คว่าถ้าน้องมีสถานะ 'พร้อมย้าย' ให้โชว์ปุ่มนี้ */}
+{pet.status === 'พร้อมย้าย' && (
+  <div className="mt-6 pt-6 border-t border-gray-100 animate-in slide-in-from-bottom-4">
+    <div className="flex items-center justify-between mb-4">
+      <p className="text-gray-500 font-bold text-sm">ค่าตัวสินสอด</p>
+      <p className="text-2xl font-black text-pink-500">
+        {pet.price ? `฿${pet.price.toLocaleString()}` : 'ติดต่อสอบถาม'}
+      </p>
+    </div>
+    
+    <button 
+      onClick={() => {
+         // ชัชสามารถเปลี่ยนให้เด้งไป Line ของฟาร์ม หรือเปิดหน้าแชทของระบบก็ได้ครับ
+         alert('ฟีเจอร์ติดต่อฟาร์มกำลังมาเร็วๆ นี้!'); 
+      }}
+      className="w-full bg-pink-500 hover:bg-pink-600 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-pink-200 active:scale-95 flex items-center justify-center gap-2 text-lg"
+    >
+      🛒 สนใจรับเลี้ยง (ติดต่อฟาร์ม)
+    </button>
+  </div>
+)}
+
       {/* Banner ชวนสร้างบัตร (เนียนโปรโมทแอปชัช) */}
       <div className="pt-4 text-center">
         <Link href="/" className="inline-block bg-pink-100 text-pink-600 font-bold px-6 py-3 rounded-2xl text-xs hover:bg-pink-200 transition">
