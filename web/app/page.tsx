@@ -108,9 +108,21 @@ export default function Home() {
               placeholder="ค้นหาฟาร์ม หรือบริการ..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                }
+              }}
               className="w-full bg-transparent outline-none px-3 py-2 text-sm text-gray-700 font-medium"
             />
-            <button className="bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-6 rounded-xl transition text-sm">
+            <button 
+              onClick={() => {
+                if (searchQuery.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                }
+              }}
+              className="bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-6 rounded-xl transition text-sm"
+            >
               ค้นหา
             </button>
           </div>
