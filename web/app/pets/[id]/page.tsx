@@ -1,5 +1,3 @@
-// app/pets/[id]/page.tsx
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -16,13 +14,17 @@ export default function PetDetailPage() {
   const [vaccines, setVaccines] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const formatBreed = (breedStr: string) => {
-    if (!breedStr) return { th: "ไม่ระบุสายพันธุ์", en: "" };
-    const parts = breedStr.split('(');
+  // 🌟 ฟังก์ชันใหม่: แยกภาษาไทยและอังกฤษออกจากกัน
+  const splitThaiEnglish = (text: string | null) => {
+    if (!text) return { th: '-', en: null };
+    const parts = text.split('(');
     if (parts.length > 1) {
-      return { th: parts[0].trim(), en: "(" + parts[1].trim() };
+      return {
+        th: parts[0].trim(),
+        en: `(${parts[1].trim()}` // เก็บวงเล็บไว้ด้วย
+      };
     }
-    return { th: breedStr, en: "" };
+    return { th: text, en: null };
   };
 
   useEffect(() => {
@@ -49,7 +51,6 @@ export default function PetDetailPage() {
       if (petError) throw petError;
       setPet(petData);
 
-      // 🌟 ดึงข้อมูลวัคซีน
       const { data: vaccineData } = await supabase
         .from('vaccines')
         .select('*')
@@ -113,11 +114,12 @@ export default function PetDetailPage() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">🐾 WHISKORA...</div>;
   if (!pet) return null;
 
-  const breeds = formatBreed(pet.breed);
+  // 🌟 เตรียมข้อมูลสายพันธุ์และสี
+  const breedData = splitThaiEnglish(pet.breed);
+  const colorData = splitThaiEnglish(pet.color);
 
   return (
-    // 🌟 ลบ bg-gray-50 ออก
-    <div className="min-h-screen bg-white pb-20 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-gray-50 pb-20 animate-in fade-in duration-700">
 
       <div className="max-w-3xl mx-auto px-4 mt-4 md:mt-8 space-y-6">
         
@@ -142,7 +144,7 @@ export default function PetDetailPage() {
           </div>
         </div>
         
-        {/* 🌟 Pet Hero Card (ดีไซน์ใหม่ คลีน เป็นระเบียบ ไม่รก) */}
+        {/* 🌟 Pet Hero Card */}
         <div className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm">
           
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
@@ -179,48 +181,46 @@ export default function PetDetailPage() {
                   <Link href={`/pets/${pet.id}/edit`} className="bg-gray-50 hover:bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl font-bold transition-all border border-gray-100 text-xs flex items-center gap-2">
                     แก้ไข ✎
                   </Link>
-                  <Link href={`/pets/${pet.id}/id-card`} className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-4 py-2.5 rounded-xl font-bold transition-all border border-pink-100 text-xs flex items-center gap-2">
+                  <Link href={`/pets/${pet.id}/id-card`} className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-4 py-2.5 rounded-xl font-black transition-all border border-pink-100 text-xs flex items-center gap-2">
                     <span className="text-base leading-none">🪪</span> บัตรประจำตัว
                   </Link>
                 </div>
               </div>
 
-              {/* 📊 กล่องข้อมูล (Grid แบบคลีนๆ) - ปรับสัดส่วนใหม่ */}
-              <div className="grid grid-cols-2 gap-3 text-left">
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+              {/* 📊 กล่องข้อมูล (Grid ปรับปรุงใหม่) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-left">
+                
+                {/* 🌟 สายพันธุ์ */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">สายพันธุ์</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{breeds.th}</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{breedData.th}</p>
+                  {breedData.en && <p className="text-xs font-bold text-gray-500 truncate">{breedData.en}</p>}
                 </div>
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+
+                {/* 🌟 สี */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">สี</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{pet.color || '-'}</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{colorData.th}</p>
+                  {colorData.en && <p className="text-xs font-bold text-gray-500 truncate">{colorData.en}</p>}
                 </div>
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+
+                {/* วันเกิด */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">วันเกิด</p>
-                  <p className="text-sm font-black text-gray-800">{(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}</p>
                 </div>
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
+
+                {/* อายุ */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">อายุ</p>
-                  <p className="text-xs font-black text-pink-500">{calculateAgeDetail(pet.birth_date || pet.birthdate)}</p>
+                  <p className="text-xs font-black text-pink-500 truncate">{calculateAgeDetail(pet.birth_date || pet.birthdate)}</p>
                 </div>
-                 {/* 🌟 เพิ่มข้อมูล พ่อพันธุ์, แม่พันธุ์, เลขไมโครชิป */}
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">พ่อพันธุ์</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{pet.father_name || '-'}</p>
-                </div>
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">แม่พันธุ์</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{pet.mother_name || '-'}</p>
-                </div>
-                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 col-span-2">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">เลขไมโครชิป</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{pet.microchip_no || '-'}</p>
-                </div>
+
               </div>
 
-              {/* ⚠️ ข้อมูลเพิ่มเติม (สิ่งที่แพ้ / หมายเหตุ) แยกกล่องสีให้ชัดเจน */}
+              {/* ⚠️ ข้อมูลเพิ่มเติม */}
               {(pet.allergies || pet.traits) && (
-                <div className="flex flex-col sm:flex-row gap-3 text-left">
+                <div className="flex flex-col sm:flex-row gap-3 text-left pt-2">
                   {pet.traits && (
                     <div className="flex-1 bg-blue-50/50 border border-blue-100 rounded-2xl p-3.5">
                       <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">📝 หมายเหตุ / นิสัย</p>
@@ -240,7 +240,7 @@ export default function PetDetailPage() {
           </div>
         </div>
 
-        {/* 🌟 Vaccine Section (คงเดิม 100%) */}
+        {/* 🌟 Vaccine Section */}
         <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
           
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
