@@ -12,23 +12,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 🌟 พระเอกของเรา: ดักจับ Session ที่ติดมากับ URL (เครื่องหมาย #) ทันทีที่เปิดหน้าเว็บ
+  // ดักจับ Session ที่ติดมากับ URL
   useEffect(() => {
-    // เช็คตอนโหลดหน้าเว็บทันที
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
         router.push("/profile");
         router.refresh();
       }
     };
     checkSession();
 
-    // ดักจับจังหวะที่ Supabase อ่าน Token จาก URL สำเร็จ
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
         router.push("/profile");
         router.refresh();
       }
@@ -37,7 +33,7 @@ export default function LoginPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  // 📧 ฟังก์ชันเข้าสู่ระบบด้วยอีเมล
+  // ฟังก์ชันเข้าสู่ระบบด้วยอีเมล
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -45,22 +41,34 @@ export default function LoginPage() {
     if (error) {
       alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     } else {
-      // 🌟 เปลี่ยนเป้าหมายเป็นหน้าโปรไฟล์
       router.push("/profile");
       router.refresh();
     }
     setLoading(false);
   };
 
-  // 🌐 ฟังก์ชันเข้าสู่ระบบด้วย Social
+  // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social (อัปเกรด Google Calendar)
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    // 1. ตั้งค่าพื้นฐาน (URL เด้งกลับ)
+    let oauthOptions: any = {
+      redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
+    };
+
+    // 2. 🌟 ถ้าเป็น Google ให้ขอสิทธิ์ Calendar เพิ่ม!
+    if (provider === 'google') {
+      oauthOptions.scopes = 'https://www.googleapis.com/auth/calendar.events';
+      oauthOptions.queryParams = {
+        access_type: 'offline', // ขอสิทธิ์เชื่อมต่อแม้ไม่ได้เปิดแอป
+        prompt: 'consent',      // บังคับให้เด้งหน้าต่างกดยืนยันสิทธิ์
+      };
+    }
+
+    // 3. ยิงคำสั่งล็อกอิน
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        // 🌟 เพิ่ม ?next=/profile เพื่อให้ไฟล์ route.ts รู้ว่าต้องเด้งไปไหนต่อ
-        redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
-      },
+      options: oauthOptions,
     });
+    
     if (error) alert(error.message);
   };
 
