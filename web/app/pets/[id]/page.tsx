@@ -114,7 +114,7 @@ export default function PetDetailPage() {
   const breeds = formatBreed(pet.breed);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 animate-in fade-in duration-700">
+    <div className="min-h-screen pb-20 animate-in fade-in duration-700">
 
       <div className="max-w-3xl mx-auto px-4 mt-4 md:mt-8 space-y-6">
         
