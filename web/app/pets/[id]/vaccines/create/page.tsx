@@ -99,6 +99,78 @@ export default function CreateVaccinePage() {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังดึงข้อมูล... ⏳</div>;
 
+  // 🌟 ฟังก์ชันเพิ่มนัดหมายลง Google Calendar
+  const addVaccineToGoogleCalendar = async (
+    petName: string, 
+    vaccineName: string, 
+    nextDueDate: string // รับค่าเป็น YYYY-MM-DD เช่น '2026-04-15'
+  ) => {
+    try {
+      // 1. ดึง session ปัจจุบันออกมา เพื่อหา provider_token (กุญแจ Google)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // 🔑 provider_token จะมีค่าก็ต่อเมื่อลูกค้าล็อกอินด้วย Google เท่านั้น
+      const providerToken = session?.provider_token; 
+
+      if (!providerToken) {
+        alert("ไม่สามารถบันทึกได้: กรุณาล็อกอินด้วย Google ใหม่อีกครั้งเพื่อรับสิทธิ์เข้าถึงปฏิทินครับ 🥲");
+        return false;
+      }
+
+      // 2. คำนวณวันสิ้นสุด (Google แบบ All-day event ต้องตั้งวัน end ให้บวกเพิ่มไปอีก 1 วันเสมอ)
+      const startDate = new Date(nextDueDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      const endString = endDate.toISOString().split('T')[0];
+
+      // 3. เตรียมข้อมูลกล่องนัดหมายที่จะส่งไปปฏิทิน
+      const event = {
+        summary: `💉 นัดฉีดวัคซีน ${vaccineName} ให้น้อง ${petName}`,
+        description: `แจ้งเตือนอัตโนมัติจากแอป Whiskora 🐾\nถึงเวลาพาน้อง ${petName} ไปรับวัคซีน ${vaccineName} แล้วครับ!`,
+        start: {
+          date: nextDueDate, // วันที่เริ่ม
+          timeZone: 'Asia/Bangkok',
+        },
+        end: {
+          date: endString,   // วันที่สิ้นสุด (+1 วัน)
+          timeZone: 'Asia/Bangkok',
+        },
+        // แถม! ตั้งค่าให้แจ้งเตือนล่วงหน้า 1 วัน และ 9 โมงเช้าของวันนั้น
+        reminders: {
+          useDefault: false,
+          overrides: [
+            { method: 'popup', minutes: 24 * 60 }, // เตือนล่วงหน้า 1 วัน
+            { method: 'popup', minutes: 60 * 9 },  // เตือนตอน 9 โมงเช้า
+          ],
+        },
+      };
+
+      // 4. 🚀 ยิง API เข้า Google Calendar โดยตรง!
+      const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${providerToken}`, // เอากุญแจมาเสียบตรงนี้
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Google API Error:", errorData);
+        throw new Error('บันทึกลงปฏิทินไม่สำเร็จ โทเคนอาจจะหมดอายุ');
+      }
+
+      alert("✅ บันทึกนัดหมายลง Google Calendar เรียบร้อยแล้ว! ลองเช็คในแอปปฏิทินได้เลย 📅");
+      return true;
+
+    } catch (error) {
+      console.error("Calendar Error:", error);
+      alert("เกิดข้อผิดพลาด หรือเซสชั่น Google หมดอายุ กรุณาล็อกอินใหม่อีกครั้งครับ");
+      return false;
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 pt-4 md:pt-12 pb-10 animate-in fade-in duration-700">
       
