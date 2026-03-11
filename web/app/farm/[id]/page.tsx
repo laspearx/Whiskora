@@ -31,7 +31,7 @@ export default function PublicFarmProfile() {
           .from('pets')
           .select('id, name, breed, image_url, gender, status, price')
           .eq('farm_id', farmId)
-          .in('status', ['พ่อแม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์', 'พร้อมย้าย', 'พร้อมย้ายบ้าน']);
+          .in('status', ['พ่อพันธุ์ / แม่พันธุ์', 'พร้อมย้ายบ้าน']);
           
         if (petsData) setPets(petsData);
 
