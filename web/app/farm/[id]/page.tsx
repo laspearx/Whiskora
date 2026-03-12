@@ -23,6 +23,7 @@ export default function PublicFarmProfile() {
     coat: '',
     ear: ''
   });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   useEffect(() => {
     const fetchFarmProfile = async () => {
@@ -36,12 +37,11 @@ export default function PublicFarmProfile() {
         if (farmError) throw farmError;
         setFarm(farmData);
 
-        // 🌟 ดึงข้อมูลสัตว์เลี้ยง พร้อมดึงลักษณะทางพันธุกรรมมาเผื่อทำฟิลเตอร์ด้วย
+        // 🌟 ดึงข้อมูลสัตว์เลี้ยง "ทุกตัว" ในฟาร์ม (เอา .in('status') ออกแล้ว)
         const { data: petsData } = await supabase
           .from('pets')
           .select('id, name, breed, image_url, gender, status, price, color, pattern, coat, ear')
-          .eq('farm_id', farmId)
-          .in('status', ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อแม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์', 'พร้อมย้ายบ้าน', 'พร้อมย้าย']);
+          .eq('farm_id', farmId);
           
         if (petsData) setPets(petsData);
 
@@ -60,14 +60,35 @@ export default function PublicFarmProfile() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังเปิดประตูฟาร์ม... 🏡</div>;
   if (!farm) return null;
 
-  // 🌟 สร้างตัวเลือกฟิลเตอร์อัตโนมัติจากข้อมูลน้องๆ ที่มีในฟาร์ม (ไม่ซ้ำกัน)
-  const uniqueBreeds = [...new Set(pets.map(p => p.breed).filter(Boolean))];
-  const uniqueColors = [...new Set(pets.map(p => p.color).filter(Boolean))];
-  const uniquePatterns = [...new Set(pets.map(p => p.pattern).filter(Boolean))];
-  const uniqueCoats = [...new Set(pets.map(p => p.coat).filter(Boolean))];
-  const uniqueEars = [...new Set(pets.map(p => p.ear).filter(Boolean))];
+  // 🌟 ฟังก์ชันอัจฉริยะ: คำนวณตัวเลือกฟิลเตอร์ที่ "มีอยู่จริง" ตามเงื่อนไขที่เลือกไว้
+  const getAvailableOptions = (field: keyof typeof filters) => {
+    const matchingPets = pets.filter(p => {
+      // เช็คว่าแมวตัวนี้ตรงกับฟิลเตอร์ "อื่นๆ" ที่กำลังเลือกอยู่ไหม (ยกเว้นตัวมันเอง)
+      return Object.keys(filters).every(key => {
+        const filterKey = key as keyof typeof filters;
+        if (filterKey === field) return true; // ข้ามฟิลด์ที่กำลังหาตัวเลือก
+        if (!filters[filterKey]) return true; // ถ้าไม่ได้เลือกฟิลเตอร์นี้ ให้ผ่าน
+        return p[filterKey] === filters[filterKey];
+      });
+    });
+    // ดึงค่าที่ไม่ซ้ำกันออกมา
+    return [...new Set(matchingPets.map(p => p[field]).filter(Boolean))];
+  };
 
-  // 🌟 ฟังก์ชันกรองสัตว์เลี้ยงตามฟิลเตอร์
+  // ดึงตัวเลือกที่แสดงได้จริง
+  const availableBreeds = getAvailableOptions('breed');
+  const availableGenders = getAvailableOptions('gender');
+  const availableColors = getAvailableOptions('color');
+  const availablePatterns = getAvailableOptions('pattern');
+  const availableCoats = getAvailableOptions('coat');
+  const availableEars = getAvailableOptions('ear');
+
+  // 🌟 ฟังก์ชันอัปเดตฟิลเตอร์ และล้างค่าลูกข่ายหากค่าที่เลือกไว้ไม่มีแล้ว
+  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // 🌟 ฟังก์ชันกรองสัตว์เลี้ยงตามฟิลเตอร์ทั้งหมด
   const filteredPets = pets.filter(pet => {
     if (filters.breed && pet.breed !== filters.breed) return false;
     if (filters.gender && pet.gender !== filters.gender) return false;
@@ -81,9 +102,11 @@ export default function PublicFarmProfile() {
   // 🌟 แยกหมวดหมู่หลังจากกรองแล้ว
   const readyToMovePets = filteredPets.filter(p => p.status === 'พร้อมย้ายบ้าน' || p.status === 'พร้อมย้าย');
   const breederPets = filteredPets.filter(p => p.status?.includes('พันธุ์'));
+  // แมวทั่วไป คือตัวที่ไม่ได้พร้อมย้าย และไม่ใช่พ่อแม่พันธุ์
+  const otherPets = filteredPets.filter(p => !p.status?.includes('พันธุ์') && p.status !== 'พร้อมย้ายบ้าน' && p.status !== 'พร้อมย้าย');
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 animate-in fade-in duration-700">
+    <div className="min-h-screen pb-20 animate-in fade-in duration-700">
       
       {/* 🌟 Header ปรับสัดส่วนให้สมูทขึ้น ไม่เทอะทะ */}
       <div className="h-32 md:h-48 bg-gradient-to-r from-pink-400 to-rose-400 relative">
@@ -95,7 +118,7 @@ export default function PublicFarmProfile() {
       <div className="max-w-5xl mx-auto px-4 sm:px-8 -mt-10 relative z-10">
         
         {/* กล่องโปรไฟล์ฟาร์ม */}
-        <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100 mb-8">
+        <div className="bg-white rounded-[2rem] p-5 md:p-8 shadow-sm border border-gray-100 mb-8">
           <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start text-center sm:text-left">
             <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center text-4xl shrink-0 -mt-10 sm:-mt-14 overflow-hidden">
                🏡
@@ -119,80 +142,100 @@ export default function PublicFarmProfile() {
           </div>
         </div>
 
-        {/* 🌟 ตัวกรอง (Filters) ให้เลือกค้นหาแบบละเอียด */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">🔍</span>
-            <h3 className="text-sm font-bold text-gray-700">ค้นหาสัตว์เลี้ยงในฟาร์ม</h3>
-          </div>
-          
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {/* กรองสายพันธุ์ */}
-            <select value={filters.breed} onChange={e => setFilters({...filters, breed: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[120px] cursor-pointer appearance-none">
-              <option value="">ทุกสายพันธุ์</option>
-              {uniqueBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
+        {/* 🌟 ตัวกรอง (Filters) อัจฉริยะ */}
+        <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 mb-8 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🔍</span>
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">ค้นหาสัตว์เลี้ยงในฟาร์ม</h3>
+                <p className="text-[10px] text-gray-400 font-medium">มีสมาชิกทั้งหมด {pets.length} ตัว</p>
+              </div>
+            </div>
 
-            {/* กรองเพศ */}
-            <select value={filters.gender} onChange={e => setFilters({...filters, gender: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[100px] cursor-pointer appearance-none">
-              <option value="">ทุกเพศ</option>
-              <option value="male">ตัวผู้ ♂️</option>
-              <option value="female">ตัวเมีย ♀️</option>
-            </select>
-
-            {/* กรองสี */}
-            <select value={filters.color} onChange={e => setFilters({...filters, color: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[100px] cursor-pointer appearance-none">
-              <option value="">ทุกสี</option>
-              {uniqueColors.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-
-            {/* กรองแพทเทิร์น */}
-            {uniquePatterns.length > 0 && (
-              <select value={filters.pattern} onChange={e => setFilters({...filters, pattern: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[120px] cursor-pointer appearance-none">
-                <option value="">ทุกลวดลาย</option>
-                {uniquePatterns.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            )}
-
-            {/* กรองขน */}
-            {uniqueCoats.length > 0 && (
-              <select value={filters.coat} onChange={e => setFilters({...filters, coat: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[120px] cursor-pointer appearance-none">
-                <option value="">ทุกความยาวขน</option>
-                {uniqueCoats.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            )}
-
-            {/* กรองหู */}
-            {uniqueEars.length > 0 && (
-              <select value={filters.ear} onChange={e => setFilters({...filters, ear: e.target.value})} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-2.5 outline-none focus:border-pink-300 min-w-[100px] cursor-pointer appearance-none">
-                <option value="">ทุกลักษณะหู</option>
-                {uniqueEars.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-            )}
-            
-            {/* ปุ่มเคลียร์ฟิลเตอร์ */}
-            {(filters.breed || filters.gender || filters.color || filters.pattern || filters.coat || filters.ear) && (
-              <button onClick={() => setFilters({breed: '', gender: '', color: '', pattern: '', coat: '', ear: ''})} className="bg-pink-100 text-pink-600 text-xs font-bold rounded-xl px-4 py-2.5 min-w-[100px]">
+            {/* ปุ่มเคลียร์ฟิลเตอร์ (โชว์เมื่อมีการเลือกฟิลเตอร์) */}
+            {Object.values(filters).some(val => val !== '') && (
+              <button 
+                onClick={() => setFilters({breed: '', gender: '', color: '', pattern: '', coat: '', ear: ''})} 
+                className="bg-gray-100 hover:bg-gray-200 text-gray-500 text-[10px] uppercase font-bold rounded-lg px-3 py-2 transition-all self-start md:self-auto"
+              >
                 ล้างตัวกรอง ✕
               </button>
             )}
           </div>
+          
+          {/* ตัวกรองพื้นฐาน */}
+          <div className="flex flex-wrap gap-3">
+            <select value={filters.breed} onChange={e => handleFilterChange('breed', e.target.value)} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-3 outline-none focus:border-pink-300 min-w-[140px] cursor-pointer appearance-none flex-1 md:flex-none">
+              <option value="">ทุกสายพันธุ์</option>
+              {availableBreeds.map(b => <option key={b as string} value={b as string}>{b as string}</option>)}
+            </select>
+
+            <select value={filters.gender} onChange={e => handleFilterChange('gender', e.target.value)} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-3 outline-none focus:border-pink-300 min-w-[120px] cursor-pointer appearance-none flex-1 md:flex-none">
+              <option value="">ทุกเพศ</option>
+              {availableGenders.includes('male') && <option value="male">ตัวผู้ ♂️</option>}
+              {availableGenders.includes('female') && <option value="female">ตัวเมีย ♀️</option>}
+            </select>
+
+            {/* ปุ่มเปิด/ปิด ตัวกรองขั้นสูง */}
+            <button 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`text-xs font-bold rounded-xl px-4 py-3 transition-all flex items-center gap-2 border w-full md:w-auto justify-center ${showAdvancedFilters ? 'bg-pink-50 text-pink-600 border-pink-200' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+            >
+              🧬 {showAdvancedFilters ? 'ซ่อนตัวกรองละเอียด' : 'กรองละเอียด (พันธุกรรม)'}
+              <svg className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+          </div>
+
+          {/* ตัวกรองขั้นสูง (พันธุกรรม) */}
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-gray-50 animate-in slide-in-from-top-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 ml-1">สี (Color)</label>
+                <select value={filters.color} onChange={e => handleFilterChange('color', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
+                  <option value="">ทั้งหมด</option>
+                  {availableColors.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 ml-1">ลวดลาย (Pattern)</label>
+                <select value={filters.pattern} onChange={e => handleFilterChange('pattern', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
+                  <option value="">ทั้งหมด</option>
+                  {availablePatterns.map(p => <option key={p as string} value={p as string}>{p as string}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 ml-1">ความยาวขน (Coat)</label>
+                <select value={filters.coat} onChange={e => handleFilterChange('coat', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
+                  <option value="">ทั้งหมด</option>
+                  {availableCoats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 ml-1">ลักษณะหู (Ear)</label>
+                <select value={filters.ear} onChange={e => handleFilterChange('ear', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
+                  <option value="">ทั้งหมด</option>
+                  {availableEars.map(e => <option key={e as string} value={e as string}>{e as string}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {filteredPets.length === 0 ? (
-           <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 mt-6">
-             <div className="text-4xl mb-3">🔍</div>
+           <div className="bg-white rounded-[2rem] p-10 text-center border border-gray-100 mt-6 shadow-sm">
+             <div className="text-4xl mb-3 opacity-50">🔍</div>
              <h3 className="text-gray-800 font-bold">ไม่พบน้องๆ ที่ตรงกับเงื่อนไขค้นหา</h3>
-             <p className="text-gray-400 text-xs mt-1">ลองปรับตัวกรองค้นหาใหม่อีกครั้งนะครับ</p>
+             <p className="text-gray-400 text-xs mt-1">ลองล้างตัวกรอง แล้วค้นหาใหม่อีกครั้งนะครับ</p>
            </div>
         ) : (
           <div className="space-y-10">
             
-            {/* 🌟 โซนที่ 1: สัตว์เลี้ยงพร้อมย้ายบ้าน (เอาขึ้นก่อน เพราะสำคัญต่อการขาย) */}
+            {/* 🌟 โซนที่ 1: สัตว์เลี้ยงพร้อมย้ายบ้าน */}
             {readyToMovePets.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-4 bg-pink-50/30 p-4 md:p-6 rounded-[2rem] border border-pink-50">
                 <div className="flex items-center gap-2 px-2">
-                  <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-500">🏠</div>
+                  <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 shadow-sm border border-pink-200">🏠</div>
                   <h2 className="text-lg font-black text-gray-800 tracking-tight">เด็กๆ พร้อมย้ายบ้าน ({readyToMovePets.length})</h2>
                 </div>
                 
@@ -224,11 +267,11 @@ export default function PublicFarmProfile() {
               </div>
             )}
 
-            {/* 🌟 โซนที่ 2: พ่อแม่พันธุ์ (โชว์ความสวยงามเฉยๆ ไม่มีราคา) */}
+            {/* 🌟 โซนที่ 2: พ่อแม่พันธุ์ */}
             {breederPets.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 px-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">👑</div>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 shadow-sm border border-blue-200">👑</div>
                   <h2 className="text-lg font-black text-gray-800 tracking-tight">พ่อแม่พันธุ์ประจำฟาร์ม ({breederPets.length})</h2>
                 </div>
                 
@@ -254,6 +297,32 @@ export default function PublicFarmProfile() {
                           </p>
                         </div>
                       </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 🌟 โซนที่ 3: สมาชิกอื่นๆ ในบ้าน (ตัวที่ไม่ได้ตั้งสถานะพิเศษ) */}
+            {otherPets.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm border border-gray-300">🐾</div>
+                  <h2 className="text-lg font-black text-gray-800 tracking-tight">สมาชิกอื่นๆ ในฟาร์ม ({otherPets.length})</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {otherPets.map(pet => (
+                    <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-[1.5rem] p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-gray-300 hover:shadow-md transition-all group">
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-50 mb-3 group-hover:scale-105 transition-transform border border-gray-100">
+                        {pet.image_url ? (
+                          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-sm">{pet.name}</h3>
+                      <p className="text-[10px] font-bold text-gray-400 mt-0.5 truncate w-full">{pet.breed || 'ไม่ระบุสายพันธุ์'}</p>
                     </Link>
                   ))}
                 </div>
