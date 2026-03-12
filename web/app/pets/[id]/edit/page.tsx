@@ -39,14 +39,8 @@ const PET_DATA = {
   ]
 };
 
-// 🎨 ข้อมูลสี
+// 🎨 ข้อมูลสีเบื้องต้น (สำหรับหมาและสัตว์อื่นๆ)
 const COLOR_DATA = {
-  cat: [
-    "ขาว (White)", "ดำ (Black)", "เทา / บลู (Grey / Blue)", "ส้ม / แดง (Orange / Red)",
-    "ครีม (Cream)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ไลแลค / เทาอมม่วง (Lilac / Lavender)",
-    "สามสี (Calico)", "สีเปรอะ (Tortoiseshell / Tortie)", "สองสี / ลายวัว (Bicolor / Tuxedo)",
-    "สีพ้อยท์ / ลายแต้ม (Colorpoint)", "ลายสลิด / ลายเสือ (Tabby)", "อื่นๆ"
-  ],
   dog: [
     "ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)",
     "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)",
@@ -85,7 +79,7 @@ export default function EditPetPage() {
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
 
-  // 🌟 ข้อมูลฟาร์มและพันธุกรรม (สร้าง State มารับ)
+  // 🌟 ข้อมูลฟาร์มและพันธุกรรม
   const [status, setStatus] = useState("");
   const [price, setPrice] = useState<number | string>("");
   const [pattern, setPattern] = useState("");
@@ -125,14 +119,12 @@ export default function EditPetPage() {
         return;
       }
 
-      // เซ็ตข้อมูลพื้นฐาน
       setName(data.name || "");
       setGender(data.gender || "male");
       setBirthdate(data.birth_date || data.birthdate || "");
       setAllergies(data.allergies || "");
       setTraits(data.traits || "");
 
-      // 🌟 เซ็ตข้อมูลฟาร์มและพันธุกรรม (ดึงจากฐานข้อมูลมาชาร์จลงตัวแปร)
       setStatus(data.status || "");
       setPrice(data.price || "");
       setPattern(data.pattern || "");
@@ -171,11 +163,11 @@ export default function EditPetPage() {
       }
 
       const petColor = data.color || "";
-      if (COLOR_DATA[currentSpecies].includes(petColor)) {
+      if (currentSpecies !== "cat" && COLOR_DATA[currentSpecies]?.includes(petColor)) {
         setColor(petColor);
       } else if (petColor) {
-        setColor("อื่นๆ");
-        setCustomColor(petColor);
+        // แมว หรือสีที่ไม่ตรงในลิสต์ จะมาตกตรงนี้
+        setColor(petColor);
       }
 
       setIsFetching(false);
@@ -270,8 +262,6 @@ export default function EditPetPage() {
       image_url: avatarUrl,
       allergies: allergies || null,
       traits: traits || null,
-      
-      // 🌟 บันทึกข้อมูลฟาร์มและพันธุกรรมเข้า Database
       status: status || null,
       price: price === "" ? null : Number(price),
       pattern: pattern || null,
@@ -307,7 +297,6 @@ export default function EditPetPage() {
       if (error) throw error;
 
       alert(`🗑️ ลบประวัติ ${name} ออกจากระบบเรียบร้อยแล้วครับ!`);
-      // กลับไปหน้าก่อนหน้า (ปลอดภัยกว่า)
       router.back(); 
     } catch (error: any) {
       alert("เกิดข้อผิดพลาดในการลบ: " + error.message);
@@ -367,9 +356,6 @@ export default function EditPetPage() {
               
               <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} onClick={(e) => (e.currentTarget.value = "")} className="hidden" />
             </div>
-            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest text-center">
-              {originalImageSrc ? "แตะรูปเพื่อปรับตำแหน่งใหม่" : "แตะเพื่อเลือกรูปภาพ"}
-            </p>
           </div>
 
           <div className="space-y-6">
@@ -403,10 +389,8 @@ export default function EditPetPage() {
               </div>
             </div>
 
-            {/* ส่วนเลือกสายพันธุ์ และ สี */}
+            {/* สายพันธุ์ */}
             <div className="bg-gray-50/50 rounded-[2rem] p-5 md:p-6 space-y-5 border border-gray-100">
-              
-              {/* สายพันธุ์ / ประเภทสัตว์แปลก */}
               {species === 'other' ? (
                 <div className="space-y-3">
                   <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider italic">โปรดเลือกประเภทสัตว์อื่นๆ</label>
@@ -442,32 +426,32 @@ export default function EditPetPage() {
                 </div>
               )}
 
-              {/* กรณีพิมพ์เอง */}
               {(breed === "อื่นๆ" || (species === 'other' && otherPetText === "สัตว์แปลกอื่นๆ")) && (
                 <input type="text" value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="ระบุสายพันธุ์เพิ่มเติม..." />
               )}
 
-              <hr className="border-gray-100" />
-
-              {/* เลือกสี */}
-              <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี (Color)</label>
-                <div className="relative">
-                  <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
-                    <option value="" disabled>เลือกสีจากรายการ...</option>
-                    {COLOR_DATA[species].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              {/* 🌟 เลือกสี (โชว์เฉพาะหมาและสัตว์อื่น ส่วนแมวจะย้ายไปอยู่หมวดพันธุกรรมด้านล่าง) */}
+              {species !== 'cat' && (
+                <>
+                  <hr className="border-gray-100" />
+                  <div className="space-y-2">
+                    <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี (Color)</label>
+                    <div className="relative">
+                      <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                        <option value="" disabled>เลือกสีจากรายการ...</option>
+                        {COLOR_DATA[species as 'dog' | 'other']?.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* กรณีพิมพ์สีเอง */}
-              {color === "อื่นๆ" && (
-                <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง (แนะนำใส่ภาษาอังกฤษต่อท้าย เช่น ขาวดำ (Black & White))..." />
+                  {color === "อื่นๆ" && (
+                    <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง..." />
+                  )}
+                </>
               )}
             </div>
 
@@ -481,21 +465,17 @@ export default function EditPetPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">
-                  วันเกิด
-                </label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    value={birthdate} 
-                    onChange={(e) => setBirthdate(e.target.value)} 
-                    className="w-full h-[42px] md:h-[48px] px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 md:text-sm font-medium text-gray-700 appearance-none block min-w-0" 
-                  />
-                </div>
+                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">วันเกิด</label>
+                <input 
+                  type="date" 
+                  value={birthdate} 
+                  onChange={(e) => setBirthdate(e.target.value)} 
+                  className="w-full h-[42px] md:h-[48px] px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 md:text-sm font-medium text-gray-700 appearance-none block min-w-0" 
+                />
               </div>
             </div>
 
-            {/* สิ่งที่แพ้ และ นิสัยส่วนตัว */}
+            {/* สิ่งที่แพ้ และ นิสัย */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">สิ่งที่แพ้ <span className="text-gray-300 font-normal">(ถ้ามี)</span></label>
@@ -507,7 +487,7 @@ export default function EditPetPage() {
               </div>
             </div>
 
-            {/* 🌟🌟 ส่วนข้อมูลฟาร์มและพันธุกรรม (สร้างใหม่) 🌟🌟 */}
+            {/* 🌟🌟 ข้อมูลฟาร์มและพันธุกรรม 🌟🌟 */}
             <div className="space-y-5 pt-6 border-t border-gray-100">
               <div className="flex items-center gap-2 mb-2">
                 <span className="bg-pink-100 text-pink-600 px-2 py-1 rounded text-xs">👑</span>
@@ -520,12 +500,9 @@ export default function EditPetPage() {
                   <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">สถานะในฟาร์ม</label>
                   <div className="relative">
                     <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm font-bold text-gray-700 appearance-none">
-                      <option value="" disabled>เลือกประเภท</option>
+                      <option value="">เด็กในบ้าน (ทั่วไป)</option>
                       <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อพันธุ์ / แม่พันธุ์</option>
-                      <option value="เด็ก">เด็ก</option>               
                       <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
-                      <option value="ติดจอง">ติดจอง</option>  
-                      <option value="ทำหมัน / ปลดระวาง">ทำหมัน / ปลดระวาง</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                       <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
@@ -541,36 +518,110 @@ export default function EditPetPage() {
                 )}
               </div>
 
-              {/* ลักษณะพันธุกรรม */}
-              <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลวดลาย (Pattern)</label>
-                  <input type="text" value={pattern} onChange={(e) => setPattern(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น Bicolor, Solid" />
-                </div>
+              {/* 🧬 ลักษณะพันธุกรรม (Traits) */}
+              <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 space-y-4">
+                <h3 className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-2">
+                  🧬 ลักษณะทางพันธุกรรม (Traits)
+                </h3>
                 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ความยาวขน (Coat)</label>
-                  <input type="text" value={coat} onChange={(e) => setCoat(e.target.value)} list="coat-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ขนสั้น, ขนยาว" />
-                  <datalist id="coat-list"><option value="ขนสั้น (Shorthair)"/><option value="ขนกึ่งยาว (Semi-longhair)"/><option value="ขนยาว (Longhair)"/><option value="ไร้ขน (Hairless)"/></datalist>
-                </div>
+                {species === 'cat' ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">สี (Color)</label>
+                        <div className="relative">
+                          <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกสี...</option>
+                            <option>Black</option><option>Black White</option><option>Black Tortie</option><option>Black Tortie White</option>
+                            <option>Blue</option><option>Blue White</option><option>Blue Tortie</option><option>Blue Tortie White</option>
+                            <option>Chocolate</option><option>Chocolate White</option><option>Chocolate Tortie</option><option>Chocolate Tortie White</option>
+                            <option>Cinnamon</option><option>Cinnamon White</option><option>Cinnamon Tortie</option><option>Cinnamon Tortie White</option>
+                            <option>Cream</option><option>Cream White</option><option>Cream Tortie</option><option>Cream Tortie White</option>
+                            <option>Fawn</option><option>Fawn White</option><option>Fawn Tortie</option><option>Fawn Tortie White</option>
+                            <option>Golden</option><option>Lilac</option><option>Lilac White</option><option>Lilac Tortie</option><option>Lilac Tortie White</option>
+                            <option>Red</option><option>Red White</option><option>Silver</option><option>White</option>
+                            <option value="อื่นๆ">อื่นๆ (พิมพ์ระบุเอง)</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                        {color === "อื่นๆ" && (
+                          <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full mt-2 px-4 py-3 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง..." />
+                        )}
+                      </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลักษณะหู (Ear)</label>
-                  <input type="text" value={ear} onChange={(e) => setEar(e.target.value)} list="ear-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น หูตั้ง, หูพับ" />
-                  <datalist id="ear-list"><option value="หูตั้ง (Straight)"/><option value="หูพับ (Fold)"/><option value="หูม้วน (Curl)"/></datalist>
-                </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">แพทเทิร์น (Pattern)</label>
+                        <div className="relative">
+                          <select value={pattern} onChange={(e) => setPattern(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกแพทเทิร์น...</option>
+                            <option>Solid</option><option>Bicolour</option><option>Van</option><option>Harlequin</option>
+                            <option>Classic Tabby</option><option>Mackerel Tabby</option><option>Spotted Tabby</option>
+                            <option>Ticked Tabby</option><option>Shaded</option><option>Shell</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลักษณะขา (Leg)</label>
-                  <input type="text" value={leg} onChange={(e) => setLeg(e.target.value)} list="leg-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ขาปกติ, ขาสั้น" />
-                  <datalist id="leg-list"><option value="ขาปกติ (Standard)"/><option value="ขาสั้น (Munchkin)"/><option value="ขาสั้นมาก (Rug Hugger)"/></datalist>
-                </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">ขน (Coat)</label>
+                        <div className="relative">
+                          <select value={coat} onChange={(e) => setCoat(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกขน...</option>
+                            <option>Shorthair</option><option>Longhair</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                      </div>
 
-                <div className="space-y-1.5 col-span-2 md:col-span-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">สีตา (Eye Color)</label>
-                  <input type="text" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} list="eye-list" className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ฟ้า, สองสี" />
-                  <datalist id="eye-list"><option value="ฟ้า (Blue)"/><option value="เหลือง / ทอง (Gold/Yellow)"/><option value="เขียว (Green)"/><option value="สองสี (Odd-eyed)"/><option value="ทองแดง (Copper)"/></datalist>
-                </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">หู (Ear)</label>
+                        <div className="relative">
+                          <select value={ear} onChange={(e) => setEar(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกหู...</option>
+                            <option>Straight</option><option>Fold</option><option>Curl</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">ขา (Leg)</label>
+                        <div className="relative">
+                          <select value={leg} onChange={(e) => setLeg(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกขา...</option>
+                            <option>Long Leg</option><option>Short Leg</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-wider">สีตา (Eye)</label>
+                        <div className="relative">
+                          <select value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
+                            <option value="">เลือกสีตา...</option>
+                            <option>Orange</option><option>Blue</option><option>Green</option><option>Yellow</option><option>Odd Eyed</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* สำหรับหมาและสัตว์อื่นๆ ให้เป็นช่องพิมพ์ปกติเผื่อไว้ครับ */
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">ลวดลาย (Pattern)</label>
+                      <input type="text" value={pattern} onChange={(e) => setPattern(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ลายจุด, ทักซิโด้" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">สีตา (Eye Color)</label>
+                      <input type="text" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-300 text-xs font-medium text-gray-700 shadow-sm" placeholder="เช่น ดำ, น้ำตาล" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
