@@ -65,7 +65,7 @@ export default function PublicPetProfilePage() {
   const isBreeder = pet.status === 'พ่อพันธุ์ / แม่พันธุ์' || pet.status === 'พ่อแม่พันธุ์' || pet.status === 'พ่อพันธุ์' || pet.status === 'แม่พันธุ์';
 
   return (
-    <div className="max-w-md mx-auto px-4 pt-8 pb-20 animate-in fade-in duration-700 space-y-6 bg-gray-50 min-h-screen">
+    <div className="max-w-md mx-auto px-4 pt-8 pb-20 animate-in fade-in duration-700 space-y-6 min-h-screen">
       
       {/* 🌟 ส่วน Header (รูปภาพและชื่อ) */}
       <div className="flex flex-col items-center text-center pt-4 pb-2 relative">
@@ -249,8 +249,8 @@ export default function PublicPetProfilePage() {
       )}
 
       {/* Banner */}
-      <div className="pt-6 pb-4 text-center">
-        <Link href="/" className="inline-block text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-pink-500 transition">
+      <div className="pt-4 text-center pb-8 border-t border-gray-100">
+        <Link href="/" className="mt-3 bg-pink-100 text-pink-600 text-xs font-bold px-4 py-1.5 rounded-full hover:bg-pink-200 hover:text-pink-600">
           สร้างบัตรประจำตัวสัตว์เลี้ยงฟรี ที่ Whiskora 🐾
         </Link>
       </div>
