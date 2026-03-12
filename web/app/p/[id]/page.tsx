@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function PublicPetProfilePage() {
+  const router = useRouter();
   const params = useParams();
   const petId = params.id as string;
 
@@ -17,7 +18,7 @@ export default function PublicPetProfilePage() {
   useEffect(() => {
     const fetchPublicData = async () => {
       try {
-        // 1. ดึงข้อมูลสัตว์เลี้ยง
+        // 1. ดึงข้อมูลสัตว์เลี้ยง (เพิ่ม vaccine_status มาด้วย)
         const { data: petData, error: petError } = await supabase
           .from("pets")
           .select("*")
@@ -65,8 +66,15 @@ export default function PublicPetProfilePage() {
   const isBreeder = pet.status === 'พ่อพันธุ์ / แม่พันธุ์' || pet.status === 'พ่อแม่พันธุ์' || pet.status === 'พ่อพันธุ์' || pet.status === 'แม่พันธุ์';
 
   return (
-    <div className="max-w-md mx-auto px-4 pt-4 pb-20 animate-in fade-in duration-700 space-y-4 min-h-screen">
+    <div className="max-w-md mx-auto px-4 pt-4 pb-20 animate-in fade-in duration-700 space-y-4 min-h-screen bg-gray-50">
       
+      {/* 🌟 ปุ่มย้อนกลับ */}
+      <div className="relative z-10">
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white shadow-sm hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition border border-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+      </div>
+
       {/* 🌟 ส่วน Header (รูปภาพและชื่อ) */}
       <div className="flex flex-col items-center text-center relative pt-2">
         <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 relative">
@@ -106,10 +114,40 @@ export default function PublicPetProfilePage() {
         </div>
       </div>
 
-      {/* 🌟 ข้อมูลสัตว์เลี้ยง และ พันธุกรรม (รวมกล่องเดียวกัน) */}
+      {/* 🌟 ส่วนราคาและปุ่มติดต่อ (ย้ายมาไว้ใต้รูปเลย) */}
+      {isFarmPet && isReadyToMove && (
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-pink-100 space-y-4">
+          <div className="flex items-center justify-between bg-pink-50 p-3.5 rounded-2xl">
+            <div>
+              <p className="text-[10px] font-bold text-pink-400 uppercase tracking-widest mb-0.5">ค่าตัว / สินสอด</p>
+              <p className="text-[10px] text-pink-500/80 font-medium leading-tight">สนใจรับน้อง<br/>ติดต่อฟาร์มได้เลย</p>
+            </div>
+            <p className="text-2xl font-black text-pink-600">
+              {pet.price ? `฿${pet.price.toLocaleString()}` : 'ทักแชท'}
+            </p>
+          </div>
+
+          <button 
+            onClick={() => alert(`ติดต่อฟาร์ม ${farm?.farm_name || ''} เบอร์: ${farm?.phone || '-'}`)}
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-pink-200 active:scale-95 flex items-center justify-center gap-2 text-sm"
+          >
+            🛒 สนใจรับเลี้ยง (ติดต่อฟาร์ม)
+          </button>
+        </div>
+      )}
+
+      {/* ถ้าเป็นพ่อแม่พันธุ์ โชว์ข้อความนี้แทน */}
+      {isFarmPet && isBreeder && (
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-center">
+          <div className="bg-gray-50 p-3 rounded-2xl">
+            <p className="text-xs font-bold text-gray-600">👑 พ่อแม่พันธุ์ประจำฟาร์ม</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">น้องไม่ได้เปิดสินสอดให้รับเลี้ยงครับ</p>
+          </div>
+        </div>
+      )}
+
+      {/* 🌟 ข้อมูลสัตว์เลี้ยง และ พันธุกรรม */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
-        
-        {/* หัวข้อข้อมูลส่วนตัว */}
         <h2 className="font-bold text-gray-800 border-b border-gray-50 pb-2 flex items-center gap-2 text-sm">
           <span className="text-lg">📋</span> ข้อมูลส่วนตัว
         </h2>
@@ -177,43 +215,30 @@ export default function PublicPetProfilePage() {
         </div>
       </div>
 
-      {/* 🌟 ข้อมูลการติดต่อ และ ราคา */}
-      {isFarmPet ? (
-        // 🏡 สำหรับสัตว์เลี้ยงฟาร์ม
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-pink-100 space-y-4">
-          
-          {/* ส่วนของราคา (โชว์เฉพาะพร้อมย้าย) */}
-          {isReadyToMove ? (
-            <div className="flex items-center justify-between bg-pink-50 p-3.5 rounded-2xl">
-              <div>
-                <p className="text-[10px] font-bold text-pink-400 uppercase tracking-widest mb-0.5">ค่าตัว / สินสอด</p>
-                <p className="text-[10px] text-pink-500/80 font-medium leading-tight">สนใจรับน้อง<br/>ติดต่อฟาร์มได้เลย</p>
-              </div>
-              <p className="text-2xl font-black text-pink-600">
-                {pet.price ? `฿${pet.price.toLocaleString()}` : 'ทักแชท'}
-              </p>
-            </div>
-          ) : (
-            // ถ้าเป็นพ่อแม่พันธุ์ โชว์ข้อความนี้แทน
-            <div className="text-center bg-gray-50 p-3 rounded-2xl">
-              <p className="text-xs font-bold text-gray-600">👑 พ่อแม่พันธุ์ประจำฟาร์ม</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">น้องไม่ได้เปิดสินสอดให้รับเลี้ยง</p>
-            </div>
-          )}
-
-          {/* ปุ่มติดต่อ (โชว์เฉพาะพร้อมย้าย) */}
-          {isReadyToMove && (
-            <button 
-              onClick={() => alert(`ติดต่อฟาร์ม ${farm?.farm_name || ''} เบอร์: ${farm?.phone || '-'}`)}
-              className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-pink-200 active:scale-95 flex items-center justify-center gap-2 text-sm"
-            >
-              🛒 สนใจรับเลี้ยง (ติดต่อฟาร์ม)
-            </button>
-          )}
+      {/* 🌟 ประวัติวัคซีน (Health Book) โชว์เหมือนการ์ดคนทั่วไป */}
+      <div className="bg-white rounded-3xl p-5 shadow-sm border border-green-100 space-y-4">
+        <h2 className="font-bold text-gray-800 border-b border-gray-50 pb-2 flex items-center gap-2 text-sm">
+          <span className="text-lg">🏥</span> สมุดสุขภาพ
+        </h2>
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 ${
+            pet.vaccine_status === 'ฉีดวัคซีนครบแล้ว' ? 'bg-green-100 text-green-500' : 'bg-orange-100 text-orange-500'
+          }`}>
+            {pet.vaccine_status === 'ฉีดวัคซีนครบแล้ว' ? '💉' : '⚠️'}
+          </div>
+          <div>
+            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">สถานะวัคซีน</p>
+            <p className={`text-sm font-bold mt-0.5 ${
+              pet.vaccine_status === 'ฉีดวัคซีนครบแล้ว' ? 'text-green-600' : 'text-orange-600'
+            }`}>
+              {pet.vaccine_status || 'รอการตรวจสอบ'}
+            </p>
+          </div>
         </div>
-        
-      ) : (
-        // 👤 สำหรับสัตว์เลี้ยงทั่วไป (ไม่ใช่ฟาร์ม)
+      </div>
+
+      {/* 🌟 ข้อมูลเจ้าของ (โชว์เฉพาะสัตว์เลี้ยงทั่วไป ที่ไม่ใช่ฟาร์ม) */}
+      {!isFarmPet && (
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-3">
           <h2 className="font-bold text-gray-800 border-b border-gray-50 pb-2 flex items-center gap-2 text-sm">
             <span className="text-lg">👤</span> ข้อมูลเจ้าของ
