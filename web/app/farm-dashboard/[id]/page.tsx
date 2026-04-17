@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import { farmService } from "@/services/farm.service";
+import { petService } from "@/services/pet.service";
+import type { Farm, Litter, PetStats } from "@/types";
 
 // 🌟 แยกส่วน Content ออกมาเพื่อให้ใช้ useSearchParams ได้อย่างปลอดภัย
 function FarmDashboardContent() {
@@ -11,15 +14,16 @@ function FarmDashboardContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const farmId = params.id as string;
-  
-  // 🌟 ดึงค่าจาก URL ว่าเรามาจากหน้าไหน (profile หรือ partner)
-  const fromPage = searchParams.get("from") || "profile"; 
+  const { user, loading: authLoading } = useAuth();
 
-  const [farm, setFarm] = useState<any>(null);
-  const [petStats, setPetStats] = useState({ breeders: 0, kids: 0, ready: 0, retired: 0, booked: 0 });
+  // 🌟 ดึงค่าจาก URL ว่าเรามาจากหน้าไหน (profile หรือ partner)
+  const fromPage = searchParams.get("from") || "profile";
+
+  const [farm, setFarm] = useState<Farm | null>(null);
+  const [petStats, setPetStats] = useState<PetStats>({ breeders: 0, kids: 0, ready: 0, retired: 0, booked: 0 });
   const [financeStats, setFinanceStats] = useState({ income: 0, expense: 0, profit: 0 });
-  const [activeLitters, setActiveLitters] = useState<any[]>([]);
-  const [allLitters, setAllLitters] = useState<any[]>([]);
+  const [activeLitters, setActiveLitters] = useState<Litter[]>([]);
+  const [allLitters, setAllLitters] = useState<Litter[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 🌟 ฟังก์ชันย้อนกลับ
@@ -32,68 +36,26 @@ function FarmDashboardContent() {
   };
 
   useEffect(() => {
+    if (authLoading || !user || !farmId) return;
     const fetchDashboardData = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push("/login");
-
-        const { data: farmData } = await supabase
-          .from("farms")
-          .select("*")
-          .eq("id", farmId)
-          .eq("user_id", session.user.id)
-          .single();
-
+        const farmData = await farmService.getFarmByIdForUser(farmId, user.id);
         if (!farmData) {
           alert("ไม่พบข้อมูลฟาร์ม");
           return router.push("/partner");
         }
         setFarm(farmData);
 
-        const { data: petsData } = await supabase
-          .from("pets")
-          .select("status")
-          .eq("farm_id", farmId);
+        const [stats, transactions, litters] = await Promise.all([
+          petService.getPetStatsByFarm(farmId),
+          farmService.getTransactionsByFarm(farmId),
+          farmService.getLittersByFarm(farmId),
+        ]);
 
-        if (petsData) {
-          const stats = { breeders: 0, kids: 0, ready: 0, retired: 0, booked: 0 };
-          petsData.forEach(pet => {
-            if (pet.status === "พ่อพันธุ์ / แม่พันธุ์") stats.breeders++;
-            else if (pet.status === "เด็ก") stats.kids++;
-            else if (pet.status === "พร้อมย้ายบ้าน") stats.ready++;
-            else if (pet.status === "ทำหมัน / ปลดระวาง") stats.retired++;
-            else if (pet.status === "ติดจอง") stats.booked++;
-          });
-          setPetStats(stats);
-        }
-
-        const { data: txData } = await supabase
-          .from("farm_transactions")
-          .select("transaction_type, amount")
-          .eq("farm_id", farmId);
-
-        if (txData) {
-          let totalIncome = 0;
-          let totalExpense = 0;
-          txData.forEach(tx => {
-            if (tx.transaction_type === "income") totalIncome += Number(tx.amount);
-            else if (tx.transaction_type === "expense") totalExpense += Number(tx.amount);
-          });
-          setFinanceStats({ income: totalIncome, expense: totalExpense, profit: totalIncome - totalExpense });
-        }
-
-        // ดึงครอกทั้งหมด
-        const { data: littersData } = await supabase
-          .from("litters")
-          .select(`*, sire:pets!sire_id(name, image_url), dam:pets!dam_id(name, image_url)`)
-          .eq("farm_id", farmId)
-          .order("mating_date", { ascending: false });
-          
-        if (littersData) {
-          setAllLitters(littersData);
-          setActiveLitters(littersData.filter(l => l.status === "รอคลอด"));
-        }
-
+        setPetStats(stats);
+        setFinanceStats(farmService.calcFinanceStats(transactions));
+        setAllLitters(litters);
+        setActiveLitters(litters.filter(l => l.status === "รอคลอด"));
       } catch (error) {
         console.error("Error loading dashboard:", error);
       } finally {
@@ -101,10 +63,11 @@ function FarmDashboardContent() {
       }
     };
 
-    if (farmId) fetchDashboardData();
-  }, [farmId, router]);
+    fetchDashboardData();
+  }, [farmId, user, authLoading, router]);
 
-  const calculatePregnancyProgress = (matingDate: string, expectedDate: string) => {
+  const calculatePregnancyProgress = (matingDate: string | null, expectedDate: string | null) => {
+    if (!matingDate || !expectedDate) return 0;
     const start = new Date(matingDate).getTime();
     const end = new Date(expectedDate).getTime();
     const today = new Date().getTime();
@@ -113,12 +76,13 @@ function FarmDashboardContent() {
     return Math.round(((today - start) / (end - start)) * 100);
   };
 
-  const calculateDaysLeft = (expectedDate: string) => {
+  const calculateDaysLeft = (expectedDate: string | null) => {
+    if (!expectedDate) return '-';
     const diffDays = Math.ceil((new Date(expectedDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? `เหลืออีก ${diffDays} วัน` : "ถึงกำหนดแล้ว!";
   };
 
-  if (loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดแดชบอร์ด... ⏳</div>;
+  if (authLoading || loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดแดชบอร์ด... ⏳</div>;
   if (!farm) return null;
 
   return (
@@ -267,8 +231,8 @@ function FarmDashboardContent() {
                   <div className="w-full mb-5">
                     <div className="flex justify-between items-end mb-2 text-xs font-bold text-gray-500">
                       <div>
-                        <p>บรีดเมื่อ : <span className="text-gray-700">{new Date(litter.mating_date).toLocaleDateString('th-TH')}</span></p>
-                        <p className="mt-0.5">กำหนดคลอด : <span className="text-pink-500">{new Date(litter.expected_birth_date).toLocaleDateString('th-TH')}</span></p>
+                        <p>บรีดเมื่อ : <span className="text-gray-700">{litter.mating_date ? new Date(litter.mating_date).toLocaleDateString('th-TH') : '-'}</span></p>
+                        <p className="mt-0.5">กำหนดคลอด : <span className="text-pink-500">{litter.expected_birth_date ? new Date(litter.expected_birth_date).toLocaleDateString('th-TH') : '-'}</span></p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-gray-400">สถานะบรีด {progress}%</p>

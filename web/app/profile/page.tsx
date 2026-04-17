@@ -1,23 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import { profileService } from "@/services/profile.service";
+import type { Profile, Farm, Shop, Service, Pet, Appointment } from "@/types";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [pets, setPets] = useState<any[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [myFarms, setMyFarms] = useState<any[]>([]);
-  const [myShops, setMyShops] = useState<any[]>([]);
-  const [myServices, setMyServices] = useState<any[]>([]);
+  const [myFarms, setMyFarms] = useState<Farm[]>([]);
+  const [myShops, setMyShops] = useState<Shop[]>([]);
+  const [myServices, setMyServices] = useState<Service[]>([]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // 🗓️ 🌟 ประกาศตัวแปรคำนวณปฏิทิน
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -31,36 +33,17 @@ export default function ProfilePage() {
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
   useEffect(() => {
+    if (authLoading || !user) return;
     const fetchUserData = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push("/login");
-        setUser(session.user);
-        const uid = session.user.id;
-
-        const [profileRes, farmRes, shopRes, serviceRes, petsRes] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-          supabase.from("farms").select("*").eq("user_id", uid),
-          supabase.from("shops").select("*").eq("user_id", uid),
-          supabase.from("services").select("*").eq("user_id", uid),
-          supabase.from("pets").select("*").eq("user_id", uid)
-        ]);
-
-        if (profileRes.data) setProfile(profileRes.data);
-        if (farmRes.data) setMyFarms(farmRes.data);
-        if (shopRes.data) setMyShops(shopRes.data);
-        if (serviceRes.data) setMyServices(serviceRes.data);
-        if (petsRes.data) setPets(petsRes.data);
-
-        if (petsRes.data && petsRes.data.length > 0) {
-          const petIds = petsRes.data.map((p: any) => p.id);
-          const { data: vacData } = await supabase
-            .from("vaccines")
-            .select("next_due, vaccine_name, pet_id") 
-            .in("pet_id", petIds)
-            .not("next_due", "is", null);
-          if (vacData) setAppointments(vacData);
-        }
+        const { profile, farms, shops, services, pets } = await profileService.getDashboardData(user.id);
+        setProfile(profile);
+        setMyFarms(farms);
+        setMyShops(shops);
+        setMyServices(services);
+        setPets(pets);
+        const appts = await profileService.getAppointments(pets.map(p => p.id));
+        setAppointments(appts);
       } catch (error) {
         console.error("Fetch Error:", error);
       } finally {
@@ -68,9 +51,9 @@ export default function ProfilePage() {
       }
     };
     fetchUserData();
-  }, [router]);
+  }, [user, authLoading]);
 
-  if (loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">🐾 WHISKORA...</div>;
+  if (authLoading || loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">🐾 WHISKORA...</div>;
 
   // 🌟 เช็คว่ายูสเซอร์เป็นพาร์ทเนอร์หรือเปล่า
   const isPartner = myFarms.length > 0 || myShops.length > 0 || myServices.length > 0;
@@ -259,7 +242,7 @@ export default function ProfilePage() {
 
 // Helper Components
 function BusinessLink({ href, label, icon, theme }: { href: string, label: string, icon: string, theme: string }) {
-  const styles: any = {
+  const styles: Record<string, string> = {
     pink: "bg-pink-50 text-pink-500 border-pink-100 hover:bg-pink-100",
     teal: "bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100",
     blue: "bg-blue-50 text-blue-500 border-blue-100 hover:bg-blue-100"

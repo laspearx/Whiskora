@@ -1,35 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { petService } from "@/services/pet.service";
+import type { PetWithFarm } from "@/types";
 
 export default function FarmHubPage() {
   const router = useRouter();
-  const [pets, setPets] = useState<any[]>([]);
+  const [pets, setPets] = useState<PetWithFarm[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAvailablePets = async () => {
-      try {
-        // 🌟 ดึงข้อมูลสัตว์ที่มีสถานะ "พร้อมย้ายบ้าน" จากทุกฟาร์ม
-        const { data, error } = await supabase
-          .from("pets")
-          .select("*, farms(farm_name)")
-          .eq("status", "พร้อมย้ายบ้าน")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setPets(data || []);
-      } catch (error) {
-        console.error("Error fetching available pets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAvailablePets();
+    petService
+      .getAvailablePets()
+      .then(setPets)
+      .catch((error) => console.error("Error fetching available pets:", error))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังเปิดตลาดสัตว์เลี้ยง... 🐾</div>;
