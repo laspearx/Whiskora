@@ -18,16 +18,16 @@ DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 
 CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT
-  USING (auth.uid() = id);
+  USING (auth.uid()::text = id::text);
 
 CREATE POLICY "Users can insert own profile"
   ON profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (auth.uid()::text = id::text);
 
 CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+  USING (auth.uid()::text = id::text)
+  WITH CHECK (auth.uid()::text = id::text);
 
 
 -- ---- pets ----
@@ -39,8 +39,8 @@ DROP POLICY IF EXISTS "Public can view available pets" ON pets;
 -- เจ้าของทำได้ทุกอย่างกับสัตว์ตัวเอง
 CREATE POLICY "Users can manage own pets"
   ON pets FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 -- สาธารณชนเห็นได้เฉพาะสัตว์ที่ "พร้อมย้ายบ้าน" (สำหรับหน้า marketplace)
 CREATE POLICY "Public can view available pets"
@@ -59,15 +59,15 @@ CREATE POLICY "Users can manage own vaccines"
   USING (
     EXISTS (
       SELECT 1 FROM pets
-      WHERE pets.id = vaccines.pet_id
-        AND pets.user_id = auth.uid()
+      WHERE pets.id::text = vaccines.pet_id::text
+        AND pets.user_id::text = auth.uid()::text
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM pets
-      WHERE pets.id = vaccines.pet_id
-        AND pets.user_id = auth.uid()
+      WHERE pets.id::text = vaccines.pet_id::text
+        AND pets.user_id::text = auth.uid()::text
     )
   );
 
@@ -80,8 +80,8 @@ DROP POLICY IF EXISTS "Public can view farms" ON farms;
 
 CREATE POLICY "Users can manage own farms"
   ON farms FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 -- ฟาร์มเปิดสาธารณะ (marketplace แสดงชื่อฟาร์มในการ์ดสัตว์)
 CREATE POLICY "Public can view farms"
@@ -99,15 +99,15 @@ CREATE POLICY "Farm owners can manage litters"
   USING (
     EXISTS (
       SELECT 1 FROM farms
-      WHERE farms.id = litters.farm_id
-        AND farms.user_id = auth.uid()
+      WHERE farms.id::text = litters.farm_id::text
+        AND farms.user_id::text = auth.uid()::text
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM farms
-      WHERE farms.id = litters.farm_id
-        AND farms.user_id = auth.uid()
+      WHERE farms.id::text = litters.farm_id::text
+        AND farms.user_id::text = auth.uid()::text
     )
   );
 
@@ -122,15 +122,15 @@ CREATE POLICY "Farm owners can manage transactions"
   USING (
     EXISTS (
       SELECT 1 FROM farms
-      WHERE farms.id = farm_transactions.farm_id
-        AND farms.user_id = auth.uid()
+      WHERE farms.id::text = farm_transactions.farm_id::text
+        AND farms.user_id::text = auth.uid()::text
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM farms
-      WHERE farms.id = farm_transactions.farm_id
-        AND farms.user_id = auth.uid()
+      WHERE farms.id::text = farm_transactions.farm_id::text
+        AND farms.user_id::text = auth.uid()::text
     )
   );
 
@@ -143,8 +143,8 @@ DROP POLICY IF EXISTS "Public can view shops" ON shops;
 
 CREATE POLICY "Users can manage own shops"
   ON shops FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 CREATE POLICY "Public can view shops"
   ON shops FOR SELECT
@@ -159,8 +159,8 @@ DROP POLICY IF EXISTS "Public can view services" ON services;
 
 CREATE POLICY "Users can manage own services"
   ON services FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 CREATE POLICY "Public can view services"
   ON services FOR SELECT
