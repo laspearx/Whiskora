@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -8,8 +8,9 @@ if (!supabaseUrl || !supabaseKey) {
     !supabaseUrl && 'NEXT_PUBLIC_SUPABASE_URL',
     !supabaseKey && 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   ].filter(Boolean).join(', ')
-  console.error(`[Whiskora] Missing environment variables: ${missing}`)
-  throw new Error(`[Whiskora] Missing environment variables: ${missing}. Set them in Vercel → Settings → Environment Variables.`)
+  throw new Error(`[Whiskora] Missing environment variables: ${missing}`)
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// createBrowserClient (จาก @supabase/ssr) เก็บ session ทั้งใน localStorage และ cookies
+// ทำให้ middleware อ่าน session จาก cookies ได้ถูกต้อง
+export const supabase = createBrowserClient(supabaseUrl, supabaseKey)
