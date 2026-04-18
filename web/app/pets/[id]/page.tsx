@@ -1,17 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import { petService } from '@/services/pet.service';
+import type { Pet, Vaccine } from '@/types';
 
 export default function PetDetailPage() {
   const router = useRouter();
   const params = useParams();
   const petId = params.id as string;
+  const { user, loading: authLoading } = useAuth();
 
-  const [pet, setPet] = useState<any>(null);
-  const [vaccines, setVaccines] = useState<any[]>([]);
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 🌟 ฟังก์ชันใหม่: แยกภาษาไทยและอังกฤษออกจากกัน
@@ -28,37 +31,18 @@ export default function PetDetailPage() {
   };
 
   useEffect(() => {
-    if (petId) fetchPetData();
-  }, [petId]);
+    if (petId && !authLoading) fetchPetData();
+  }, [petId, authLoading]);
 
   const fetchPetData = async () => {
     try {
       setIsLoading(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: petData, error: petError } = await supabase
-        .from('pets') 
-        .select('*')
-        .eq('id', petId)
-        .eq('user_id', session.user.id) 
-        .single();
-        
-      if (petError) throw petError;
+      const [petData, vaccineData] = await Promise.all([
+        petService.getPetById(petId, user?.id),
+        petService.getVaccinesByPet(petId),
+      ]);
       setPet(petData);
-
-      const { data: vaccineData } = await supabase
-        .from('vaccines')
-        .select('*')
-        .eq('pet_id', petId)
-        .order('date_given', { ascending: false }); 
-        
-      if (vaccineData) setVaccines(vaccineData);
-
+      setVaccines(vaccineData);
     } catch (error) {
       console.error("Fetch Data Error:", error);
       alert('ไม่พบข้อมูลสัตว์เลี้ยงตัวนี้ครับ หรือคุณอาจจะไม่มีสิทธิ์เข้าถึง');
@@ -201,13 +185,13 @@ export default function PetDetailPage() {
                 {/* วันเกิด */}
                 <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">วันเกิด</p>
-                  <p className="text-sm font-black text-gray-800 truncate">{(pet.birth_date || pet.birthdate) ? new Date(pet.birth_date || pet.birthdate).toLocaleDateString('th-TH') : '-'}</p>
+                  <p className="text-sm font-black text-gray-800 truncate">{pet.birth_date ? new Date(pet.birth_date).toLocaleDateString('th-TH') : '-'}</p>
                 </div>
 
                 {/* อายุ */}
                 <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-3 flex flex-col justify-center">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">อายุ</p>
-                  <p className="text-xs font-black text-pink-500 truncate">{calculateAgeDetail(pet.birth_date || pet.birthdate)}</p>
+                  <p className="text-xs font-black text-pink-500 truncate">{calculateAgeDetail(pet.birth_date)}</p>
                 </div>
 
               </div>

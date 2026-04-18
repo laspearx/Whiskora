@@ -1,33 +1,40 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  
-  // 🌟 ถ้าเจอเครื่องหมาย ?code= ให้ทำงานตามปกติ
+  const next = searchParams.get('next') ?? '/profile'
+
   if (code) {
-    const cookieStore = await cookies() 
+    // สร้าง redirect response ก่อน แล้วค่อย attach cookies เข้าไป
+    // (Next.js App Router: cookies ต้อง set บน Response object โดยตรง)
+    const response = NextResponse.redirect(`${origin}${next}`)
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
+          getAll() {
+            return request.cookies.getAll()
           },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
+          setAll(cookiesToSet) {
+            // set cookies ลงบน response ที่จะส่งกลับ browser โดยตรง
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
           },
         },
       }
     )
-    
-    await supabase.auth.exchangeCodeForSession(code)
-    return NextResponse.redirect(`${origin}/`)
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) return response
   }
 
-  return NextResponse.redirect(`${origin}/`)
+  // กรณี code หาย หรือ exchange ล้มเหลว
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }

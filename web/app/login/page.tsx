@@ -37,29 +37,43 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-    } else {
-      router.push("/profile");
-      router.refresh();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('[Whiskora] Login error:', error.message, error);
+        alert(`เข้าสู่ระบบไม่สำเร็จ: ${error.message}`);
+      } else {
+        router.push("/profile");
+        router.refresh();
+      }
+    } catch (err) {
+      console.error('[Whiskora] Unexpected login error:', err);
+      alert('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    // 1. ตั้งค่าพื้นฐาน (URL เด้งกลับ)
-    let oauthOptions: any = {
-      redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
-    };
+    try {
+      // ล้าง session เก่าที่อาจค้างอยู่ใน browser ก่อนเริ่ม OAuth ใหม่
+      await supabase.auth.signOut();
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: oauthOptions,
-    });
-    
-    if (error) alert(error.message);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+        },
+      });
+      if (error) {
+        console.error(`[Whiskora] OAuth error (${provider}):`, error.message, error);
+        alert(`เชื่อมต่อ ${provider} ไม่สำเร็จ: ${error.message}`);
+      }
+    } catch (err) {
+      console.error(`[Whiskora] Unexpected OAuth error (${provider}):`, err);
+      alert('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง');
+    }
   };
 
   return (

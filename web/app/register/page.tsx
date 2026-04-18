@@ -22,9 +22,9 @@ export default function RegisterPage() {
 
   // 🌟 ดักจับ Session เพื่อแยก "คนเก่า" กับ "คนใหม่"
   useEffect(() => {
-    const checkUserStatus = (user: any) => {
+    const checkUserStatus = (user: { created_at: string; last_sign_in_at?: string }) => {
       const createdAt = new Date(user.created_at).getTime();
-      const lastSignInAt = new Date(user.last_sign_in_at).getTime();
+      const lastSignInAt = new Date(user.last_sign_in_at ?? user.created_at).getTime();
 
       // ถ้าเวลาล็อกอินล่าสุด กับเวลาสร้างบัญชี ห่างกันเกิน 5 วินาที = มีบัญชีอยู่แล้ว
       if (lastSignInAt - createdAt > 5000) {
@@ -70,32 +70,47 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error('[Whiskora] Register error:', error.message, error);
+        alert(`สมัครสมาชิกไม่สำเร็จ: ${error.message}`);
+      } else {
+        alert("สมัครสมาชิกสำเร็จ! โปรดเช็คอีเมลเพื่อยืนยันตัวตน");
+        router.push("/login");
       }
-    });
-    
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("สมัครสมาชิกสำเร็จ! โปรดเช็คอีเมลเพื่อยืนยันตัวตน");
-      router.push("/login");
+    } catch (err) {
+      console.error('[Whiskora] Unexpected register error:', err);
+      alert('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        // 🌟 เพิ่ม ?next=/register เข้าไป เพื่อให้มันเด้งกลับมาหน้านี้ก่อนเพื่อโชว์ Alert
-        redirectTo: `${window.location.origin}/auth/callback?next=/register`,
-      },
-    });
-    if (error) alert(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          // 🌟 เพิ่ม ?next=/register เข้าไป เพื่อให้มันเด้งกลับมาหน้านี้ก่อนเพื่อโชว์ Alert
+          redirectTo: `${window.location.origin}/auth/callback?next=/register`,
+        },
+      });
+      if (error) {
+        console.error(`[Whiskora] OAuth error (${provider}):`, error.message, error);
+        alert(`เชื่อมต่อ ${provider} ไม่สำเร็จ: ${error.message}`);
+      }
+    } catch (err) {
+      console.error(`[Whiskora] Unexpected OAuth error (${provider}):`, err);
+      alert('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง');
+    }
   };
 
   return (
