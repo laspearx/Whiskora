@@ -57,6 +57,9 @@ export default function LoginPage() {
   // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     try {
+      // ล้าง session เก่าที่อาจค้างอยู่ใน browser ก่อนเริ่ม OAuth ใหม่
+      await supabase.auth.signOut();
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {

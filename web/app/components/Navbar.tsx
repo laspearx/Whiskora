@@ -8,20 +8,21 @@ import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [session, setSession] = useState<any>(null); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
-  const router = useRouter(); 
-  
+  const router = useRouter();
+
   // 🌟 สร้าง Ref สำหรับอ้างอิงพื้นที่ของ Navbar
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // ใช้ getUser() แทน getSession() เพื่อ verify กับ server จริง ป้องกัน session ผี
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      setIsLoggedIn(!!session?.user);
     });
 
     return () => subscription.unsubscribe();
@@ -48,7 +49,7 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   const handleProtectedAction = (path: string) => {
-    if (!session) {
+    if (!isLoggedIn) {
       router.push('/login'); 
     } else {
       router.push(path); 
@@ -58,8 +59,8 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setSession(null);
-    router.push('/login'); 
+    setIsLoggedIn(false);
+    router.push('/login');
   };
 
   return (
@@ -84,7 +85,7 @@ export default function Navbar() {
             <Link href="/farm-hub" className={`hover:text-pink-500 transition ${isActive('/farm-hub') ? 'text-pink-500 font-bold' : ''}`}>ตลาดสัตว์เลี้ยง</Link>
             <Link href="/partner" className={`hover:text-pink-500 transition ${isActive('/partner') ? 'text-pink-500 font-bold' : ''}`}>พาร์ทเนอร์ของเรา</Link>
             
-            {session ? (
+            {isLoggedIn ? (
               <button onClick={handleLogout} className="ml-2 text-red-400 hover:text-red-600 font-bold transition">ออกจากระบบ</button>
             ) : (
               <Link href="/login" className="ml-2 text-pink-500 font-bold transition">เข้าสู่ระบบ</Link>
@@ -131,7 +132,7 @@ export default function Navbar() {
               <Link href="/partner" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/partner') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>พาร์ทเนอร์ของเรา</Link>
               
               <div className="border-t border-gray-100 mt-1 pt-1">
-                {session ? (
+                {isLoggedIn ? (
                   <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition">ออกจากระบบ</button>
                 ) : (
                   <Link href="/login" onClick={() => setIsOpen(false)} className="w-full block px-4 py-2.5 text-sm font-bold text-pink-500 hover:bg-pink-50 transition">เข้าสู่ระบบ</Link>
