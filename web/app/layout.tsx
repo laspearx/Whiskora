@@ -4,8 +4,17 @@ import ScrollToTop from "./components/ScrollToTop";
 import BrowserChecker from "./components/BrowserChecker";
 
 export const metadata = {
+  metadataBase: new URL('https://whiskora.pet'),
   title: "Whiskora | แพลตฟอร์มสำหรับคนรักสัตว์เลี้ยง",
   description: "รวมตลาดสัตว์เลี้ยง คอมมูนิตี้ บริการ และระบบจัดการฟาร์มไว้ในที่เดียว",
+  openGraph: {
+    title: "Whiskora | แพลตฟอร์มสำหรับคนรักสัตว์เลี้ยง",
+    description: "รวมตลาดสัตว์เลี้ยง คอมมูนิตี้ บริการ และระบบจัดการฟาร์มไว้ในที่เดียว",
+    url: "https://whiskora.pet",
+    siteName: "Whiskora",
+    locale: "th_TH",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
