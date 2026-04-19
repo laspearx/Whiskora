@@ -70,7 +70,28 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           
           {/* โลโก้เว็บ */}
-          <Link href="/" className="text-2xl font-black text-pink-500 tracking-tight">
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, fontSize: 20, letterSpacing: -0.3, color: '#e84677', textDecoration: 'none' }}>
+            <span style={{ width: 34, height: 34, display: 'inline-block', flexShrink: 0 }}>
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 2px 4px rgba(232,70,119,.2))' }}>
+                <defs>
+                  <radialGradient id="pawNavGrad" cx="35%" cy="28%" r="80%">
+                    <stop offset="0%" stopColor="#ffffff"/>
+                    <stop offset="60%" stopColor="#fff0f5"/>
+                    <stop offset="100%" stopColor="#fcd3e0"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="32" cy="32" r="29" fill="url(#pawNavGrad)" stroke="#f8a5bf" strokeWidth="1.5"/>
+                <g fill="#ec5b89">
+                  <ellipse cx="32" cy="43" rx="10" ry="8.5"/>
+                  <ellipse cx="19.5" cy="31" rx="4.2" ry="5.6" transform="rotate(-20 19.5 31)"/>
+                  <ellipse cx="26" cy="20" rx="3.8" ry="5" transform="rotate(-10 26 20)"/>
+                  <g transform="matrix(-1 0 0 1 64 0)">
+                    <ellipse cx="19.5" cy="31" rx="4.2" ry="5.6" transform="rotate(-20 19.5 31)"/>
+                    <ellipse cx="26" cy="20" rx="3.8" ry="5" transform="rotate(-10 26 20)"/>
+                  </g>
+                </g>
+              </svg>
+            </span>
             Whiskora
           </Link>
 
