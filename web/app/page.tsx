@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 // ─── CI Design tokens ───────────────────────────────────────────────────────
 const F = {
@@ -22,12 +23,12 @@ const F = {
 
 // ─── Farm data ───────────────────────────────────────────────────────────────
 const FARMS = [
-  { id: '1', name: 'ฟาร์มน้องเหมียว',  loc: 'กรุงเทพฯ · 2.4 กม.',     rating: 4.9, breed: 'แมวเปอร์เซีย',         certs: ['CFA'] },
-  { id: '2', name: 'The Paws Bangkok',  loc: 'นนทบุรี · 8.1 กม.',       rating: 4.8, breed: 'โกลเด้น รีทรีฟเวอร์',  certs: ['TICA'] },
-  { id: '3', name: 'ฟาร์มคุณหมอ',      loc: 'ปทุมธานี · 12 กม.',       rating: 4.9, breed: 'แมวบริติช',             certs: ['CFA','TICA'] },
-  { id: '4', name: 'Siam Feline',       loc: 'กรุงเทพฯ · 5.2 กม.',     rating: 5.0, breed: 'แมววิเชียรมาศ',         certs: ['CFA'] },
-  { id: '5', name: 'Happy Tails Farm',  loc: 'สมุทรปราการ · 15 กม.',    rating: 4.7, breed: 'พุดเดิ้ล',              certs: [] },
-  { id: '6', name: 'ฟาร์มบ้านแมว',    loc: 'กรุงเทพฯ · 3.8 กม.',     rating: 4.9, breed: 'แมวอเมริกันขนสั้น',    certs: ['TICA'] },
+  { id: '1', name: 'ฟาร์มน้องเหมียว',  loc: 'กรุงเทพฯ · 2.4 กม.',    rating: 4.9, breed: 'แมวเปอร์เซีย',        certs: ['CFA'] },
+  { id: '2', name: 'The Paws Bangkok',  loc: 'นนทบุรี · 8.1 กม.',      rating: 4.8, breed: 'โกลเด้น รีทรีฟเวอร์',  certs: ['TICA'] },
+  { id: '3', name: 'ฟาร์มคุณหมอ',      loc: 'ปทุมธานี · 12 กม.',      rating: 4.9, breed: 'แมวบริติช',            certs: ['CFA','TICA'] },
+  { id: '4', name: 'Siam Feline',       loc: 'กรุงเทพฯ · 5.2 กม.',    rating: 5.0, breed: 'แมววิเชียรมาศ',        certs: ['CFA'] },
+  { id: '5', name: 'Happy Tails Farm',  loc: 'สมุทรปราการ · 15 กม.',   rating: 4.7, breed: 'พุดเดิ้ล',              certs: [] },
+  { id: '6', name: 'ฟาร์มบ้านแมว',    loc: 'กรุงเทพฯ · 3.8 กม.',    rating: 4.9, breed: 'แมวอเมริกันขนสั้น',    certs: ['TICA'] },
 ];
 
 const FILTERS = ['ทั้งหมด', 'สุนัข', 'แมว', 'กระต่าย', 'ใกล้ฉัน', 'ยืนยันแล้ว'];
@@ -194,7 +195,7 @@ export default function Home() {
             className="hero-grid"
             style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 20, alignItems: 'stretch' }}
           >
-            {/* 🌟 Left: Gradient Hero (อัปเดตใหม่ตามดีไซน์ชัช) */}
+            {/* 🌟 Left: Gradient Hero */}
             <div className="hero-banner-inner" style={{
               background: `linear-gradient(135deg, ${F.pink} 0%, #f06d98 60%, #f49ab8 100%)`,
               borderRadius: 24, padding: '40px 32px', color: '#fff',
@@ -220,7 +221,8 @@ export default function Home() {
                 <button
                   className="btn-white"
                   style={{ background: '#fff', color: F.pink, padding: '14px 24px', borderRadius: 16, fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 20px rgba(232,70,119,.4)' }}
-                  onClick={() => router.push('/pets')}
+                  // 🌟 แก้ไขจุดที่ 1: เปลี่ยนลิงก์ไปที่ /profile/pets
+                  onClick={() => router.push('/profile/pets')}
                 >
                   <span style={{ fontSize: 18 }}>🐾</span> เริ่มสร้างบัตรฟรี
                 </button>
@@ -233,7 +235,6 @@ export default function Home() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <div style={{ width: 22, height: 22 }}>
-                          {/* ถ้าหารูปโลโก้ไม่เจอ มันจะไม่แสดง error กวนใจครับ */}
                           <img src="/mini-logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => e.currentTarget.style.display = 'none'} />
                         </div>
                         <div style={{ fontSize: 9, fontWeight: 900, color: F.pink, letterSpacing: 0.5 }}>WHISKORA</div>
@@ -267,7 +268,8 @@ export default function Home() {
                 <button
                   className="btn-pink"
                   style={{ background: F.pink, color: '#fff', padding: '10px 20px', borderRadius: 999, fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(232,70,119,.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => router.push('/login')}
+                  // 🌟 แก้ไขจุดที่ 2: เปลี่ยนลิงก์ไปที่ /pets/create
+                  onClick={() => router.push('/pets/create')}
                 >
                   + เพิ่มน้องเลย
                 </button>
@@ -327,7 +329,8 @@ export default function Home() {
               { href: '/service-hub?category=คลินิก',  icon: <Icon.Clinic />,    bg: '#dbeafe',   color: F.sky,   label: 'คลินิก' },
               { href: '/service-hub?category=กรูมมิ่ง', icon: <Icon.Scissors />, bg: '#dcfce7',   color: F.leaf,  label: 'กรูมมิ่ง' },
               { href: '/community',                     icon: <Icon.Community />, bg: '#fef9c3',   color: F.sun,   label: 'คอมมูนิตี้' },
-              { href: '/pets',                          icon: <Icon.IdCard />,    bg: F.pinkSoft,  color: F.pink,  label: 'Pet ID Card' },
+              // 🌟 แก้ไขจุดที่ 3: เปลี่ยนลิงก์ Pet ID Card ไปที่ /profile/pets
+              { href: '/profile/pets',                  icon: <Icon.IdCard />,    bg: F.pinkSoft,  color: F.pink,  label: 'Pet ID Card' },
             ].map(cat => (
               <Link
                 key={cat.href}
@@ -436,7 +439,7 @@ export default function Home() {
           <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.3, margin: '0 0 18px' }}>เริ่มต้นง่ายมาก</h2>
           <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
             {[
-              { n: '01', title: 'สมัครฟรี',           desc: 'สร้างบัญชีด้วยอีเมลหรือ Google ภายใน 1 นาที ไม่ต้องบัตรเครดิต' },
+              { n: '01', title: 'สมัครฟรี',       desc: 'สร้างบัญชีด้วยอีเมลหรือ Google ภายใน 1 นาที ไม่ต้องบัตรเครดิต' },
               { n: '02', title: 'เพิ่มน้องของคุณ',    desc: 'เพิ่มข้อมูลสัตว์เลี้ยง รูปภาพ วัคซีน และประวัติสุขภาพ' },
               { n: '03', title: 'ค้นหาและเชื่อมต่อ', desc: 'ค้นหาฟาร์ม คลินิก หรือบริการที่ต้องการ พร้อม GPS ใกล้ฉัน' },
             ].map(step => (
@@ -501,7 +504,7 @@ export default function Home() {
               </p>
             </div>
             {[
-              { title: 'ผู้ใช้งาน',  links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/pets' }, { label: 'คอมมูนิตี้', href: '/community' }] },
+              { title: 'ผู้ใช้งาน',  links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/profile/pets' }, { label: 'คอมมูนิตี้', href: '/community' }] },
               { title: 'พาร์ทเนอร์', links: [{ label: 'เปิดฟาร์ม', href: '/partner' }, { label: 'เปิดร้านค้า', href: '/partner' }, { label: 'Genesis Program', href: '/partner' }, { label: 'ราคา PRO', href: '/partner' }] },
               { title: 'บริษัท',     links: [{ label: 'เกี่ยวกับเรา', href: '/' }, { label: 'นโยบายความเป็นส่วนตัว', href: '/' }, { label: 'ข้อกำหนด', href: '/' }, { label: 'ติดต่อ', href: '/' }] },
             ].map(col => (
