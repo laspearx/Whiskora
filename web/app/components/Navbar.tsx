@@ -69,7 +69,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           
           {/* โลโก้เว็บ */}
-          <Link href="/" className="text-2xl font-black text-pink-500 tracking-tight">
+          <Link href="/" className="text-2xl font-pink text-pink-500 tracking-tight">
             Whiskora
           </Link>
 
