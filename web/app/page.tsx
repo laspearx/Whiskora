@@ -268,7 +268,6 @@ export default function Home() {
                 <button
                   className="btn-pink"
                   style={{ background: F.pink, color: '#fff', padding: '10px 20px', borderRadius: 999, fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(232,70,119,.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  // 🌟 แก้ไขจุดที่ 2: เปลี่ยนลิงก์ไปที่ /pets/create
                   onClick={() => router.push('/pets/create')}
                 >
                   + เพิ่มน้องเลย
@@ -329,7 +328,6 @@ export default function Home() {
               { href: '/service-hub?category=คลินิก',  icon: <Icon.Clinic />,    bg: '#dbeafe',   color: F.sky,   label: 'คลินิก' },
               { href: '/service-hub?category=กรูมมิ่ง', icon: <Icon.Scissors />, bg: '#dcfce7',   color: F.leaf,  label: 'กรูมมิ่ง' },
               { href: '/community',                     icon: <Icon.Community />, bg: '#fef9c3',   color: F.sun,   label: 'คอมมูนิตี้' },
-              // 🌟 แก้ไขจุดที่ 3: เปลี่ยนลิงก์ Pet ID Card ไปที่ /profile/pets
               { href: '/profile/pets',                  icon: <Icon.IdCard />,    bg: F.pinkSoft,  color: F.pink,  label: 'Pet ID Card' },
             ].map(cat => (
               <Link

@@ -6,55 +6,35 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
 
-// 🎮 ข้อมูลสายพันธุ์
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+const F = {
+  ink: '#111827',
+  inkSoft: '#4B5563',
+  muted: '#9CA3AF',
+  pink: '#E84677',
+  pinkSoft: '#FDF2F5',
+  line: '#E5E7EB',
+  paper: '#FFFFFF',
+};
+
+// ─── Elegant Minimal Icons ──────────────────────────────────────────────────
+const Icon = {
+  ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Camera: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  Cat: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5z"/></svg>,
+  Dog: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2 .336-3.5 2-3.5 3.5 0 1.079.49 2.044 1.267 2.688L5 15h5V7c.667-.667 0-1.828 0-1.828z"/><path d="M14.267 9.188C15.044 8.544 15.5 7.579 15.5 6.5c0-1.5-1.5-3.164-3.5-3.5-1.923-.321-3.5.782-3.5 2.172 0 0-.667 1.161 0 1.828"/><path d="M5 15v3a2 2 0 0 0 4 0v-3"/><path d="M14 15v3a2 2 0 0 0 4 0v-3"/><path d="M9 15h6"/></svg>,
+  Paw: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>,
+};
+
+// 🎮 ข้อมูลสายพันธุ์ (คงเดิม)
 const PET_DATA = {
   cat: {
     label: "แมว",
-    breeds: [
-      "แมวบ้าน / พันธุ์ผสม (Domestic / Mix Breed)",
-      "โกนจา (Konja)",
-      "ขาวมณี (Khao Manee)",
-      "โคราช / สีสวาด (Korat)",
-      "ดีวอน เร็กซ์ (Devon Rex)",
-      "บริติช ช็อตแฮร์ (British Shorthair)",
-      "เบงกอล (Bengal)",
-      "เปอร์เซีย (Persian)",
-      "มันช์กิ้น (Munchkin)",
-      "เมนคูน (Maine Coon)",
-      "แร็กดอล (Ragdoll)",
-      "วิเชียรมาศ (Siamese)",
-      "ศุภลักษณ์ (Suphalak)",
-      "สก็อตติช โฟลด์ (Scottish Fold)",
-      "สฟิงซ์ (Sphynx)",
-      "อเมริกัน ชอร์ตแฮร์ (American Shorthair)",
-      "เอ็กโซติก ชอร์ตแฮร์ (Exotic Shorthair)",
-      "อื่นๆ"
-    ]
+    breeds: ["แมวบ้าน / พันธุ์ผสม (Domestic / Mix Breed)", "โกนจา (Konja)", "ขาวมณี (Khao Manee)", "โคราช / สีสวาด (Korat)", "ดีวอน เร็กซ์ (Devon Rex)", "บริติช ช็อตแฮร์ (British Shorthair)", "เบงกอล (Bengal)", "เปอร์เซีย (Persian)", "มันช์กิ้น (Munchkin)", "เมนคูน (Maine Coon)", "แร็กดอล (Ragdoll)", "วิเชียรมาศ (Siamese)", "ศุภลักษณ์ (Suphalak)", "สก็อตติช โฟลด์ (Scottish Fold)", "สฟิงซ์ (Sphynx)", "อเมริกัน ชอร์ตแฮร์ (American Shorthair)", "เอ็กโซติก ชอร์ตแฮร์ (Exotic Shorthair)", "อื่นๆ"]
   },
   dog: {
     label: "หมา",
-    breeds: [
-      "พันธุ์ทาง / พันธุ์ผสม (Mixed Breed)",
-      "คอร์กี้ (Corgi)",
-      "ชิบะ อินุ (Shiba Inu)",
-      "ชิวาวา (Chihuahua)",
-      "ชิสุ (Shih Tzu)",
-      "ซามอยด์ (Samoyed)",
-      "ไซบีเรียน ฮัสกี้ (Siberian Husky)",
-      "แจ็ครัสเซลล์ เทอร์เรีย (Jack Russell)",
-      "ไทยบางแก้ว (Thai Bangkaew)",
-      "ไทยหลังอาน (Thai Ridgeback)",
-      "บีเกิ้ล (Beagle)",
-      "ปอมเมอเรเนียน (Pomeranian)",
-      "พุดเดิ้ลทอย (Toy Poodle)",
-      "เฟรนช์ บูลด็อก (French Bulldog)",
-      "ยอร์กเชียร์ เทอร์เรีย (Yorkshire Terrier)",
-      "ลาบราดอร์ รีทรีฟเวอร์ (Labrador)",
-      "โกลเด้น รีทรีฟเวอร์ (Golden Retriever)",
-      "อเมริกัน บูลลี่ (American Bully)",
-      "อลาสกัน มาลามิวท์ (Alaskan Malamute)",
-      "อื่นๆ"
-    ]
+    breeds: ["พันธุ์ทาง / พันธุ์ผสม (Mixed Breed)", "คอร์กี้ (Corgi)", "ชิบะ อินุ (Shiba Inu)", "ชิวาวา (Chihuahua)", "ชิสุ (Shih Tzu)", "ซามอยด์ (Samoyed)", "ไซบีเรียน ฮัสกี้ (Siberian Husky)", "แจ็ครัสเซลล์ เทอร์เรีย (Jack Russell)", "ไทยบางแก้ว (Thai Bangkaew)", "ไทยหลังอาน (Thai Ridgeback)", "บีเกิ้ล (Beagle)", "ปอมเมอเรเนียน (Pomeranian)", "พุดเดิ้ลทอย (Toy Poodle)", "เฟรนช์ บูลด็อก (French Bulldog)", "ยอร์กเชียร์ เทอร์เรีย (Yorkshire Terrier)", "ลาบราดอร์ รีทรีฟเวอร์ (Labrador)", "โกลเด้น รีทรีฟเวอร์ (Golden Retriever)", "อเมริกัน บูลลี่ (American Bully)", "อลาสกัน มาลามิวท์ (Alaskan Malamute)", "อื่นๆ"]
   },
   other_pets: [
     { id: "rabbit", label: "กระต่าย", emoji: "🐰" },
@@ -72,44 +52,10 @@ const PET_DATA = {
   ]
 };
 
-// 🎨 ข้อมูลสีและลวดลาย (แยกตามประเภทสัตว์)
 const COLOR_DATA = {
-  cat: [
-    "ขาว (White)",
-    "ดำ (Black)",
-    "เทา / บลู (Grey / Blue)",
-    "ส้ม / แดง (Orange / Red)",
-    "ครีม (Cream)",
-    "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)",
-    "ไลแลค / เทาอมม่วง (Lilac / Lavender)",
-    "สามสี (Calico)",
-    "สีเปรอะ (Tortoiseshell / Tortie)",
-    "สองสี / ลายวัว (Bicolor / Tuxedo)",
-    "สีพ้อยท์ / ลายแต้ม (Colorpoint)",
-    "ลายสลิด / ลายเสือ (Tabby)",
-    "อื่นๆ"
-  ],
-  dog: [
-    "ดำ (Black)",
-    "ขาว (White)",
-    "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)",
-    "ทอง / เหลือง (Golden / Yellow)",
-    "ครีม (Cream)",
-    "แดง / น้ำตาลแดง (Red)",
-    "เทา / บลู (Grey / Blue)",
-    "ฟอว์น / น้ำตาลอ่อน (Fawn)",
-    "สามสี (Tricolor)",
-    "ลายหินอ่อน (Merle / Dapple)",
-    "ลายเสือ (Brindle)",
-    "อื่นๆ"
-  ],
-  other: [
-    "สีเดียวล้วน (Solid Color)",
-    "สองสี (Bicolor)",
-    "หลายสี / ลวดลายผสม (Multi-color)",
-    "เผือก (Albino)",
-    "อื่นๆ"
-  ]
+  cat: ["ขาว (White)", "ดำ (Black)", "เทา / บลู (Grey / Blue)", "ส้ม / แดง (Orange / Red)", "ครีม (Cream)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ไลแลค / เทาอมม่วง (Lilac / Lavender)", "สามสี (Calico)", "สีเปรอะ (Tortoiseshell / Tortie)", "สองสี / ลายวัว (Bicolor / Tuxedo)", "สีพ้อยท์ / ลายแต้ม (Colorpoint)", "ลายสลิด / ลายเสือ (Tabby)", "อื่นๆ"],
+  dog: ["ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)", "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น / น้ำตาลอ่อน (Fawn)", "สามสี (Tricolor)", "ลายหินอ่อน (Merle / Dapple)", "ลายเสือ (Brindle)", "อื่นๆ"],
+  other: ["สีเดียวล้วน (Solid Color)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"]
 };
 
 export default function CreatePetPage() {
@@ -122,21 +68,16 @@ export default function CreatePetPage() {
   const [otherPetText, setOtherPetText] = useState("");
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
-  
-  // 🌟 State สำหรับสี
   const [color, setColor] = useState("");
   const [customColor, setCustomColor] = useState("");
-
   const [gender, setGender] = useState("male");
   const [birthdate, setBirthdate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
-  
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
@@ -152,7 +93,6 @@ export default function CreatePetPage() {
     checkUser();
   }, [router]);
 
-  // 🌟 รีเซ็ตสายพันธุ์และสี เมื่อเปลี่ยนประเภทสัตว์
   const handleSpeciesChange = (type: "cat" | "dog" | "other") => {
     setSpecies(type);
     setOtherPetText("");
@@ -193,29 +133,16 @@ export default function CreatePetPage() {
     try {
       setIsUploading(true);
       if (!userId || !imageSrc || !croppedAreaPixels) return;
-
       const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
       const fileName = `pet-${Date.now()}.jpg`;
       const filePath = `${userId}/${fileName}`;
       const file = new File([croppedImageBlob], fileName, { type: "image/jpeg" });
-
-      const { error: uploadError } = await supabase.storage
-        .from("pet-photos") 
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        console.error("Storage Error Details:", uploadError);
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("pet-photos")
-        .getPublicUrl(filePath);
-
+      const { error: uploadError } = await supabase.storage.from("pet-photos").upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("pet-photos").getPublicUrl(filePath);
       setAvatarUrl(publicUrl);
       setImageSrc(null); 
     } catch (error: any) {
-      console.error("Upload process error:", error);
       alert("เกิดข้อผิดพลาด: " + (error.message || "อัปโหลดรูปภาพไม่ได้"));
     } finally {
       setIsUploading(false);
@@ -226,13 +153,11 @@ export default function CreatePetPage() {
     e.preventDefault();
     if (!name) return alert("กรุณากรอกชื่อสัตว์เลี้ยง");
     if (species === 'other' && !otherPetText) return alert("กรุณาเลือกประเภทสัตว์เลี้ยง");
-    
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : (species === 'cat' ? 'แมว' : 'หมา');
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
     const finalColor = color === 'อื่นๆ' ? customColor : color;
 
-    // 🌟 แก้ไขตรงนี้: เพิ่ม .select() เพื่อให้ Supabase คืนค่า data กลับมา
     const { data, error } = await supabase.from("pets").insert({
       user_id: userId,
       name,
@@ -245,51 +170,72 @@ export default function CreatePetPage() {
       status: "personal",
       allergies: allergies || null,
       traits: traits || null,
-    }).select(); // <--- ใส่ .select() เพิ่มเข้าไปครับ
+    }).select();
 
     if (error) {
-      console.error("Insert Error:", error);
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
     } else if (data && data.length > 0) {
-      // 🌟 ดึง ID ของสัตว์เลี้ยงที่เพิ่งสร้างเสร็จ
-      const newPetId = data[0].id;
-      
-      // 🚀 เด้งไปหน้าดูรายละเอียดสัตว์เลี้ยงตัวนั้นทันที เพื่อให้ชัชเห็นปุ่มสร้างบัตรต่อได้เลย
-      router.push(`/pets/${newPetId}`);
+      router.push(`/pets/${data[0].id}`);
       router.refresh();
     }
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-5 md:mb-8 max-w-xl mx-auto">
-        <Link href="/profile" className="p-2 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition shadow-sm border border-gray-100">
-           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-           </svg>
-        </Link>
-        <h1 className="text-xl md:text-3xl font-black text-gray-800 tracking-tight">เพิ่มสัตว์เลี้ยง</h1>
-      </div>
+    <>
+      <style>{`
+        .premium-input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #ffffff;
+          border: 1px solid ${F.line};
+          border-radius: 0.75rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: ${F.ink};
+          outline: none;
+          transition: all 0.2s;
+        }
+        .premium-input:focus {
+          border-color: ${F.pink};
+          box-shadow: 0 0 0 4px ${F.pinkSoft};
+        }
+        .premium-label {
+          display: block;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: ${F.muted};
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.5rem;
+          margin-left: 0.25rem;
+        }
+      `}</style>
 
-      <div className="max-w-xl mx-auto"> 
-        <form onSubmit={handleSave} className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-pink-50 space-y-6 md:space-y-8">
+      <div className="max-w-xl mx-auto px-4 pt-8 pb-24 animate-in fade-in duration-500">
+        
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-10">
+          <Link href="/profile" className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-gray-900 transition-colors">
+            <Icon.ArrowLeft />
+          </Link>
+          <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: F.ink }}>Add New Pet</h1>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-8">
           
-          {/* 1. รูปสัตว์เลี้ยง */}
-          <div className="flex flex-col items-center space-y-3">
+          {/* 1. Photo Upload Section */}
+          <section className="flex flex-col items-center">
             <div className="relative group">
               <div 
-                className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-full overflow-hidden border-4 border-white shadow-md group-hover:opacity-80 transition cursor-pointer"
-                onClick={() => {
-                  if (originalImageSrc) setImageSrc(originalImageSrc);
-                  else fileInputRef.current?.click();
-                }}
+                className="w-28 h-28 md:w-32 md:h-32 bg-gray-50 rounded-full overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center cursor-pointer transition-all hover:border-pink-300"
+                onClick={() => originalImageSrc ? setImageSrc(originalImageSrc) : fileInputRef.current?.click()}
               >
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Pet Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl text-gray-200">
-                    {species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾'}
+                  <div className="text-gray-300">
+                    {species === 'cat' ? '🐱'  : species === 'dog' ? '🐶' : '🐾'}
                   </div>
                 )}
               </div>
@@ -297,188 +243,189 @@ export default function CreatePetPage() {
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 bg-pink-500 text-white p-2 md:p-2.5 rounded-full shadow-lg border-2 border-white active:scale-90 transition cursor-pointer z-10 hover:bg-pink-600"
+                className="absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white transition-transform active:scale-90 hover:opacity-90"
+                style={{ background: F.pink }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <Icon.Camera />
               </button>
               
               <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} onClick={(e) => (e.currentTarget.value = "")} className="hidden" />
             </div>
-            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest text-center">
-              {originalImageSrc ? "แตะรูปเพื่อปรับตำแหน่งใหม่" : "แตะเพื่อเลือกรูปภาพ"}
+            <p className="mt-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              {originalImageSrc ? "Tap to reposition" : "Upload Photo"}
             </p>
-          </div>
+          </section>
 
-          <div className="space-y-6">
-            {/* ชื่อสัตว์เลี้ยง */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">ชื่อสัตว์เลี้ยง</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-5 py-3 md:py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm md:text-base font-bold text-gray-800" placeholder="กรอกชื่อน้อง" />
+          {/* 2. Basic Info Card */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+            
+            {/* Name */}
+            <div>
+              <label className="premium-label">ชื่อสัตว์เลี้ยง</label>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                required 
+                className="premium-input" 
+                placeholder="เช่น น้องถุงทอง" 
+              />
             </div>
 
-            {/* ประเภทสัตว์เลี้ยง */}
-            <div className="space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">น้องเป็นตัวอะไร?</label>
-              <div className="grid grid-cols-3 gap-3">
+            {/* Species Selection */}
+            <div>
+              <label className="premium-label">ประเภท</label>
+              <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: "cat", label: "แมว", icon: "🐱" },
-                  { id: "dog", label: "หมา", icon: "🐶" },
-                  { id: "other", label: "อื่นๆ", icon: "🐾" }
+                  { id: "cat", label: "แมว", icon: '🐱'  },
+                  { id: "dog", label: "หมา", icon: '🐶' },
+                  { id: "other", label: "อื่นๆ", icon: '🐾' }
                 ].map((type) => (
                   <button
                     key={type.id}
                     type="button"
                     onClick={() => handleSpeciesChange(type.id as any)}
-                    className={`py-3 rounded-2xl border-2 font-black text-xs md:text-sm flex flex-col items-center gap-1 transition-all ${
-                      species === type.id ? 'border-pink-500 bg-pink-50 text-pink-600 scale-105 shadow-sm' : 'border-gray-100 bg-white text-gray-400 hover:border-pink-200 hover:bg-gray-50'
+                    className={`py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                      species === type.id 
+                      ? 'bg-teal-200 text-teal border-teal-500 shadow-md' 
+                      : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
                     }`}
                   >
-                    <span className="text-xl md:text-2xl">{type.icon}</span>
-                    {type.label}
+                    <span className="scale-110">{type.icon}</span>
+                    <span className="text-[11px] font-bold">{type.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* ส่วนเลือกสายพันธุ์ และ สี (จับรวมไว้ในกล่องเดียวกัน) */}
-            <div className="bg-gray-50/50 rounded-[2rem] p-5 md:p-6 space-y-5 border border-gray-100">
-              
-              {/* สายพันธุ์ / ประเภทสัตว์แปลก */}
-              {species === 'other' ? (
-                <div className="space-y-3">
-                  <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider italic">โปรดเลือกประเภทสัตว์อื่นๆ</label>
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                    {PET_DATA.other_pets.map((o) => (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => setOtherPetText(o.label)}
-                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all
-                          ${otherPetText === o.label ? 'border-pink-500 bg-white ring-2 ring-pink-200 shadow-sm' : 'border-gray-200 bg-white/60 hover:border-pink-300'}`}
-                      >
-                        <span className="text-xl md:text-2xl">{o.emoji}</span>
-                        <span className={`text-[9px] md:text-[10px] font-bold ${otherPetText === o.label ? 'text-pink-600' : 'text-gray-500'}`}>{o.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สายพันธุ์</label>
-                  <div className="relative">
-                    <select value={breed} onChange={(e) => setBreed(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
-                      <option value="" disabled>เลือกสายพันธุ์จากรายการ...</option>
-                      {PET_DATA[species].breeds.map(b => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* กรณีพิมพ์สายพันธุ์เอง */}
-              {(breed === "อื่นๆ" || (species === 'other' && otherPetText === "สัตว์อื่นๆ")) && (
-                <input type="text" value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="ระบุสายพันธุ์ หรือชนิดสัตว์เพิ่มเติม..." />
-              )}
-
-              <hr className="border-gray-100" />
-
-              {/* 🌟 เลือกสี */}
-              <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">สี / ลวดลาย</label>
-                <div className="relative">
-                  <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-gray-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm appearance-none">
-                    <option value="" disabled>เลือกสีจากรายการ...</option>
-                    {COLOR_DATA[species].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                  </div>
+            {/* Other Pet Types Sub-selection */}
+            {species === 'other' && (
+              <div className="pt-2">
+                <label className="premium-label italic">โปรดเลือกประเภท</label>
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                  {PET_DATA.other_pets.map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => setOtherPetText(o.label)}
+                      className={`p-2 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all
+                        ${otherPetText === o.label ? 'border-teal-500 bg-teal-50' : 'border-gray-100 bg-gray-50/50'}`}
+                    >
+                      <span className="text-xl">{o.emoji}</span>
+                      <span className={`text-[9px] font-bold ${otherPetText === o.label ? 'text-teal-600' : 'text-gray-500'}`}>{o.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-
-              {/* 🌟 กรณีพิมพ์สีเอง */}
-              {color === "อื่นๆ" && (
-                <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="w-full px-4 py-3 md:py-3.5 rounded-xl bg-white border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium text-gray-700 shadow-sm animate-in fade-in" placeholder="พิมพ์ระบุสีด้วยตัวเอง (แนะนำใส่ภาษาอังกฤษต่อท้าย เช่น ขาวดำ (Black & White))..." />
-              )}
-            </div>
-
-            {/* เพศและวันเกิด */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">เพศ</label>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setGender('male')} className={`flex-1 py-2.5 rounded-xl border-2 font-black text-xs md:text-sm transition-all ${gender === 'male' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-100 bg-white text-gray-400'}`}>ตัวผู้</button>
-                  <button type="button" onClick={() => setGender('female')} className={`flex-1 py-2.5 rounded-xl border-2 font-black text-xs md:text-sm transition-all ${gender === 'female' ? 'border-pink-500 bg-pink-50 text-pink-600' : 'border-gray-100 bg-white text-gray-400'}`}>ตัวเมีย</button>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">วันเกิด</label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    value={birthdate} 
-                    onChange={(e) => setBirthdate(e.target.value)} 
-                    className="w-full h-[42px] md:h-[48px] px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 md:text-sm font-medium text-gray-700 appearance-none block min-w-0" 
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* สิ่งที่แพ้ และ โน้ตเพิ่มเติม */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">สิ่งที่แพ้ <span className="text-gray-300 font-normal">(ถ้ามี)</span></label>
-                <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm font-medium text-gray-800" placeholder="เช่น แพ้ไก่, แพ้อาหารทะเล" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">หมายเหตุ <span className="text-gray-300 font-normal">(เพิ่มเติม)</span></label>
-                <input type="text" value={traits} onChange={(e) => setTraits(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm font-medium text-gray-800" placeholder="เช่น นิสัยส่วนตัว" />
-              </div>
-            </div>
-
+            )}
           </div>
 
-          {/* ปุ่มบันทึก */}
-          <div className="flex gap-3 pt-4">
-            <Link href="/profile" className="flex-1 text-center py-3.5 rounded-xl font-bold text-gray-400 bg-gray-100 hover:bg-gray-200 transition text-sm">
-              ยกเลิก
+          {/* 3. Detail Info Card */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+            
+            {/* Breed & Color Group */}
+            <div className="space-y-6">
+              {species !== 'other' && (
+                <div>
+                  <label className="premium-label">สายพันธุ์</label>
+                  <select 
+                    value={breed} 
+                    onChange={(e) => setBreed(e.target.value)} 
+                    className="premium-input appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtNiA5IDYgNiA2LTYiLz48L3N2Zz4=')] bg-[length:20px] bg-[right_10px_center] bg-no-repeat"
+                  >
+                    <option value="" disabled>เลือกสายพันธุ์...</option>
+                    {PET_DATA[species].breeds.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {(breed === "อื่นๆ" || (species === 'other' && otherPetText === "สัตว์อื่นๆ")) && (
+                <input type="text" value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} className="premium-input mt-2" placeholder="ระบุสายพันธุ์เพิ่มเติม..." />
+              )}
+
+              <div>
+                <label className="premium-label">สี / ลวดลาย</label>
+                <select 
+                  value={color} 
+                  onChange={(e) => setColor(e.target.value)} 
+                  className="premium-input appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtNiA5IDYgNiA2LTYiLz48L3N2Zz4=')] bg-[length:20px] bg-[right_10px_center] bg-no-repeat"
+                >
+                  <option value="" disabled>เลือกสี...</option>
+                  {COLOR_DATA[species === 'other' ? 'other' : species].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {color === "อื่นๆ" && (
+                <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value)} className="premium-input mt-2" placeholder="ระบุสีด้วยตนเอง..." />
+              )}
+            </div>
+
+            {/* Gender & Birthdate */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="premium-label">เพศ</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setGender('male')} className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${gender === 'male' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-100 text-gray-400'}`}>Male</button>
+                  <button type="button" onClick={() => setGender('female')} className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${gender === 'female' ? 'bg-pink-50 border-pink-200 text-pink-600' : 'bg-white border-gray-100 text-gray-400'}`}>Female</button>
+                </div>
+              </div>
+              <div>
+                <label className="premium-label">วันเกิด</label>
+                <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} className="premium-input h-[42px]" />
+              </div>
+            </div>
+
+            {/* Health & Traits */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="premium-label">สิ่งที่แพ้</label>
+                <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} className="premium-input" placeholder="ถ้ามี..." />
+              </div>
+              <div>
+                <label className="premium-label">หมายเหตุ</label>
+                <input type="text" value={traits} onChange={(e) => setTraits(e.target.value)} className="premium-input" placeholder="นิสัยส่วนตัว..." />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-4">
+            <Link href="/profile" className="flex-1 text-center py-4 rounded-xl font-bold text-sm text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition">
+              Cancel
             </Link>
-            <button type="submit" disabled={saving} className="flex-[2] py-3.5 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 shadow-lg shadow-pink-200 transition-all active:scale-95 disabled:opacity-50 text-sm">
-              {saving ? "กำลังบันทึก..." : "เพิ่มสัตว์เลี้ยง ✨"}
+            <button 
+              type="submit" 
+              disabled={saving} 
+              className="flex-[2] py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all active:scale-95 disabled:opacity-50"
+              style={{ background: F.ink }}
+            >
+              {saving ? "Saving..." : "Add to My Pets"}
             </button>
           </div>
         </form>
       </div>
 
-      {/* คร็อปรูป */}
+      {/* Image Crop Modal */}
       {imageSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden flex flex-col">
-            <div className="relative w-full h-64 bg-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative w-full h-80 bg-gray-900">
               <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
             </div>
-            <div className="p-5 space-y-5">
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2 text-center">ซูมรูปภาพ</label>
-                <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(Number(e.target.value))} className="w-full accent-pink-500" />
+            <div className="p-6 space-y-6">
+              <div className="px-2">
+                <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(Number(e.target.value))} className="w-full accent-pink-600" />
               </div>
               <div className="flex gap-3">
-                <button type="button" onClick={() => setImageSrc(null)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition text-xs">ยกเลิก</button>
-                <button type="button" onClick={handleUploadCroppedImage} disabled={isUploading} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 transition text-xs">ยืนยัน</button>
+                <button type="button" onClick={() => setImageSrc(null)} className="flex-1 py-3 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition text-xs uppercase tracking-widest">Cancel</button>
+                <button type="button" onClick={handleUploadCroppedImage} disabled={isUploading} className="flex-1 py-3 rounded-xl font-bold text-white transition text-xs uppercase tracking-widest" style={{ background: F.pink }}>
+                  {isUploading ? 'Uploading...' : 'Confirm'}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

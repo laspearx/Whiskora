@@ -3,7 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
+// ─── Minimal Icons ─────────────────────────────────────────────────────────
+const Icon = {
+  ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  TrendingUp: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+  TrendingDown: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>,
+  Receipt: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>,
+  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  FileText: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+};
 
 export default function UniversalPetFinancePage() {
   const router = useRouter();
@@ -12,21 +21,22 @@ export default function UniversalPetFinancePage() {
   const [allLitters, setAllLitters] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
 
-  // 🌟 State สำหรับฟอร์ม
+  // 🌟 Form State
   const [formData, setFormData] = useState({
-    transaction_type: "expense",
-    expense_context: "PERSONAL", // PERSONAL, ALL_FARMS, หรือ Farm ID
+    expense_context: "PERSONAL", 
     category: "ค่าอาหาร",
     amount: "",
     transaction_date: new Date().toISOString().split("T")[0],
     litter_id: "", 
     description: "",
+    receipt_url: "",
   });
 
   const categories = {
     personal: ["ค่าอาหาร", "ค่าทรายแมว", "ของเล่น/ของใช้", "ค่าวัคซีน/หาหมอ", "ค่าอาบน้ำตัดขน", "อื่นๆ"],
-    farm: ["ค่าอาหาร", "ค่าทรายแมว", "ค่าอุปกรณ์ต่างๆ", "ค่าวัคซีน/ยารักษา", "ค่ารักษาพยาบาล", "ค่าผสมพันธุ์", "ค่าใบเพ็ดดีกรี", "ค่ากรูมมิ่ง", "ค่าประกวด", "ค่าน้ำ/ค่าไฟ", "อื่นๆ"],
+    farm: ["ค่าอาหาร", "ค่าทรายแมว", "ค่าอุปกรณ์ต่างๆ", "ค่าวัคซีน/ยารักษา", "ค่ารักษาพยาบาล", "ค่าผสมพันธุ์", "ค่าใบเพ็ดดีกรี", "ค่ากรูมมิ่ง", "ค่าน้ำ/ค่าไฟ", "อื่นๆ"],
     income: ["ขายสัตว์เลี้ยง", "ค่ามัดจำ", "ค่ารับผสมพันธุ์", "รายรับอื่นๆ"]
   };
 
@@ -37,15 +47,12 @@ export default function UniversalPetFinancePage() {
         if (!session) return router.push("/login");
         const uid = session.user.id;
 
-        // 1. ดึงฟาร์มทั้งหมดของผู้ใช้
         const { data: farmData } = await supabase.from("farms").select("id, farm_name").eq("user_id", uid);
         if (farmData) setFarms(farmData);
 
-        // 2. ดึงครอกทั้งหมด (เพื่อกรองตามฟาร์มที่เลือก)
         const { data: litterData } = await supabase.from("litters").select("id, litter_code, farm_id").eq("user_id", uid);
         if (litterData) setAllLitters(litterData);
 
-        // 3. ดึงประวัติบัญชีทั้งหมดของผู้ใช้
         const { data: txData } = await supabase
           .from("farm_transactions")
           .select("*")
@@ -62,21 +69,28 @@ export default function UniversalPetFinancePage() {
     fetchData();
   }, [router]);
 
-  // 🌟 กรองครอกตามฟาร์มที่เลือก
   const availableLitters = allLitters.filter(l => l.farm_id?.toString() === formData.expense_context);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
-      // ถ้าเปลี่ยนบริบท ให้รีเซ็ตหมวดหมู่ให้เหมาะสม
       if (name === "expense_context") {
-        updated.category = value === "PERSONAL" ? "ค่าอาหาร" : "ค่าอาหารฟาร์ม";
-        updated.litter_id = ""; // ล้างค่าครอก
+        updated.category = value === "PERSONAL" ? "ค่าอาหาร" : "ค่าอาหาร";
+        updated.litter_id = ""; 
       }
       return updated;
     });
   };
+
+  // เปลี่ยนหมวดหมู่ให้ตรงกับ Tab ที่เลือกอัตโนมัติ
+  useEffect(() => {
+    if (activeTab === "income") {
+      setFormData(prev => ({ ...prev, category: "ขายสัตว์เลี้ยง" }));
+    } else {
+      setFormData(prev => ({ ...prev, category: prev.expense_context === "PERSONAL" ? "ค่าอาหาร" : "ค่าอาหาร" }));
+    }
+  }, [activeTab]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,25 +99,23 @@ export default function UniversalPetFinancePage() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const isFarmBusiness = formData.expense_context !== "PERSONAL";
-
       const { data, error } = await supabase.from("farm_transactions").insert([{
         user_id: session?.user.id,
-        farm_id: formData.expense_context, // เก็บเป็น 'PERSONAL', 'ALL_FARMS' หรือ 'FarmUUID'
-        transaction_type: formData.transaction_type,
+        farm_id: formData.expense_context,
+        transaction_type: activeTab,
         category: formData.category,
         amount: Number(formData.amount),
         transaction_date: formData.transaction_date,
         litter_id: formData.litter_id ? Number(formData.litter_id) : null,
         description: formData.description,
+        receipt_url: formData.receipt_url || null,
       }]).select().single();
 
       if (error) throw error;
 
-      alert("บันทึกสำเร็จ!");
-      router.push("/profile");
       setTransactions([data, ...transactions]);
-      setFormData(prev => ({ ...prev, amount: "", description: "", litter_id: "" }));
+      setFormData(prev => ({ ...prev, amount: "", description: "", receipt_url: "", litter_id: "" }));
+      alert("✅ บันทึกรายการสำเร็จ!");
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -111,136 +123,188 @@ export default function UniversalPetFinancePage() {
     }
   };
 
-  // 🌟 คำนวณสรุปยอด (เดือนปัจจุบัน)
-  const currentMonth = new Date().getMonth();
-  const personalSpending = transactions
-    .filter(t => t.farm_id === 'PERSONAL' && t.transaction_type === 'expense' && new Date(t.transaction_date).getMonth() === currentMonth)
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+  // 🌟 Dashboard Calculations (This Year)
+  const currentYear = new Date().getFullYear();
+  const yearTransactions = transactions.filter(t => new Date(t.transaction_date).getFullYear() === currentYear);
   
-  const farmSpending = transactions
-    .filter(t => t.farm_id !== 'PERSONAL' && t.transaction_type === 'expense' && new Date(t.transaction_date).getMonth() === currentMonth)
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalIncome = yearTransactions.filter(t => t.transaction_type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalExpense = yearTransactions.filter(t => t.transaction_type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+  const netProfit = totalIncome - totalExpense;
+  
+  // ยอดที่นำไปลดหย่อนได้ (สมมติว่าต้องเป็นของ Farm และมีเอกสาร)
+  const taxDeductible = yearTransactions.filter(t => t.farm_id !== 'PERSONAL' && t.transaction_type === 'expense' && t.receipt_url).reduce((sum, t) => sum + Number(t.amount), 0);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-emerald-500 font-bold animate-pulse">กำลังโหลดสมุดบัญชี... 💸</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">Loading Financial Dashboard...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700">
+    <div className="max-w-6xl mx-auto px-4 pt-8 pb-24 animate-in fade-in duration-700 font-sans text-gray-900">
       
-      {/* 🔙 Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => router.back()} className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 text-gray-400 hover:text-emerald-500 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+      {/* 🔙 Header & Export Action */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-gray-900 transition-colors">
+            <Icon.ArrowLeft />
+          </button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Financial Dashboard</h1>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">บัญชีฟาร์ม & ภาษี ประจำปี {currentYear}</p>
+          </div>
+        </div>
+        <button className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-800 transition-colors shadow-md">
+          <Icon.Download /> Export for Tax (Excel)
         </button>
-        <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">บัญชีสัตว์เลี้ยง 📝</h1>
-          <p className="text-sm font-bold text-emerald-500">จัดการค่าใช้จ่ายส่วนตัวและธุรกิจฟาร์ม</p>
+      </div>
+
+      {/* 📊 KPI Dashboard Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-green-500"><Icon.TrendingUp /></div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">รายรับฟาร์ม (YTD)</p>
+          <p className="text-2xl font-black text-green-500">฿{totalIncome.toLocaleString()}</p>
+        </div>
+        <div className="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-red-500"><Icon.TrendingDown /></div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">รายจ่ายทั้งหมด (YTD)</p>
+          <p className="text-2xl font-black text-red-500">฿{totalExpense.toLocaleString()}</p>
+        </div>
+        <div className="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">กำไรสุทธิ (Net Profit)</p>
+          <p className={`text-2xl font-black ${netProfit >= 0 ? 'text-gray-900' : 'text-red-500'}`}>
+            {netProfit >= 0 ? '' : '-'}฿{Math.abs(netProfit).toLocaleString()}
+          </p>
+        </div>
+        <div className="bg-blue-50/50 p-5 rounded-[1.5rem] border border-blue-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-blue-500"><Icon.Receipt /></div>
+          <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">รายจ่ายที่มีใบเสร็จ (หักภาษีได้)</p>
+          <p className="text-2xl font-black text-blue-600">฿{taxDeductible.toLocaleString()}</p>
         </div>
       </div>
 
-      {/* 📊 Summary Boxes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-[2rem] border border-blue-50 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">สัตว์เลี้ยงส่วนตัว (เดือนนี้)</p>
-          <p className="text-3xl font-black text-blue-500">฿{personalSpending.toLocaleString()}</p>
-        </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-pink-50 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">ต้นทุนฟาร์ม (เดือนนี้)</p>
-          <p className="text-3xl font-black text-pink-500">฿{farmSpending.toLocaleString()}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* 📝 Form Section */}
-        <div className="md:col-span-5 bg-white rounded-[2.5rem] p-6 md:p-8 border border-emerald-50 shadow-sm">
-          <h2 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2"><span>✍🏻</span> บันทึกรายการใหม่</h2>
+        {/* 📝 Quick Add Form Section */}
+        <div className="lg:col-span-5 bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+          
+          {/* Tabs Control */}
+          <div className="flex bg-gray-50 p-1 rounded-xl mb-6 border border-gray-100">
+            <button 
+              onClick={() => setActiveTab("expense")} 
+              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === "expense" ? "bg-white text-red-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
+            >
+              ลงรายจ่าย (Expense)
+            </button>
+            <button 
+              onClick={() => setActiveTab("income")} 
+              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === "income" ? "bg-white text-green-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
+            >
+              ลงรายรับ (Income)
+            </button>
+          </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* รายรับ / รายจ่าย */}
-            <div className="grid grid-cols-2 gap-3 bg-gray-50 p-1.5 rounded-2xl">
-              <button type="button" onClick={() => setFormData({ ...formData, transaction_type: "expense" })} className={`py-2.5 rounded-xl font-bold text-sm transition-all ${formData.transaction_type === 'expense' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-400'}`}>รายจ่าย</button>
-              <button type="button" onClick={() => setFormData({ ...formData, transaction_type: "income" })} className={`py-2.5 rounded-xl font-bold text-sm transition-all ${formData.transaction_type === 'income' ? 'bg-white text-green-500 shadow-sm' : 'text-gray-400'}`}>รายรับ</button>
+            
+            {/* Context & Category Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">บัญชีของ</label>
+                <select name="expense_context" value={formData.expense_context} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-gray-300 text-xs font-bold text-gray-800 appearance-none">
+                  <option value="PERSONAL">🏠 สัตว์เลี้ยงส่วนตัว</option>
+                  {farms.length > 0 && (
+                    <optgroup label="ธุรกิจฟาร์ม">
+                      <option value="ALL_FARMS">🏢 รวมทุกฟาร์ม</option>
+                      {farms.map(f => <option key={f.id} value={f.id}>🏡 {f.farm_name}</option>)}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">หมวดหมู่</label>
+                <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-gray-300 text-xs font-bold text-gray-800 appearance-none">
+                  {activeTab === "income" 
+                    ? categories.income.map(c => <option key={c} value={c}>{c}</option>)
+                    : (formData.expense_context === "PERSONAL" ? categories.personal : categories.farm).map(c => <option key={c} value={c}>{c}</option>)
+                  }
+                </select>
+              </div>
             </div>
 
-            {/* 🌟 เลือกบริบท (PERSONAL / ALL_FARMS / SPECIFIC FARM) */}
-            <div>
-              <label className="block text-xs font-black text-emerald-600 mb-1.5 ml-1">รายการนี้เป็นของส่วนไหน?</label>
-              <select name="expense_context" value={formData.expense_context} onChange={handleChange} className="w-full bg-emerald-50/50 border border-emerald-100 rounded-xl px-4 py-3 outline-none focus:border-emerald-400 font-bold text-gray-800">
-                <option value="PERSONAL">🏠 สัตว์เลี้ยงส่วนตัว (Home Pet)</option>
-                {farms.length > 0 && (
-                  <optgroup label="ธุรกิจฟาร์ม">
-                    <option value="ALL_FARMS">🏢 รวมทุกฟาร์ม (ค่าน้ำ/ไฟ/อื่นๆ)</option>
-                    {farms.map(f => <option key={f.id} value={f.id}>🏡 ฟาร์ม: {f.farm_name}</option>)}
-                  </optgroup>
-                )}
-              </select>
-            </div>
-
-            {/* 🌟 ถ้าเลือกฟาร์ม ให้เลือกครอกได้ */}
+            {/* Litter Context (Optional for Farm) */}
             {formData.expense_context !== "PERSONAL" && formData.expense_context !== "ALL_FARMS" && (
-              <div className="p-3 bg-pink-50 rounded-xl border border-pink-100 animate-in zoom-in-95">
-                <label className="block text-xs font-bold text-pink-600 mb-1">ผูกกับครอก (ถ้ามี)</label>
-                <select name="litter_id" value={formData.litter_id} onChange={handleChange} className="w-full bg-white rounded-lg px-3 py-2 text-xs font-bold text-gray-700 outline-none">
-                  <option value="">-- ไม่ระบุครอก (รายจ่ายรวมฟาร์มนี้) --</option>
+              <div className="animate-in fade-in zoom-in-95">
+                <select name="litter_id" value={formData.litter_id} onChange={handleChange} className="w-full bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-xs font-bold text-indigo-700 outline-none appearance-none">
+                  <option value="">-- ไม่ระบุครอก (รายรับ/จ่ายรวมของฟาร์ม) --</option>
                   {availableLitters.map(l => <option key={l.id} value={l.id}>🐾 ครอก: {l.litter_code}</option>)}
                 </select>
               </div>
             )}
 
+            {/* Amount & Date Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">จำนวนเงิน</label>
-                <input required type="number" name="amount" value={formData.amount} onChange={handleChange} placeholder="0" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-black text-gray-800" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">จำนวนเงิน (บาท) *</label>
+                <input required type="number" name="amount" value={formData.amount} onChange={handleChange} placeholder="0.00" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-black text-gray-900 text-lg outline-none focus:border-gray-400" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">วันที่</label>
-                <input required type="date" name="transaction_date" value={formData.transaction_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-800" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">วันที่ทำรายการ *</label>
+                <input required type="date" name="transaction_date" value={formData.transaction_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none h-[54px]" />
               </div>
             </div>
 
+            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="รายละเอียดเพิ่มเติม (เช่น ชื่อร้านค้า, รายการสินค้า)..." className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold text-gray-800 outline-none focus:border-gray-300" rows={2} />
+
+            {/* 🧾 Tax Receipt Section */}
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">หมวดหมู่</label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-800">
-                {formData.transaction_type === "income" 
-                  ? categories.income.map(c => <option key={c} value={c}>{c}</option>)
-                  : (formData.expense_context === "PERSONAL" ? categories.personal : categories.farm).map(c => <option key={c} value={c}>{c}</option>)
-                }
-              </select>
+              <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                <Icon.FileText /> เอกสารอ้างอิง / ใบกำกับภาษี
+              </label>
+              <input type="text" name="receipt_url" value={formData.receipt_url} onChange={handleChange} placeholder="วางลิงก์รูปภาพใบเสร็จ หรือ เลขที่เอกสารอ้างอิง" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-medium text-gray-600 outline-none focus:border-gray-300" />
             </div>
 
-            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="รายละเอียดเพิ่มเติม..." className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800" rows={2} />
-
-            <button type="submit" disabled={isSubmitting} className={`w-full py-4 rounded-xl font-black text-white shadow-xl transition-all active:scale-95 ${isSubmitting ? 'bg-gray-300' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-100'}`}>
-              {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกรายการ 💾'}
+            <button type="submit" disabled={isSubmitting} className={`w-full py-4 rounded-xl font-black text-white shadow-xl transition-all active:scale-95 ${isSubmitting ? 'bg-gray-300' : (activeTab === 'income' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' : 'bg-red-500 hover:bg-red-600 shadow-red-100')}`}>
+              {isSubmitting ? 'กำลังบันทึก...' : `บันทึก${activeTab === 'income' ? 'รายรับ' : 'รายจ่าย'} 💾`}
             </button>
           </form>
         </div>
 
-        {/* 📋 History Section */}
-        <div className="md:col-span-7 bg-white rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm h-[750px] flex flex-col">
-          <h2 className="text-lg font-black text-gray-800 mb-4">ประวัติล่าสุด</h2>
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+        {/* 📋 Recent Transactions List */}
+        <div className="lg:col-span-7 bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm h-[680px] flex flex-col">
+          <div className="flex justify-between items-end mb-5">
+            <h2 className="text-lg font-black text-gray-900">Recent Transactions</h2>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{transactions.length} records</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3">
             {transactions.map(tx => {
               const isIncome = tx.transaction_type === 'income';
               const farmObj = farms.find(f => f.id === tx.farm_id);
+              const hasReceipt = !!tx.receipt_url;
+
               return (
-                <div key={tx.id} className="p-4 border border-gray-50 rounded-2xl flex items-center justify-between hover:bg-gray-50 transition">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-400'}`}>
-                      {isIncome ? '➕' : '➖'}
+                <div key={tx.id} className="p-4 border border-gray-100 rounded-2xl flex items-center justify-between hover:bg-gray-50 transition-colors group">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border ${isIncome ? 'bg-green-50 text-green-500 border-green-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                      {isIncome ? <Icon.TrendingUp /> : <Icon.TrendingDown />}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm font-bold text-gray-800 truncate">{tx.category}</p>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${tx.farm_id === 'PERSONAL' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-pink-50 text-pink-500 border-pink-100'}`}>
-                          {tx.farm_id === 'PERSONAL' ? '🏠 ส่วนตัว' : (tx.farm_id === 'ALL_FARMS' ? '🏢 ทุกฟาร์ม' : `🏡 ${farmObj?.farm_name || 'ฟาร์ม'}`)}
-                        </span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-sm font-bold text-gray-900 truncate">{tx.category}</p>
+                        {hasReceipt && (
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-500 rounded border border-blue-100 flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider" title="มีเอกสารใบเสร็จ">
+                            <Icon.FileText /> TAX
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[10px] text-gray-400 truncate">{tx.description || tx.transaction_date}</p>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span>{new Date(tx.transaction_date).toLocaleDateString('en-GB')}</span>
+                        <span>•</span>
+                        <span className="truncate">{tx.farm_id === 'PERSONAL' ? 'PERSONAL' : (tx.farm_id === 'ALL_FARMS' ? 'ALL FARMS' : farmObj?.farm_name || 'FARM')}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className={`font-black text-sm ${isIncome ? 'text-green-500' : 'text-red-500'}`}>
-                    {isIncome ? '+' : '-'}฿{Number(tx.amount).toLocaleString()}
+                  <div className="text-right shrink-0 ml-4">
+                    <div className={`font-black text-base ${isIncome ? 'text-green-500' : 'text-gray-900'}`}>
+                      {isIncome ? '+' : '-'}฿{Number(tx.amount).toLocaleString()}
+                    </div>
                   </div>
                 </div>
               );
