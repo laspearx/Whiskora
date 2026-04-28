@@ -488,41 +488,6 @@ export default function Home() {
             สมัครเลยฟรี →
           </button>
         </section>
-
-        {/* ── FOOTER ───────────────────────────────────────────────────── */}
-        <footer style={{ borderTop: `1px solid ${F.line}`, padding: '40px 0 60px' }}>
-          <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: 20, marginBottom: 12 }}>
-                <PawMark size={40} />
-                <span style={{ color: F.pink }}>Whiskora</span>
-              </div>
-              <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.6, margin: 0 }}>
-                ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง — One platform, every pet life.
-              </p>
-            </div>
-            {[
-              { title: 'ผู้ใช้งาน',  links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/profile/pets' }, { label: 'คอมมูนิตี้', href: '/community' }] },
-              { title: 'พาร์ทเนอร์', links: [{ label: 'เปิดฟาร์ม', href: '/partner' }, { label: 'เปิดร้านค้า', href: '/partner' }, { label: 'Genesis Program', href: '/partner' }, { label: 'ราคา PRO', href: '/partner' }] },
-              { title: 'บริษัท',     links: [{ label: 'เกี่ยวกับเรา', href: '/' }, { label: 'นโยบายความเป็นส่วนตัว', href: '/' }, { label: 'ข้อกำหนด', href: '/' }, { label: 'ติดต่อ', href: '/' }] },
-            ].map(col => (
-              <div key={col.title}>
-                <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: 2, color: F.muted, margin: '0 0 14px', fontWeight: 600 }}>{col.title}</h4>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                  {col.links.map(l => (
-                    <li key={l.label} style={{ marginBottom: 10 }}>
-                      <Link href={l.href} className="footer-link" style={{ fontSize: 13, color: F.inkSoft, transition: 'color .15s' }}>{l.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, paddingTop: 24, borderTop: `1px solid ${F.line}`, fontSize: 12, color: F.muted }}>
-            <span>© 2026 Whiskora · Made in Bangkok</span>
-            <span>PDPA compliant</span>
-          </div>
-        </footer>
       </div>
     </>
   );

@@ -3,6 +3,9 @@ import Navbar from "./components/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import BrowserChecker from "./components/BrowserChecker";
 
+// 🌟 1. Import Component ใหม่ที่สร้างไว้เข้ามา
+import Footer from "./components/Footer";
+
 export const metadata = {
   metadataBase: new URL('https://whiskora.pet'),
   title: "Whiskora | แพลตฟอร์มสำหรับคนรักสัตว์เลี้ยง",
@@ -36,9 +39,15 @@ export default function RootLayout({
         <BrowserChecker />
         <ScrollToTop />
         <Navbar />
+
+        {/* เนื้อหาหลักของแต่ละหน้า */}
         <main className="max-w-7xl mx-auto px-4 md:px-6 min-h-screen">
           {children}
         </main>
+
+        {/* 🌟 2. Footer วางไว้ล่างสุดของส่วนเนื้อหา (โผล่ทุกหน้า) */}
+        <Footer />
+
       </body>
     </html>
   );
