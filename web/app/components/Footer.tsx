@@ -20,39 +20,39 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full max-w-7xl mx-auto px-4 md:px-6 mt-20 pt-16 pb-28" style={{ borderTop: `1px solid ${F.line}` }}>
+    <footer className="w-full max-w-7xl mx-auto px-5 md:px-6 mt-10 md:mt-16 pt-8 md:pt-12 pb-20 md:pb-24" style={{ borderTop: `1px solid ${F.line}` }}>
       
-      {/* Grid Layout: ปรับเป็น 1 คอลัมน์ในมือถือ และ 4 คอลัมน์ในคอม */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-10">
         
         {/* Brand Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 font-extrabold text-xl">
+        <div className="col-span-2 md:col-span-1 space-y-4 md:-mt-4">
+          <div className="flex items-center gap-2">
             <Image 
-              src="/mini-logo.png" // พาธรูปภาพ อ้างอิงจากโฟลเดอร์ public
-              alt="Whiskora Mini Logo" // ข้อความอธิบายรูปภาพ (สำคัญสำหรับ SEO)
-              width={30} // 📏 กำหนดความกว้าง (ปรับขนาดได้ตามต้องการ)
-              height={30} // 📏 กำหนดความสูง (ปรับขนาดได้ตามต้องการ)
-              className="object-contain" // ช่วยให้รูปไม่เบี้ยว
+              src="/logo.png" 
+              alt="Whiskora Logo" 
+              width={140}
+              height={40}
+              className="h-auto"
             />
           </div>
           <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.6 }} className="max-w-xs">
-            ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง — One platform, every pet life.
+            ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง <br />
+            <span className="opacity-70">One platform, every pet life.</span>
           </p>
         </div>
 
         {/* Links Sections */}
         {footerSections.map((section) => (
-          <div key={section.title}>
-            <h4 style={{ fontSize: 12, letterSpacing: '0.1em', color: F.muted }} className="font-bold uppercase mb-5">
+          <div key={section.title} className="space-y-4">
+            <h4 style={{ fontSize: 11, letterSpacing: '0.1em', color: F.muted }} className="font-bold uppercase">
               {section.title}
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-2.5">
               {section.links.map((link) => (
                 <li key={link.label}>
                   <Link 
                     href={link.href} 
-                    className="text-[13px] transition-colors hover:text-pink-500"
+                    className="text-[13px] transition-colors hover:text-pink-500 block"
                     style={{ color: F.inkSoft }}
                   >
                     {link.label}
@@ -65,11 +65,15 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left" style={{ borderTop: `1px solid ${F.line}`, fontSize: 12, color: F.muted }}>
-        <span>© 2026 Whiskora · Made in Bangkok</span>
-        <div className="flex justify-center gap-6">
+      <div className="mt-6 md:mt-8 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-gray-50" style={{ fontSize: 11, color: F.muted }}>
+        <div className="flex items-center gap-2">
+          <span>© 2026 Whiskora</span>
+          <span className="opacity-30">|</span>
+          <span>Made in Bangkok</span>
+        </div>
+        <div className="flex items-center gap-6">
           <span>PDPA compliant</span>
-          <span className="opacity-50">Whiskora v1.4.0</span>
+          <span className="opacity-50">V1.1.4</span>
         </div>
       </div>
     </footer>

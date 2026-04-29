@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-// 🌟 เพิ่ม useRef เข้ามา
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase'; 
@@ -12,7 +12,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter(); 
   
-  // 🌟 สร้าง Ref สำหรับอ้างอิงพื้นที่ของ Navbar
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -27,19 +26,15 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 🌟 useEffect สำหรับตรวจจับการคลิกนอก Navbar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // ถ้า Navbar มีอยู่จริง และ จุดที่คลิก "ไม่ได้อยู่ข้างใน" Navbar
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
-        setIsOpen(false); // สั่งหุบเมนู
+        setIsOpen(false); 
       }
     };
 
-    // เปิดเรดาร์ตรวจจับการคลิก
     document.addEventListener("mousedown", handleClickOutside);
     
-    // ปิดเรดาร์เมื่อ Component ถูกทำลาย (ทำความสะอาด Memory)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -63,14 +58,20 @@ export default function Navbar() {
   };
 
   return (
-    // 🌟 ใส่ ref={navRef} ที่ตัวคลุมชั้นนอกสุด เพื่อกำหนดอาณาเขต
     <nav ref={navRef} className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex justify-between items-center h-16">
           
-          {/* โลโก้เว็บ */}
-          <Link href="/" className="text-2xl font-black text-pink-500 tracking-tight">
-            Whiskora
+          {/* 🌟 ปรับขนาดโลโก้ให้ใหญ่ขึ้น */}
+          <Link href="/" className="flex items-center shrink-0 transition-transform hover:scale-105 py-2">
+            <Image 
+              src="/logo.png" 
+              alt="Whiskora Logo" 
+              width={160} 
+              height={48} 
+              // เปลี่ยนจาก h-8 เป็น h-10 (มือถือ) และ h-12 (คอม) ให้ดูเต็มตาขึ้น
+              className="h-22 md:h-30 w-auto object-contain"
+            />
           </Link>
 
           {/* เมนูสำหรับจอคอม (Desktop) */}
