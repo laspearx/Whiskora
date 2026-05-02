@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,8 +12,8 @@ function ShopDashboardContent() {
   const shopId = params.id as string;
   const fromPage = searchParams.get("from") || "profile";
 
-  const [shop, setShop] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [shop, setShop] = useState<import('@/lib/types').Shop | null>(null);
+  const [products, setProducts] = useState<import('@/lib/types').Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -165,7 +165,7 @@ function ShopDashboardContent() {
 }
 
 // Helper Components
-function StatCard({ label, value, unit, color, icon }: any) {
+function StatCard({ label, value, unit, color, icon }: import('@/lib/types').StatCardProps) {
   return (
     <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden group">
       <div className="absolute -right-2 -top-2 text-4xl opacity-10 group-hover:scale-125 transition-transform">{icon}</div>
@@ -178,7 +178,7 @@ function StatCard({ label, value, unit, color, icon }: any) {
   );
 }
 
-function ToolLink({ href, icon, title, desc }: any) {
+function ToolLink({ href, icon, title, desc }: import('@/lib/types').ToolLinkProps) {
   return (
     <Link href={href} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:border-teal-200 transition-all flex items-center gap-4 group">
       <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition">{icon}</div>

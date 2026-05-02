@@ -10,7 +10,7 @@ function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   
-  const [farms, setFarms] = useState<any[]>([]);
+  const [farms, setFarms] = useState<import('@/lib/types').Farm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

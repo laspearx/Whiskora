@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -31,9 +31,9 @@ export default function PartnerHubPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   
-  const [myFarms, setMyFarms] = useState<any[]>([]);
-  const [myShops, setMyShops] = useState<any[]>([]);
-  const [myServices, setMyServices] = useState<any[]>([]);
+  const [myFarms, setMyFarms] = useState<import('@/lib/types').Farm[]>([]);
+  const [myShops, setMyShops] = useState<import('@/lib/types').Shop[]>([]);
+  const [myServices, setMyServices] = useState<import('@/lib/types').Service[]>([]);
 
   useEffect(() => {
     const fetchMyBusinesses = async () => {
@@ -123,7 +123,7 @@ export default function PartnerHubPage() {
   );
 }
 
-function PartnerCategoryCard({ title, description, icon, colorTheme, items, registerUrl, dashboardUrlPrefix }: any) {
+function PartnerCategoryCard({ title, description, icon, colorTheme, items, registerUrl, dashboardUrlPrefix }: import('@/lib/types').PartnerCategoryCardProps) {
   const themeStyles = {
     pink: { 
         accent: F.pink, 
@@ -168,7 +168,7 @@ function PartnerCategoryCard({ title, description, icon, colorTheme, items, regi
             </div>
             
             <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
-              {items.map((item: any) => (
+              {items.map((item) => (
                 <Link 
                   key={item.id} 
                   href={`${dashboardUrlPrefix}/${item.id}?from=partner`} 

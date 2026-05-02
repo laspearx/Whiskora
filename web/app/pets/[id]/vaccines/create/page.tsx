@@ -175,9 +175,9 @@ export default function CreateVaccinePage() {
       // เสร็จกระบวนการทั้งหมด เด้งกลับไปหน้าโปรไฟล์น้อง
       router.push(`/pets/${petId}`); 
       router.refresh(); 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving vaccine:", error);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'กรุณาลองใหม่'}`);
       setSaving(false);
     }
   };

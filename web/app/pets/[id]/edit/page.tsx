@@ -88,7 +88,7 @@ export default function EditPetPage() {
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<import('react-easy-crop').Area | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -162,9 +162,9 @@ export default function EditPetPage() {
     }
   };
 
-  const onCropComplete = useCallback((ca: any, cap: any) => setCroppedAreaPixels(cap), []);
+  const onCropComplete = useCallback((ca: import('react-easy-crop').Area, cap: import('react-easy-crop').Area) => setCroppedAreaPixels(cap), []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<Blob> => {
+  const getCroppedImg = async (imageSrc: string, pixelCrop: import('react-easy-crop').Area): Promise<Blob> => {
     const image = new Image(); image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
     const canvas = document.createElement("canvas");
@@ -190,8 +190,8 @@ export default function EditPetPage() {
       const { data: { publicUrl } } = supabase.storage.from("pet-photos").getPublicUrl(filePath);
       setAvatarUrl(publicUrl);
       setImageSrc(null);
-    } catch (error: any) {
-      alert("เกิดข้อผิดพลาด: " + (error.message || "อัปโหลดรูปภาพไม่ได้"));
+    } catch (error: unknown) {
+      alert("เกิดข้อผิดพลาด: " + (error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่ได้"));
     } finally {
       setIsUploading(false);
     }
@@ -231,8 +231,8 @@ export default function EditPetPage() {
       const { error } = await supabase.from("pets").delete().eq("id", petId).eq("user_id", userId);
       if (error) throw error;
       router.push('/profile'); 
-    } catch (error: any) {
-      alert("เกิดข้อผิดพลาดในการลบ: " + error.message);
+    } catch (error: unknown) {
+      alert("เกิดข้อผิดพลาดในการลบ: " + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
       setIsDeleting(false);
     }
   };
@@ -323,7 +323,7 @@ export default function EditPetPage() {
                   { id: "other", label: "อื่นๆ", icon: '🐾' }
                 ].map((type) => (
                   <button
-                    key={type.id} type="button" onClick={() => handleSpeciesChange(type.id as any)}
+                    key={type.id} type="button" onClick={() => handleSpeciesChange(type.id as "cat" | "dog" | "other")}
                     className={`py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
                       species === type.id ? 'bg-teal-200 text-teal border-teal-500 shadow-md' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
                     }`}

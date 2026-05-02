@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -40,14 +40,14 @@ export default function PetDetailPage() {
   const params = useParams();
   const petId = params.id as string;
 
-  const [pet, setPet] = useState<any>(null);
-  const [vaccines, setVaccines] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [owner, setOwner] = useState<any>(null);
+  const [pet, setPet] = useState<import('@/lib/types').Pet | null>(null);
+  const [vaccines, setVaccines] = useState<import('@/lib/types').Vaccine[]>([]);
+  const [activities, setActivities] = useState<import('@/lib/types').Activity[]>([]);
+  const [owner, setOwner] = useState<import('@/lib/types').UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // 🌟 Formatting Helpers
-  const displayVal = (val: any, suffix = '') => val ? `${val}${suffix}` : '-';
+  const displayVal = (val: string | number | null | undefined, suffix = '') => val != null && val !== '' ? `${val}${suffix}` : '-';
   const parseGallery = (urls: string) => {
     if (!urls) return [];
     try { return JSON.parse(urls); } catch { return urls.split(','); }
@@ -112,7 +112,7 @@ export default function PetDetailPage() {
 
   // 🌟 Logic: ผสมข้อมูลเข้าด้วยกันสำหรับ Master Timeline
   const generateCombinedTimeline = () => {
-    const timeline: any[] = [];
+    const timeline: { id: string; date: string; title: string; description: string; type: string; color: string }[] = [];
 
     // 1. เพิ่มวันเกิด
     if (pet?.birth_date) {

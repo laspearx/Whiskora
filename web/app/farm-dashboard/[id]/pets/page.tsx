@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +13,7 @@ export default function FarmPetsListPage() {
   const farmId = params.id as string;
   const statusFilter = searchParams.get("status"); // 🌟 ดึงคำว่า "พร้อมย้ายบ้าน", "เด็ก" ฯลฯ ออกมาจาก URL
 
-  const [pets, setPets] = useState<any[]>([]);
+  const [pets, setPets] = useState<import('@/lib/types').Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

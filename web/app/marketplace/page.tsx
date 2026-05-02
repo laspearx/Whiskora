@@ -25,7 +25,7 @@ const Icon = {
 
 export default function MarketplacePage() {
   const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<import('@/lib/types').Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ทั้งหมด");

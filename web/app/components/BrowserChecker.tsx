@@ -6,7 +6,7 @@ export default function BrowserChecker() {
   const [isInApp, setIsInApp] = useState(false);
 
   useEffect(() => {
-    const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const ua = navigator.userAgent || navigator.vendor || (window as Window & { opera?: string }).opera || "";
     // เช็คว่าเข้าผ่าน LINE, FB Messenger, Instagram หรือแอปแชทอื่นๆ หรือไม่
     const isLine = ua.indexOf("Line") > -1;
     const isFB = ua.indexOf("FBAN") > -1 || ua.indexOf("FBAV") > -1;

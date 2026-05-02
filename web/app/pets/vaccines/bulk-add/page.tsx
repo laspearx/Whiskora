@@ -32,7 +32,7 @@ export default function BulkAddVaccinePage() {
   const [nextDue, setNextDue] = useState("");
   
   // 🌟 States สำหรับจัดการสัตว์เลี้ยง
-  const [pets, setPets] = useState<any[]>([]);
+  const [pets, setPets] = useState<import('@/lib/types').Pet[]>([]);
   const [selectedPetIds, setSelectedPetIds] = useState<string[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -110,9 +110,9 @@ export default function BulkAddVaccinePage() {
 
       router.push(`/profile`); 
       router.refresh(); 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving vaccine:", error);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'กรุณาลองใหม่'}`);
       setSaving(false);
     }
   };

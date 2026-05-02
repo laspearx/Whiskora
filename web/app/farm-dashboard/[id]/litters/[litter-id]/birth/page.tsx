@@ -23,7 +23,7 @@ export default function BornLitterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [litterInfo, setLitterInfo] = useState<any>(null);
+  const [litterInfo, setLitterInfo] = useState<import('@/lib/types').Litter | null>(null);
 
   const [actualBirthDate, setActualBirthDate] = useState(new Date().toISOString().split('T')[0]);
   const [kittens, setKittens] = useState<KittenForm[]>([
@@ -119,8 +119,8 @@ export default function BornLitterPage() {
       alert(`🎉 บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
       router.push(`/farm-dashboard/${farmId}`);
 
-    } catch (error: any) {
-      alert('เกิดข้อผิดพลาด: ' + error.message);
+    } catch (error: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
       console.error(error);
     } finally {
       setIsLoading(false);

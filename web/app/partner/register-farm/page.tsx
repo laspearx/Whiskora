@@ -92,9 +92,9 @@ export default function RegisterFarmPage() {
       alert('🎉 ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
       router.push('/partner'); 
       router.refresh(); 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error registering farm:', error);
-      alert(`เกิดข้อผิดพลาด: ${error.message || error.details}`);
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'กรุณาลองใหม่'}`);
     } finally {
       setLoading(false);
     }

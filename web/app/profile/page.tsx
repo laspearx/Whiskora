@@ -33,17 +33,17 @@ const Icon = {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [pets, setPets] = useState<any[]>([]);
+  const [user, setUser] = useState<import('@supabase/supabase-js').User | null>(null);
+  const [profile, setProfile] = useState<import('@/lib/types').UserProfile | null>(null);
+  const [pets, setPets] = useState<import('@/lib/types').Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [myFarms, setMyFarms] = useState<any[]>([]);
-  const [myShops, setMyShops] = useState<any[]>([]);
-  const [myServices, setMyServices] = useState<any[]>([]);
+  const [myFarms, setMyFarms] = useState<import('@/lib/types').Farm[]>([]);
+  const [myShops, setMyShops] = useState<import('@/lib/types').Shop[]>([]);
+  const [myServices, setMyServices] = useState<import('@/lib/types').Service[]>([]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<{ next_due: string; vaccine_name: string; pet_id: string }[]>([]);
 
   // 🗓️ 🌟 ประกาศตัวแปรคำนวณปฏิทิน
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -78,7 +78,7 @@ export default function ProfilePage() {
         if (petsRes.data) setPets(petsRes.data);
 
         if (petsRes.data && petsRes.data.length > 0) {
-          const petIds = petsRes.data.map((p: any) => p.id);
+          const petIds = petsRes.data.map((p) => p.id);
           const { data: vacData } = await supabase
             .from("vaccines")
             .select("next_due, vaccine_name, pet_id") 

@@ -95,8 +95,8 @@ export default function RegisterServicePage() {
 
       alert('🐾 บันทึกข้อมูลบริการเรียบร้อยแล้ว!');
       router.push(`/profile`); 
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
     } finally {
       setIsLoading(false);
     }

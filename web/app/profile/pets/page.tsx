@@ -30,8 +30,8 @@ const Icon = {
 export default function MyPetsSummaryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [personalPets, setPersonalPets] = useState<any[]>([]);
-  const [farmPets, setFarmPets] = useState<Record<string, { name: string, pets: any[] }>>({});
+  const [personalPets, setPersonalPets] = useState<import('@/lib/types').Pet[]>([]);
+  const [farmPets, setFarmPets] = useState<Record<string, { name: string; pets: import('@/lib/types').Pet[] }>>({});
 
   useEffect(() => {
     const fetchAllPets = async () => {
@@ -44,8 +44,8 @@ export default function MyPetsSummaryPage() {
         const { data: pets } = await supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false });
 
         if (pets) {
-          const personal: any[] = [];
-          const groupedFarms: Record<string, { name: string, pets: any[] }> = {};
+          const personal: import('@/lib/types').Pet[] = [];
+          const groupedFarms: Record<string, { name: string; pets: import('@/lib/types').Pet[] }> = {};
           farms?.forEach(f => { groupedFarms[f.id] = { name: f.farm_name, pets: [] }; });
 
           pets.forEach(pet => {
@@ -163,7 +163,7 @@ export default function MyPetsSummaryPage() {
 }
 
 // ─── Refined Pet Card Component ───────────────────────────────────────────────
-function PetGridCard({ pet }: { pet: any }) {
+function PetGridCard({ pet }: { pet: import('@/lib/types').Pet }) {
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
 
   // 🌟 ฟังก์ชันจัดการชื่อสายพันธุ์ (ตัดแยกไทยและอังกฤษให้อยู่คนละบรรทัด)
