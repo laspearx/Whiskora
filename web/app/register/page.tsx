@@ -22,7 +22,7 @@ export default function RegisterPage() {
 
   // 🌟 ดักจับ Session เพื่อแยก "คนเก่า" กับ "คนใหม่"
   useEffect(() => {
-    const checkUserStatus = (user: import('@supabase/supabase-js').User) => {
+    const checkUserStatus = (user: any) => {
       const createdAt = new Date(user.created_at).getTime();
       const lastSignInAt = new Date(user.last_sign_in_at).getTime();
 

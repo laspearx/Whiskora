@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -11,7 +11,7 @@ function AppointmentsList() {
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date"); // รับค่าวันที่จาก URL
 
-  const [groupedAppointments, setGroupedAppointments] = useState<import('@/lib/types').VaccineGroup[]>([]);
+  const [groupedAppointments, setGroupedAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ function AppointmentsList() {
           });
 
           // 🌟 5. จัดกลุ่มข้อมูลตาม "ชื่อวัคซีน/บริการ"
-          const groupedData = mergedData.reduce((acc: Record<string, import('@/lib/types').VaccineGroup>, current: import('@/lib/types').VaccineWithPet) => {
+          const groupedData = mergedData.reduce((acc: any, current: any) => {
             const type = current.vaccine_name;
             if (!acc[type]) acc[type] = [];
             acc[type].push(current);
@@ -139,7 +139,7 @@ function AppointmentsList() {
 
               {/* รายชื่อสัตว์เลี้ยงในกลุ่มนี้ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {group.items.map((appt, idx: number) => (
+                {group.items.map((appt: any, idx: number) => (
                   <Link 
                     key={idx} 
                     href={`/pets/${appt.cat_id}`} 

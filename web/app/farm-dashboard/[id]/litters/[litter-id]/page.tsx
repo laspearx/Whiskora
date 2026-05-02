@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -11,10 +11,10 @@ export default function LitterDetailsPage() {
   const farmId = params.id as string;
   const litterId = params['litter-id'] as string;
 
-  const [litter, setLitter] = useState<import('@/lib/types').Litter | null>(null);
-  const [sire, setSire] = useState<import('@/lib/types').Pet | null>(null);
-  const [dam, setDam] = useState<import('@/lib/types').Pet | null>(null);
-  const [babies, setBabies] = useState<import('@/lib/types').Pet[]>([]);
+  const [litter, setLitter] = useState<any>(null);
+  const [sire, setSire] = useState<any>(null);
+  const [dam, setDam] = useState<any>(null);
+  const [babies, setBabies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

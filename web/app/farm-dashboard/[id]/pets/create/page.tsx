@@ -34,7 +34,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     image.src = url;
   });
 
-async function getCroppedImg(imageSrc: string, pixelCrop: import('react-easy-crop').Area): Promise<Blob | null> {
+async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -68,7 +68,7 @@ export default function CreateFarmPetPage() {
   const params = useParams();
   const farmId = params.id as string;
 
-  const [farm, setFarm] = useState<import('@/lib/types').Farm | null>(null);
+  const [farm, setFarm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -135,7 +135,7 @@ export default function CreateFarmPetPage() {
     }
   };
 
-  const onCropComplete = useCallback((croppedArea: import('react-easy-crop').Area, croppedAreaPixels: import('react-easy-crop').Area) => {
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -217,9 +217,9 @@ export default function CreateFarmPetPage() {
       alert("🎉 เพิ่มสัตว์เลี้ยงเข้าฟาร์มเรียบร้อยแล้ว!");
       router.push(`/farm-dashboard/${farm.id}/pets`); 
       router.refresh();
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Error creating pet:", error);
-      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : 'กรุณาลองใหม่'}`);
+      alert(`เกิดข้อผิดพลาด: ${error.message}`);
     } finally {
       setSaving(false);
     }

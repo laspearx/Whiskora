@@ -85,8 +85,8 @@ export default function RegisterShopPage() {
 
       alert('🛍️ เปิดร้าน Pet Shop สำเร็จ! ไปจัดการสต็อกสินค้ากันครับ');
       router.push(`/profile`); 
-    } catch (error: unknown) {
-      alert('Error: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
+    } catch (error: any) {
+      alert('Error: ' + error.message);
     } finally {
       setIsLoading(false);
     }

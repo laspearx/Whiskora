@@ -4,12 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import type { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase'; 
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any>(null); 
   const pathname = usePathname();
   const router = useRouter(); 
   

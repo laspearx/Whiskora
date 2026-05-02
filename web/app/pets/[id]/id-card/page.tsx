@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
@@ -40,8 +40,8 @@ export default function PetIdCardPage() {
   const params = useParams();
   const petId = params.id as string;
 
-  const [pet, setPet] = useState<import('@/lib/types').Pet | null>(null);
-  const [profile, setProfile] = useState<import('@/lib/types').UserProfile | null>(null);
+  const [pet, setPet] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   const [activeTheme, setActiveTheme] = useState<keyof typeof PREMIUM_THEMES>('obsidian');

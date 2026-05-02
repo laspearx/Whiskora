@@ -10,9 +10,9 @@ export default function PublicPetProfilePage() {
   const params = useParams();
   const petId = params.id as string;
 
-  const [pet, setPet] = useState<import('@/lib/types').Pet | null>(null);
-  const [profile, setProfile] = useState<import('@/lib/types').UserProfile | null>(null);
-  const [farm, setFarm] = useState<import('@/lib/types').Farm | null>(null);
+  const [pet, setPet] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [farm, setFarm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -30,7 +30,7 @@ const Icon = {
 
 export default function FarmHubPage() {
   const router = useRouter();
-  const [pets, setPets] = useState<import('@/lib/types').Pet[]>([]);
+  const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activePetType, setActivePetType] = useState("ทั้งหมด");

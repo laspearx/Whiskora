@@ -50,8 +50,8 @@ export default function LoginPage() {
   // 🌟 ฟังก์ชันเข้าสู่ระบบด้วย Social
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     // 1. ตั้งค่าพื้นฐาน (URL เด้งกลับ)
-    const oauthOptions: { redirectTo: string } = {
-      redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+    let oauthOptions: any = {
+      redirectTo: `${window.location.origin}/auth/callback?next=/profile`, 
     };
 
     const { error } = await supabase.auth.signInWithOAuth({

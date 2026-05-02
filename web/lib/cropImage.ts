@@ -7,11 +7,9 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
     image.src = url;
   });
 
-interface PixelCrop { x: number; y: number; width: number; height: number; }
-
 export default async function getCroppedImg(
   imageSrc: string,
-  pixelCrop: PixelCrop
+  pixelCrop: any
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');

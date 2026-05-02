@@ -17,9 +17,9 @@ const Icon = {
 export default function UniversalPetFinancePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [farms, setFarms] = useState<import('@/lib/types').Farm[]>([]);
-  const [allLitters, setAllLitters] = useState<import('@/lib/types').Litter[]>([]);
-  const [transactions, setTransactions] = useState<import('@/lib/types').Transaction[]>([]);
+  const [farms, setFarms] = useState<any[]>([]);
+  const [allLitters, setAllLitters] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
 
@@ -116,8 +116,8 @@ export default function UniversalPetFinancePage() {
       setTransactions([data, ...transactions]);
       setFormData(prev => ({ ...prev, amount: "", description: "", receipt_url: "", litter_id: "" }));
       alert("✅ บันทึกรายการสำเร็จ!");
-    } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+    } catch (error: any) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }

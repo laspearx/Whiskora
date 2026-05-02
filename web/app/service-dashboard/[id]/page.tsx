@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,8 +12,8 @@ function ServiceDashboardContent() {
   const serviceId = params.id as string;
   const fromPage = searchParams.get("from") || "profile";
 
-  const [service, setService] = useState<import('@/lib/types').Service | null>(null);
-  const [bookings, setBookings] = useState<import('@/lib/types').ServiceBooking[]>([]);
+  const [service, setService] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -174,7 +174,7 @@ function ServiceDashboardContent() {
 }
 
 // Helper Components
-function StatCard({ label, value, unit, color, icon }: import('@/lib/types').StatCardProps) {
+function StatCard({ label, value, unit, color, icon }: any) {
   return (
     <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden group">
       <div className="absolute -right-2 -top-2 text-4xl opacity-10 group-hover:scale-125 transition-transform">{icon}</div>
@@ -187,7 +187,7 @@ function StatCard({ label, value, unit, color, icon }: import('@/lib/types').Sta
   );
 }
 
-function ToolLink({ href, icon, title, desc }: import('@/lib/types').ToolLinkProps) {
+function ToolLink({ href, icon, title, desc }: any) {
   return (
     <Link href={href} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:border-blue-200 transition-all flex items-center gap-4 group">
       <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition">{icon}</div>

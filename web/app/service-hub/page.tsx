@@ -28,7 +28,7 @@ const Icon = {
 
 export default function ServiceHubPage() {
   const router = useRouter();
-  const [services, setServices] = useState<import('@/lib/types').Service[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ทั้งหมด");

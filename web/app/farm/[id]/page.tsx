@@ -10,8 +10,8 @@ export default function PublicFarmProfile() {
   const params = useParams();
   const farmId = params.id as string;
 
-  const [farm, setFarm] = useState<import('@/lib/types').Farm | null>(null);
-  const [pets, setPets] = useState<import('@/lib/types').Pet[]>([]);
+  const [farm, setFarm] = useState<any>(null);
+  const [pets, setPets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 🌟 State สำหรับระบบฟิลเตอร์

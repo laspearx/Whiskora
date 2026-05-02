@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -15,7 +15,7 @@ function VaccineTimeline() {
   const filterType = searchParams.get("type"); // ดึงประเภทวัคซีนจาก URL (ถ้ามี)
 
   const [petName, setPetName] = useState<string>("");
-  const [records, setRecords] = useState<import('@/lib/types').Vaccine[]>([]);
+  const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

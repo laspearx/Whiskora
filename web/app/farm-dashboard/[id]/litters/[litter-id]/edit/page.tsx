@@ -116,8 +116,8 @@ export default function EditLitterPage() {
 
       alert('🎉 อัปเดตข้อมูลการจับคู่เรียบร้อย!');
       router.push(`/farm-dashboard/${farmId}`);
-    } catch (error: unknown) {
-      alert('เกิดข้อผิดพลาด: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
+    } catch (error: any) {
+      alert('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -142,8 +142,8 @@ export default function EditLitterPage() {
 
       alert('🗑️ ยกเลิกการจับคู่และคืนรหัสครอกเรียบร้อยแล้ว');
       router.push(`/farm-dashboard/${farmId}`);
-    } catch (error: unknown) {
-      alert('ล้มเหลว: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
+    } catch (error: any) {
+      alert('ล้มเหลว: ' + error.message);
     } finally {
       setIsSaving(false);
     }

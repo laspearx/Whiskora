@@ -195,8 +195,8 @@ export default function CreateLitterPage() {
       alert(`💕 บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
       router.push(`/farm-dashboard/${farmId}`);
 
-    } catch (error: unknown) {
-      alert('เกิดข้อผิดพลาด: ' + (error instanceof Error ? error.message : 'กรุณาลองใหม่'));
+    } catch (error: any) {
+      alert('เกิดข้อผิดพลาด: ' + error.message);
       console.error(error);
     } finally {
       setIsLoading(false);

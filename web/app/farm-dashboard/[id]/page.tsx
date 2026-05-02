@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -23,10 +23,10 @@ function FarmDashboardContent() {
   const farmId = params.id as string;
   const fromPage = searchParams.get("from") || "profile"; 
 
-  const [farm, setFarm] = useState<import('@/lib/types').Farm | null>(null);
-  const [allPets, setAllPets] = useState<import('@/lib/types').Pet[]>([]);
-  const [allLitters, setAllLitters] = useState<import('@/lib/types').Litter[]>([]);
-  const [transactions, setTransactions] = useState<import('@/lib/types').Transaction[]>([]);
+  const [farm, setFarm] = useState<any>(null);
+  const [allPets, setAllPets] = useState<any[]>([]);
+  const [allLitters, setAllLitters] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [filterStatus, setFilterStatus] = useState("");

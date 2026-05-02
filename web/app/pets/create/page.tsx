@@ -80,7 +80,7 @@ export default function CreatePetPage() {
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<import('react-easy-crop').Area | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,9 +114,9 @@ export default function CreatePetPage() {
     }
   };
 
-  const onCropComplete = useCallback((ca: import('react-easy-crop').Area, cap: import('react-easy-crop').Area) => setCroppedAreaPixels(cap), []);
+  const onCropComplete = useCallback((ca: any, cap: any) => setCroppedAreaPixels(cap), []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: import('react-easy-crop').Area): Promise<Blob> => {
+  const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<Blob> => {
     const image = new Image(); image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
     const canvas = document.createElement("canvas");
@@ -142,8 +142,8 @@ export default function CreatePetPage() {
       const { data: { publicUrl } } = supabase.storage.from("pet-photos").getPublicUrl(filePath);
       setAvatarUrl(publicUrl);
       setImageSrc(null); 
-    } catch (error: unknown) {
-      alert("เกิดข้อผิดพลาด: " + (error instanceof Error ? error.message : "อัปโหลดรูปภาพไม่ได้"));
+    } catch (error: any) {
+      alert("เกิดข้อผิดพลาด: " + (error.message || "อัปโหลดรูปภาพไม่ได้"));
     } finally {
       setIsUploading(false);
     }
@@ -284,7 +284,7 @@ export default function CreatePetPage() {
                   <button
                     key={type.id}
                     type="button"
-                    onClick={() => handleSpeciesChange(type.id as "cat" | "dog" | "other")}
+                    onClick={() => handleSpeciesChange(type.id as any)}
                     className={`py-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
                       species === type.id 
                       ? 'bg-teal-200 text-teal border-teal-500 shadow-md' 

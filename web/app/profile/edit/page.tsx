@@ -21,7 +21,7 @@ export default function EditProfilePage() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<import('react-easy-crop').Area | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,11 +62,11 @@ export default function EditProfilePage() {
     }
   };
 
-  const onCropComplete = useCallback((croppedArea: import('react-easy-crop').Area, croppedAreaPixels: import('react-easy-crop').Area) => {
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: import('react-easy-crop').Area): Promise<Blob> => {
+  const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<Blob> => {
     const image = new Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
