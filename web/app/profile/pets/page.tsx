@@ -7,21 +7,19 @@ import Link from "next/link";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
-  ink: '#111827',
-  inkSoft: '#4B5563',
-  muted: '#9CA3AF',
-  pink: '#E84677',
-  pinkSoft: '#FDF2F5',
-  line: '#E5E7EB',
+  ink: '#111827',      // Gray-900
+  inkSoft: '#4B5563',  // Gray-600
+  muted: '#9CA3AF',    // Gray-400
+  pink: '#E84677',     // Brand Primary
+  pinkSoft: '#FDF2F5', 
+  line: '#E5E7EB',     // Gray-200
   paper: '#FFFFFF',
 };
 
 // ─── Elegant Minimal Icons ──────────────────────────────────────────────────
 const Icon = {
-  ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Home: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Building: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/></svg>,
-  Plus: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Home: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Building: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/></svg>,
   ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
   Male: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
   Female: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
@@ -60,7 +58,7 @@ export default function MyPetsSummaryPage() {
           setPersonalPets(personal);
           setFarmPets(groupedFarms);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching pets:", error);
       } finally {
         setLoading(false);
@@ -70,170 +68,157 @@ export default function MyPetsSummaryPage() {
   }, [router]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">
+    <div className="min-h-[50vh] flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">
       Loading Pet Gallery...
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-10 pb-24 animate-in fade-in duration-700" style={{ fontFamily: 'var(--font-ui)', color: F.ink }}>
-      
-      {/* 🔙 Sleek Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div className="flex items-start gap-4">
-          <button 
-            onClick={() => router.push('/profile')} 
-            className="mt-1 p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-          >
-            <Icon.ArrowLeft />
-          </button>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">My Pets</h1>
-            <p className="text-sm font-medium" style={{ color: F.muted }}>จัดการสมาชิกในบ้านและฟาร์มทั้งหมดของคุณ</p>
-          </div>
-        </div>
-      </div>
+    <>
+      <style>{`
+        .premium-card {
+          background: #ffffff;
+          border: 1px solid ${F.line};
+          border-radius: 1.25rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+          transition: all 0.2s ease-in-out;
+        }
+        .premium-card:hover {
+          border-color: #D1D5DB;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+      `}</style>
 
-      <div className="space-y-20">
+      <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-12 pb-24 animate-in fade-in duration-500 space-y-6" style={{ color: F.ink, fontFamily: 'var(--font-ui)' }}>
         
-        {/* 🏠 หมวด: สัตว์เลี้ยงส่วนตัว */}
-        <section className="animate-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between mb-6 px-1">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center border border-gray-100">
-                <Icon.Home />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                สัตว์เลี้ยงส่วนตัว <span className="text-gray-400 font-medium ml-1">({personalPets.length})</span>
-              </h2>
-            </div>
+        {/* 📋 Page Header */}
+        <div className="px-1 mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-1">My Pets</h1>
+          <p className="text-sm font-medium" style={{ color: F.muted }}>จัดการสมาชิกในบ้านและฟาร์มทั้งหมดของคุณ</p>
+        </div>
+
+        {/* 🏠 Section: Personal Pets */}
+        <section className="premium-card p-6">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
+              <span className="text-gray-400"><Icon.Home /></span> สัตว์เลี้ยงส่วนตัว
+              <span className="text-xs font-medium text-gray-400 ml-1">({personalPets.length})</span>
+            </h3>
             <Link 
               href="/pets/create" 
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">
-              <Icon.Plus /> เพิ่มสัตว์เลี้ยง
+              className="text-sm font-semibold hover:text-pink-600 transition-colors"
+              style={{ color: F.inkSoft }}
+            >
+              + เพิ่มสมาชิก
             </Link>
           </div>
           
-          {personalPets.length === 0 ? (
-            <div className="bg-gray-50/50 rounded-2xl p-12 text-center border border-dashed border-gray-200 text-gray-400 font-medium text-sm">
-              ไม่มีข้อมูลสัตว์เลี้ยงส่วนตัวในขณะนี้
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {personalPets.map(pet => <PetGridCard key={pet.id} pet={pet} />)}
-            </div>
-          )}
+          <div className="space-y-3">
+            {personalPets.length === 0 ? (
+              <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
+                ยังไม่มีข้อมูลสัตว์เลี้ยง
+              </div>
+            ) : (
+              personalPets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
+            )}
+          </div>
         </section>
 
-        {/* 🏡 หมวด: แยกตามฟาร์ม */}
+        {/* 🏡 Sections: Farm Pets */}
         {Object.entries(farmPets).map(([farmId, farm]) => (
-          <section key={farmId} className="animate-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center justify-between mb-6 px-1">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center border border-gray-100">
-                  <Icon.Building />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 truncate max-w-[200px] md:max-w-md">
-                  ฟาร์ม: {farm.name} <span className="text-gray-400 font-medium ml-1">({farm.pets.length})</span>
-                </h2>
-              </div>
+          <section key={farmId} className="premium-card p-6">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base min-w-0">
+                <span className="text-gray-400 shrink-0"><Icon.Building /></span> 
+                <span className="truncate">{farm.name}</span>
+                <span className="text-xs font-medium text-gray-400 ml-1 shrink-0">({farm.pets.length})</span>
+              </h3>
               <Link 
                 href={`/farm-dashboard/${farmId}/pets/create`} 
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                className="text-sm font-semibold hover:text-blue-600 transition-colors shrink-0"
+                style={{ color: F.inkSoft }}
               >
-                <Icon.Plus /> เพิ่มสมาชิกฟาร์ม
+                + เพิ่มสมาชิก
               </Link>
             </div>
             
-            {farm.pets.length === 0 ? (
-              <div className="bg-gray-50/50 rounded-2xl p-12 text-center border border-dashed border-gray-200 text-gray-400 font-medium text-sm">
-                ยังไม่มีสมาชิกในฟาร์มนี้
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {farm.pets.map(pet => <PetGridCard key={pet.id} pet={pet} />)}
-              </div>
-            )}
+            <div className="space-y-3">
+              {farm.pets.length === 0 ? (
+                <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
+                  ยังไม่มีสมาชิกในฟาร์มนี้
+                </div>
+              ) : (
+                farm.pets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
+              )}
+            </div>
           </section>
         ))}
 
       </div>
-    </div>
+    </>
   );
 }
 
+<<<<<<< HEAD
+// ─── Refined Helper Component (เลียนแบบ BusinessLink เด๊ะๆ) ───────────────────────
+function PetBusinessLink({ pet }: { pet: any }) {
+=======
 // ─── Refined Pet Card Component ───────────────────────────────────────────────
 function PetGridCard({ pet }: { pet: any }) {
+>>>>>>> 6c1f2b304c0aab3c4c865562d8673f7f87886e48
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
 
-  // 🌟 ฟังก์ชันจัดการชื่อสายพันธุ์ (ตัดแยกไทยและอังกฤษให้อยู่คนละบรรทัด)
-  const formatBreed = (rawBreed: string | null) => {
+  const formatBreed = (rawBreed?: string | null) => {
     if (!rawBreed) return { th: "ไม่ระบุสายพันธุ์", en: null };
     const parts = rawBreed.split('(');
     if (parts.length > 1) {
-      return { 
-        th: parts[0].trim(), 
-        en: `(${parts[1].trim()}` // เก็บวงเล็บเอาไว้ด้วย
-      };
+      return { th: parts[0].trim(), en: `(${parts[1].trim()}` };
     }
     return { th: rawBreed, en: null };
   };
-
-  const breedParts = formatBreed(pet.breed || pet.species);
+  const breedParts = formatBreed(pet.breed || pet.species || null);
 
   return (
     <Link 
       href={`/pets/${pet.id}`} 
-      className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-pink-200 hover:shadow-xl hover:shadow-gray-100 transition-all group relative"
+      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200 transition-all group"
     >
-      {/* Pet Image Container */}
-      <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center relative shadow-inner">
+      {/* รูปภาพ */}
+      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center">
         {pet.image_url ? (
-          <img 
-            src={pet.image_url} 
-            alt={pet.name} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-          />
+          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="text-gray-200 select-none scale-150">🐾</div>
+          <div className="text-gray-300 text-lg">🐾</div>
         )}
       </div>
 
-      {/* Pet Info */}
+      {/* ข้อมูล */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <h3 className="font-bold text-gray-900 text-base truncate mb-1 group-hover:text-pink-600 transition-colors">
-          {pet.name}
-        </h3>
-        
-        {/* 🌟 สายพันธุ์ที่ถูกแยกบรรทัด */}
-        <div className="mb-2">
-          <p className="text-xs font-bold text-gray-500 truncate">
-            {breedParts.th}
-          </p>
-          {breedParts.en && (
-            <p className="text-[10px] font-medium text-gray-400 truncate">
-              {breedParts.en}
-            </p>
-          )}
-        </div>
-        
-        {/* Sleek Gender Badge */}
-        <div>
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider ${
-            isMale 
-            ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-            : 'bg-pink-50 text-pink-600 border border-pink-100'
-            }`}>
+        <div className="flex items-center gap-2 mb-1">
+          {/* Badge เพศ */}
+          <span className={`text-[10px] font-medium border px-2 py-0.5 rounded-md bg-white shrink-0 flex items-center gap-1 ${
+            isMale ? 'text-blue-500 border-blue-200' : 'text-pink-500 border-pink-200'
+          }`}>
             <span className="shrink-0">{isMale ? <Icon.Male /> : <Icon.Female />}</span>
             {isMale ? 'Male' : 'Female'}
-            </div>
+          </span>
+          {/* ชื่อสัตว์เลี้ยง */}
+          <p className="font-semibold text-sm text-gray-900 truncate">{pet.name}</p>
+        </div>
+        
+        {/* 🌟 ชื่อสายพันธุ์แยกบรรทัดไทย-อังกฤษ */}
+        <div className="flex flex-col">
+          <span className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">{breedParts.th}</span>
+          {breedParts.en && (
+            <span className="text-[10px] text-gray-400 truncate mt-[1px]">{breedParts.en}</span>
+          )}
         </div>
       </div>
 
-      {/* Subtle Interaction Icon */}
-      <div className="text-gray-200 group-hover:text-gray-400 transition-colors shrink-0">
+      {/* ลูกศรขวา */}
+      <span className="text-gray-300 group-hover:text-gray-900 transition-colors shrink-0">
         <Icon.ChevronRight />
-      </div>
+      </span>
     </Link>
   );
 }
