@@ -97,6 +97,8 @@ export default function PetDetailPage() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showPedigreeModal, setShowPedigreeModal] = useState(false);
   const [pedigreeZoom, setPedigreeZoom] = useState(1);
+  const pedStageRef = useRef<HTMLDivElement>(null);
+  const pedScalerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -130,6 +132,35 @@ export default function PetDetailPage() {
     if (shareUrl) QRCode.toDataURL(shareUrl, { width: 320, margin: 1, color: { dark: '#111827', light: '#FFFFFF' } })
       .then(setQrDataUrl).catch(() => {});
   }, [shareUrl]);
+
+  // เมื่อเปิด modal ผังเต็ม → คำนวณ zoom ให้ผังพอดีกับพื้นที่ (fit-to-screen)
+  useEffect(() => {
+    if (!showPedigreeModal) return;
+    // รอ DOM render เสร็จก่อนวัดขนาด
+    const t = setTimeout(() => {
+      const stage = pedStageRef.current;
+      const scaler = pedScalerRef.current;
+      if (!stage || !scaler) return;
+      const tree = scaler.firstElementChild as HTMLElement | null;
+      if (!tree) return;
+      // วัดขนาดจริงโดย reset scale ชั่วคราว (กันค่าเพี้ยนข้ามเบราว์เซอร์)
+      const prev = scaler.style.transform;
+      scaler.style.transform = 'scale(1)';
+      const treeW = tree.offsetWidth;
+      const treeH = tree.offsetHeight;
+      scaler.style.transform = prev;
+      if (!treeW || !treeH) return;
+      // พื้นที่ stage หัก padding
+      const padding = 48;
+      const availW = stage.clientWidth - padding;
+      const availH = stage.clientHeight - padding;
+      const fit = Math.min(availW / treeW, availH / treeH);
+      // จำกัดไม่ให้เกิน 2.5 เท่า และไม่ต่ำกว่า 0.5
+      const clamped = Math.max(0.5, Math.min(2.5, +fit.toFixed(2)));
+      setPedigreeZoom(clamped);
+    }, 60);
+    return () => clearTimeout(t);
+  }, [showPedigreeModal, pedigreeGens]);
 
   // ─── สร้างผังสายเลือดโดยไล่ตามลิงก์ sire_id/dam_id ขึ้นไป ───
   // คืนค่าเป็น array ของเจน เรียงจาก "รุ่นเก่าสุด (เจน 1)" → "ตัวเอง (เจนล่างสุด)"
@@ -613,7 +644,7 @@ export default function PetDetailPage() {
         .pedigree-gen-num { display: inline-block; font-size: 10px; font-weight: 800; color: ${F.pink}; background: ${F.pinkSoft}; padding: 3px 12px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; }
         .pedigree-gen-role { font-size: 11px; font-weight: 600; color: ${F.muted}; }
         .pedigree-col-cards { display: flex; flex-direction: column; justify-content: space-around; flex: 1; width: 180px; }
-        .ped-card-slot { display: flex; align-items: center; position: relative; flex: 1; width: 180px; }
+        .ped-card-slot { display: flex; align-items: center; position: relative; flex: 1; width: 180px; padding: 10px 0; min-height: 80px; }
         .ped-card-link { text-decoration: none; flex-shrink: 0; position: relative; width: 180px; }
         .ped-card { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; padding: 8px 12px; width: 180px; transition: all .2s; }
         a.ped-card-link:hover .ped-card { border-color: ${F.pinkBorder}; box-shadow: 0 4px 16px rgba(232,70,119,.08); transform: translateX(-1px); }
@@ -1219,8 +1250,8 @@ export default function PetDetailPage() {
             <div className="ped-modal-head">
               <div className="ped-modal-title"><Icon.Dna /> แผนผังสายเลือด {pet.name}</div>
             </div>
-            <div className="ped-modal-stage">
-              <div className="ped-modal-scaler" style={{ transform: `scale(${pedigreeZoom})` }}>
+            <div className="ped-modal-stage" ref={pedStageRef}>
+              <div className="ped-modal-scaler" ref={pedScalerRef} style={{ transform: `scale(${pedigreeZoom})` }}>
                 {renderPedigree()}
               </div>
             </div>
