@@ -14,6 +14,7 @@ export default function PublicPetProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [farm, setFarm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     const fetchPublicData = async () => {
@@ -32,7 +33,7 @@ export default function PublicPetProfilePage() {
         if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
           const { data: farmData } = await supabase
             .from("farms")
-            .select("farm_name, phone, facebook_link, line_id")
+            .select("id, farm_name, phone, facebook_link, line_id")
             .eq("id", petData.farm_id)
             .single();
             
@@ -57,6 +58,25 @@ export default function PublicPetProfilePage() {
 
     fetchPublicData();
   }, [petId]);
+
+  // บันทึกลีด (ใครสนใจสัตว์ตัวไหน) ก่อนเด้งออกไปช่องทางภายนอก
+  const logLeadAndOpen = async (channel: "phone" | "line" | "facebook", url: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.from("contact_leads").insert({
+        pet_id: pet?.id ?? null,
+        farm_id: farm?.id ?? null,
+        viewer_id: session?.user?.id ?? null,
+        channel,
+        pet_status: pet?.status ?? null,
+      });
+    } catch (err) {
+      // ถ้า log ไม่สำเร็จก็ไม่ควรบล็อกผู้ใช้ — ปล่อยให้ติดต่อฟาร์มได้ต่อ
+      console.error("log lead failed:", err);
+    }
+    setShowContactModal(false);
+    if (url) window.open(url, "_blank");
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดข้อมูลน้อง... 🐾</div>;
   if (!pet) return <div className="min-h-screen flex items-center justify-center text-gray-500 font-bold">ไม่พบข้อมูลสัตว์เลี้ยง 😢</div>;
@@ -128,7 +148,7 @@ export default function PublicPetProfilePage() {
           </div>
 
           <button 
-            onClick={() => alert(`ติดต่อฟาร์ม ${farm?.farm_name || ''} เบอร์: ${farm?.phone || '-'}`)}
+            onClick={() => setShowContactModal(true)}
             className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-pink-200 active:scale-95 flex items-center justify-center gap-2 text-sm"
           >
             🛒 สนใจรับเลี้ยง (ติดต่อฟาร์ม)
@@ -266,6 +286,59 @@ export default function PublicPetProfilePage() {
           สร้างบัตรประจำตัวสัตว์เลี้ยงฟรี ที่ Whiskora 🐾
         </Link>
       </div>
+
+      {/* 🌟 Contact Modal — เลือกช่องทางติดต่อ (log ก่อนเด้งออก) */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowContactModal(false)}>
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-3 animate-in slide-in-from-bottom duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-2">
+              <p className="text-base font-black text-gray-800">ติดต่อฟาร์ม {farm?.farm_name || ""}</p>
+              <p className="text-[11px] text-gray-400 font-medium mt-0.5">เลือกช่องทางที่สะดวก แล้วทักได้เลย 🐾</p>
+            </div>
+
+            {farm?.phone && (
+              <button
+                onClick={() => logLeadAndOpen("phone", `tel:${farm.phone}`)}
+                className="w-full flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3.5 px-4 rounded-2xl transition active:scale-95"
+              >
+                <span className="text-xl">📞</span>
+                <span className="text-sm">โทรหาฟาร์ม <span className="font-medium opacity-70">{farm.phone}</span></span>
+              </button>
+            )}
+
+            {farm?.line_id && (
+              <button
+                onClick={() => logLeadAndOpen("line", `https://line.me/ti/p/~${farm.line_id}`)}
+                className="w-full flex items-center gap-3 bg-green-50 hover:bg-green-100 text-green-600 font-bold py-3.5 px-4 rounded-2xl transition active:scale-95"
+              >
+                <span className="text-xl">💬</span>
+                <span className="text-sm">แชทผ่าน LINE</span>
+              </button>
+            )}
+
+            {farm?.facebook_link && (
+              <button
+                onClick={() => logLeadAndOpen("facebook", farm.facebook_link)}
+                className="w-full flex items-center gap-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold py-3.5 px-4 rounded-2xl transition active:scale-95"
+              >
+                <span className="text-xl">📘</span>
+                <span className="text-sm">ติดต่อผ่าน Facebook</span>
+              </button>
+            )}
+
+            {!farm?.phone && !farm?.line_id && !farm?.facebook_link && (
+              <p className="text-center text-xs text-gray-400 font-medium py-4">ฟาร์มนี้ยังไม่ได้เพิ่มช่องทางติดต่อ 😢</p>
+            )}
+
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="w-full text-gray-400 font-bold py-3 text-sm hover:text-gray-600 transition"
+            >
+              ปิด
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

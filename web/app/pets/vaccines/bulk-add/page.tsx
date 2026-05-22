@@ -97,9 +97,9 @@ export default function BulkAddVaccinePage() {
 
     setSaving(true);
     try {
-      // 🌟 ใช้ cat_id ตามโครงสร้างเดิมของชัช
+      // ตาราง vaccines ใช้คอลัมน์ pet_id (ตรงกับ schema จริง)
       const insertData = selectedPetIds.map(petId => ({
-        cat_id: petId, 
+        pet_id: petId, 
         vaccine_name: finalVaccineName,
         date_given: dateGiven,
         next_due: nextDue || null

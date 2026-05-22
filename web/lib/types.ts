@@ -44,6 +44,7 @@ export interface Pet {
   gallery_urls?: string | null;
   microchip_number?: string | null;
   pedigree_number?: string | null;
+  pet_code?: string | null;
   is_neutered?: boolean;
   chronic_diseases?: string | null;
   allergies?: string | null;
@@ -144,7 +145,19 @@ export interface UserProfile {
   avatar_url?: string | null;
   phone?: string | null;
   email?: string | null;
+  location?: string | null;
   bio?: string | null;
+  created_at?: string;
+}
+
+// ── Pet Document ─────────────────────────────────────────────────────────────
+export interface PetDocument {
+  id: string;
+  pet_id: string;
+  name: string;
+  file_url: string;
+  doc_type?: string | null;
+  file_size?: number | null;
   created_at?: string;
 }
 

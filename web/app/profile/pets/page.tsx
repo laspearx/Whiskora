@@ -159,13 +159,8 @@ export default function MyPetsSummaryPage() {
   );
 }
 
-<<<<<<< HEAD
 // ─── Refined Helper Component (เลียนแบบ BusinessLink เด๊ะๆ) ───────────────────────
 function PetBusinessLink({ pet }: { pet: any }) {
-=======
-// ─── Refined Pet Card Component ───────────────────────────────────────────────
-function PetGridCard({ pet }: { pet: any }) {
->>>>>>> 6c1f2b304c0aab3c4c865562d8673f7f87886e48
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
 
   const formatBreed = (rawBreed?: string | null) => {

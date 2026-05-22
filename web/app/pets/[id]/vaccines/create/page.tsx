@@ -152,7 +152,7 @@ export default function CreateVaccinePage() {
       const { error } = await supabase
         .from("vaccines")
         .insert([{
-          pet_id: petId, // เปลี่ยนจาก pet_id เป็น cat_id ให้ตรงกับ Database ของชัช (ถ้า Database ใช้ cat_id อย่าลืมแก้นะครับ)
+          pet_id: petId,
           vaccine_name: finalVaccineName,
           date_given: dateGiven,
           next_due: nextDue || null

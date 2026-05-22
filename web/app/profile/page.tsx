@@ -159,36 +159,40 @@ export default function ProfilePage() {
             
             {/* 🌟 2. Stats & Quick Actions (Pet Management) */}
             <div className="premium-card p-1">
-              <div className="grid grid-cols-2 divide-x divide-gray-100">
-                {/* Total Pets Section */}
-                <Link href="/profile/pets" className="p-5 md:p-6 group flex flex-col justify-between hover:bg-gray-50/50 rounded-l-[1.25rem] transition-colors">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center"><Icon.Paw /></div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">สัตว์เลี้ยง</span>
+              {/* เปลี่ยนตารางเป็น 5 ส่วน (ฝั่งซ้าย 40% : ฝั่งขวา 60%) */}
+              <div className="grid grid-cols-5 divide-x divide-gray-100">
+                
+                {/* Total Pets Section (ใช้พื้นที่ 2 ส่วน = 40%) */}
+                <Link href="/profile/pets" className="col-span-2 p-4 md:p-6 group flex flex-col justify-between hover:bg-gray-50/50 rounded-l-[1.25rem] transition-colors">
+                  <div className="flex items-center gap-2 md:gap-3 mb-4">
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center shrink-0">
+                      <Icon.Paw />
+                    </div>
+                    <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-gray-500 truncate">สัตว์เลี้ยง</span>
                   </div>
                   <div>
                     <span className="text-3xl font-bold text-gray-900">{pets.length}</span>
-                    <span className="text-sm font-medium text-gray-500 ml-1.5">ตัว</span>
+                    <span className="text-xs md:text-sm font-medium text-gray-500 ml-1.5">ตัว</span>
                   </div>
                 </Link>
 
-                {/* Actions Section */}
-                <div className="p-5 md:p-6 flex flex-col justify-center gap-3">
+                {/* Actions Section (ใช้พื้นที่ 3 ส่วน = 60%) */}
+                <div className="col-span-3 p-4 md:p-6 flex flex-col justify-center gap-2 md:gap-3">
                   <Link 
                     href="/pets/create" 
-                    className="flex items-center justify-between group p-3 rounded-xl border border-transparent hover:border-pink-100 hover:bg-pink-50 transition-colors"
+                    className="flex items-center justify-between group p-2.5 md:p-3 rounded-xl border border-transparent hover:border-pink-100 hover:bg-pink-50 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-gray-700 group-hover:text-pink-600">เพิ่มสัตว์เลี้ยงใหม่</span>
-                    <span className="text-gray-400 group-hover:text-pink-500"><Icon.ChevronRight /></span>
+                    <span className="text-xs md:text-sm font-semibold text-gray-700 group-hover:text-pink-600 truncate">เพิ่มสัตว์เลี้ยงใหม่</span>
+                    <span className="text-gray-400 group-hover:text-pink-500 shrink-0"><Icon.ChevronRight /></span>
                   </Link>
                   {pets.length > 0 && (
                     <Link 
                       href="/pets/vaccines/bulk-add" 
-                      className="flex items-center justify-between group p-3 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between group p-2.5 md:p-3 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400 group-hover:text-teal-600"><Icon.Syringe /></span>
-                        <span className="text-sm font-medium text-gray-600 group-hover:text-teal-600">เพิ่มวัคซีนแบบกลุ่ม</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-gray-400 group-hover:text-teal-600 shrink-0"><Icon.Syringe /></span>
+                        <span className="text-xs md:text-sm font-medium text-gray-600 group-hover:text-teal-600 truncate">เพิ่มวัคซีนแบบกลุ่ม</span>
                       </div>
                     </Link>
                   )}
