@@ -5,10 +5,14 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  
-  // 🌟 ถ้าเจอเครื่องหมาย ?code= ให้ทำงานตามปกติ
+
+  // อ่านหน้าปลายทางที่ต้องเด้งกลับ (ส่งมาจาก login/register ผ่าน ?next=)
+  const nextParam = searchParams.get('next') || '/profile'
+  // กัน open-redirect: รับเฉพาะ path ภายในเว็บเท่านั้น
+  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/profile'
+
   if (code) {
-    const cookieStore = await cookies() 
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,10 +28,11 @@ export async function GET(request: Request) {
         },
       }
     )
-    
+
     await supabase.auth.exchangeCodeForSession(code)
-    return NextResponse.redirect(`${origin}/`)
+    // เด้งกลับหน้าที่ผู้ใช้ตั้งใจจะไป (เช่นหน้า id-card ที่เพิ่งกดดู)
+    return NextResponse.redirect(`${origin}${next}`)
   }
 
-  return NextResponse.redirect(`${origin}/`)
+  return NextResponse.redirect(`${origin}${next}`)
 }

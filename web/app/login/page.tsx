@@ -1,31 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailLogin, setShowEmailLogin] = useState(false); // เปิดฟอร์มอีเมลสำหรับผู้ใช้เดิม
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // หน้าที่จะเด้งกลับหลัง login (ถ้าไม่มี → ไปโปรไฟล์)
+  const redirectTo = searchParams.get("redirect") || "/profile";
+  // กันไม่ให้ redirect ออกไปนอกเว็บ (เปิดเฉพาะ path ภายใน)
+  const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
 
   // ดักจับ Session ที่ติดมากับ URL (เด้งกลับจาก OAuth)
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) { router.push("/profile"); router.refresh(); }
+      if (session) { router.push(safeRedirect); router.refresh(); }
     };
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) { router.push("/profile"); router.refresh(); }
+      if (session) { router.push(safeRedirect); router.refresh(); }
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, safeRedirect]);
 
   // เข้าสู่ระบบด้วยอีเมล (เฉพาะผู้ใช้เดิมที่เคยสมัครด้วยอีเมล)
   const handleLogin = async (e: React.FormEvent) => {
@@ -35,7 +41,7 @@ export default function LoginPage() {
     if (error) {
       alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     } else {
-      router.push("/profile");
+      router.push(safeRedirect);
       router.refresh();
     }
     setLoading(false);
@@ -44,7 +50,7 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/profile` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
     });
     if (error) alert(error.message);
   };
@@ -151,7 +157,7 @@ export default function LoginPage() {
         <div className="mt-8 text-center border-t border-gray-50 pt-6">
           <p className="text-gray-400 text-sm font-medium">
             ยังไม่มีบัญชีใช่ไหม?{" "}
-            <Link href="/register" className="text-pink-500 font-bold hover:underline">
+            <Link href={`/register${safeRedirect !== '/profile' ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`} className="text-pink-500 font-bold hover:underline">
               สมัครสมาชิก
             </Link>
           </p>
@@ -162,5 +168,13 @@ export default function LoginPage() {
         ← กลับหน้าแรก
       </Link>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

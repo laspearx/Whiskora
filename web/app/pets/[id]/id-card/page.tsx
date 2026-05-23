@@ -75,7 +75,7 @@ export default function PetIdCardPage() {
     const fetchPetData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push('/login');
+        if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
 
         const { data: petData, error: petError } = await supabase.from('pets').select('*').eq('id', petId).single();
         if (petError) throw petError;
@@ -180,13 +180,15 @@ export default function PetIdCardPage() {
       ? <img src={base64Paw} alt="paw" style={{ width: size, height: size, objectFit: 'contain' }} />
       : <span style={{ display: 'flex', color: tint || F.pink }}><Icon.Paw /></span>;
 
-  // แถวข้อมูลในตาราง
+  // แถวข้อมูลในตาราง (ไทยบรรทัดบน / อังกฤษบรรทัดล่าง)
   const rows = [
     { icon: <Icon.Paw />, th: 'ชื่อ', en: 'Name', val: pet.name, isName: true },
     { icon: <Icon.Cat />, th: 'สายพันธุ์', en: 'Breed', val: extractThai(pet.breed) },
     { icon: <Icon.Palette />, th: 'สี', en: 'Color', val: extractThai(pet.color) },
-    { icon: <Icon.Calendar />, th: 'วันเกิด', en: 'DOB', val: fmtDate(pet.birth_date) },
-    { icon: <Icon.Pin />, th: 'เจ้าของ', en: 'Owner', val: profile?.full_name || profile?.username || 'Whiskora User' },
+    { icon: <Icon.Calendar />, th: 'วันเกิด', en: 'Date of Birth', val: fmtDate(pet.birth_date) },
+    { icon: <Icon.Clock />, th: 'อายุ', en: 'Age', val: calcAge(pet.birth_date) },
+    { icon: <Icon.Drop />, th: 'กรุ๊ปเลือด', en: 'Blood Type', val: pet.blood_type || '-' },
+    { icon: <Icon.Cross />, th: 'ทำหมันแล้ว', en: 'Spayed / Neutered', val: pet.is_neutered ? 'ทำหมันแล้ว' : 'ไม่ทำหมัน' },
   ];
 
   return (
@@ -215,49 +217,51 @@ export default function PetIdCardPage() {
         .idc-btn-ghost:hover { border-color: ${F.pink}; color: ${F.pink}; }
         .idc-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 10px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; max-width: 760px; width: 100%; }
 
-        /* ═══ ตัวบัตร (แนวนอน — สัดส่วนใกล้บัตรประชาชน) ═══ */
-        .idc-card { width: 760px; background: linear-gradient(135deg, #FFF8FB 0%, #FFFFFF 50%, #FFF0F6 100%); border-radius: 16px; overflow: hidden; position: relative; border: 1px solid ${F.pinkBorder}; }
-        .idc-card-pattern { position: absolute; inset: 0; opacity: 0.4; pointer-events: none; background-image: radial-gradient(circle at 92% 12%, rgba(251,207,232,0.4) 0%, transparent 38%), radial-gradient(circle at 8% 88%, rgba(251,207,232,0.3) 0%, transparent 32%); }
-        .idc-brand { display: flex; align-items: center; gap: 9px; padding: 14px 22px 0; position: relative; z-index: 1; }
-        .idc-brand-logo { height: 26px; width: auto; object-fit: contain; }
-        .idc-brand-logo-fallback { font-family: 'Prompt', sans-serif; font-size: 19px; font-weight: 700; color: ${F.pink}; letter-spacing: -0.5px; }
-        .idc-brand-sub { font-size: 8px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.12em; border-left: 1px solid ${F.pinkBorder}; padding-left: 9px; }
-        .idc-main { display: grid; grid-template-columns: 175px 1fr 150px; gap: 18px; padding: 12px 22px 18px; position: relative; z-index: 1; }
-        .idc-photo { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 42px; border: 1px solid ${F.pinkBorder}; }
-        .idc-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .idc-petid-box { margin-top: 10px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; border-radius: 11px; padding: 10px 12px; }
-        .idc-petid-label { display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-        .idc-petid-num { font-family: 'Prompt', monospace; font-size: 16px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.2px; white-space: nowrap; }
-        .idc-petid-issue { font-size: 8px; color: ${F.muted}; margin-top: 2px; }
-        .idc-mid-header { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1.5px dashed ${F.pinkBorder}; }
-        .idc-cert-shield { width: 32px; height: 32px; border-radius: 9px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .idc-cert-title { display: flex; align-items: center; gap: 5px; font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 700; color: ${F.ink}; }
-        .idc-cert-no { font-size: 9px; color: ${F.inkSoft}; margin-top: 1px; }
-        .idc-cert-no b { color: ${F.pink}; font-family: 'Prompt', monospace; font-weight: 700; }
-        .idc-rows { display: flex; flex-direction: column; }
-        .idc-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px dotted ${F.lineMid}; }
-        .idc-row:last-child { border-bottom: none; }
-        .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
-        .idc-row-label { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; white-space: nowrap; flex-shrink: 0; }
-        .idc-row-label .en { font-size: 9px; color: ${F.muted}; font-weight: 500; }
-        .idc-row-val { margin-left: auto; font-size: 13px; font-weight: 700; color: ${F.ink}; text-align: right; font-family: 'Prompt', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 12px; }
-        .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; margin-left: 4px; }
-        .idc-right { display: flex; flex-direction: column; align-items: center; gap: 10px; justify-content: center; }
-        .idc-verified { width: 56px; height: 56px; }
-        .idc-verified img { width: 100%; height: 100%; object-fit: contain; }
-        .idc-verified-fallback { width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid ${F.pink}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${F.pink}; }
-        .idc-qr-section { background: white; border: 1px solid ${F.pinkBorder}; border-radius: 12px; padding: 11px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-        .idc-qr-title { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
-        .idc-qr-img { width: 88px; height: 88px; position: relative; }
+        /* ═══ ตัวบัตร (แนวนอน — 2 คอลัมน์ ข้อมูลเต็มความกว้าง) ═══ */
+        .idc-card { width: 760px; background: linear-gradient(135deg, #FEF1F6 0%, #FFFFFF 55%, #FEF1F6 100%); border-radius: 20px; overflow: hidden; position: relative; border: 6px solid #FCE0EC; }
+        .idc-card-pattern { position: absolute; inset: 0; opacity: 0.5; pointer-events: none; background-image: radial-gradient(circle at 4% 92%, rgba(251,207,232,0.25) 0%, transparent 28%); }
+        /* มุมขวาบน: VERIFIED + QR */
+        .idc-corner { position: absolute; top: 18px; right: 22px; z-index: 2; display: flex; align-items: flex-start; gap: 12px; }
+        .idc-verified-corner { width: 60px; height: 60px; flex-shrink: 0; }
+        .idc-verified-corner img { width: 100%; height: 100%; object-fit: contain; }
+        .idc-verified-fallback { width: 60px; height: 60px; border-radius: 50%; border: 2px solid ${F.pink}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${F.pink}; }
+        .idc-qr-box { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .idc-qr-img { width: 86px; height: 86px; position: relative; background: white; border-radius: 8px; padding: 3px; }
         .idc-qr-img img { width: 100%; height: 100%; object-fit: contain; }
         .idc-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px; border-radius: 50%; background: white; border: 2px solid ${F.pink}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
-        .idc-qr-hint { font-size: 8px; color: ${F.muted}; text-align: center; }
-        .idc-footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: ${F.pinkBorder}; border-top: 1px solid ${F.pinkBorder}; position: relative; z-index: 1; }
-        .idc-foot-cell { background: linear-gradient(135deg, #FFF8FB, #FFFFFF); padding: 9px 14px; display: flex; align-items: center; gap: 7px; }
-        .idc-foot-icon { color: ${F.pink}; flex-shrink: 0; }
-        .idc-foot-label { font-size: 8px; font-weight: 700; color: ${F.muted}; }
-        .idc-foot-val { font-size: 11px; font-weight: 700; color: ${F.ink}; font-family: 'Prompt', sans-serif; white-space: nowrap; }
-        .idc-bottombar { background: ${F.pink}; color: white; text-align: center; padding: 6px; font-size: 9px; font-weight: 600; position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .idc-qr-title { font-size: 8px; font-weight: 700; color: ${F.inkSoft}; text-align: center; }
+        /* โลโก้มุมซ้ายบน */
+        .idc-brand { display: flex; align-items: center; gap: 12px; padding: 20px 26px 0; position: relative; z-index: 1; }
+        .idc-brand-logo { height: 36px; width: auto; object-fit: contain; }
+        .idc-brand-logo-fallback { font-family: 'Prompt', sans-serif; font-size: 28px; font-weight: 700; color: ${F.pink}; letter-spacing: -1px; }
+        .idc-brand-titles { line-height: 1.25; }
+        .idc-brand-en { font-size: 12px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.06em; }
+        .idc-brand-th { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; }
+        /* main: 2 คอลัมน์ */
+        .idc-main { display: grid; grid-template-columns: 190px 1fr; gap: 28px; padding: 18px 26px 18px; position: relative; z-index: 1; align-items: start; }
+        .idc-left { padding-top: 4px; }
+        .idc-photo { width: 100%; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+        .idc-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .idc-petid-box { margin-top: 12px; background: rgba(253,242,245,0.7); border-radius: 12px; padding: 11px 14px; }
+        .idc-petid-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+        .idc-petid-num { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.2px; word-break: break-all; line-height: 1.2; }
+        .idc-petid-issue { font-size: 9px; color: ${F.muted}; margin-top: 3px; }
+        /* ตารางข้อมูล (เต็มความกว้าง ไม่ตัดข้อความ) */
+        .idc-rows { display: flex; flex-direction: column; padding-top: 2px; }
+        .idc-row { display: flex; align-items: center; gap: 13px; padding: 7px 0; border-bottom: 1px solid rgba(252,224,236,0.7); }
+        .idc-row:last-child { border-bottom: none; }
+        .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
+        .idc-row-label { display: flex; flex-direction: column; flex-shrink: 0; min-width: 96px; line-height: 1.2; }
+        .idc-row-label .th { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .idc-row-label .en { font-size: 9px; font-weight: 500; color: ${F.muted}; }
+        .idc-row-val { margin-left: auto; font-size: 15px; font-weight: 700; color: ${F.ink}; text-align: right; font-family: 'Prompt', sans-serif; line-height: 1.3; }
+        .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; margin-left: 6px; font-size: 16px; }
+        /* แถบล่าง */
+        .idc-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-top: 1px solid #FCE0EC; position: relative; z-index: 1; background: rgba(255,255,255,0.4); flex-wrap: wrap; }
+        .idc-foot-shield { color: ${F.pink}; display: flex; }
+        .idc-foot-text { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
+        .idc-foot-text b { color: ${F.pink}; font-family: 'Prompt', sans-serif; font-weight: 700; }
+        .idc-foot-sep { color: ${F.muted}; }
         @media (max-width: 768px) {
           .idc-body { padding: 16px 12px 60px; }
           .idc-rendered, .idc-actions, .idc-hint { max-width: 100%; }
@@ -292,16 +296,41 @@ export default function PetIdCardPage() {
               style={{ position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: cardImageUrl ? -1 : 0, pointerEvents: 'none' }}
             >
               <div className="idc-card-pattern" />
+              {/* มุมขวาบน: ตรา VERIFIED + QR */}
+              <div className="idc-corner">
+                <div className="idc-verified-corner">
+                  {base64Verified && !base64Verified.startsWith('/') ? (
+                    <img src={base64Verified} alt="Verified" />
+                  ) : (
+                    <div className="idc-verified-fallback">
+                      {pawImg(18)}
+                      <span style={{ fontSize: '6px', fontWeight: 800, letterSpacing: '0.08em', marginTop: '1px' }}>VERIFIED</span>
+                    </div>
+                  )}
+                </div>
+                <div className="idc-qr-box">
+                  <div className="idc-qr-img">
+                    {base64Qr ? <img src={base64Qr} alt="QR" /> : <div style={{ width: '100%', height: '100%', background: F.line, borderRadius: 6 }} />}
+                    <div className="idc-qr-center">{pawImg(12)}</div>
+                  </div>
+                  <div className="idc-qr-title">สแกนดูโปรไฟล์</div>
+                </div>
+              </div>
+
               {/* โลโก้มุมซ้ายบน */}
               <div className="idc-brand">
                 {base64Logo && !base64Logo.startsWith('/')
                   ? <img src={base64Logo} alt="Whiskora" className="idc-brand-logo" />
                   : <span className="idc-brand-logo-fallback">whiskora</span>}
-                <span className="idc-brand-sub">Pet Identification Card · บัตรประจำตัวสัตว์เลี้ยง</span>
+                <div className="idc-brand-titles">
+                  <div className="idc-brand-en">PET IDENTIFICATION CARD</div>
+                  <div className="idc-brand-th">บัตรประจำตัวสัตว์เลี้ยง</div>
+                </div>
               </div>
+
               <div className="idc-main">
                 {/* ซ้าย: รูป + Pet ID */}
-                <div>
+                <div className="idc-left">
                   <div className="idc-photo">{base64Avatar ? <img src={base64Avatar} alt={pet.name} /> : '🐾'}</div>
                   <div className="idc-petid-box">
                     <div className="idc-petid-label">{pawImg(13)} PET ID</div>
@@ -310,68 +339,32 @@ export default function PetIdCardPage() {
                   </div>
                 </div>
 
-                {/* กลาง: header + ตาราง */}
-                <div>
-                  <div className="idc-mid-header">
-                    <div className="idc-cert-shield">{pawImg(18, 'white')}</div>
-                    <div>
-                      <div className="idc-cert-title">รับรองโดย Whiskora <Icon.Verified /></div>
-                      <div className="idc-cert-no">ใบรับรองเลขที่ <b>{petCode}</b></div>
+                {/* ขวา: ตารางข้อมูล (เต็มความกว้าง) */}
+                <div className="idc-rows">
+                  {rows.map((r, i) => (
+                    <div key={i} className="idc-row">
+                      <span className="idc-row-icon">{r.icon}</span>
+                      <span className="idc-row-label">
+                        <span className="th">{r.th}</span>
+                        <span className="en">{r.en}</span>
+                      </span>
+                      <span className="idc-row-val">
+                        {r.val}
+                        {r.isName && <span className="gender">{isMale ? '♂' : '♀'}</span>}
+                      </span>
                     </div>
-                  </div>
-                  <div className="idc-rows">
-                    {rows.map((r, i) => (
-                      <div key={i} className="idc-row">
-                        <span className="idc-row-icon">{r.icon}</span>
-                        <span className="idc-row-label">{r.th} <span className="en">({r.en})</span></span>
-                        <span className="idc-row-val">
-                          {r.val}
-                          {r.isName && <span className="gender">{isMale ? '♂' : '♀'}</span>}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ขวา: ตรารับรอง + QR */}
-                <div className="idc-right">
-                  <div className="idc-verified">
-                    {base64Verified && !base64Verified.startsWith('/') ? (
-                      <img src={base64Verified} alt="Verified" />
-                    ) : (
-                      <div className="idc-verified-fallback">
-                        {pawImg(20)}
-                        <span style={{ fontSize: '7px', fontWeight: 800, letterSpacing: '0.1em', marginTop: '2px' }}>VERIFIED</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="idc-qr-section">
-                    <div className="idc-qr-title">สแกนเพื่อดูข้อมูลสัตว์เลี้ยง</div>
-                    <div className="idc-qr-img">
-                      {base64Qr ? <img src={base64Qr} alt="QR" /> : <div style={{ width: '100%', height: '100%', background: F.line, borderRadius: 8 }} />}
-                      <div className="idc-qr-center">{pawImg(14)}</div>
-                    </div>
-                    <div className="idc-qr-hint">หรือสแกนด้วยกล้องทั่วไป</div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* แถบล่าง (3 ช่อง — ตัดลายเซ็นออก) */}
+              {/* แถบล่าง — รับรองโดย Whiskora */}
               <div className="idc-footer">
-                <div className="idc-foot-cell">
-                  <span className="idc-foot-icon"><Icon.Calendar /></span>
-                  <div><div className="idc-foot-label">วันที่ออกบัตร</div><div className="idc-foot-val">{fmtThaiDate(issueDate)}</div></div>
-                </div>
-                <div className="idc-foot-cell">
-                  <span className="idc-foot-icon"><Icon.Shield /></span>
-                  <div><div className="idc-foot-label">บัตรหมดอายุ</div><div className="idc-foot-val">{fmtThaiDate(expireDate)}</div></div>
-                </div>
-                <div className="idc-foot-cell">
-                  <span className="idc-foot-icon"><Icon.Doc /></span>
-                  <div><div className="idc-foot-label">ออกโดย</div><div className="idc-foot-val">Whiskora System</div></div>
-                </div>
+                <span className="idc-foot-shield"><Icon.Shield /></span>
+                <span className="idc-foot-text">รับรองโดย Whiskora</span>
+                <Icon.Verified />
+                <span className="idc-foot-sep">·</span>
+                <span className="idc-foot-text">ใบรับรองเลขที่ <b>{petCode}</b></span>
               </div>
-              <div className="idc-bottombar">{pawImg(13, 'white')} ตรวจสอบข้อมูลได้ที่ whiskora.pet/verify หรือสแกน QR Code</div>
             </div>
 
             {/* Actions */}

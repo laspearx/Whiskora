@@ -1,31 +1,35 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // ถ้ามี session อยู่แล้ว (เช่นเด้งกลับจาก OAuth callback) ให้เข้าโปรไฟล์
+  const redirectTo = searchParams.get("redirect") || "/profile";
+  const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
+
+  // ถ้ามี session อยู่แล้ว (เช่นเด้งกลับจาก OAuth callback) ให้เข้าหน้าที่ตั้งใจ
   useEffect(() => {
     const initCheck = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) { router.push("/profile"); router.refresh(); }
+      if (session) { router.push(safeRedirect); router.refresh(); }
     };
     initCheck();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) { router.push("/profile"); router.refresh(); }
+      if (session) { router.push(safeRedirect); router.refresh(); }
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, safeRedirect]);
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/profile` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
     });
     if (error) alert(error.message);
   };
@@ -65,7 +69,7 @@ export default function RegisterPage() {
         <div className="mt-8 text-center border-t border-gray-50 pt-6">
           <p className="text-gray-400 text-sm font-medium">
             มีบัญชีอยู่แล้ว?{" "}
-            <Link href="/login" className="text-pink-500 font-bold hover:underline">
+            <Link href={`/login${safeRedirect !== '/profile' ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`} className="text-pink-500 font-bold hover:underline">
               เข้าสู่ระบบ
             </Link>
           </p>
@@ -76,5 +80,13 @@ export default function RegisterPage() {
         ← กลับหน้าแรก
       </Link>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[90vh] flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" /></div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }
