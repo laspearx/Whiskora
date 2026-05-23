@@ -158,7 +158,7 @@ export default function EditProfilePage() {
     <div className="max-w-6xl mx-auto px-4 pt-1 md:pt-12 pb-10 animate-in fade-in duration-700">
       
       <div className="flex items-center gap-3 mb-5 md:mb-8">
-        <Link href="/profile" className="p-2 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-50 rounded-xl transition shadow-sm border border-gray-100">
+        <Link href="/profile" className="p-2 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition shadow-sm border border-gray-100">
            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
            </svg>

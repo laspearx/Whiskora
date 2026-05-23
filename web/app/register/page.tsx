@@ -1,99 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 🌟 State สำหรับเช็คเงื่อนไขรหัสผ่าน
-  const [validation, setValidation] = useState({
-    lowercase: false,
-    uppercase: false,
-    digit: false,
-    symbol: false,
-  });
-
-  // 🌟 ดักจับ Session เพื่อแยก "คนเก่า" กับ "คนใหม่"
+  // ถ้ามี session อยู่แล้ว (เช่นเด้งกลับจาก OAuth callback) ให้เข้าโปรไฟล์
   useEffect(() => {
-    const checkUserStatus = (user: any) => {
-      const createdAt = new Date(user.created_at).getTime();
-      const lastSignInAt = new Date(user.last_sign_in_at).getTime();
-
-      // ถ้าเวลาล็อกอินล่าสุด กับเวลาสร้างบัญชี ห่างกันเกิน 5 วินาที = มีบัญชีอยู่แล้ว
-      if (lastSignInAt - createdAt > 5000) {
-        alert("บัญชีนี้เคยลงทะเบียนไว้แล้ว ระบบจะพาคุณเข้าสู่หน้าโปรไฟล์ 🐾");
-        router.push("/profile");
-      } else {
-        // เพิ่งสมัครใหม่สดๆ ร้อนๆ
-        router.push("/profile");
-      }
-    };
-
-    // เช็คตอนโหลดหน้า (เผื่อเด้งกลับมาจากหน้า Callback)
     const initCheck = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) checkUserStatus(session.user);
+      if (session) { router.push("/profile"); router.refresh(); }
     };
     initCheck();
 
-    // เช็คจังหวะที่มีการอัปเดต Auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) checkUserStatus(session.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) { router.push("/profile"); router.refresh(); }
     });
-
     return () => subscription.unsubscribe();
   }, [router]);
-
-  useEffect(() => {
-    setValidation({
-      lowercase: /[a-z]/.test(password),
-      uppercase: /[A-Z]/.test(password),
-      digit: /[0-9]/.test(password),
-      symbol: /[^A-Za-z0-9]/.test(password),
-    });
-  }, [password]);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const isAllValid = Object.values(validation).every(Boolean);
-    if (!isAllValid) {
-      alert("กรุณาตั้งรหัสผ่านให้ตรงตามเงื่อนไขที่กำหนด");
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      }
-    });
-    
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("สมัครสมาชิกสำเร็จ! โปรดเช็คอีเมลเพื่อยืนยันตัวตน");
-      router.push("/login");
-    }
-    setLoading(false);
-  };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        // 🌟 เพิ่ม ?next=/register เข้าไป เพื่อให้มันเด้งกลับมาหน้านี้ก่อนเพื่อโชว์ Alert
-        redirectTo: `${window.location.origin}/auth/callback?next=/register`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/profile` },
     });
     if (error) alert(error.message);
   };
@@ -101,94 +33,34 @@ export default function RegisterPage() {
   return (
     <div className="min-h-[90vh] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-[400px] bg-white p-8 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500">
-        
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">สร้างบัญชีใหม่</h1>
           <p className="text-gray-400 text-sm font-medium">เริ่มต้นดูแลสัตว์เลี้ยงของคุณด้วย Whiskora</p>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase">อีเมล</label>
-            <input
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase">รหัสผ่าน</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Example@1234"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm pr-12"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
-              >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12.002a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-
-            {/* 🌟 Password Validator UI */}
-            <div className="mt-3 grid grid-cols-2 gap-y-1 gap-x-2 px-1">
-              <ValidationItem label="Lowercase (a-z)" isValid={validation.lowercase} />
-              <ValidationItem label="Uppercase (A-Z)" isValid={validation.uppercase} />
-              <ValidationItem label="Digits (0-9)" isValid={validation.digit} />
-              <ValidationItem label="Symbols (!@#$)" isValid={validation.symbol} />
-            </div>
-          </div>
-
+        {/* สมัครด้วย Social เท่านั้น */}
+        <div className="space-y-3">
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-gray-200 active:scale-[0.98] mt-2 disabled:opacity-50"
-          >
-            {loading ? "กำลังดำเนินการ..." : "สมัครสมาชิก"}
-          </button>
-        </form>
-
-        <div className="mt-8 space-y-3">
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-gray-100 w-full"></div>
-            <span className="bg-white px-3 text-[10px] font-bold text-gray-300 uppercase absolute">หรือเชื่อมต่อด้วย</span>
-          </div>
-
-          <button 
             onClick={() => handleSocialLogin('google')}
-            className="w-full flex items-center justify-center gap-3 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-bold text-gray-600 text-sm shadow-sm"
+            className="w-full flex items-center justify-center gap-3 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] font-bold text-gray-700 text-sm shadow-sm"
           >
             <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-            ดำเนินการต่อด้วย Google
+            สมัครด้วย Google
           </button>
 
-          <button 
+          <button
             onClick={() => handleSocialLogin('facebook')}
-            className="w-full flex items-center justify-center gap-3 py-3 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl transition-all font-bold text-sm shadow-sm shadow-blue-100"
+            className="w-full flex items-center justify-center gap-3 py-4 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl transition-all active:scale-[0.98] font-bold text-sm shadow-lg shadow-blue-100"
           >
             <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            ดำเนินการต่อด้วย Facebook
+            สมัครด้วย Facebook
           </button>
         </div>
+
+        <p className="text-[11px] text-gray-400 text-center mt-5 leading-relaxed px-2">
+          การสมัครสมาชิกถือว่าคุณยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัวของ Whiskora
+        </p>
 
         <div className="mt-8 text-center border-t border-gray-50 pt-6">
           <p className="text-gray-400 text-sm font-medium">
@@ -203,16 +75,6 @@ export default function RegisterPage() {
       <Link href="/" className="mt-8 text-gray-400 text-xs font-bold hover:text-pink-500 transition">
         ← กลับหน้าแรก
       </Link>
-    </div>
-  );
-}
-
-// 🌟 Component ย่อยสำหรับแสดงผลเงื่อนไขแต่ละข้อ
-function ValidationItem({ label, isValid }: { label: string; isValid: boolean }) {
-  return (
-    <div className={`flex items-center gap-1.5 transition-colors duration-300 ${isValid ? 'text-teal-500' : 'text-gray-300'}`}>
-      <span className="text-[10px] font-bold">{isValid ? '✓' : '✕'}</span>
-      <span className="text-[10px] font-bold">{label}</span>
     </div>
   );
 }
