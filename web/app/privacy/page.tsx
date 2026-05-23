@@ -165,7 +165,7 @@ export default function PrivacyPolicyPage() {
             <p className="pv-p">
               หากมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัวหรือต้องการใช้สิทธิ์ของคุณ ติดต่อได้ที่:<br />
               อีเมล: <a className="pv-link" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a><br />
-              เว็บไซต์: <a className="pv-link" href="https://whiskora.pet">whiskora.pet</a>
+              เว็บไซต์: <a className="pv-link" href="https://www.whiskora.pet">whiskora.pet</a>
             </p>
           </div>
         </div>
