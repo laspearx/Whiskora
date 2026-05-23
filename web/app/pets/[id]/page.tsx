@@ -565,12 +565,13 @@ export default function PetDetailPage() {
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
         .whiskora-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
-        .topbar { position: sticky; top: 64px; z-index: 40; background: rgba(253,246,248,0.85); backdrop-filter: blur(8px); height: 56px; display: flex; align-items: center; padding: 0 16px; gap: 12px; }
-        .topbar-back { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: #FFFFFF; color: #6B7280; cursor: pointer; border: 1px solid rgba(251,207,232,0.7); box-shadow: 0 2px 8px rgba(232,70,119,0.10); transition: all .18s ease; flex-shrink: 0; padding: 0; }
+        .topbar { display: flex; align-items: center; gap: 14px; max-width: 1100px; margin: 0 auto; padding: 24px 20px 4px; }
+        .topbar-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; color: #6B7280; cursor: pointer; border: 1px solid rgba(251,207,232,0.9); box-shadow: 0 2px 8px rgba(232,70,119,0.10); transition: all .18s ease; flex-shrink: 0; padding: 0; }
         .topbar-back:hover { color: ${F.pink}; border-color: ${F.pink}; box-shadow: 0 4px 14px rgba(232,70,119,0.22); transform: translateX(-1px); }
         .topbar-back:active { transform: scale(0.94); }
-        .topbar-back-label { font-size: 13px; font-weight: 600; color: #6B7280; white-space: nowrap; }
-        .topbar-title { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 600; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none; }
+        .topbar-titles { display: flex; flex-direction: column; min-width: 0; }
+        .topbar-title { font-family: 'Prompt', sans-serif; font-size: 19px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .topbar-sub { font-size: 11px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
         .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
         .btn-share { display: flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(251,207,232,0.7); background: white; font-size: 12px; font-weight: 600; color: #4B5563; cursor: pointer; box-shadow: 0 2px 8px rgba(232,70,119,0.08); transition: all .18s ease; }
         .btn-share:hover { border-color: ${F.pink}; color: ${F.pink}; box-shadow: 0 4px 14px rgba(232,70,119,0.18); }
@@ -578,7 +579,7 @@ export default function PetDetailPage() {
         .btn-edit-profile { display: flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 20px; background: ${F.pink}; font-size: 12px; font-weight: 700; color: white; cursor: pointer; text-decoration: none; box-shadow: 0 2px 10px rgba(232,70,119,0.28); transition: all .18s ease; border: none; }
         .btn-edit-profile:hover { background: #D63F6A; box-shadow: 0 4px 16px rgba(232,70,119,0.38); }
         .btn-edit-profile:active { transform: scale(0.96); }
-        .page-body { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+        .page-body { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
         .hero-section { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 24px; }
         .gallery-strip { display: flex; flex-direction: column; gap: 6px; width: 64px; flex-shrink: 0; }
         .gallery-thumb { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color .15s; flex-shrink: 0; }
@@ -787,14 +788,13 @@ export default function PetDetailPage() {
         @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr 260px; } .hero-main-image { width: 240px; height: 240px; } }
         @media (max-width: 768px) {
           .page-body { padding: 16px 16px 40px; }
-          .topbar { padding: 0 12px; }
+          .topbar { padding: 16px 16px 4px; }
           /* มือถือ: การ์ด modal ผังเต็มจอ ปุ่มซูม/ปิดอยู่ล่าง */
           .ped-modal-card { width: 95vw; height: 92vh; max-height: 92vh; }
           .ped-modal-stage { padding: 14px; }
           .btn-share span, .btn-edit-profile span { display: none; }
           .btn-share, .btn-edit-profile { padding: 0; width: 36px; height: 36px; border-radius: 50%; justify-content: center; }
-          .topbar-back-label { display: none; }
-          .topbar-title { display: block; }
+          .topbar-title { font-size: 17px; }
           .hero-section { flex-direction: column; gap: 16px; }
           .gallery-strip { order: 2; flex-direction: row; width: 100%; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
           .gallery-strip::-webkit-scrollbar { display: none; }
@@ -830,7 +830,7 @@ export default function PetDetailPage() {
           .stat-cell { padding: 9px 10px; }
           .gallery-grid { grid-template-columns: repeat(2, 1fr); }
           .ped-card, .pedigree-col-cards, .ped-card-slot, .ped-card-link { width: 140px; }
-          .topbar-title { font-size: 14px; }
+          .topbar-title { font-size: 16px; }
         }
       `}</style>
 
@@ -842,8 +842,10 @@ export default function PetDetailPage() {
         {/* ─── Topbar ─── */}
         <div className="topbar">
           <button className="topbar-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-          <span className="topbar-back-label">ย้อนกลับ</span>
-          <div className="topbar-title">{pet.name}</div>
+          <div className="topbar-titles">
+            <div className="topbar-title">โปรไฟล์สัตว์เลี้ยง</div>
+            <div className="topbar-sub">{pet.name}</div>
+          </div>
         </div>
 
         <div className="page-body">

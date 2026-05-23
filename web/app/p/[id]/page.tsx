@@ -17,6 +17,8 @@ const F = {
 // ─── Icons ──────────────────────────────────────────────────────────────────
 const Icon = {
   Paw: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
+  Tag: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+  Home: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Female: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm-1 2v3H9v2h2v2h2v-2h2v-2h-2v-3h-2z"/></svg>,
   Male: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a7 7 0 1 0 5.29 11.71L17 16.41V20h3v-3h3v-3h-4.41l-2.7-2.7A7 7 0 0 0 9 2zm0 2a5 5 0 1 1 0 10A5 5 0 0 1 9 4z"/></svg>,
   Verified: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="#E84677"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
@@ -376,6 +378,10 @@ export default function PublicPetProfilePage() {
         .contact-btn:hover { background: #D63F6A; box-shadow: 0 6px 20px rgba(232,70,119,0.4); transform: translateY(-1px); }
         .contact-btn:active { transform: scale(0.97); }
         .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .price-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; font-family: 'Prompt', sans-serif; background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+        .farm-link-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: 24px; background: white; color: ${F.pink}; font-size: 14px; font-weight: 700; border: 1px solid ${F.pinkBorder}; cursor: pointer; text-decoration: none; transition: all .18s ease; }
+        .farm-link-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; transform: translateY(-1px); }
+        .farm-link-btn:active { transform: scale(0.97); }
         .tabs-wrapper { border-bottom: 1px solid ${F.lineMid}; margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .tabs-wrapper::-webkit-scrollbar { display: none; }
         .tabs-inner { display: flex; gap: 0; min-width: max-content; }
@@ -555,10 +561,18 @@ export default function PublicPetProfilePage() {
                 {pet.status && (
                   <span className="status-pill" style={{ background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' }}>● {pet.status}</span>
                 )}
+                {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
+                  <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>
+                )}
                 {hasContact && (
                   <button className="contact-btn" onClick={() => setShowContactModal(true)}>
                     <Icon.Message /> ติดต่อ{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}
                   </button>
+                )}
+                {isFarmPet && farm && (
+                  <a href={`/farm/${farm.id}`} className="farm-link-btn">
+                    <Icon.Home /> ดูโปรไฟล์ฟาร์ม
+                  </a>
                 )}
               </div>
             </div>

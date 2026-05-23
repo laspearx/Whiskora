@@ -1,9 +1,34 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  teal: '#0D9488', tealSoft: '#F0FDFA',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+// ─── Icons ──────────────────────────────────────────────────────────────────
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Share: () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  Paw: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
+  Verified: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="#E84677"><path d="M12 2l2.4 1.8 3 .2.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3 .2L12 22l-2.4-1.8-3-.2-.9-2.9L3.3 15l.9-2.9-.9-2.9 2.4-1.8.9-2.9 3-.2L12 2z"/><path d="M9.5 12.5l1.8 1.8 3.7-3.7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  Pin: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Calendar: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  User: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Phone: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+  Shield: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+  Male: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
+  Female: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
+  Cat: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/></svg>,
+};
 
 export default function PublicFarmProfile() {
   const router = useRouter();
@@ -11,40 +36,37 @@ export default function PublicFarmProfile() {
   const farmId = params.id as string;
 
   const [farm, setFarm] = useState<any>(null);
+  const [owner, setOwner] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
+  const [litters, setLitters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // 🌟 State สำหรับระบบฟิลเตอร์
-  const [filters, setFilters] = useState({
-    breed: '',
-    gender: '',
-    color: '',
-    pattern: '',
-    coat: '',
-    ear: ''
-  });
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchFarmProfile = async () => {
       try {
         const { data: farmData, error: farmError } = await supabase
-          .from('farms')
-          .select('*')
-          .eq('id', farmId)
-          .single();
-          
+          .from('farms').select('*').eq('id', farmId).single();
         if (farmError) throw farmError;
         setFarm(farmData);
 
-        // 🌟 ดึงข้อมูลสัตว์เลี้ยง "ทุกตัว" ในฟาร์ม (เอา .in('status') ออกแล้ว)
+        // เจ้าของฟาร์ม (ชื่อ/อีเมล/ที่อยู่)
+        if (farmData.user_id) {
+          const { data: ownerData } = await supabase
+            .from('profiles').select('full_name, username, email, address')
+            .eq('id', farmData.user_id).maybeSingle();
+          if (ownerData) setOwner(ownerData);
+        }
+
         const { data: petsData } = await supabase
-          .from('pets')
-          .select('id, name, breed, image_url, gender, status, price, color, pattern, coat, ear')
+          .from('pets').select('id, name, breed, image_url, gender, status, price, birth_date')
           .eq('farm_id', farmId);
-          
         if (petsData) setPets(petsData);
 
+        const { data: littersData } = await supabase
+          .from('litters').select('id, status').eq('farm_id', farmId);
+        if (littersData) setLitters(littersData);
       } catch (error) {
         console.error("Error fetching farm:", error);
         alert("ไม่พบข้อมูลฟาร์มนี้ครับ");
@@ -53,286 +75,343 @@ export default function PublicFarmProfile() {
         setIsLoading(false);
       }
     };
-
     if (farmId) fetchFarmProfile();
   }, [farmId, router]);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังเปิดประตูฟาร์ม... 🏡</div>;
+  const isMale = (g: string) => g === 'male' || g === 'ตัวผู้';
+  const isFemale = (g: string) => g === 'female' || g === 'ตัวเมีย';
+
+  // ─── สถานะการยืนยัน: verified = ฟาร์มคุณภาพ / ไม่ verified = โฮมบรีด ───
+  const isVerified = !!farm?.is_verified;
+
+  // ─── สถิติ (คำนวณจากข้อมูลจริง) ───
+  const stats = {
+    total: pets.length,
+    ready: pets.filter(p => p.status === 'พร้อมย้ายบ้าน').length,
+    breeders: pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์').length,
+    neutered: pets.filter(p => p.status === 'ทำหมัน / ปลดระวาง').length,
+    litters: litters.length,
+  };
+
+  const readyPets = pets.filter(p => p.status === 'พร้อมย้ายบ้าน');
+
+  const calcAge = (b?: string | null) => {
+    if (!b) return '';
+    const dob = new Date(b), now = new Date();
+    let y = now.getFullYear() - dob.getFullYear();
+    let m = now.getMonth() - dob.getMonth();
+    if (m < 0) { y--; m += 12; }
+    if (y === 0 && m === 0) return 'เพิ่งเกิด';
+    return `${y > 0 ? y + ' ปี ' : ''}${m > 0 ? m + ' เดือน' : ''}`.trim();
+  };
+  const extractThai = (t?: string | null) => t ? t.split('(')[0].trim() : '-';
+  const speciesLabel = (s?: string) => s === 'cat' ? 'แมว' : s === 'dog' ? 'สุนัข' : (s || 'สัตว์เลี้ยง');
+  const foundedDate = farm?.created_at ? new Date(farm.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      if (navigator.share) await navigator.share({ title: farm?.farm_name, url });
+      else { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    } catch { /* cancelled */ }
+  };
+
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" />
+        <p className="text-xs font-semibold text-gray-400 tracking-widest">กำลังเปิดประตูฟาร์ม...</p>
+      </div>
+    </div>
+  );
   if (!farm) return null;
 
-  // 🌟 ฟังก์ชันอัจฉริยะ: คำนวณตัวเลือกฟิลเตอร์ที่ "มีอยู่จริง" ตามเงื่อนไขที่เลือกไว้
-  const getAvailableOptions = (field: keyof typeof filters) => {
-    const matchingPets = pets.filter(p => {
-      // เช็คว่าแมวตัวนี้ตรงกับฟิลเตอร์ "อื่นๆ" ที่กำลังเลือกอยู่ไหม (ยกเว้นตัวมันเอง)
-      return Object.keys(filters).every(key => {
-        const filterKey = key as keyof typeof filters;
-        if (filterKey === field) return true; // ข้ามฟิลด์ที่กำลังหาตัวเลือก
-        if (!filters[filterKey]) return true; // ถ้าไม่ได้เลือกฟิลเตอร์นี้ ให้ผ่าน
-        return p[filterKey] === filters[filterKey];
-      });
-    });
-    // ดึงค่าที่ไม่ซ้ำกันออกมา
-    return [...new Set(matchingPets.map(p => p[field]).filter(Boolean))];
-  };
-
-  // ดึงตัวเลือกที่แสดงได้จริง
-  const availableBreeds = getAvailableOptions('breed');
-  const availableGenders = getAvailableOptions('gender');
-  const availableColors = getAvailableOptions('color');
-  const availablePatterns = getAvailableOptions('pattern');
-  const availableCoats = getAvailableOptions('coat');
-  const availableEars = getAvailableOptions('ear');
-
-  // 🌟 ฟังก์ชันอัปเดตฟิลเตอร์ และล้างค่าลูกข่ายหากค่าที่เลือกไว้ไม่มีแล้ว
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  // 🌟 ฟังก์ชันกรองสัตว์เลี้ยงตามฟิลเตอร์ทั้งหมด
-  const filteredPets = pets.filter(pet => {
-    if (filters.breed && pet.breed !== filters.breed) return false;
-    if (filters.gender && pet.gender !== filters.gender) return false;
-    if (filters.color && pet.color !== filters.color) return false;
-    if (filters.pattern && pet.pattern !== filters.pattern) return false;
-    if (filters.coat && pet.coat !== filters.coat) return false;
-    if (filters.ear && pet.ear !== filters.ear) return false;
-    return true;
-  });
-
-  // 🌟 แยกหมวดหมู่หลังจากกรองแล้ว
-  const readyToMovePets = filteredPets.filter(p => p.status === 'พร้อมย้ายบ้าน' || p.status === 'พร้อมย้าย');
-  const breederPets = filteredPets.filter(p => p.status?.includes('พันธุ์'));
-  // แมวทั่วไป คือตัวที่ไม่ได้พร้อมย้าย และไม่ใช่พ่อแม่พันธุ์
-  const otherPets = filteredPets.filter(p => !p.status?.includes('พันธุ์') && p.status !== 'พร้อมย้ายบ้าน' && p.status !== 'พร้อมย้าย');
+  const ownerName = owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
+  const farmLocation = owner?.address || null;
+  const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
+  const bioIsLong = bioText.length > 120;
 
   return (
-    <div className="min-h-screen pb-20 animate-in fade-in duration-700">
-      
-      {/* 🌟 Header ปรับสัดส่วนให้สมูทขึ้น ไม่เทอะทะ */}
-      <div className="h-32 md:h-48 bg-gradient-to-r from-pink-400 to-rose-400 relative">
-        <button onClick={() => router.back()} className="absolute top-6 left-4 md:left-8 w-10 h-10 flex items-center justify-center bg-white/30 backdrop-blur-md hover:bg-white/50 text-white rounded-xl transition">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-        </button>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .fp-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
+        /* ── Cover ── */
+        .fp-cover { position: relative; height: 280px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; }
+        .fp-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .fp-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 40%); }
+        .fp-cover-top { position: absolute; top: 16px; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
+        .fp-cover-btn { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); color: ${F.ink}; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.12); transition: all .15s; }
+        .fp-cover-btn:hover { background: white; transform: scale(1.05); }
+        .fp-cover-verified { position: absolute; bottom: 16px; right: 20px; width: 84px; height: 84px; z-index: 2; }
+        .fp-cover-verified img, .fp-cover-verified svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 12px rgba(232,70,119,0.3)); }
+        /* ── Identity ── */
+        .fp-identity { background: white; border-radius: 24px 24px 0 0; margin-top: -24px; position: relative; z-index: 3; padding: 0 24px 24px; }
+        .fp-id-row { display: flex; align-items: flex-end; gap: 18px; padding-top: 20px; flex-wrap: wrap; }
+        .fp-avatar { width: 96px; height: 96px; border-radius: 50%; border: 4px solid white; margin-top: -56px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 40px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .fp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .fp-id-main { flex: 1; min-width: 200px; }
+        .fp-name { font-family: 'Prompt', sans-serif; font-size: 26px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .fp-tagline { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; margin-top: 4px; }
+        .fp-meta-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; font-size: 12px; color: ${F.muted}; font-weight: 600; }
+        .fp-meta-item { display: inline-flex; align-items: center; gap: 5px; }
+        .fp-badge-type { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .fp-badge-verified { background: ${F.pinkSoft}; color: ${F.pink}; border: 1px solid ${F.pinkBorder}; }
+        .fp-badge-home { background: #F3F4F6; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
+        /* ── Bio + quality card ── */
+        .fp-bio-card { display: grid; grid-template-columns: 1fr auto; gap: 20px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; border-radius: 18px; padding: 18px 20px; margin-top: 18px; }
+        .fp-bio-text { font-size: 13px; color: ${F.inkSoft}; line-height: 1.65; }
+        .fp-bio-toggle { color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; background: none; border: none; padding: 4px 0 0; display: inline-flex; align-items: center; gap: 3px; }
+        .fp-quality { display: flex; align-items: flex-start; gap: 10px; border-left: 1px solid ${F.pinkBorder}; padding-left: 20px; min-width: 180px; }
+        .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fp-quality-title { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 700; color: ${F.ink}; }
+        .fp-quality-sub { font-size: 11px; color: ${F.inkSoft}; line-height: 1.5; margin-top: 2px; }
+        /* ── Stats ── */
+        .fp-stats-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; margin-top: 16px; }
+        .fp-stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .fp-stat { text-align: center; }
+        .fp-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: ${F.muted}; margin-bottom: 6px; }
+        .fp-stat-num { font-family: 'Prompt', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; }
+        .fp-stat-unit { font-size: 11px; color: ${F.muted}; font-weight: 600; margin-top: 3px; }
+        /* ── Section ── */
+        .fp-section { margin-top: 20px; padding: 0 24px; }
+        .fp-section-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; }
+        .fp-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .fp-section-title { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        /* ── Farm info ── */
+        .fp-info-grid { display: flex; flex-direction: column; gap: 0; }
+        .fp-info-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px dotted ${F.lineMid}; }
+        .fp-info-row:last-child { border-bottom: none; }
+        .fp-info-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
+        .fp-info-label { font-size: 13px; color: ${F.muted}; font-weight: 600; min-width: 110px; }
+        .fp-info-val { font-size: 13px; color: ${F.ink}; font-weight: 700; margin-left: auto; text-align: right; }
+        .fp-info-val.verified { color: ${F.pink}; }
+        /* ── Ready pets ── */
+        .fp-pets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+        .fp-pet-card { background: white; border: 1px solid ${F.line}; border-radius: 16px; overflow: hidden; text-decoration: none; transition: all .2s; display: block; }
+        .fp-pet-card:hover { border-color: ${F.pinkBorder}; box-shadow: 0 6px 20px rgba(232,70,119,.1); transform: translateY(-2px); }
+        .fp-pet-img { width: 100%; aspect-ratio: 1; background: ${F.pinkSoft}; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 32px; position: relative; }
+        .fp-pet-img img { width: 100%; height: 100%; object-fit: cover; }
+        .fp-pet-ready-tag { position: absolute; top: 8px; left: 8px; background: ${F.pink}; color: white; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+        .fp-pet-info { padding: 12px 14px; }
+        .fp-pet-name { font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 5px; }
+        .fp-pet-name .g-m { color: #2563EB; }
+        .fp-pet-name .g-f { color: #DB2777; }
+        .fp-pet-breed { font-size: 11px; color: ${F.muted}; font-weight: 600; margin-top: 2px; }
+        .fp-pet-age { font-size: 10px; color: ${F.muted}; margin-top: 1px; }
+        .fp-pet-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+        .fp-pet-price { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 800; color: #C2410C; }
+        .fp-pet-pill { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: ${F.pinkSoft}; color: ${F.pink}; }
+        .fp-empty { text-align: center; padding: 32px; color: ${F.muted}; font-size: 13px; font-weight: 600; }
+        /* ── Sticky bottom CTA ── */
+        .fp-cta-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .fp-cta-inner { max-width: 1000px; margin: 0 auto; display: flex; gap: 12px; }
+        .fp-cta-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 26px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s ease; font-family: inherit; text-decoration: none; }
+        .fp-cta-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .fp-cta-primary:hover { background: #D63F6A; }
+        .fp-cta-ghost { background: white; color: ${F.pink}; border: 1px solid ${F.pinkBorder}; }
+        .fp-cta-ghost:hover { background: ${F.pinkSoft}; }
+        .fp-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: ${F.ink}; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 60; }
+        @media (max-width: 720px) {
+          .fp-bio-card { grid-template-columns: 1fr; }
+          .fp-quality { border-left: none; border-top: 1px solid ${F.pinkBorder}; padding-left: 0; padding-top: 14px; }
+          .fp-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+          .fp-identity, .fp-section { padding-left: 16px; padding-right: 16px; }
+        }
+        @media (max-width: 420px) {
+          .fp-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .fp-name { font-size: 22px; }
+          .fp-cover { height: 220px; }
+        }
+      `}</style>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 -mt-10 relative z-10">
-        
-        {/* กล่องโปรไฟล์ฟาร์ม */}
-        <div className="bg-white rounded-[2rem] p-5 md:p-8 shadow-sm border border-gray-100 mb-8">
-          <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start text-center sm:text-left">
-            <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center text-4xl shrink-0 -mt-10 sm:-mt-14 overflow-hidden">
-               🏡
+      <div className="fp-page">
+        <div className="fp-body">
+          {/* ── Cover ── */}
+          <div className="fp-cover">
+            {farm.cover_url || farm.image_url ? <img src={farm.cover_url || farm.image_url} alt={farm.farm_name} /> : null}
+            <div className="fp-cover-overlay" />
+            <div className="fp-cover-top">
+              <button className="fp-cover-btn" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+              <button className="fp-cover-btn" onClick={handleShare} aria-label="แชร์"><Icon.Share /></button>
             </div>
-            
-            <div className="flex-1 space-y-1.5 w-full">
-              <h1 className="text-xl md:text-3xl font-black text-gray-800 tracking-tight">{farm.farm_name}</h1>
-              <p className="text-xs md:text-sm font-medium text-gray-500">{farm.description || 'ฟาร์มคุณภาพบนระบบ Whiskora'}</p>
-              
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2">
-                {farm.phone && (
-                  <span className="bg-pink-50 text-pink-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                    📞 {farm.phone}
+            {isVerified && (
+              <div className="fp-cover-verified" title="Whiskora Verified">
+                <svg viewBox="0 0 100 100" fill="none">
+                  <circle cx="50" cy="50" r="46" fill="white" stroke={F.pinkBorder} strokeWidth="2"/>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke={F.pink} strokeWidth="1.5" strokeDasharray="3 3"/>
+                  <g transform="translate(50,42)" fill={F.pink}><circle cx="-8" cy="-4" r="3.5"/><circle cx="8" cy="-4" r="3.5"/><circle cx="-14" cy="3" r="3"/><circle cx="14" cy="3" r="3"/><path d="M0 0c-5 0-9 4-11 8-1.5 3-.5 6 3 7 2.5.7 5 .3 8 .3s5.5.4 8-.3c3.5-1 4.5-4 3-7-2-4-6-8-11-8z"/></g>
+                  <text x="50" y="72" textAnchor="middle" fontSize="9" fontWeight="700" fill={F.pink} fontFamily="sans-serif">VERIFIED</text>
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* ── Identity ── */}
+          <div className="fp-identity">
+            <div className="fp-id-row">
+              <div className="fp-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : (farm.species === 'cat' ? '🐱' : farm.species === 'dog' ? '🐶' : '🏡')}</div>
+              <div className="fp-id-main">
+                <h1 className="fp-name">
+                  {farm.farm_name}
+                  {isVerified && <Icon.Verified />}
+                </h1>
+                <p className="fp-tagline">ฟาร์ม{speciesLabel(farm.species)}</p>
+                <div className="fp-meta-row">
+                  {farmLocation && <span className="fp-meta-item"><Icon.Pin /> {farmLocation}</span>}
+                  <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
+                  <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
+                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><Icon.Paw /> โฮมบรีด</>}
                   </span>
-                )}
-                <span className="bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                  📍 {farm.address || 'ไม่ระบุที่อยู่'}
-                </span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* 🌟 ตัวกรอง (Filters) อัจฉริยะ */}
-        <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 mb-8 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🔍</span>
+            {/* Bio + quality */}
+            <div className="fp-bio-card">
               <div>
-                <h3 className="text-sm font-bold text-gray-800">ค้นหาสัตว์เลี้ยงในฟาร์ม</h3>
-                <p className="text-[10px] text-gray-400 font-medium">มีสมาชิกทั้งหมด {pets.length} ตัว</p>
+                <p className="fp-bio-text">
+                  {bioIsLong && !bioExpanded ? `${bioText.slice(0, 120)}...` : bioText}
+                </p>
+                {bioIsLong && (
+                  <button className="fp-bio-toggle" onClick={() => setBioExpanded(!bioExpanded)}>
+                    {bioExpanded ? 'ย่อ' : 'อ่านเพิ่มเติม'} <Icon.ChevronRight />
+                  </button>
+                )}
+              </div>
+              <div className="fp-quality">
+                <div className="fp-quality-icon">{isVerified ? <Icon.Shield /> : <Icon.Paw />}</div>
+                <div>
+                  <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
+                  <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
+                </div>
               </div>
             </div>
 
-            {/* ปุ่มเคลียร์ฟิลเตอร์ (โชว์เมื่อมีการเลือกฟิลเตอร์) */}
-            {Object.values(filters).some(val => val !== '') && (
-              <button 
-                onClick={() => setFilters({breed: '', gender: '', color: '', pattern: '', coat: '', ear: ''})} 
-                className="bg-gray-100 hover:bg-gray-200 text-gray-500 text-[10px] uppercase font-bold rounded-lg px-3 py-2 transition-all self-start md:self-auto"
-              >
-                ล้างตัวกรอง ✕
-              </button>
-            )}
-          </div>
-          
-          {/* ตัวกรองพื้นฐาน */}
-          <div className="flex flex-wrap gap-3">
-            <select value={filters.breed} onChange={e => handleFilterChange('breed', e.target.value)} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-3 outline-none focus:border-pink-300 min-w-[140px] cursor-pointer appearance-none flex-1 md:flex-none">
-              <option value="">ทุกสายพันธุ์</option>
-              {availableBreeds.map(b => <option key={b as string} value={b as string}>{b as string}</option>)}
-            </select>
-
-            <select value={filters.gender} onChange={e => handleFilterChange('gender', e.target.value)} className="bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-4 py-3 outline-none focus:border-pink-300 min-w-[120px] cursor-pointer appearance-none flex-1 md:flex-none">
-              <option value="">ทุกเพศ</option>
-              {availableGenders.includes('male') && <option value="male">ตัวผู้ ♂️</option>}
-              {availableGenders.includes('female') && <option value="female">ตัวเมีย ♀️</option>}
-            </select>
-
-            {/* ปุ่มเปิด/ปิด ตัวกรองขั้นสูง */}
-            <button 
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`text-xs font-bold rounded-xl px-4 py-3 transition-all flex items-center gap-2 border w-full md:w-auto justify-center ${showAdvancedFilters ? 'bg-pink-50 text-pink-600 border-pink-200' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-            >
-              🧬 {showAdvancedFilters ? 'ซ่อนตัวกรองละเอียด' : 'กรองละเอียด (พันธุกรรม)'}
-              <svg className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-            </button>
-          </div>
-
-          {/* ตัวกรองขั้นสูง (พันธุกรรม) */}
-          {showAdvancedFilters && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-gray-50 animate-in slide-in-from-top-2">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-400 ml-1">สี (Color)</label>
-                <select value={filters.color} onChange={e => handleFilterChange('color', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
-                  <option value="">ทั้งหมด</option>
-                  {availableColors.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-400 ml-1">ลวดลาย (Pattern)</label>
-                <select value={filters.pattern} onChange={e => handleFilterChange('pattern', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
-                  <option value="">ทั้งหมด</option>
-                  {availablePatterns.map(p => <option key={p as string} value={p as string}>{p as string}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-400 ml-1">ความยาวขน (Coat)</label>
-                <select value={filters.coat} onChange={e => handleFilterChange('coat', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
-                  <option value="">ทั้งหมด</option>
-                  {availableCoats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-400 ml-1">ลักษณะหู (Ear)</label>
-                <select value={filters.ear} onChange={e => handleFilterChange('ear', e.target.value)} className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-xs font-bold rounded-xl px-3 py-2.5 outline-none focus:border-pink-300 appearance-none">
-                  <option value="">ทั้งหมด</option>
-                  {availableEars.map(e => <option key={e as string} value={e as string}>{e as string}</option>)}
-                </select>
+            {/* Stats */}
+            <div className="fp-stats-card">
+              <div className="fp-stats-grid">
+                <div className="fp-stat">
+                  <div className="fp-stat-label"><Icon.Paw /> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
+                  <div className="fp-stat-unit">ตัว</div>
+                </div>
+                <div className="fp-stat">
+                  <div className="fp-stat-label">พร้อมย้ายบ้าน</div>
+                  <div className="fp-stat-num" style={{ color: '#16A34A' }}>{stats.ready}</div>
+                  <div className="fp-stat-unit">ตัว</div>
+                </div>
+                <div className="fp-stat">
+                  <div className="fp-stat-label">พ่อแม่พันธุ์</div>
+                  <div className="fp-stat-num" style={{ color: '#7C3AED' }}>{stats.breeders}</div>
+                  <div className="fp-stat-unit">ตัว</div>
+                </div>
+                <div className="fp-stat">
+                  <div className="fp-stat-label">ทำหมันแล้ว</div>
+                  <div className="fp-stat-num" style={{ color: '#D97706' }}>{stats.neutered}</div>
+                  <div className="fp-stat-unit">ตัว</div>
+                </div>
+                <div className="fp-stat">
+                  <div className="fp-stat-label">ครอกทั้งหมด</div>
+                  <div className="fp-stat-num" style={{ color: '#2563EB' }}>{stats.litters}</div>
+                  <div className="fp-stat-unit">ครอก</div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {filteredPets.length === 0 ? (
-           <div className="bg-white rounded-[2rem] p-10 text-center border border-gray-100 mt-6 shadow-sm">
-             <div className="text-4xl mb-3 opacity-50">🔍</div>
-             <h3 className="text-gray-800 font-bold">ไม่พบน้องๆ ที่ตรงกับเงื่อนไขค้นหา</h3>
-             <p className="text-gray-400 text-xs mt-1">ลองล้างตัวกรอง แล้วค้นหาใหม่อีกครั้งนะครับ</p>
-           </div>
-        ) : (
-          <div className="space-y-10">
-            
-            {/* 🌟 โซนที่ 1: สัตว์เลี้ยงพร้อมย้ายบ้าน */}
-            {readyToMovePets.length > 0 && (
-              <div className="space-y-4 bg-pink-50/30 p-4 md:p-6 rounded-[2rem] border border-pink-50">
-                <div className="flex items-center gap-2 px-2">
-                  <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 shadow-sm border border-pink-200">🏠</div>
-                  <h2 className="text-lg font-black text-gray-800 tracking-tight">เด็กๆ พร้อมย้ายบ้าน ({readyToMovePets.length})</h2>
+          {/* ── ข้อมูลฟาร์ม ── */}
+          <div className="fp-section">
+            <div className="fp-section-card">
+              <div className="fp-section-head">
+                <div className="fp-section-title"><Icon.Paw /> ข้อมูลฟาร์ม</div>
+              </div>
+              <div className="fp-info-grid">
+                <div className="fp-info-row">
+                  <span className="fp-info-icon"><Icon.User /></span>
+                  <span className="fp-info-label">เจ้าของฟาร์ม</span>
+                  <span className="fp-info-val">{ownerName}</span>
                 </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {readyToMovePets.map(pet => (
-                    <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-[1.5rem] p-4 border border-pink-100 shadow-sm flex flex-col items-center text-center hover:border-pink-300 hover:shadow-md transition-all group relative overflow-hidden">
-                      <div className="absolute top-0 right-0 bg-pink-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl z-10">
-                        พร้อมย้าย
-                      </div>
-                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-50 mb-3 group-hover:scale-105 transition-transform border-2 border-pink-50">
-                        {pet.image_url ? (
-                          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
-                        )}
-                      </div>
-                      <h3 className="font-black text-gray-800 text-sm md:text-base">{pet.name}</h3>
-                      <p className="text-[10px] font-bold text-gray-400 mt-0.5 truncate w-full">{pet.breed || 'ไม่ระบุสายพันธุ์'}</p>
-                      
-                      <div className="mt-3 w-full bg-pink-50/50 rounded-xl py-2 px-2 border border-pink-100/50">
-                        <p className="text-[9px] text-pink-400 font-bold uppercase tracking-wider mb-0.5">ค่าตัว / สินสอด</p>
-                        <p className="text-sm font-black text-pink-600">
-                          {pet.price ? `฿${pet.price.toLocaleString()}` : 'ทักแชทสอบถาม'}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                {farm.phone && (
+                  <div className="fp-info-row">
+                    <span className="fp-info-icon"><Icon.Phone /></span>
+                    <span className="fp-info-label">เบอร์โทรศัพท์</span>
+                    <span className="fp-info-val">{farm.phone}</span>
+                  </div>
+                )}
+                {farmLocation && (
+                  <div className="fp-info-row">
+                    <span className="fp-info-icon"><Icon.Pin /></span>
+                    <span className="fp-info-label">ที่อยู่</span>
+                    <span className="fp-info-val">{farmLocation}</span>
+                  </div>
+                )}
+                <div className="fp-info-row">
+                  <span className="fp-info-icon"><Icon.Calendar /></span>
+                  <span className="fp-info-label">วันที่ก่อตั้ง</span>
+                  <span className="fp-info-val">{foundedDate}</span>
+                </div>
+                <div className="fp-info-row">
+                  <span className="fp-info-icon"><Icon.Shield /></span>
+                  <span className="fp-info-label">มาตรฐานที่ได้รับ</span>
+                  <span className={`fp-info-val ${isVerified ? 'verified' : ''}`}>{isVerified ? 'Whiskora Verified' : 'ฟาร์มโฮมบรีด (ยังไม่ยืนยัน)'}</span>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* 🌟 โซนที่ 2: พ่อแม่พันธุ์ */}
-            {breederPets.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 px-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 shadow-sm border border-blue-200">👑</div>
-                  <h2 className="text-lg font-black text-gray-800 tracking-tight">พ่อแม่พันธุ์ประจำฟาร์ม ({breederPets.length})</h2>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {breederPets.map(pet => (
-                    <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-[1.5rem] p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-blue-300 hover:shadow-md transition-all group">
-                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-50 mb-3 group-hover:scale-105 transition-transform border-2 border-blue-50">
-                        {pet.image_url ? (
-                          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
-                        )}
+          {/* ── สัตว์พร้อมย้ายบ้าน ── */}
+          <div className="fp-section">
+            <div className="fp-section-card">
+              <div className="fp-section-head">
+                <div className="fp-section-title"><Icon.Cat /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
+              </div>
+              {readyPets.length === 0 ? (
+                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
+              ) : (
+                <div className="fp-pets-grid">
+                  {readyPets.map(pet => (
+                    <Link key={pet.id} href={`/p/${pet.id}`} className="fp-pet-card">
+                      <div className="fp-pet-img">
+                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                        <span className="fp-pet-ready-tag">พร้อมย้าย</span>
                       </div>
-                      <h3 className="font-black text-gray-800 text-sm md:text-base">{pet.name}</h3>
-                      <p className="text-[10px] font-bold text-gray-400 mt-0.5 truncate w-full">{pet.breed || 'ไม่ระบุสายพันธุ์'}</p>
-                      
-                      <div className="mt-3 w-full">
-                        <div className={`rounded-xl py-1.5 px-2 ${pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
-                          <p className="text-[10px] font-black">
-                            {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? '👑 พ่อพันธุ์' : 
-                             pet.gender === 'female' || pet.gender === 'ตัวเมีย' ? '👑 แม่พันธุ์' : 
-                             '👑 พ่อแม่พันธุ์'}
-                          </p>
+                      <div className="fp-pet-info">
+                        <div className="fp-pet-name">
+                          {pet.name}
+                          <span className={isMale(pet.gender) ? 'g-m' : 'g-f'}>{isMale(pet.gender) ? '♂' : '♀'}</span>
+                        </div>
+                        <div className="fp-pet-breed">{extractThai(pet.breed)}</div>
+                        {pet.birth_date && <div className="fp-pet-age">{calcAge(pet.birth_date)}</div>}
+                        <div className="fp-pet-foot">
+                          {pet.price != null && Number(pet.price) > 0
+                            ? <span className="fp-pet-price">฿{Number(pet.price).toLocaleString()}</span>
+                            : <span className="fp-pet-pill">สอบถามราคา</span>}
+                          <Icon.ChevronRight />
                         </div>
                       </div>
                     </Link>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 🌟 โซนที่ 3: สมาชิกอื่นๆ ในบ้าน (ตัวที่ไม่ได้ตั้งสถานะพิเศษ) */}
-            {otherPets.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 px-2">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 shadow-sm border border-gray-300">🐾</div>
-                  <h2 className="text-lg font-black text-gray-800 tracking-tight">สมาชิกอื่นๆ ในฟาร์ม ({otherPets.length})</h2>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {otherPets.map(pet => (
-                    <Link href={`/p/${pet.id}`} key={pet.id} className="bg-white rounded-[1.5rem] p-4 border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-gray-300 hover:shadow-md transition-all group">
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-50 mb-3 group-hover:scale-105 transition-transform border border-gray-100">
-                        {pet.image_url ? (
-                          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-gray-800 text-sm">{pet.name}</h3>
-                      <p className="text-[10px] font-bold text-gray-400 mt-0.5 truncate w-full">{pet.breed || 'ไม่ระบุสายพันธุ์'}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
+        {/* ── Sticky CTA ── */}
+        <div className="fp-cta-bar">
+          <div className="fp-cta-inner">
+            <button className="fp-cta-btn fp-cta-ghost" onClick={handleShare}><Icon.Share /> แชร์ฟาร์ม</button>
+            {farm.phone && (
+              <a className="fp-cta-btn fp-cta-primary" href={`tel:${farm.phone}`}><Icon.Phone /> ติดต่อฟาร์ม</a>
+            )}
+          </div>
+        </div>
+
+        {copied && <div className="fp-toast">✅ คัดลอกลิงก์แล้ว</div>}
       </div>
-    </div>
+    </>
   );
 }

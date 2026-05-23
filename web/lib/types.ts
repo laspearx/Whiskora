@@ -45,6 +45,7 @@ export interface Pet {
   microchip_number?: string | null;
   pedigree_number?: string | null;
   pet_code?: string | null;
+  price?: number | null;
   is_neutered?: boolean;
   chronic_diseases?: string | null;
   allergies?: string | null;
