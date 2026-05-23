@@ -246,16 +246,16 @@ export default function PetIdCardPage() {
         .idc-petid-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
         .idc-petid-num { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.2px; word-break: break-all; line-height: 1.2; }
         .idc-petid-issue { font-size: 9px; color: ${F.muted}; margin-top: 3px; }
-        /* ตารางข้อมูล (เต็มความกว้าง ไม่ตัดข้อความ) */
+        /* ตารางข้อมูล (หัวข้อ: ค่า ต่อกันชิดซ้าย ไม่ตัดข้อความ) */
         .idc-rows { display: flex; flex-direction: column; padding-top: 2px; }
-        .idc-row { display: flex; align-items: center; gap: 13px; padding: 7px 0; border-bottom: 1px solid rgba(252,224,236,0.7); }
+        .idc-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(252,224,236,0.7); }
         .idc-row:last-child { border-bottom: none; }
-        .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
-        .idc-row-label { display: flex; flex-direction: column; flex-shrink: 0; min-width: 96px; line-height: 1.2; }
-        .idc-row-label .th { font-size: 14px; font-weight: 700; color: ${F.ink}; }
-        .idc-row-label .en { font-size: 9px; font-weight: 500; color: ${F.muted}; }
-        .idc-row-val { margin-left: auto; font-size: 15px; font-weight: 700; color: ${F.ink}; text-align: right; font-family: 'Prompt', sans-serif; line-height: 1.3; }
-        .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; margin-left: 6px; font-size: 16px; }
+        .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; margin-top: 2px; }
+        .idc-row-content { min-width: 0; flex: 1; }
+        .idc-row-th { font-size: 15px; font-weight: 600; color: ${F.inkSoft}; line-height: 1.35; }
+        .idc-row-val { font-family: 'Prompt', sans-serif; font-weight: 700; color: ${F.ink}; }
+        .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; font-size: 16px; }
+        .idc-row-en { font-size: 10px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         /* แถบล่าง */
         .idc-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-top: 1px solid #FCE0EC; position: relative; z-index: 1; background: rgba(255,255,255,0.4); flex-wrap: wrap; }
         .idc-foot-shield { color: ${F.pink}; display: flex; }
@@ -339,19 +339,17 @@ export default function PetIdCardPage() {
                   </div>
                 </div>
 
-                {/* ขวา: ตารางข้อมูล (เต็มความกว้าง) */}
+                {/* ขวา: ตารางข้อมูล (หัวข้อ: ค่า ต่อกันชิดซ้าย) */}
                 <div className="idc-rows">
                   {rows.map((r, i) => (
                     <div key={i} className="idc-row">
                       <span className="idc-row-icon">{r.icon}</span>
-                      <span className="idc-row-label">
-                        <span className="th">{r.th}</span>
-                        <span className="en">{r.en}</span>
-                      </span>
-                      <span className="idc-row-val">
-                        {r.val}
-                        {r.isName && <span className="gender">{isMale ? '♂' : '♀'}</span>}
-                      </span>
+                      <div className="idc-row-content">
+                        <div className="idc-row-th">
+                          {r.th}: <span className="idc-row-val">{r.val}{r.isName && <span className="gender">{isMale ? ' ♂' : ' ♀'}</span>}</span>
+                        </div>
+                        <div className="idc-row-en">{r.en}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
