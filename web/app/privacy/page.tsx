@@ -15,7 +15,7 @@ const Icon = {
 };
 
 const LAST_UPDATED = "23 พฤษภาคม 2569";
-const CONTACT_EMAIL = "support@whiskora.pet";
+const CONTACT_EMAIL = "whiskora.pet@gmail.com";
 
 export default function PrivacyPolicyPage() {
   return (
