@@ -5,22 +5,36 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
 
-// ─── Premium Vertical Card Themes ──────────────────────────────────────────
-const PREMIUM_THEMES = {
-  obsidian: { id: 'obsidian', name: 'Obsidian Gold', bg: '#111315', text: '#FFFFFF', accent: '#D4AF37', card: '#1A1D20', label: '#8B9298', border: '#2C3136' },
-  pearl: { id: 'pearl', name: 'Pearl Rose', bg: '#F8F9FA', text: '#111827', accent: '#E84677', card: '#FFFFFF', label: '#6B7280', border: '#E5E7EB' },
-  sapphire: { id: 'sapphire', name: 'Sapphire Silver', bg: '#0F172A', text: '#FFFFFF', accent: '#94A3B8', card: '#1E293B', label: '#64748B', border: '#334155' },
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF',
 };
 
-// ─── Icons ─────────────────────────────────────────────────────────────────
+// ─── Icons (เส้น minimal โทนชมพู) ───
 const Icon = {
-  ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Share: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>,
-  Microchip: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Share: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Paw: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
+  Cat: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>,
+  Palette: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"/></svg>,
+  Calendar: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Clock: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  Weight: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>,
+  Drop: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+  Cross: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>,
+  Chip: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M16 11h1a2 2 0 0 1 0 4h-1"/><path d="M8 11H7a2 2 0 0 0 0 4h1"/><path d="M11 16v1a2 2 0 0 0 4 0v-1"/><path d="M11 8V7a2 2 0 0 1 4 0v1"/></svg>,
+  Pin: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Home: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Shield: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Doc: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  Verified: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="#E84677"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
 };
 
-// ฟังก์ชันแปลงรูปภาพเป็น Base64 เพื่อให้ html-to-image วาดรูปได้ไม่ติดปัญหา CORS
-const fetchImageAsBase64 = async (url: string) => {
+// แปลงรูปเป็น Base64 (กัน CORS ตอน html-to-image จับภาพ)
+const fetchImageAsBase64 = async (url: string): Promise<string> => {
   try {
     const response = await fetch(url);
     const blob = await response.blob();
@@ -30,9 +44,7 @@ const fetchImageAsBase64 = async (url: string) => {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-  } catch (error) {
-    return url; 
-  }
+  } catch { return url; }
 };
 
 export default function PetIdCardPage() {
@@ -42,24 +54,22 @@ export default function PetIdCardPage() {
 
   const [pet, setPet] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [farm, setFarm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
-  const [activeTheme, setActiveTheme] = useState<keyof typeof PREMIUM_THEMES>('obsidian');
   const [baseUrl, setBaseUrl] = useState("");
-  
+
   const [cardImageUrl, setCardImageUrl] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
+
   const [base64Avatar, setBase64Avatar] = useState<string | null>(null);
   const [base64Qr, setBase64Qr] = useState<string | null>(null);
   const [base64Logo, setBase64Logo] = useState<string | null>(null);
+  const [base64Verified, setBase64Verified] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setBaseUrl(window.location.origin);
-    }
+    if (typeof window !== "undefined") setBaseUrl(window.location.origin);
 
     const fetchPetData = async () => {
       try {
@@ -70,27 +80,24 @@ export default function PetIdCardPage() {
         if (petError) throw petError;
         setPet(petData);
 
-        const { data: profileData } = await supabase.from('profiles').select('username, full_name, address').eq('id', petData.user_id).single();
+        const { data: profileData } = await supabase.from('profiles').select('username, full_name, address').eq('id', petData.user_id).maybeSingle();
         if (profileData) setProfile(profileData);
 
-        // ดึงโลโก้
-        const logoB64 = await fetchImageAsBase64('/mini-logo.png');
-        setBase64Logo(logoB64);
-
-        // ดึงรูปโปรไฟล์สัตว์เลี้ยง
-        if (petData.image_url) {
-          const b64 = await fetchImageAsBase64(petData.image_url);
-          setBase64Avatar(b64);
+        if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
+          const { data: farmData } = await supabase.from('farms').select('farm_name').eq('id', petData.farm_id).maybeSingle();
+          if (farmData) setFarm(farmData);
         }
 
-        // สร้าง QR Code ลิ้งค์ไปยังหน้า Public Profile
+        // โลโก้ + ตรารับรอง (จริงจาก /public)
+        setBase64Logo(await fetchImageAsBase64('/logo.png'));
+        setBase64Verified(await fetchImageAsBase64('/verified.png'));
+
+        if (petData.image_url) setBase64Avatar(await fetchImageAsBase64(petData.image_url));
+
         if (typeof window !== "undefined") {
           const publicProfileUrl = `${window.location.origin}/p/${petId}`;
-          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(publicProfileUrl)}&margin=0`;
-          try {
-             const qrB64 = await fetchImageAsBase64(qrUrl);
-             setBase64Qr(qrB64);
-          } catch(e) { console.log("Error loading QR"); }
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicProfileUrl)}&margin=0`;
+          try { setBase64Qr(await fetchImageAsBase64(qrUrl)); } catch { /* QR optional */ }
         }
       } catch (error) {
         console.error("Error:", error);
@@ -98,233 +105,280 @@ export default function PetIdCardPage() {
         setLoading(false);
       }
     };
-
     fetchPetData();
   }, [petId, router]);
 
+  // สร้างรูปบัตรเมื่อข้อมูลพร้อม
   useEffect(() => {
     if (loading || !pet) return;
-
     const generateImage = async () => {
       setIsGeneratingImage(true);
       try {
-        // หน่วงเวลาเล็กน้อยเพื่อให้ภาพและฟอนต์โหลดครบ
-        await new Promise(resolve => setTimeout(resolve, 800)); 
+        await new Promise(r => setTimeout(r, 800));
         if (!cardRef.current) return;
-        
-        const dataUrl = await htmlToImage.toPng(cardRef.current, {
-          quality: 1.0,
-          pixelRatio: 3, // ความละเอียดสูงเพื่อความคมชัด
-          skipFonts: true, 
-        });
+        const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 1.0, pixelRatio: 3, skipFonts: true });
         setCardImageUrl(dataUrl);
       } catch (error) {
-        console.error('Error generating card image:', error);
+        console.error('Error generating card:', error);
       } finally {
         setIsGeneratingImage(false);
       }
     };
-
     generateImage();
-  }, [loading, pet, profile, activeTheme, base64Qr, base64Avatar, base64Logo]);
+  }, [loading, pet, profile, farm, base64Qr, base64Avatar, base64Logo, base64Verified]);
+
+  const publicUrl = `${baseUrl}/p/${petId}`;
 
   const handleShare = async () => {
-    const publicProfileUrl = `${baseUrl}/p/${petId}`;
-    const shareData = {
-      title: `${pet?.name} - Whiskora Official Pass 🐾`,
-      text: `ดูโปรไฟล์แบบเต็มของ ${pet?.name} ได้ที่นี่เลย!`,
-      url: publicProfileUrl
-    };
-
+    const shareData = { title: `${pet?.name} - Whiskora Pet ID 🐾`, text: `ดูโปรไฟล์ของ ${pet?.name}`, url: publicUrl };
     try {
       if (navigator.share) await navigator.share(shareData);
-      else {
-        await navigator.clipboard.writeText(publicProfileUrl);
-        alert("✅ คัดลอกลิงก์เรียบร้อยแล้ว ส่งให้คนอื่นกดดูได้เลย!");
-      }
-    } catch (err) { console.log("Share cancelled", err); }
+      else { await navigator.clipboard.writeText(publicUrl); alert("✅ คัดลอกลิงก์เรียบร้อยแล้ว"); }
+    } catch { /* cancelled */ }
   };
 
-  const extractThai = (text: string | null) => {
-    if (!text) return '-';
-    return text.split('(')[0].trim(); 
+  const handleDownload = () => {
+    if (!cardImageUrl) return;
+    const a = document.createElement('a');
+    a.href = cardImageUrl;
+    a.download = `whiskora-id-${pet?.pet_code || pet?.name || 'pet'}.png`;
+    a.click();
   };
 
-  const generate13DigitId = (uuid: string) => {
-    let hash = 0;
-    for (let i = 0; i < uuid.length; i++) { hash = uuid.charCodeAt(i) + ((hash << 5) - hash); }
-    const absoluteHash = Math.abs(hash).toString();
-    const paddedId = (absoluteHash + "1098765432109").substring(0, 13);
-    return `${paddedId.substring(0,1)} ${paddedId.substring(1,5)} ${paddedId.substring(5,10)} ${paddedId.substring(10,12)} ${paddedId.substring(12,13)}`;
-  };
+  const extractThai = (text: string | null) => text ? text.split('(')[0].trim() : '-';
+  const isMale = pet?.gender === 'male' || pet?.gender === 'ตัวผู้';
 
-  const safeFormatDate = (dateString: string | null) => {
-    if (!dateString) return '-';
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('en-GB'); 
+  const calcAge = (b?: string | null) => {
+    if (!b) return '-';
+    const dob = new Date(b), now = new Date();
+    let y = now.getFullYear() - dob.getFullYear();
+    let m = now.getMonth() - dob.getMonth();
+    if (m < 0) { y--; m += 12; }
+    if (y === 0 && m === 0) return 'เพิ่งเกิด';
+    return `${y > 0 ? y + ' ปี ' : ''}${m > 0 ? m + ' เดือน' : ''}`.trim();
   };
+  const fmtDate = (d?: string | null) => {
+    if (!d) return '-';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '-';
+    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  const fmtThaiDate = (date: Date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">Loading Pass...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">Loading ID Card...</div>;
   if (!pet) return null;
 
-  const formattedId = generate13DigitId(pet.id);
-  const t = PREMIUM_THEMES[activeTheme];
+  const petCode = pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`;
+  const issueDate = new Date();
+  const expireDate = new Date(); expireDate.setFullYear(expireDate.getFullYear() + 2);
+
+  // แถวข้อมูลในตาราง
+  const rows = [
+    { icon: <Icon.Paw />, th: 'ชื่อ', en: 'Name', val: pet.name, isName: true },
+    { icon: <Icon.Cat />, th: 'สายพันธุ์', en: 'Breed', val: extractThai(pet.breed) },
+    { icon: <Icon.Palette />, th: 'สี', en: 'Color', val: extractThai(pet.color) },
+    { icon: <Icon.Calendar />, th: 'วันเกิด', en: 'DOB', val: fmtDate(pet.birth_date) },
+    { icon: <Icon.Clock />, th: 'อายุ', en: 'Age', val: calcAge(pet.birth_date) },
+    { icon: <Icon.Weight />, th: 'น้ำหนัก', en: 'Weight', val: pet.weight ? `${pet.weight} kg` : '-' },
+    { icon: <Icon.Drop />, th: 'กรุ๊ปเลือด', en: 'Blood Type', val: pet.blood_type || '-' },
+    { icon: <Icon.Cross />, th: 'ทำหมันแล้ว', en: 'Spayed/Neutered', val: pet.is_neutered ? 'ทำหมันแล้ว' : 'ไม่ทำหมัน' },
+    { icon: <Icon.Chip />, th: 'ไมโครชิป', en: 'Microchip No.', val: pet.microchip_number || '-' },
+    { icon: <Icon.Pin />, th: 'เจ้าของ', en: 'Owner', val: profile?.full_name || profile?.username || 'Whiskora User' },
+    { icon: <Icon.Home />, th: 'ฟาร์ม', en: 'Cattery', val: farm?.farm_name || '-' },
+  ];
 
   return (
-    <div className="max-w-md mx-auto px-4 pt-6 pb-24 animate-in fade-in duration-700 space-y-6 font-sans">
-      
-      {/* 🔙 Header & Theme Selector */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-900 rounded-xl transition-colors shadow-sm border border-gray-100">
-          <Icon.ArrowLeft />
-        </button>
-        <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-2">
-          {(Object.keys(PREMIUM_THEMES) as Array<keyof typeof PREMIUM_THEMES>).map((key) => (
-            <button
-              key={key}
-              onClick={() => { setActiveTheme(key); setCardImageUrl(null); }} 
-              className={`w-6 h-6 rounded-full transition-all border-2 ${activeTheme === key ? 'scale-110 shadow-sm' : 'scale-90 border-transparent opacity-60 hover:opacity-100'}`}
-              style={{ backgroundColor: PREMIUM_THEMES[key].bg, borderColor: activeTheme === key ? PREMIUM_THEMES[key].accent : 'transparent' }}
-              title={PREMIUM_THEMES[key].name}
-            />
-          ))}
-        </div>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .idc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .idc-body { max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px; }
+        .idc-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .idc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .idc-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .idc-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .idc-sub { font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
+        /* แสดงรูปบัตรที่ render แล้ว */
+        .idc-display { display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; min-height: 400px; }
+        .idc-rendered { width: 100%; max-width: 920px; border-radius: 18px; box-shadow: 0 20px 50px rgba(232,70,119,0.15); }
+        .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; }
+        .idc-spinner { width: 36px; height: 36px; border: 4px solid ${F.pinkBorder}; border-top-color: ${F.pink}; border-radius: 50%; animation: idcspin 0.8s linear infinite; }
+        @keyframes idcspin { to { transform: rotate(360deg); } }
+        .idc-actions { display: flex; gap: 12px; width: 100%; max-width: 920px; }
+        .idc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all .18s ease; font-family: inherit; }
+        .idc-btn-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .idc-btn-primary:hover { background: #D63F6A; }
+        .idc-btn-ghost { background: white; color: ${F.ink}; border: 1px solid ${F.lineMid}; }
+        .idc-btn-ghost:hover { border-color: ${F.pink}; color: ${F.pink}; }
+        .idc-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 10px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; max-width: 920px; width: 100%; }
 
-      <div className="text-center px-4">
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">Pet Digital Pass</h1>
-        <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">Whiskora Verified Identification</p>
-      </div>
+        /* ═══ ตัวบัตร (แนวนอน) ═══ */
+        .idc-card { width: 920px; background: linear-gradient(135deg, #FFF8FB 0%, #FFFFFF 50%, #FFF0F6 100%); border-radius: 20px; overflow: hidden; position: relative; border: 1px solid ${F.pinkBorder}; }
+        .idc-card-pattern { position: absolute; inset: 0; opacity: 0.4; pointer-events: none; background-image: radial-gradient(circle at 90% 15%, rgba(251,207,232,0.4) 0%, transparent 40%), radial-gradient(circle at 10% 85%, rgba(251,207,232,0.3) 0%, transparent 35%); }
+        .idc-main { display: grid; grid-template-columns: 280px 1fr 250px; gap: 24px; padding: 28px 32px; position: relative; z-index: 1; }
+        /* คอลัมน์ซ้าย: รูป + Pet ID */
+        .idc-photo { width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 60px; border: 1px solid ${F.pinkBorder}; }
+        .idc-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .idc-petid-box { margin-top: 16px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; border-radius: 14px; padding: 14px 16px; }
+        .idc-petid-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .idc-petid-num { font-family: 'Prompt', monospace; font-size: 24px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.5px; }
+        .idc-petid-issue { font-size: 10px; color: ${F.muted}; margin-top: 4px; }
+        /* คอลัมน์กลาง: header + ตาราง */
+        .idc-mid-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1.5px dashed ${F.pinkBorder}; }
+        .idc-cert-shield { width: 40px; height: 40px; border-radius: 12px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .idc-cert-title { display: flex; align-items: center; gap: 6px; font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; }
+        .idc-cert-no { font-size: 11px; color: ${F.inkSoft}; margin-top: 2px; }
+        .idc-cert-no b { color: ${F.pink}; font-family: 'Prompt', monospace; font-weight: 700; }
+        .idc-rows { display: flex; flex-direction: column; }
+        .idc-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dotted ${F.lineMid}; }
+        .idc-row:last-child { border-bottom: none; }
+        .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
+        .idc-row-label { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; min-width: 0; }
+        .idc-row-label .en { font-size: 10px; color: ${F.muted}; font-weight: 500; }
+        .idc-row-val { margin-left: auto; font-size: 13px; font-weight: 700; color: ${F.ink}; text-align: right; font-family: 'Prompt', sans-serif; }
+        .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; margin-left: 4px; }
+        /* คอลัมน์ขวา: ตรารับรอง + QR */
+        .idc-right { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .idc-verified { width: 88px; height: 88px; }
+        .idc-verified img { width: 100%; height: 100%; object-fit: contain; }
+        .idc-verified-fallback { width: 88px; height: 88px; border-radius: 50%; border: 3px solid ${F.pink}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${F.pink}; }
+        .idc-qr-section { background: white; border: 1px solid ${F.pinkBorder}; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+        .idc-qr-title { font-size: 11px; font-weight: 700; color: ${F.inkSoft}; text-align: center; }
+        .idc-qr-img { width: 130px; height: 130px; position: relative; }
+        .idc-qr-img img { width: 100%; height: 100%; object-fit: contain; }
+        .idc-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; border-radius: 50%; background: white; border: 2px solid ${F.pink}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
+        .idc-qr-hint { font-size: 9px; color: ${F.muted}; text-align: center; }
+        /* แถบล่าง */
+        .idc-footer { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: ${F.pinkBorder}; border-top: 1px solid ${F.pinkBorder}; position: relative; z-index: 1; }
+        .idc-foot-cell { background: linear-gradient(135deg, #FFF8FB, #FFFFFF); padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+        .idc-foot-icon { color: ${F.pink}; flex-shrink: 0; }
+        .idc-foot-label { font-size: 9px; font-weight: 700; color: ${F.muted}; }
+        .idc-foot-val { font-size: 12px; font-weight: 700; color: ${F.ink}; font-family: 'Prompt', sans-serif; }
+        .idc-foot-sign { font-family: 'Prompt', cursive; font-size: 18px; font-weight: 600; color: ${F.pink}; font-style: italic; }
+        .idc-bottombar { background: ${F.pink}; color: white; text-align: center; padding: 8px; font-size: 10px; font-weight: 600; position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        @media (max-width: 768px) {
+          .idc-body { padding: 16px 12px 60px; }
+          .idc-rendered, .idc-actions, .idc-hint { max-width: 100%; }
+          .idc-actions { flex-direction: column; }
+        }
+      `}</style>
 
-      {/* 💳 Card Display Area */}
-      <div className="flex flex-col items-center relative min-h-[500px]">
-        
-        {/* Loading Overlay */}
-        {(isGeneratingImage || !cardImageUrl) && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-3xl">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin"></div>
-              <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Generating Pass...</span>
+      <div className="idc-page">
+        <div className="idc-body">
+          {/* Topbar */}
+          <div className="idc-topbar">
+            <button onClick={() => router.back()} className="idc-back" aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <div>
+              <h1 className="idc-title">บัตรประจำตัวสัตว์เลี้ยง</h1>
+              <p className="idc-sub">Whiskora Pet Identification Card</p>
             </div>
           </div>
-        )}
 
-        {/* 🌟 รูปที่โชว์ให้ผู้ใช้เห็นและกดเซฟได้ */}
-        {cardImageUrl && (
-          <img 
-            src={cardImageUrl} 
-            alt="Pet ID Pass" 
-            className="w-full max-w-[320px] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-500 relative z-30"
-          />
-        )}
+          <div className="idc-display">
+            {/* Loading */}
+            {(isGeneratingImage || !cardImageUrl) && (
+              <div className="idc-loading"><div className="idc-spinner" /></div>
+            )}
 
-        {/* 🛠️ The Hidden DOM Element สำหรับให้ html-to-image จับภาพ */}
-        <div 
-          ref={cardRef} 
-          className="w-[320px] h-[520px] rounded-3xl overflow-hidden relative flex flex-col p-6 shadow-2xl"
-          style={{ 
-            backgroundColor: t.bg, border: `1px solid ${t.border}`, color: t.text,
-            position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: -1, pointerEvents: 'none',
-          }} 
-        >
-          {/* Decorative Glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 blur-3xl -mr-20 -mt-20" style={{ background: t.accent }}></div>
+            {/* รูปบัตรที่ render แล้ว (ให้กดเซฟ) */}
+            {cardImageUrl && <img src={cardImageUrl} alt="Pet ID Card" className="idc-rendered" />}
 
-          {/* 1. Header */}
-          <div className="flex justify-between items-center z-10">
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                    {base64Logo ? (
-                        <img src={base64Logo} alt="Logo" className="w-full h-full object-contain" />
+            {/* ── ตัวบัตรจริง (ซ่อนไว้ให้ html-to-image จับภาพ) ── */}
+            <div
+              ref={cardRef}
+              className="idc-card"
+              style={{ position: cardImageUrl ? 'absolute' : 'relative', opacity: cardImageUrl ? 0 : 1, zIndex: cardImageUrl ? -1 : 0, pointerEvents: 'none' }}
+            >
+              <div className="idc-card-pattern" />
+              <div className="idc-main">
+                {/* ซ้าย: รูป + Pet ID */}
+                <div>
+                  <div className="idc-photo">{base64Avatar ? <img src={base64Avatar} alt={pet.name} /> : '🐾'}</div>
+                  <div className="idc-petid-box">
+                    <div className="idc-petid-label"><Icon.Paw /> PET ID</div>
+                    <div className="idc-petid-num">{petCode}</div>
+                    <div className="idc-petid-issue">ออกให้เมื่อ {fmtThaiDate(issueDate)}</div>
+                  </div>
+                </div>
+
+                {/* กลาง: header + ตาราง */}
+                <div>
+                  <div className="idc-mid-header">
+                    <div className="idc-cert-shield"><Icon.Paw /></div>
+                    <div>
+                      <div className="idc-cert-title">รับรองโดย Whiskora <Icon.Verified /></div>
+                      <div className="idc-cert-no">ใบรับรองเลขที่ <b>{petCode}</b></div>
+                    </div>
+                  </div>
+                  <div className="idc-rows">
+                    {rows.map((r, i) => (
+                      <div key={i} className="idc-row">
+                        <span className="idc-row-icon">{r.icon}</span>
+                        <span className="idc-row-label">{r.th} <span className="en">({r.en})</span></span>
+                        <span className="idc-row-val">
+                          {r.val}
+                          {r.isName && <span className="gender">{isMale ? '♂' : '♀'}</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ขวา: ตรารับรอง + QR */}
+                <div className="idc-right">
+                  <div className="idc-verified">
+                    {base64Verified && !base64Verified.startsWith('/') ? (
+                      <img src={base64Verified} alt="Verified" />
                     ) : (
-                        <div className="text-[10px]">🐾</div>
+                      <div className="idc-verified-fallback">
+                        <Icon.Paw />
+                        <span style={{ fontSize: '8px', fontWeight: 800, letterSpacing: '0.1em', marginTop: '2px' }}>VERIFIED</span>
+                      </div>
                     )}
+                  </div>
+                  <div className="idc-qr-section">
+                    <div className="idc-qr-title">สแกนเพื่อดูข้อมูลสัตว์เลี้ยง</div>
+                    <div className="idc-qr-img">
+                      {base64Qr ? <img src={base64Qr} alt="QR" /> : <div style={{ width: '100%', height: '100%', background: F.line, borderRadius: 8 }} />}
+                      <div className="idc-qr-center"><Icon.Paw /></div>
+                    </div>
+                    <div className="idc-qr-hint">หรือสแกนด้วยกล้องทั่วไป</div>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black tracking-[0.2em] uppercase leading-none" style={{ color: t.accent }}>WHISKORA</span>
-                  <span className="text-[6px] font-bold tracking-widest uppercase mt-0.5" style={{ color: t.label }}>Pet Identification</span>
+              </div>
+
+              {/* แถบล่าง */}
+              <div className="idc-footer">
+                <div className="idc-foot-cell">
+                  <span className="idc-foot-icon"><Icon.Calendar /></span>
+                  <div><div className="idc-foot-label">วันที่ออกบัตร</div><div className="idc-foot-val">{fmtThaiDate(issueDate)}</div></div>
                 </div>
-            </div>
-            <div className="opacity-80" style={{ color: t.accent }}><Icon.Microchip /></div>
-          </div>
-
-          {/* 2. Photo & Name */}
-          <div className="flex flex-col items-center mt-8 z-10">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 shadow-[0_0_20px_rgba(0,0,0,0.2)] mb-4 relative" style={{ borderColor: t.accent, backgroundColor: t.card }}>
-              {base64Avatar ? (
-                <img src={base64Avatar} alt={pet.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">🐾</div>
-              )}
-            </div>
-            <h1 className="text-3xl font-black tracking-tight mb-0.5 text-center" style={{ color: t.text }}>{pet.name}</h1>
-            <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.label }}>
-              {pet.species === 'cat' ? 'Feline' : pet.species === 'dog' ? 'Canine' : 'Pet'} / {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? 'Male' : 'Female'}
-            </p>
-          </div>
-
-          {/* 3. Details Grid */}
-          <div className="w-full mt-8 rounded-2xl p-4 grid grid-cols-2 gap-y-4 gap-x-2 z-10" style={{ backgroundColor: t.card, border: `1px solid ${t.border}` }}>
-            <div>
-              <p className="text-[7px] font-bold uppercase tracking-widest mb-1" style={{ color: t.label }}>Breed</p>
-              <p className="text-[10px] font-bold truncate" style={{ color: t.text }}>{extractThai(pet.breed)}</p>
-            </div>
-            <div>
-              <p className="text-[7px] font-bold uppercase tracking-widest mb-1" style={{ color: t.label }}>Color</p>
-              <p className="text-[10px] font-bold truncate" style={{ color: t.text }}>{extractThai(pet.color)}</p>
-            </div>
-            <div>
-              <p className="text-[7px] font-bold uppercase tracking-widest mb-1" style={{ color: t.label }}>Birth Date</p>
-              <p className="text-[10px] font-bold" style={{ color: t.text }}>{safeFormatDate(pet.birth_date || pet.birthdate)}</p>
-            </div>
-            <div>
-              <p className="text-[7px] font-bold uppercase tracking-widest mb-1" style={{ color: t.label }}>Status</p>
-              <p className="text-[10px] font-bold" style={{ color: t.accent }}>Verified</p>
-            </div>
-          </div>
-
-          {/* 4. Footer (Owner & QR) */}
-          <div className="mt-auto pt-5 flex justify-between items-end z-10">
-            <div className="flex flex-col gap-3">
-              <div>
-                <p className="text-[7px] font-bold uppercase tracking-widest mb-0.5" style={{ color: t.label }}>Owner</p>
-                <p className="text-[11px] font-bold truncate w-40" style={{ color: t.text }}>{profile?.full_name || profile?.username || 'Whiskora User'}</p>
+                <div className="idc-foot-cell">
+                  <span className="idc-foot-icon"><Icon.Shield /></span>
+                  <div><div className="idc-foot-label">บัตรหมดอายุ</div><div className="idc-foot-val">{fmtThaiDate(expireDate)}</div></div>
+                </div>
+                <div className="idc-foot-cell" style={{ flexDirection: 'column', alignItems: 'center', gap: 0, justifyContent: 'center' }}>
+                  <div className="idc-foot-sign">Whiskora</div>
+                  <div className="idc-foot-label">AUTHORIZED SIGNATURE</div>
+                </div>
+                <div className="idc-foot-cell">
+                  <span className="idc-foot-icon"><Icon.Doc /></span>
+                  <div><div className="idc-foot-label">ออกโดย</div><div className="idc-foot-val">Whiskora System</div></div>
+                </div>
               </div>
-              <div>
-                <p className="text-[7px] font-bold uppercase tracking-widest mb-0.5" style={{ color: t.label }}>ID Number</p>
-                <p className="text-[10px] font-black tracking-widest font-mono" style={{ color: t.text }}>{formattedId}</p>
-              </div>
+              <div className="idc-bottombar"><Icon.Paw /> ตรวจสอบข้อมูลได้ที่ whiskora.pet/verify หรือสแกน QR Code</div>
             </div>
-            <div className="w-[60px] h-[60px] bg-white p-1 rounded-lg flex-shrink-0 flex items-center justify-center shadow-md">
-              {base64Qr ? (
-                <img src={base64Qr} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply" />
-              ) : (
-                <div className="w-full h-full bg-gray-100 animate-pulse rounded"></div>
-              )}
+
+            {/* Actions */}
+            <p className="idc-hint">📱 แตะค้างที่บัตรเพื่อบันทึกรูป หรือกดปุ่มดาวน์โหลดด้านล่าง</p>
+            <div className="idc-actions">
+              <button onClick={handleDownload} className="idc-btn idc-btn-ghost" disabled={!cardImageUrl}><Icon.Download /> ดาวน์โหลดบัตร</button>
+              <button onClick={handleShare} className="idc-btn idc-btn-primary"><Icon.Share /> แชร์ลิงก์ให้สแกน</button>
             </div>
           </div>
-
         </div>
-
       </div>
-
-      {/* User Actions */}
-      <div className="space-y-4 pt-2">
-        <p className="text-[10px] font-bold text-gray-400 text-center uppercase tracking-widest bg-gray-50 py-2 rounded-lg border border-gray-100">
-          📱 แตะค้างที่บัตรเพื่อบันทึกรูปลงเครื่อง
-        </p>
-        
-        <button 
-          onClick={handleShare}
-          className="w-full text-white font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg hover:opacity-90"
-          style={{ background: '#111827' }} 
-        >
-          <Icon.Share />
-          แชร์ลิงก์ให้คนอื่นสแกน
-        </button>
-      </div>
-
-    </div>
+    </>
   );
 }

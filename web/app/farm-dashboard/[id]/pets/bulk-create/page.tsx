@@ -32,6 +32,51 @@ const breedData: Record<string, string[]> = {
 
 const STATUS_OPTIONS = ["พ่อพันธุ์ / แม่พันธุ์", "เด็ก", "พร้อมย้ายบ้าน", "ติดจอง", "ทำหมัน / ปลดระวาง"];
 
+// ─── ตัวเลือก สี / ลาย / หู / ขา / ขน / สีตา (อ้างอิงชาร์ต Housecat Coat Colors & Patterns) ───
+// หมายเหตุ: "สี" = สีพื้น (base color), "ลาย" = แพทเทิร์น — แยกเป็นคนละแกนตามต้นแบบ
+const COLOR_DATA: Record<string, string[]> = {
+  cat: [
+    "ดำ (Black)", "บลู / เทา (Blue / Grey)", "ช็อกโกแลต (Chocolate)", "ไลแลค (Lilac / Lavender)",
+    "ซินนามอน (Cinnamon)", "ฟอว์น (Fawn)", "แดง / ส้ม (Red / Orange)", "ครีม (Cream)",
+    "ขาว (White)", "ทอร์ตี้ / สีเปรอะ (Tortoiseshell)", "อื่นๆ",
+  ],
+  dog: [
+    "ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)", "ทอง / เหลือง (Golden / Yellow)",
+    "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น / น้ำตาลอ่อน (Fawn)",
+    "สามสี (Tricolor)", "ลายหินอ่อน (Merle / Dapple)", "ลายเสือ (Brindle)", "อื่นๆ",
+  ],
+  other: ["ดำ (Black)", "ขาว (White)", "น้ำตาล (Brown)", "เทา (Grey)", "ครีม (Cream)", "หลายสี (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
+};
+
+// แพทเทิร์น (ลาย) — แมวอ้างอิงหมวดหลักในชาร์ต, สัตว์อื่นใช้ชุดทั่วไป
+const PATTERN_DATA: Record<string, string[]> = {
+  cat: [
+    "สีเดียวล้วน (Solid / Self)",
+    "ลายสลิด-แมคเคอเรล (Mackerel Tabby)", "ลายสลิด-คลาสสิก (Classic Tabby)",
+    "ลายจุด (Spotted Tabby)", "ลายทิคต์ (Ticked Tabby)",
+    "สีแต้ม / พ้อยท์ (Colorpoint)", "สองสี / ขาวแต้ม (Bicolor / Tuxedo)",
+    "ทอร์ตี้ / สีเปรอะ (Tortie)", "สามสี / แคลิโค (Calico)",
+    "ทิปปิ้ง-ชินชิลล่า (Chinchilla / Shell)", "ทิปปิ้ง-เฉดเดด (Shaded)", "ทิปปิ้ง-สโมก (Smoke)",
+    "อื่นๆ",
+  ],
+  default: ["สีเดียวล้วน (Solid Color)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
+};
+
+// สีตา — อ้างอิงหมวด Eye Colors ในชาร์ต
+const EYE_OPTIONS = [
+  "เขียว (Green)", "เฮเซล (Hazel)", "ทอง (Gold)", "เหลือง (Yellow)",
+  "อำพัน (Amber)", "ส้ม (Orange)", "คอปเปอร์ (Copper)", "ฟ้า (Blue)",
+  "ตาสองสี (Odd-eyed)", "ตาหลายสีในดวงเดียว (Dichroic)", "อื่นๆ",
+];
+
+const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
+const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
+const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
+
+// เลือกชุดตามชนิดสัตว์
+const colorOptionsFor = (species: string): string[] => COLOR_DATA[species] || COLOR_DATA.other;
+const patternOptionsFor = (species: string): string[] => PATTERN_DATA[species] || PATTERN_DATA.default;
+
 // ─── Icons ──────────────────────────────────────────────────────────────────
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -51,7 +96,11 @@ type PetRow = {
   breed: string;
   color: string;
   pattern: string;
-  traits: string;
+  ear: string;
+  leg: string;
+  coat: string;
+  eye_color: string;
+  price: string;
   status: string;
   sire_id: string;
   dam_id: string;
@@ -60,7 +109,8 @@ type PetRow = {
 const blankRow = (): PetRow => ({
   key: Math.random().toString(36).slice(2),
   name: '', gender: '', birth_date: '', breed: '', color: '', pattern: '',
-  traits: '', status: 'พ่อพันธุ์ / แม่พันธุ์', sire_id: '', dam_id: '',
+  ear: '', leg: '', coat: '', eye_color: '', price: '',
+  status: 'พ่อพันธุ์ / แม่พันธุ์', sire_id: '', dam_id: '',
 });
 
 function BulkCreateContent() {
@@ -139,9 +189,13 @@ function BulkCreateContent() {
         gender: r.gender,
         birth_date: r.birth_date || null,
         breed: r.breed || null,
-        color: r.color.trim() || null,
-        pattern: r.pattern.trim() || null,
-        traits: r.traits.trim() || null,
+        color: r.color || null,
+        pattern: r.pattern || null,
+        ear: r.ear || null,
+        leg: r.leg || null,
+        coat: r.coat || null,
+        eye_color: r.eye_color || null,
+        price: r.price ? Number(r.price) : null,
         status: r.status || null,
         sire_id: r.sire_id || null,
         dam_id: r.dam_id || null,
@@ -297,15 +351,49 @@ function BulkCreateContent() {
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">สี</label>
-                    <input className="bc-input" type="text" value={row.color} onChange={e => updateRow(row.key, 'color', e.target.value)} placeholder="เช่น ครีม, น้ำตาล" />
+                    <select className="bc-select" value={row.color} onChange={e => updateRow(row.key, 'color', e.target.value)}>
+                      <option value="">เลือกสี</option>
+                      {colorOptionsFor(farm.species).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">ลาย</label>
-                    <input className="bc-input" type="text" value={row.pattern} onChange={e => updateRow(row.key, 'pattern', e.target.value)} placeholder="เช่น ลายสลิด, สีพื้น" />
+                    <select className="bc-select" value={row.pattern} onChange={e => updateRow(row.key, 'pattern', e.target.value)}>
+                      <option value="">เลือกลาย</option>
+                      {patternOptionsFor(farm.species).map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
                   </div>
                   <div className="bc-field">
-                    <label className="bc-label">ลักษณะทางกรรมพันธุ์</label>
-                    <input className="bc-input" type="text" value={row.traits} onChange={e => updateRow(row.key, 'traits', e.target.value)} placeholder="เช่น หูพับ, ขาสั้น" />
+                    <label className="bc-label">ลักษณะหู</label>
+                    <select className="bc-select" value={row.ear} onChange={e => updateRow(row.key, 'ear', e.target.value)}>
+                      <option value="">เลือกลักษณะหู</option>
+                      {EAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="bc-field">
+                    <label className="bc-label">ลักษณะขา</label>
+                    <select className="bc-select" value={row.leg} onChange={e => updateRow(row.key, 'leg', e.target.value)}>
+                      <option value="">เลือกลักษณะขา</option>
+                      {LEG_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="bc-field">
+                    <label className="bc-label">ลักษณะขน</label>
+                    <select className="bc-select" value={row.coat} onChange={e => updateRow(row.key, 'coat', e.target.value)}>
+                      <option value="">เลือกลักษณะขน</option>
+                      {COAT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="bc-field">
+                    <label className="bc-label">สีตา</label>
+                    <select className="bc-select" value={row.eye_color} onChange={e => updateRow(row.key, 'eye_color', e.target.value)}>
+                      <option value="">เลือกสีตา</option>
+                      {EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="bc-field">
+                    <label className="bc-label">ราคา (บาท)</label>
+                    <input className="bc-input" type="number" inputMode="numeric" value={row.price} onChange={e => updateRow(row.key, 'price', e.target.value)} placeholder="เช่น 15000" />
                   </div>
                   {/* เลือกพ่อ-แม่จากในฟาร์ม (ถ้ามี) */}
                   <div className="bc-field">
