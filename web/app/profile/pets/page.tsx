@@ -1,233 +1,221 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { speciesTh } from "@/lib/species";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
-  ink: '#111827',      // Gray-900
-  inkSoft: '#4B5563',  // Gray-600
-  muted: '#9CA3AF',    // Gray-400
-  pink: '#E84677',     // Brand Primary
-  pinkSoft: '#FDF2F5', 
-  line: '#E5E7EB',     // Gray-200
-  paper: '#FFFFFF',
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', blue: '#2563EB', blueSoft: '#EFF6FF', blueBorder: '#BFDBFE',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF',
 };
 
-// ─── Elegant Minimal Icons ──────────────────────────────────────────────────
+const SERVICE_CATEGORIES = [
+  { id: 'grooming', label: 'อาบน้ำตัดขน', emoji: '✂️', needAddress: true },
+  { id: 'transport', label: 'รับส่งสัตว์เลี้ยง', emoji: '🚗', needAddress: false },
+  { id: 'cat_hotel', label: 'โรงแรมสัตว์', emoji: '🏨', needAddress: true },
+  { id: 'pet_care', label: 'บริการดูแลสัตว์เลี้ยง', emoji: '🦮', needAddress: false },
+  { id: 'clinic', label: 'คลินิก / โรงพยาบาลสัตว์', emoji: '🏥', needAddress: true },
+];
+
+const SPECIES = [
+  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
+  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
+  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
+  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
+  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
+  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
+  { id: 'raccoon', label: 'แร็กคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
+];
+
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Home: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Building: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/></svg>,
-  ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-  Male: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
-  Female: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
+  Camera: () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  Scissors: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>,
 };
 
-export default function MyPetsSummaryPage() {
+export default function RegisterServicePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [personalPets, setPersonalPets] = useState<any[]>([]);
-  const [farmPets, setFarmPets] = useState<Record<string, { name: string, pets: any[] }>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [imageUrl, setImageUrl] = useState('');
+  const [form, setForm] = useState({ service_name: '', phone: '', category: '', bio: '', address: '' });
+  const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
+
+  const showAddressField = SERVICE_CATEGORIES.find((c) => c.id === form.category)?.needAddress;
 
   useEffect(() => {
-    const fetchAllPets = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push("/login");
-        const uid = session.user.id;
-
-        const { data: farms } = await supabase.from("farms").select("id, farm_name").eq("user_id", uid);
-        const { data: pets } = await supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false });
-
-        if (pets) {
-          const personal: any[] = [];
-          const groupedFarms: Record<string, { name: string, pets: any[] }> = {};
-          farms?.forEach(f => { groupedFarms[f.id] = { name: f.farm_name, pets: [] }; });
-
-          pets.forEach(pet => {
-            if (!pet.farm_id || pet.farm_id === "PERSONAL") {
-              personal.push(pet);
-            } else if (groupedFarms[pet.farm_id]) {
-              groupedFarms[pet.farm_id].pets.push(pet);
-            } else {
-              personal.push(pet);
-            }
-          });
-          setPersonalPets(personal);
-          setFarmPets(groupedFarms);
-        }
-      } catch (error: any) {
-        console.error("Error fetching pets:", error);
-      } finally {
-        setLoading(false);
-      }
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return router.push(`/login?redirect=${encodeURIComponent('/partner/register-service')}`);
+      setUserId(session.user.id);
     };
-    fetchAllPets();
+    checkUser();
   }, [router]);
 
-  if (loading) return (
-    <div className="min-h-[50vh] flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">
-      Loading Pet Gallery...
-    </div>
-  );
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    try {
+      setUploading(true);
+      const ext = file.name.split('.').pop();
+      const filePath = `services/${userId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('partner-photos').upload(filePath, file, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('partner-photos').getPublicUrl(filePath);
+      setImageUrl(publicUrl);
+    } catch (err: any) { alert('อัปโหลดรูปไม่สำเร็จ: ' + (err.message || '')); }
+    finally { setUploading(false); }
+  };
+
+  const toggleSpecies = (id: string) =>
+    setSelectedSpecies((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    if (!form.category) return alert('กรุณาเลือกประเภทบริการครับ');
+    if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับครับ');
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from('services').insert([{
+        user_id: userId, service_name: form.service_name, phone: form.phone,
+        category: form.category, bio: form.bio,
+        address: showAddressField ? form.address : null,
+        image_url: imageUrl || null,
+        supported_species: selectedSpecies.join(','),
+      }]);
+      if (error) throw error;
+      alert('🐾 บันทึกข้อมูลบริการเรียบร้อยแล้ว!');
+      router.push('/profile');
+    } catch (err: any) { alert('Error: ' + err.message); }
+    finally { setIsLoading(false); }
+  };
 
   return (
     <>
       <style>{`
-        .premium-card {
-          background: #ffffff;
-          border: 1px solid ${F.line};
-          border-radius: 1.25rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-          transition: all 0.2s ease-in-out;
-        }
-        .premium-card:hover {
-          border-color: #D1D5DB;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .sv-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .sv-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .sv-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+        .sv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .sv-back:hover { color: ${F.blue}; border-color: ${F.blue}; transform: translateX(-1px); }
+        .sv-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .sv-sub { font-size: 12px; font-weight: 600; color: ${F.blue}; margin-top: 2px; }
+        .sv-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .sv-photo { position: relative; }
+        .sv-photo-box { width: 110px; height: 110px; border-radius: 24px; overflow: hidden; background: ${F.blueSoft}; border: 2px dashed ${F.blueBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s; color: ${F.blue}; }
+        .sv-photo-box.has-img { border-style: solid; }
+        .sv-photo-box:hover { border-color: ${F.blue}; }
+        .sv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .sv-photo-btn { position: absolute; bottom: -4px; right: -4px; width: 36px; height: 36px; border-radius: 50%; background: ${F.blue}; color: white; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .sv-photo-hint { margin-top: 10px; font-size: 11px; font-weight: 700; color: ${F.muted}; }
+        .sv-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; margin-bottom: 16px; }
+        .sv-card-title { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 4px; }
+        .sv-card-note { font-size: 11px; color: ${F.muted}; margin-bottom: 16px; }
+        .sv-field { margin-bottom: 16px; }
+        .sv-field:last-child { margin-bottom: 0; }
+        .sv-label { display: block; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; margin-left: 2px; }
+        .sv-req { color: ${F.pink}; }
+        .sv-input, .sv-select, .sv-textarea { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
+        .sv-input:focus, .sv-select:focus, .sv-textarea:focus { border-color: ${F.blue}; box-shadow: 0 0 0 3px ${F.blueSoft}; }
+        .sv-textarea { resize: none; }
+        .sv-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; cursor: pointer; }
+        .sv-species-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .sv-species-btn { padding: 12px 4px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all .15s; font-family: inherit; }
+        .sv-species-btn.active { border-color: ${F.blue}; background: ${F.blueSoft}; }
+        .sv-species-btn .emoji { font-size: 20px; }
+        .sv-species-btn .lbl { font-size: 10px; font-weight: 700; color: ${F.inkSoft}; }
+        .sv-species-btn.active .lbl { color: ${F.blue}; }
+        .sv-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .sv-savebar-inner { max-width: 600px; margin: 0 auto; }
+        .sv-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.blue}; color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+        .sv-btn:hover { background: #1D4FD7; }
+        .sv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        @media (max-width: 420px) { .sv-species-grid { grid-template-columns: repeat(3, 1fr); } }
       `}</style>
 
-      <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-12 pb-24 animate-in fade-in duration-500 space-y-6" style={{ color: F.ink, fontFamily: 'var(--font-ui)' }}>
-        
-        {/* 📋 Page Header */}
-        <div className="px-1 mb-2 flex items-center gap-3">
-          <button
-            onClick={() => router.push('/profile')}
-            aria-label="ย้อนกลับ"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-gray-500 shrink-0 transition-all active:scale-95"
-            style={{ border: `1px solid #FBCFE8`, boxShadow: '0 2px 8px rgba(232,70,119,0.1)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = F.pink; e.currentTarget.style.borderColor = F.pink; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = '#FBCFE8'; }}
-          >
-            <Icon.ArrowLeft />
-          </button>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-1">My Pets</h1>
-            <p className="text-sm font-medium" style={{ color: F.muted }}>จัดการสมาชิกในบ้านและฟาร์มทั้งหมดของคุณ</p>
+      <div className="sv-page">
+        <div className="sv-body">
+          <div className="sv-header">
+            <button className="sv-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <div>
+              <h1 className="sv-title">เปิดบริการสัตว์เลี้ยง ✂️</h1>
+              <p className="sv-sub">ขยายบริการให้เข้าถึงคนรักสัตว์มากขึ้น</p>
+            </div>
           </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="sv-photo-wrap">
+              <div className="sv-photo">
+                <div className={`sv-photo-box ${imageUrl ? 'has-img' : ''}`} onClick={() => fileInputRef.current?.click()}>
+                  {imageUrl ? <img src={imageUrl} alt="รูปบริการ" /> : (uploading ? '...' : <Icon.Scissors />)}
+                </div>
+                <button type="button" className="sv-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
+                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} onClick={(e) => (e.currentTarget.value = '')} style={{ display: 'none' }} />
+              </div>
+              <p className="sv-photo-hint">{uploading ? 'กำลังอัปโหลด...' : imageUrl ? 'แตะเพื่อเปลี่ยนรูป' : 'อัปโหลดรูปร้าน / บริการ'}</p>
+            </div>
+
+            <div className="sv-card">
+              <div className="sv-field">
+                <label className="sv-label">ชื่อร้าน / ชื่อบริการ <span className="sv-req">*</span></label>
+                <input className="sv-input" required value={form.service_name} onChange={(e) => setForm({ ...form, service_name: e.target.value })} placeholder="ชื่อบริการของคุณ" />
+              </div>
+
+              <div className="sv-field">
+                <label className="sv-label">ประเภทบริการ <span className="sv-req">*</span></label>
+                <select className="sv-select" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                  <option value="" disabled>เลือกประเภทบริการ</option>
+                  {SERVICE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                </select>
+              </div>
+
+              <div className="sv-field">
+                <label className="sv-label">เบอร์โทรศัพท์ติดต่อ <span className="sv-req">*</span></label>
+                <input type="tel" className="sv-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
+              </div>
+
+              {showAddressField && (
+                <div className="sv-field">
+                  <label className="sv-label">ที่ตั้งหน้าร้าน / พิกัดบริการ 📍 <span className="sv-req">*</span></label>
+                  <textarea className="sv-textarea" rows={2} required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+                </div>
+              )}
+
+              <div className="sv-field">
+                <label className="sv-label">รายละเอียดบริการเพิ่มเติม</label>
+                <textarea className="sv-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="อธิบายจุดเด่นหรือรายละเอียดของบริการ..." />
+              </div>
+            </div>
+
+            <div className="sv-card">
+              <div className="sv-card-title">บริการนี้รองรับสัตว์ชนิดใดบ้าง? <span className="sv-req">*</span></div>
+              <div className="sv-card-note">เลือกได้หลายชนิด</div>
+              <div className="sv-species-grid">
+                {SPECIES.map((s) => (
+                  <button key={s.id} type="button" className={`sv-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
+                    <span className="emoji">{s.emoji}</span><span className="lbl">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </form>
         </div>
 
-        {/* 🏠 Section: Personal Pets */}
-        <section className="premium-card p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
-              <span className="text-gray-400"><Icon.Home /></span> สัตว์เลี้ยงส่วนตัว
-              <span className="text-xs font-medium text-gray-400 ml-1">({personalPets.length})</span>
-            </h3>
-            <Link 
-              href="/pets/create" 
-              className="text-sm font-semibold hover:text-pink-600 transition-colors"
-              style={{ color: F.inkSoft }}
-            >
-              + เพิ่มสมาชิก
-            </Link>
+        <div className="sv-savebar">
+          <div className="sv-savebar-inner">
+            <button type="button" className="sv-btn" onClick={handleSubmit} disabled={isLoading || uploading}>
+              {isLoading ? '⏳ กำลังบันทึก...' : '🐾 ยืนยันการสมัครบริการ'}
+            </button>
           </div>
-          
-          <div className="space-y-3">
-            {personalPets.length === 0 ? (
-              <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
-                ยังไม่มีข้อมูลสัตว์เลี้ยง
-              </div>
-            ) : (
-              personalPets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
-            )}
-          </div>
-        </section>
-
-        {/* 🏡 Sections: Farm Pets */}
-        {Object.entries(farmPets).map(([farmId, farm]) => (
-          <section key={farmId} className="premium-card p-6">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base min-w-0">
-                <span className="text-gray-400 shrink-0"><Icon.Building /></span> 
-                <span className="truncate">{farm.name}</span>
-                <span className="text-xs font-medium text-gray-400 ml-1 shrink-0">({farm.pets.length})</span>
-              </h3>
-              <Link 
-                href={`/farm-dashboard/${farmId}/pets/create`} 
-                className="text-sm font-semibold hover:text-blue-600 transition-colors shrink-0"
-                style={{ color: F.inkSoft }}
-              >
-                + เพิ่มสมาชิก
-              </Link>
-            </div>
-            
-            <div className="space-y-3">
-              {farm.pets.length === 0 ? (
-                <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
-                  ยังไม่มีสมาชิกในฟาร์มนี้
-                </div>
-              ) : (
-                farm.pets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
-              )}
-            </div>
-          </section>
-        ))}
-
+        </div>
       </div>
     </>
-  );
-}
-
-// ─── Refined Helper Component (เลียนแบบ BusinessLink เด๊ะๆ) ───────────────────────
-function PetBusinessLink({ pet }: { pet: any }) {
-  const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
-
-  const formatBreed = (rawBreed?: string | null) => {
-    if (!rawBreed) return { th: "ไม่ระบุสายพันธุ์", en: null };
-    const parts = rawBreed.split('(');
-    if (parts.length > 1) {
-      return { th: parts[0].trim(), en: `(${parts[1].trim()}` };
-    }
-    return { th: rawBreed, en: null };
-  };
-  const breedParts = formatBreed(pet.breed || speciesTh(pet.species) || null);
-
-  return (
-    <Link 
-      href={`/pets/${pet.id}`} 
-      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200 transition-all group"
-    >
-      {/* รูปภาพ */}
-      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center">
-        {pet.image_url ? (
-          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        ) : (
-          <div className="text-gray-300 text-lg">🐾</div>
-        )}
-      </div>
-
-      {/* ข้อมูล */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div className="flex items-center gap-2 mb-1">
-          {/* Badge เพศ */}
-          <span className={`text-[10px] font-medium border px-2 py-0.5 rounded-md bg-white shrink-0 flex items-center gap-1 ${
-            isMale ? 'text-blue-500 border-blue-200' : 'text-pink-500 border-pink-200'
-          }`}>
-            <span className="shrink-0">{isMale ? <Icon.Male /> : <Icon.Female />}</span>
-            {isMale ? 'Male' : 'Female'}
-          </span>
-          {/* ชื่อสัตว์เลี้ยง */}
-          <p className="font-semibold text-sm text-gray-900 truncate">{pet.name}</p>
-        </div>
-        
-        {/* 🌟 ชื่อสายพันธุ์แยกบรรทัดไทย-อังกฤษ */}
-        <div className="flex flex-col">
-          <span className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">{breedParts.th}</span>
-          {breedParts.en && (
-            <span className="text-[10px] text-gray-400 truncate mt-[1px]">{breedParts.en}</span>
-          )}
-        </div>
-      </div>
-
-      {/* ลูกศรขวา */}
-      <span className="text-gray-300 group-hover:text-gray-900 transition-colors shrink-0">
-        <Icon.ChevronRight />
-      </span>
-    </Link>
   );
 }
