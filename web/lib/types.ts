@@ -147,6 +147,7 @@ export interface UserProfile {
   phone?: string | null;
   email?: string | null;
   location?: string | null;
+  address?: string | null;
   bio?: string | null;
   created_at?: string;
 }

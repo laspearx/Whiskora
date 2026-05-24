@@ -219,7 +219,9 @@ export default function EditPetPage() {
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
     } else {
-      router.push(`/pets/${petId}`);
+      // replace: เด้งไปโปรไฟล์สัตว์ + ถอดหน้าแก้ไขออกจาก history
+      // → กดย้อนกลับจะข้ามหน้าแก้ไข ไปหน้าก่อนหน้า (เช่น My Pets) เลย
+      router.replace(`/pets/${petId}`);
       router.refresh();
     }
   };

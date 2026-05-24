@@ -208,7 +208,7 @@ export default function PublicPetProfilePage() {
       if (petData.user_id) {
         const { data: ownerData } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, location')
+          .select('id, full_name, avatar_url, address')
           .eq('id', petData.user_id)
           .maybeSingle();
         if (ownerData) setOwner(ownerData as UserProfile);
@@ -680,7 +680,7 @@ export default function PublicPetProfilePage() {
                           {farm?.farm_name && <div className="owner-cattery"><Icon.Verified /> ฟาร์มที่ยืนยันแล้ว</div>}
                         </div>
                       </div>
-                      {owner.location && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Calendar /></span>{owner.location}</div>}
+                      {owner.address && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Calendar /></span>{owner.address}</div>}
                       {hasContact && (
                         <button className="contact-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }} onClick={() => setShowContactModal(true)}>
                           <Icon.Message /> ติดต่อสอบถาม

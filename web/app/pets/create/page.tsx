@@ -243,8 +243,8 @@ function CreatePetContent() {
         .cp-other-btn .lbl { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.2; }
         .cp-other-btn.active .lbl { color: ${F.teal}; }
         /* gender toggle */
-        .cp-gender { display: flex; gap: 10px; }
-        .cp-gender-btn { flex: 1; padding: 11px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; }
+        .cp-gender { display: flex; gap: 8px; }
+        .cp-gender-btn { flex: 1; padding: 11px 6px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; text-align: center; }
         .cp-gender-btn.male.active { border-color: #2563EB; background: #EFF6FF; color: #2563EB; }
         .cp-gender-btn.female.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pink}; }
         /* save bar */

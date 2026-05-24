@@ -115,7 +115,8 @@ export default function EditLitterPage() {
       if (error) throw error;
 
       alert('🎉 อัปเดตข้อมูลการจับคู่เรียบร้อย!');
-      router.push(`/farm-dashboard/${farmId}`);
+      // replace: ถอดหน้าแก้ไขออกจาก history หลังบันทึก
+      router.replace(`/farm-dashboard/${farmId}`);
     } catch (error: any) {
       alert('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
