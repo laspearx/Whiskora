@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -184,7 +185,7 @@ function PetBusinessLink({ pet }: { pet: any }) {
     }
     return { th: rawBreed, en: null };
   };
-  const breedParts = formatBreed(pet.breed || pet.species || null);
+  const breedParts = formatBreed(pet.breed || speciesTh(pet.species) || null);
 
   return (
     <Link 

@@ -5,83 +5,72 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// 🌟 Component แยกสำหรับดึงข้อมูล
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  teal: '#0D9488', tealSoft: '#F0FDFA',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+  Calendar: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+};
+
 function AppointmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const dateParam = searchParams.get("date"); // รับค่าวันที่จาก URL
+  const dateParam = searchParams.get("date");
 
   const [groupedAppointments, setGroupedAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAppointments = async () => {
-      if (!dateParam) {
-        setLoading(false);
-        return;
-      }
-
+      if (!dateParam) { setLoading(false); return; }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          router.push("/login");
+          router.push(`/login?redirect=${encodeURIComponent(`/pets/vaccines/all?date=${dateParam}`)}`);
           return;
         }
 
-        // 1. ดึงข้อมูลสัตว์เลี้ยงทั้งหมดของ User
+        // 1. สัตว์เลี้ยงทั้งหมดของผู้ใช้
         const { data: petsData } = await supabase
-          .from("pets")
-          .select("id, name, image_url")
-          .eq("user_id", session.user.id);
-
-        if (!petsData || petsData.length === 0) {
-          setLoading(false);
-          return;
-        }
+          .from("pets").select("id, name, image_url").eq("user_id", session.user.id);
+        if (!petsData || petsData.length === 0) { setLoading(false); return; }
 
         const petIds = petsData.map((p) => p.id);
 
-        // 2. ดึงข้อมูลนัดหมายของทุกตัว
+        // 2. วัคซีน/นัดหมายของสัตว์ทุกตัว
         const { data: vacData } = await supabase
-          .from("vaccines")
-          .select("*")
-          .in("pet_id", petIds);
+          .from("vaccines").select("*").in("pet_id", petIds);
 
         if (vacData) {
           // 3. กรองเฉพาะวันที่ตรงกัน
           const filteredAppts = vacData.filter(
             (a) => a.next_due && a.next_due.split("T")[0] === dateParam
           );
-
-          // 4. เอาข้อมูลสัตว์เลี้ยงมาผูกรวมกับนัดหมาย
-          const mergedData = filteredAppts.map((appt) => {
-            const petInfo = petsData.find((p) => p.id === appt.pet_id);
-            return { ...appt, pet: petInfo };
-          });
-
-          // 🌟 5. จัดกลุ่มข้อมูลตาม "ชื่อวัคซีน/บริการ"
-          const groupedData = mergedData.reduce((acc: any, current: any) => {
-            const type = current.vaccine_name;
+          // 4. ผูกข้อมูลสัตว์เลี้ยง
+          const mergedData = filteredAppts.map((appt) => ({
+            ...appt, pet: petsData.find((p) => p.id === appt.pet_id),
+          }));
+          // 5. จัดกลุ่มตามชื่อวัคซีน/บริการ
+          const groupedData = mergedData.reduce((acc: any, cur: any) => {
+            const type = cur.vaccine_name || 'อื่นๆ';
             if (!acc[type]) acc[type] = [];
-            acc[type].push(current);
+            acc[type].push(cur);
             return acc;
           }, {});
-
-          // แปลง Object เป็น Array เพื่อให้ง่ายต่อการ map แสดงผล
-          const finalGroupedArray = Object.keys(groupedData).map(key => {
-            // เลือกอิโมจิให้ตรงกับประเภท
+          const finalArray = Object.keys(groupedData).map((key) => {
             let emoji = '💉';
             if (key.includes('เห็บ') || key.includes('หยด')) emoji = '💧';
             else if (key.includes('พยาธิ')) emoji = '💊';
-
-            return {
-              vaccineName: key,
-              emoji: emoji,
-              items: groupedData[key] // รายชื่อสัตว์เลี้ยงในบริการนี้
-            };
+            return { vaccineName: key, emoji, items: groupedData[key] };
           });
-
-          setGroupedAppointments(finalGroupedArray);
+          setGroupedAppointments(finalArray);
         }
       } catch (error) {
         console.error("Error:", error);
@@ -89,102 +78,109 @@ function AppointmentsList() {
         setLoading(false);
       }
     };
-
     fetchAppointments();
   }, [dateParam, router]);
 
-  // ฟังก์ชันแปลงวันที่
-  const formattedDate = dateParam 
+  const formattedDate = dateParam
     ? new Date(dateParam).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
     : 'ไม่ระบุวันที่';
 
-  if (loading) return <div className="min-h-[50vh] flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดข้อมูลนัดหมาย... ⏳</div>;
-
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-4 md:pt-12 pb-20 animate-in fade-in duration-700 space-y-6">
-      
-      {/* 🌟 Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/profile" className="p-2.5 bg-gray-50 hover:bg-pink-50 text-gray-400 hover:text-pink-600 rounded-xl transition shadow-sm border border-gray-100">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <div>
-          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">รายการนัดหมาย</h1>
-          <p className="text-sm text-pink-500 font-bold mt-0.5">📅 ประจำวันที่ {formattedDate}</p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .ap-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .ap-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+        .ap-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+        .ap-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; text-decoration: none; }
+        .ap-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .ap-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .ap-date { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: ${F.pink}; margin-top: 3px; }
+        .ap-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .ap-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: apspin 1s linear infinite; }
+        @keyframes apspin { to { transform: rotate(360deg); } }
+        .ap-loading-text { font-size: 13px; font-weight: 700; color: ${F.muted}; }
+        /* empty */
+        .ap-empty { background: white; border: 1px solid ${F.line}; border-radius: 24px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .ap-empty-emoji { font-size: 48px; }
+        .ap-empty-text { font-size: 15px; font-weight: 700; color: ${F.inkSoft}; }
+        /* group card */
+        .ap-group { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 22px; margin-bottom: 18px; }
+        .ap-group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid ${F.line}; }
+        .ap-group-icon { width: 42px; height: 42px; border-radius: 13px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+        .ap-group-title { font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700; color: ${F.ink}; letter-spacing: -0.2px; }
+        .ap-group-count { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 1px; }
+        /* pet items */
+        .ap-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+        .ap-item { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 14px; border: 1px solid ${F.line}; background: #FAFAFA; text-decoration: none; transition: all .15s; }
+        .ap-item:hover { background: white; border-color: ${F.pinkBorder}; box-shadow: 0 4px 14px rgba(232,70,119,0.1); }
+        .ap-item-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: ${F.pinkSoft}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+        .ap-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .ap-item-info { flex: 1; min-width: 0; }
+        .ap-item-tag { font-size: 9px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.08em; }
+        .ap-item-name { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ap-item-arrow { color: ${F.muted}; flex-shrink: 0; display: flex; }
+        .ap-item:hover .ap-item-arrow { color: ${F.pink}; }
+        @media (max-width: 480px) { .ap-items { grid-template-columns: 1fr; } }
+      `}</style>
+
+      <div className="ap-page">
+        <div className="ap-body">
+          <div className="ap-header">
+            <Link href="/profile" className="ap-back" aria-label="ย้อนกลับ"><Icon.ArrowLeft /></Link>
+            <div>
+              <h1 className="ap-title">รายการนัดหมาย</h1>
+              <span className="ap-date"><Icon.Calendar /> ประจำวันที่ {formattedDate}</span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="ap-loading">
+              <div className="ap-spinner" />
+              <p className="ap-loading-text">กำลังโหลดข้อมูลนัดหมาย...</p>
+            </div>
+          ) : groupedAppointments.length === 0 ? (
+            <div className="ap-empty">
+              <span className="ap-empty-emoji">📭</span>
+              <p className="ap-empty-text">ไม่มีนัดหมายในวันนี้</p>
+            </div>
+          ) : (
+            groupedAppointments.map((group, gi) => (
+              <div key={gi} className="ap-group">
+                <div className="ap-group-head">
+                  <div className="ap-group-icon">{group.emoji}</div>
+                  <div>
+                    <div className="ap-group-title">{group.vaccineName}</div>
+                    <div className="ap-group-count">{group.items.length} ตัว</div>
+                  </div>
+                </div>
+                <div className="ap-items">
+                  {group.items.map((appt: any, idx: number) => (
+                    <Link key={idx} href={`/pets/${appt.pet_id}`} className="ap-item">
+                      <div className="ap-item-avatar">
+                        {appt.pet?.image_url ? <img src={appt.pet.image_url} alt={appt.pet.name} /> : '🐾'}
+                      </div>
+                      <div className="ap-item-info">
+                        <div className="ap-item-tag">นัดของน้อง</div>
+                        <div className="ap-item-name">{appt.pet?.name || 'ไม่ทราบชื่อ'}</div>
+                      </div>
+                      <span className="ap-item-arrow"><Icon.ChevronRight /></span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
-
-      {/* 🌟 รายการนัดหมาย (แบบจัดกลุ่มตามบริการ) */}
-      <div className="space-y-6">
-        {groupedAppointments.length === 0 ? (
-          <div className="bg-white rounded-[2rem] border border-gray-100 p-10 text-center flex flex-col items-center justify-center shadow-sm">
-            <span className="text-5xl mb-4">📭</span>
-            <p className="text-gray-500 font-bold text-base">ไม่มีนัดหมายในวันนี้</p>
-          </div>
-        ) : (
-          groupedAppointments.map((group, groupIdx) => (
-            <div key={groupIdx} className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-              
-              {/* หัวข้อกลุ่ม (ชื่อบริการ + อิโมจิ) */}
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-50">
-                <div className="w-10 h-10 bg-pink-50 text-pink-500 rounded-xl flex items-center justify-center text-lg border border-pink-100 shrink-0">
-                  {group.emoji}
-                </div>
-                <h2 className="text-lg md:text-xl font-black text-gray-800 tracking-tight">
-                  {group.vaccineName}
-                </h2>
-              </div>
-
-              {/* รายชื่อสัตว์เลี้ยงในกลุ่มนี้ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {group.items.map((appt: any, idx: number) => (
-                  <Link 
-                    key={idx} 
-                    href={`/pets/${appt.cat_id}`} 
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-gray-50 bg-gray-50/50 hover:bg-white hover:border-pink-200 hover:shadow-sm transition-all group/card"
-                  >
-                    {/* รูปสัตว์เลี้ยง */}
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white border-2 border-white shadow-sm shrink-0">
-                      {appt.pet?.image_url ? (
-                        <img src={appt.pet.image_url} alt={appt.pet.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-lg bg-pink-50">🐾</div>
-                      )}
-                    </div>
-
-                    {/* ชื่อ */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">นัดของน้อง</p>
-                      <h3 className="text-sm font-black text-gray-800 truncate group-hover/card:text-pink-600 transition-colors">
-                        {appt.pet?.name || 'ไม่ทราบชื่อ'}
-                      </h3>
-                    </div>
-
-                    {/* ลูกศรชี้เข้าสมุดพก */}
-                    <div className="text-gray-300 group-hover/card:text-pink-400 transition-colors pr-2">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                       </svg>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-            </div>
-          ))
-        )}
-      </div>
-
-    </div>
+    </>
   );
 }
 
-// 🌟 Export หลัก ครอบด้วย Suspense ตามกฎของ Next.js
 export default function AllAppointmentsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังเตรียมข้อมูล... ⏳</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #FBCFE8', borderTopColor: '#E84677', animation: 'apspin 1s linear infinite' }} /></div>}>
       <AppointmentsList />
     </Suspense>
   );

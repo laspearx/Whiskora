@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { speciesTh } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -351,7 +352,7 @@ function FarmDashboardContent() {
               <div className="fd-farm-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : '🏠'}</div>
               <div style={{ minWidth: 0 }}>
                 <h1 className="fd-farm-name">{farm.farm_name} <Icon.Verified /></h1>
-                <p className="fd-farm-meta">{farm.bio || `ฟาร์ม${farm.species || 'สัตว์เลี้ยง'}`} · {allPets.length} ตัว</p>
+                <p className="fd-farm-meta">{farm.bio || `ฟาร์ม${speciesTh(farm.species) || 'สัตว์เลี้ยง'}`} · {allPets.length} ตัว</p>
               </div>
             </div>
             <div className="fd-id-actions">
@@ -419,7 +420,7 @@ function FarmDashboardContent() {
               <div className="fd-kpi">
                 <div className="fd-kpi-top"><div className="fd-kpi-emoji" style={{ background: F.pinkSoft }}>🐾</div><div className="fd-kpi-label">รวมทั้งหมด</div></div>
                 <div className="fd-kpi-value" style={{ color: F.pink }}>{allPets.length}</div>
-                <div className="fd-kpi-gender"><span className="total">{farm.species === 'cat' ? 'แมว' : 'สัตว์'}ทั้งหมด</span></div>
+                <div className="fd-kpi-gender"><span className="total">{speciesTh(farm.species) || 'สัตว์'}ทั้งหมด</span></div>
               </div>
             </div>
           </section>

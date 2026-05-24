@@ -1,231 +1,218 @@
 "use client";
 
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import { OTHER_SPECIES } from '@/lib/species';
 
-// 🌟 ตัวเลือกสัตว์เลี้ยงอื่นๆ
-const other_pets = [
-  { id: "rabbit", label: "กระต่าย", emoji: "🐰" },
-  { id: "hamster", label: "หนูแฮมสเตอร์", emoji: "🐹" },
-  { id: "bird", label: "นก", emoji: "🦜" },
-  { id: "squirrel", label: "กระรอก", emoji: "🐿️" },
-  { id: "hedgehog", label: "เม่นแคระ", emoji: "🦔" },
-  { id: "fish", label: "ปลา", emoji: "🐟" },
-  { id: "turtle", label: "เต่า", emoji: "🐢" },
-  { id: "frog", label: "กบ", emoji: "🐸" },
-  { id: "lizard", label: "กิ้งก่า", emoji: "🦎" },
-  { id: "snake", label: "งู", emoji: "🐍" },
-  { id: "raccoon", label: "แร็กคูน", emoji: "🦝" },
-  { id: "other", label: "สัตว์อื่นๆ", emoji: "🐾" },
-];
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  teal: '#0D9488', tealSoft: '#F0FDFA',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const OTHER_PETS = OTHER_SPECIES; // id อังกฤษ + label ไทย จาก map กลาง
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Camera: () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  Home: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+};
 
 export default function RegisterFarmPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
-  // 🌟 เพิ่ม State สำหรับซับหมวดหมู่และช่องพิมพ์เอง
-  const [formData, setFormData] = useState({
-    farmName: '',
-    species: '',
-    subSpecies: '', // เก็บค่าสัตว์แปลกที่เลือก
-    customSpecies: '', // เก็บข้อความที่พิมพ์เอง
-    phone: '',
-    bio: ''
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [imageUrl, setImageUrl] = useState('');
+  const [form, setForm] = useState({
+    farmName: '', species: '', subSpecies: '', customSpecies: '', phone: '', bio: '',
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner/register-farm')}`); return; }
+      const ext = file.name.split('.').pop();
+      const filePath = `farms/${session.user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('partner-photos').upload(filePath, file, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('partner-photos').getPublicUrl(filePath);
+      setImageUrl(publicUrl);
+    } catch (err: any) {
+      alert('อัปโหลดรูปไม่สำเร็จ: ' + (err.message || ''));
+    } finally { setUploading(false); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // ดักการเลือกประเภท
-    if (!formData.species) {
-      alert('กรุณาเลือกชนิดสัตว์ที่เพาะพันธุ์หลักด้วยครับ');
-      return;
-    }
+    if (!form.species) return alert('กรุณาเลือกชนิดสัตว์ที่เพาะพันธุ์หลักด้วยครับ');
 
-    // 🌟 จัดการคำนวณว่าสุดท้ายแล้วจะบันทึกคำว่าอะไรลง Database
-    let finalSpecies = formData.species;
-    
-    if (formData.species === 'other') {
-      if (!formData.subSpecies) {
-        alert('กรุณาเลือกชนิดสัตว์แปลกด้วยครับ');
-        return;
-      }
-      
-      if (formData.subSpecies === 'other') {
-        if (!formData.customSpecies.trim()) {
-          alert('กรุณาระบุชื่อสัตว์แปลกที่ต้องการด้วยครับ');
-          return;
-        }
-        finalSpecies = formData.customSpecies.trim(); // เอาคำที่พิมพ์เองไปบันทึก
-      } else {
-        // หาชื่อภาษาไทยจาก list มาบันทึก จะได้แสดงผลสวยๆ (เช่น บันทึกคำว่า "กระต่าย")
-        const selectedPet = other_pets.find(p => p.id === formData.subSpecies);
-        finalSpecies = selectedPet ? selectedPet.label : formData.subSpecies;
-      }
-    }
+    let finalSpecies = form.species;
+    if (form.species === 'other') {
+      if (!form.subSpecies) return alert('กรุณาเลือกชนิดสัตว์ด้วยครับ');
+      finalSpecies = form.subSpecies === 'other' ? form.customSpecies.trim() : form.subSpecies;
+      if (form.subSpecies === 'other' && !form.customSpecies.trim()) return alert('กรุณาระบุชื่อสัตว์ด้วยครับ');
+    } else if (form.species === 'cat') finalSpecies = 'cat';
+    else if (form.species === 'dog') finalSpecies = 'dog';
 
     setLoading(true);
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      // 🌟 บันทึกลงตาราง farms พร้อมกับ finalSpecies ที่ประมวลผลแล้ว
-      const { error } = await supabase
-        .from('farms')
-        .insert([{
-          user_id: session.user.id,
-          farm_name: formData.farmName,
-          species: finalSpecies,
-          phone: formData.phone,
-          bio: formData.bio
-        }]);
-
+      if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner/register-farm')}`); return; }
+      const { error } = await supabase.from('farms').insert([{
+        user_id: session.user.id,
+        farm_name: form.farmName,
+        species: finalSpecies,
+        phone: form.phone,
+        bio: form.bio,
+        image_url: imageUrl || null,
+      }]);
       if (error) throw error;
-
       alert('🎉 ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
-      router.push('/partner'); 
-      router.refresh(); 
-    } catch (error: any) {
-      console.error('Error registering farm:', error);
-      alert(`เกิดข้อผิดพลาด: ${error.message || error.details}`);
-    } finally {
-      setLoading(false);
-    }
+      router.push('/partner');
+      router.refresh();
+    } catch (err: any) {
+      alert(`เกิดข้อผิดพลาด: ${err.message || err.details}`);
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="max-w-xl mx-auto py-8 md:py-12 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      {/* 🔙 Header + ย้อนกลับตามประวัติจริง */}
-      <div className="flex items-center gap-4 mb-8">
-        <button 
-          onClick={() => router.back()} 
-          className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 text-gray-400 hover:text-indigo-500 transition active:scale-90"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">เปิดฟาร์มสัตว์เลี้ยง 🏡</h1>
-          <p className="text-sm font-bold text-pink-500 italic">"ฟาร์มบรีดสัตว์เลี้ยงที่น่ารักเพื่อคนรักสัตว์"</p>
-        </div>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .pf-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .pf-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .pf-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+        .pf-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .pf-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .pf-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .pf-sub { font-size: 12px; font-weight: 600; color: ${F.pink}; margin-top: 2px; }
+        /* photo */
+        .pf-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .pf-photo { position: relative; }
+        .pf-photo-box { width: 110px; height: 110px; border-radius: 24px; overflow: hidden; background: ${F.pinkSoft}; border: 2px dashed ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s; color: ${F.pink}; }
+        .pf-photo-box.has-img { border-style: solid; }
+        .pf-photo-box:hover { border-color: ${F.pink}; }
+        .pf-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .pf-photo-btn { position: absolute; bottom: -4px; right: -4px; width: 36px; height: 36px; border-radius: 50%; background: ${F.pink}; color: white; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pf-photo-hint { margin-top: 10px; font-size: 11px; font-weight: 700; color: ${F.muted}; }
+        /* card */
+        .pf-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }
+        .pf-field { margin-bottom: 16px; }
+        .pf-field:last-child { margin-bottom: 0; }
+        .pf-label { display: block; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; margin-left: 2px; }
+        .pf-req { color: ${F.pink}; }
+        .pf-input, .pf-select, .pf-textarea { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
+        .pf-input:focus, .pf-select:focus, .pf-textarea:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
+        .pf-textarea { resize: none; }
+        .pf-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; cursor: pointer; }
+        /* species buttons */
+        .pf-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .pf-species-btn { padding: 14px 8px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
+        .pf-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .pf-species-btn .emoji { font-size: 24px; }
+        .pf-species-btn .lbl { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
+        .pf-species-btn.active .lbl { color: ${F.pink}; }
+        .pf-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+        .pf-other-btn { padding: 10px 4px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
+        .pf-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .pf-other-btn .emoji { font-size: 20px; }
+        .pf-other-btn .lbl { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.2; }
+        .pf-other-btn.active .lbl { color: ${F.pink}; }
+        /* save bar */
+        .pf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .pf-savebar-inner { max-width: 600px; margin: 0 auto; }
+        .pf-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .pf-btn:hover { background: #D63F6A; }
+        .pf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      `}</style>
 
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-pink-100 p-8 md:p-10">
-        
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* ชื่อฟาร์ม */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">ชื่อฟาร์มของคุณ <span className="text-pink-500">*</span></label>
-            <input 
-              required
-              type="text" 
-              placeholder="เช่น Happy Paw Cattery"
-              className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-bold text-gray-800"
-              value={formData.farmName}
-              onChange={(e) => setFormData({...formData, farmName: e.target.value})}
-            />
+      <div className="pf-page">
+        <div className="pf-body">
+          <div className="pf-header">
+            <button className="pf-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <div>
+              <h1 className="pf-title">เปิดฟาร์มสัตว์เลี้ยง 🏡</h1>
+              <p className="pf-sub">ฟาร์มบรีดสัตว์เลี้ยงที่น่ารักเพื่อคนรักสัตว์</p>
+            </div>
           </div>
 
-          {/* 🌟 ชนิดสัตว์หลัก */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">ชนิดสัตว์ที่เพาะพันธุ์ <span className="text-pink-500">*</span></label>
-            <select 
-              required
-              value={formData.species}
-              className={`w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-bold appearance-none cursor-pointer ${formData.species === '' ? 'text-gray-400' : 'text-gray-800'}`}
-              // ถ้ารีเซ็ตตัวหลัก ต้องเคลียร์ค่าตัวย่อยด้วย
-              onChange={(e) => setFormData({...formData, species: e.target.value, subSpecies: '', customSpecies: ''})}
-            >
-              <option value="" disabled>เลือกประเภท</option>
-              <option value="cat">🐱 แมว (Cat)</option>
-              <option value="dog">🐶 สุนัข (Dog)</option>
-              <option value="other">🐾 อื่นๆ (Other)</option>
-            </select>
-          </div>
-
-          {/* 🌟 Dropdown: เลือกชนิดสัตว์แปลก (โชว์เฉพาะเมื่อเลือก "อื่นๆ") */}
-          {formData.species === 'other' && (
-            <div className="animate-in fade-in slide-in-from-top-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">ระบุชนิดสัตว์<span className="text-pink-500">*</span></label>
-              <div className="relative">
-                <select 
-                  required
-                  value={formData.subSpecies}
-                  className={`w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-bold appearance-none cursor-pointer ${formData.subSpecies === '' ? 'text-gray-400' : 'text-gray-800'}`}
-                  onChange={(e) => setFormData({...formData, subSpecies: e.target.value, customSpecies: ''})}
-                >
-                  <option value="" disabled>เลือกชนิดสัตว์</option>
-                  {other_pets.map(pet => (
-                    <option key={pet.id} value={pet.id}>{pet.emoji} {pet.label}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-gray-400">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+          <form onSubmit={handleSubmit}>
+            {/* รูปฟาร์ม */}
+            <div className="pf-photo-wrap">
+              <div className="pf-photo">
+                <div className={`pf-photo-box ${imageUrl ? 'has-img' : ''}`} onClick={() => fileInputRef.current?.click()}>
+                  {imageUrl ? <img src={imageUrl} alt="รูปฟาร์ม" /> : (uploading ? '...' : <Icon.Home />)}
                 </div>
+                <button type="button" className="pf-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
+                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} onClick={(e) => (e.currentTarget.value = '')} style={{ display: 'none' }} />
+              </div>
+              <p className="pf-photo-hint">{uploading ? 'กำลังอัปโหลด...' : imageUrl ? 'แตะเพื่อเปลี่ยนรูป' : 'อัปโหลดรูปฟาร์ม / โลโก้'}</p>
+            </div>
+
+            <div className="pf-card">
+              <div className="pf-field">
+                <label className="pf-label">ชื่อฟาร์มของคุณ <span className="pf-req">*</span></label>
+                <input className="pf-input" required value={form.farmName} onChange={(e) => setForm({ ...form, farmName: e.target.value })} placeholder="เช่น Happy Paw Cattery" />
+              </div>
+
+              <div className="pf-field">
+                <label className="pf-label">ชนิดสัตว์ที่เพาะพันธุ์ <span className="pf-req">*</span></label>
+                <div className="pf-species">
+                  {[{ id: 'cat', emoji: '🐱', lbl: 'แมว' }, { id: 'dog', emoji: '🐶', lbl: 'สุนัข' }, { id: 'other', emoji: '🐾', lbl: 'อื่นๆ' }].map((t) => (
+                    <button key={t.id} type="button" className={`pf-species-btn ${form.species === t.id ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, species: t.id, subSpecies: '', customSpecies: '' })}>
+                      <span className="emoji">{t.emoji}</span><span className="lbl">{t.lbl}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {form.species === 'other' && (
+                  <div className="pf-other-grid">
+                    {OTHER_PETS.map((o) => (
+                      <button key={o.id} type="button" className={`pf-other-btn ${form.subSpecies === o.id ? 'active' : ''}`}
+                        onClick={() => setForm({ ...form, subSpecies: o.id, customSpecies: '' })}>
+                        <span className="emoji">{o.emoji}</span><span className="lbl">{o.th}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {form.species === 'other' && form.subSpecies === 'other' && (
+                  <input className="pf-input" style={{ marginTop: 10 }} required value={form.customSpecies}
+                    onChange={(e) => setForm({ ...form, customSpecies: e.target.value })} placeholder="เช่น ชินชิลล่า, เฟอร์เรท" />
+                )}
+              </div>
+
+              <div className="pf-field">
+                <label className="pf-label">เบอร์โทรศัพท์ติดต่อฟาร์ม <span className="pf-req">*</span></label>
+                <input type="tel" className="pf-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
+              </div>
+
+              <div className="pf-field">
+                <label className="pf-label">แนะนำฟาร์มของคุณสั้นๆ</label>
+                <textarea className="pf-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="บอกเล่าประสบการณ์ ความตั้งใจ หรือสายพันธุ์ที่เพาะ..." />
               </div>
             </div>
-          )}
+          </form>
+        </div>
 
-          {/* 🌟 ช่องพิมพ์เอง: (โชว์เฉพาะเมื่อเลือก "สัตว์แปลกอื่นๆ") */}
-          {formData.species === 'other' && formData.subSpecies === 'other' && (
-            <div className="animate-in fade-in slide-in-from-top-2">
-              <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">พิมพ์ชนิดสัตว์ของคุณ <span className="text-pink-500">*</span></label>
-              <input 
-                required
-                type="text" 
-                placeholder="เช่น ชินชิลล่า, เฟอร์เรท, แมงมุม"
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-bold text-gray-800"
-                value={formData.customSpecies}
-                onChange={(e) => setFormData({...formData, customSpecies: e.target.value})}
-              />
-            </div>
-          )}
-
-          {/* เบอร์โทรศัพท์ */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">เบอร์โทรศัพท์ติดต่อฟาร์ม <span className="text-pink-500">*</span></label>
-            <input 
-              required
-              type="tel" 
-              placeholder="08X-XXX-XXXX"
-              className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-bold text-gray-800"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            />
-          </div>
-
-          {/* คำอธิบายสั้นๆ */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">แนะนำฟาร์มของคุณสั้นๆ</label>
-            <textarea 
-              rows={3}
-              placeholder="บอกเล่าเกี่ยวกับประสบการณ์ ความตั้งใจ หรือสายพันธุ์ที่เพาะ..."
-              className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 outline-none focus:border-pink-300 focus:bg-white transition text-sm font-medium text-gray-800 resize-none"
-              value={formData.bio}
-              onChange={(e) => setFormData({...formData, bio: e.target.value})}
-            ></textarea>
-          </div>
-
-          <div className="pt-4">
-            <button 
-              disabled={loading}
-              type="submit"
-              className={`w-full py-4 rounded-2xl font-black text-white transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 ${loading ? 'bg-gray-400 shadow-none' : 'bg-pink-500 hover:bg-pink-600 shadow-pink-200'}`}
-            >
-              {loading ? '⏳ กำลังบันทึกข้อมูล...' : '🏡 ยืนยันการสมัครเปิดฟาร์ม'}
+        <div className="pf-savebar">
+          <div className="pf-savebar-inner">
+            <button type="button" className="pf-btn" onClick={handleSubmit} disabled={loading || uploading}>
+              {loading ? '⏳ กำลังบันทึก...' : '🏡 ยืนยันการเปิดฟาร์ม'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

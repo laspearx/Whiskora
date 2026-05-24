@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { speciesToId } from "@/lib/species";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
@@ -127,7 +128,7 @@ export default function EditPetPage() {
       let currentSpecies: "cat" | "dog" | "other" = "other";
       if (data.species === "แมว" || data.species === "cat") { currentSpecies = "cat"; setSpecies("cat"); } 
       else if (data.species === "หมา" || data.species === "dog") { currentSpecies = "dog"; setSpecies("dog"); } 
-      else { setSpecies("other"); setOtherPetText(data.species || ""); }
+      else { setSpecies("other"); setOtherPetText(speciesToId(data.species) || ""); }
 
       const petBreed = data.breed || "";
       if (currentSpecies === "cat" || currentSpecies === "dog") {
@@ -203,7 +204,7 @@ export default function EditPetPage() {
     if (species === 'other' && !otherPetText) return alert("กรุณาเลือกประเภทสัตว์เลี้ยง");
     
     setSaving(true);
-    const finalSpecies = species === 'other' ? otherPetText : (species === 'cat' ? 'แมว' : 'หมา');
+    const finalSpecies = species === 'other' ? otherPetText : species; // เก็บเป็น id อังกฤษ
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
     const finalColor = color === 'อื่นๆ' ? customColor : color;
 
@@ -341,12 +342,12 @@ export default function EditPetPage() {
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                   {PET_DATA.other_pets.map((o) => (
                     <button
-                      key={o.id} type="button" onClick={() => setOtherPetText(o.label)}
+                      key={o.id} type="button" onClick={() => setOtherPetText(o.id)}
                       className={`p-2 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all
-                        ${otherPetText === o.label ? 'border-teal-500 bg-teal-50' : 'border-gray-100 bg-gray-50/50'}`}
+                        ${otherPetText === o.id ? 'border-teal-500 bg-teal-50' : 'border-gray-100 bg-gray-50/50'}`}
                     >
                       <span className="text-xl">{o.emoji}</span>
-                      <span className={`text-[9px] font-bold ${otherPetText === o.label ? 'text-pink-600' : 'text-gray-500'}`}>{o.label}</span>
+                      <span className={`text-[9px] font-bold ${otherPetText === o.id ? 'text-pink-600' : 'text-gray-500'}`}>{o.label}</span>
                     </button>
                   ))}
                 </div>

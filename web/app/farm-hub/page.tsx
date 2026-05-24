@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -197,7 +198,7 @@ export default function FarmHubPage() {
                   </div>
                   
                   <p className="text-xs font-medium text-gray-500 mb-4">
-                    {pet.breed || pet.species}
+                    {pet.breed || speciesTh(pet.species)}
                   </p>
 
                   <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">

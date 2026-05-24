@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { speciesTh } from '@/lib/species';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -105,7 +106,7 @@ export default function PublicFarmProfile() {
     return `${y > 0 ? y + ' ปี ' : ''}${m > 0 ? m + ' เดือน' : ''}`.trim();
   };
   const extractThai = (t?: string | null) => t ? t.split('(')[0].trim() : '-';
-  const speciesLabel = (s?: string) => s === 'cat' ? 'แมว' : s === 'dog' ? 'สุนัข' : (s || 'สัตว์เลี้ยง');
+  const speciesLabel = (s?: string) => speciesTh(s) || 'สัตว์เลี้ยง';
   const foundedDate = farm?.created_at ? new Date(farm.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
   const handleShare = async () => {
