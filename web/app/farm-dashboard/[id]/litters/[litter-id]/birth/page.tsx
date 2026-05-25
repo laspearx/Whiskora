@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -82,21 +82,21 @@ export default function RecordBirthPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .rb-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .rb-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 120px; }
         .rb-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .rb-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .rb-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .rb-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
+        .rb-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
         .rb-sub { font-size: 12px; font-weight: 700; color: ${F.pink}; margin-top: 4px; }
         .rb-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 22px; margin-bottom: 16px; }
         .rb-date-label { display: block; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 8px; }
         .rb-input { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
         .rb-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .rb-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 0 2px; }
-        .rb-sec-title { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .rb-sec-title { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .rb-sec-badge { font-size: 10px; font-weight: 700; color: ${F.pink}; background: ${F.pinkSoft}; padding: 4px 11px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
         .rb-baby { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 18px; margin-bottom: 12px; position: relative; }
         .rb-baby-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }

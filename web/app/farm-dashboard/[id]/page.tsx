@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
@@ -196,9 +196,9 @@ function FarmDashboardContent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .fd-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .fd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .fd-body { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; display: flex; flex-direction: column; gap: 20px; }
         /* ── Farm identity header ── */
         .fd-id-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -207,7 +207,7 @@ function FarmDashboardContent() {
         .fd-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
         .fd-farm-avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid ${F.pinkBorder}; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 28px; }
         .fd-farm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .fd-farm-name { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; display: flex; align-items: center; gap: 6px; }
+        .fd-farm-name { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; display: flex; align-items: center; gap: 6px; }
         .fd-farm-meta { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 4px; }
         .fd-id-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .fd-btn-add { display: inline-flex; align-items: center; gap: 6px; padding: 11px 18px; border-radius: 24px; background: ${F.pink}; color: white; font-size: 13px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .18s ease; }
@@ -221,7 +221,7 @@ function FarmDashboardContent() {
         .fd-expense-icon { width: 44px; height: 44px; border-radius: 14px; background: white; color: ${F.pink}; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(232,70,119,.12); }
         .fd-expense-label { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; }
         .fd-expense-sub { font-size: 11px; color: ${F.muted}; margin-top: 2px; }
-        .fd-expense-amount { font-family: 'Prompt', sans-serif; font-size: 32px; font-weight: 700; color: ${F.pink}; margin: 12px 0 4px; letter-spacing: -0.5px; }
+        .fd-expense-amount { font-family: inherit; font-size: 32px; font-weight: 700; color: ${F.pink}; margin: 12px 0 4px; letter-spacing: -0.5px; }
         .fd-donut-card { padding: 22px; }
         .fd-donut-title { font-size: 13px; font-weight: 700; color: ${F.ink}; margin-bottom: 16px; }
         .fd-donut-wrap { display: flex; align-items: center; gap: 22px; }
@@ -233,10 +233,10 @@ function FarmDashboardContent() {
         .fd-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
         .fd-legend-name { color: ${F.inkSoft}; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fd-legend-pct { color: ${F.muted}; font-weight: 700; flex-shrink: 0; }
-        .fd-legend-amt { color: ${F.ink}; font-weight: 700; font-family: 'Prompt', sans-serif; flex-shrink: 0; min-width: 56px; text-align: right; }
+        .fd-legend-amt { color: ${F.ink}; font-weight: 700; font-family: inherit; flex-shrink: 0; min-width: 56px; text-align: right; }
         /* ── KPI ── */
         .fd-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-        .fd-section-title { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700; color: ${F.ink}; }
+        .fd-section-title { display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 17px; font-weight: 700; color: ${F.ink}; }
         .fd-link-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all .15s; cursor: pointer; }
         .fd-link-pill:hover { background: #FDE7EF; border-color: ${F.pink}; }
         .fd-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -244,7 +244,7 @@ function FarmDashboardContent() {
         .fd-kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
         .fd-kpi-emoji { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
         .fd-kpi-label { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
-        .fd-kpi-value { font-family: 'Prompt', sans-serif; font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+        .fd-kpi-value { font-family: inherit; font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
         .fd-kpi-gender { display: flex; gap: 10px; font-size: 11px; font-weight: 700; }
         .fd-kpi-gender .m { color: #2563EB; display: inline-flex; align-items: center; gap: 3px; }
         .fd-kpi-gender .f { color: #DB2777; display: inline-flex; align-items: center; gap: 3px; }
@@ -253,7 +253,7 @@ function FarmDashboardContent() {
         .fd-litter-row { padding: 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
         .fd-litter-code { text-align: center; min-width: 52px; }
         .fd-litter-code-label { font-size: 9px; color: ${F.muted}; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-        .fd-litter-code-val { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .fd-litter-code-val { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .fd-parents { display: flex; align-items: center; gap: 8px; background: #FAFAFA; padding: 8px 12px; border-radius: 14px; border: 1px solid ${F.line}; }
         .fd-parent-img { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
         .fd-parent-img img { width: 100%; height: 100%; object-fit: cover; }
@@ -271,7 +271,7 @@ function FarmDashboardContent() {
         .fd-mid-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 16px; align-items: start; }
         .fd-summary-card { padding: 20px; }
         .fd-summary-icon { width: 40px; height: 40px; border-radius: 12px; background: ${F.pinkSoft}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-        .fd-summary-big { font-family: 'Prompt', sans-serif; font-size: 28px; font-weight: 700; color: ${F.ink}; }
+        .fd-summary-big { font-family: inherit; font-size: 28px; font-weight: 700; color: ${F.ink}; }
         .fd-summary-sub { font-size: 12px; color: ${F.inkSoft}; margin-top: 6px; line-height: 1.6; }
         .fd-summary-sub b { color: ${F.pink}; }
         .fd-activity-card { padding: 20px; }
@@ -281,7 +281,7 @@ function FarmDashboardContent() {
         .fd-act-info { flex: 1; min-width: 0; }
         .fd-act-title { font-size: 12px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fd-act-date { font-size: 10px; color: ${F.muted}; margin-top: 1px; }
-        .fd-act-amt { font-size: 12px; font-weight: 700; font-family: 'Prompt', sans-serif; flex-shrink: 0; }
+        .fd-act-amt { font-size: 12px; font-weight: 700; font-family: inherit; flex-shrink: 0; }
         /* ── Litter history grid ── */
         .fd-litter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .fd-litter-card { display: flex; flex-direction: column; }
@@ -296,7 +296,7 @@ function FarmDashboardContent() {
         .fd-roi-row { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid ${F.line}; }
         .fd-roi-items { display: flex; gap: 16px; }
         .fd-roi-label { font-size: 8px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; }
-        .fd-roi-val { font-size: 12px; font-weight: 700; font-family: 'Prompt', sans-serif; }
+        .fd-roi-val { font-size: 12px; font-weight: 700; font-family: inherit; }
         .fd-roi-arrow { width: 30px; height: 30px; border-radius: 50%; background: #FAFAFA; color: ${F.muted}; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all .15s; flex-shrink: 0; }
         .fd-roi-arrow:hover { background: ${F.pink}; color: white; }
         /* ── Directory ── */
@@ -311,7 +311,7 @@ function FarmDashboardContent() {
         .fd-pet-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
         .fd-pet-card:hover .fd-pet-img img { transform: scale(1.1); }
         .fd-pet-info { flex: 1; min-width: 0; }
-        .fd-pet-name { font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fd-pet-name { font-family: inherit; font-size: 14px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fd-pet-breed { font-size: 10px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
         .fd-pet-tags { display: flex; gap: 5px; flex-wrap: wrap; }
         .fd-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 700; }

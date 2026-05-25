@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
@@ -230,14 +230,14 @@ function BulkCreateContent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .bc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .bc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .bc-body { max-width: 920px; margin: 0 auto; padding: 28px 20px 140px; }
         .bc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
         .bc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .bc-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .bc-title { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.4px; }
+        .bc-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.4px; }
         .bc-sub { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         /* info banner */
         .bc-info { display: flex; align-items: flex-start; gap: 10px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; border-radius: 14px; padding: 12px 16px; margin: 18px 0 22px; }
@@ -249,7 +249,7 @@ function BulkCreateContent() {
         .bc-row { background: white; border: 1px solid ${F.line}; border-radius: 18px; overflow: hidden; transition: all .2s; }
         .bc-row:hover { box-shadow: 0 4px 16px rgba(232,70,119,.06); }
         .bc-row-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: linear-gradient(135deg, #FFF5F8, white); border-bottom: 1px solid ${F.line}; }
-        .bc-row-num { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .bc-row-num { display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .bc-row-badge { width: 26px; height: 26px; border-radius: 50%; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
         .bc-row-actions { display: flex; gap: 6px; }
         .bc-icon-btn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid ${F.lineMid}; background: white; color: ${F.muted}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; }
@@ -272,7 +272,7 @@ function BulkCreateContent() {
         .bc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .bc-savebar-inner { max-width: 920px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .bc-savebar-count { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
-        .bc-savebar-count b { color: ${F.pink}; font-family: 'Prompt', sans-serif; font-size: 16px; }
+        .bc-savebar-count b { color: ${F.pink}; font-family: inherit; font-size: 16px; }
         .bc-save-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 26px; background: ${F.pink}; color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .18s ease; }
         .bc-save-btn:hover { background: #D63F6A; box-shadow: 0 6px 20px rgba(232,70,119,0.4); }
         .bc-save-btn:active { transform: scale(0.97); }

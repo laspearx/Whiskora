@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -33,15 +33,15 @@ export default function UniversalPetFinancePage() {
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
 
   const [formData, setFormData] = useState({
-    expense_context: "PERSONAL", category: "ค่าอาหาร", amount: "",
+    expense_context: "PERSONAL", category: "เธเนเธฒเธญเธฒเธซเธฒเธฃ", amount: "",
     transaction_date: new Date().toISOString().split("T")[0],
     litter_id: "", description: "", receipt_url: "",
   });
 
   const categories = {
-    personal: ["ค่าอาหาร", "ค่าทรายแมว", "ของเล่น/ของใช้", "ค่าวัคซีน/หาหมอ", "ค่าอาบน้ำตัดขน", "อื่นๆ"],
-    farm: ["ค่าอาหาร", "ค่าทรายแมว", "ค่าอุปกรณ์ต่างๆ", "ค่าวัคซีน/ยารักษา", "ค่ารักษาพยาบาล", "ค่าผสมพันธุ์", "ค่าใบเพ็ดดีกรี", "ค่ากรูมมิ่ง", "ค่าน้ำ/ค่าไฟ", "อื่นๆ"],
-    income: ["ขายสัตว์เลี้ยง", "ค่ามัดจำ", "ค่ารับผสมพันธุ์", "รายรับอื่นๆ"],
+    personal: ["เธเนเธฒเธญเธฒเธซเธฒเธฃ", "เธเนเธฒเธ—เธฃเธฒเธขเนเธกเธง", "เธเธญเธเน€เธฅเนเธ/เธเธญเธเนเธเน", "เธเนเธฒเธงเธฑเธเธเธตเธ/เธซเธฒเธซเธกเธญ", "เธเนเธฒเธญเธฒเธเธเนเธณเธ•เธฑเธ”เธเธ", "เธญเธทเนเธเน"],
+    farm: ["เธเนเธฒเธญเธฒเธซเธฒเธฃ", "เธเนเธฒเธ—เธฃเธฒเธขเนเธกเธง", "เธเนเธฒเธญเธธเธเธเธฃเธ“เนเธ•เนเธฒเธเน", "เธเนเธฒเธงเธฑเธเธเธตเธ/เธขเธฒเธฃเธฑเธเธฉเธฒ", "เธเนเธฒเธฃเธฑเธเธฉเธฒเธเธขเธฒเธเธฒเธฅ", "เธเนเธฒเธเธชเธกเธเธฑเธเธเธธเน", "เธเนเธฒเนเธเน€เธเนเธ”เธ”เธตเธเธฃเธต", "เธเนเธฒเธเธฃเธนเธกเธกเธดเนเธ", "เธเนเธฒเธเนเธณ/เธเนเธฒเนเธ", "เธญเธทเนเธเน"],
+    income: ["เธเธฒเธขเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ", "เธเนเธฒเธกเธฑเธ”เธเธณ", "เธเนเธฒเธฃเธฑเธเธเธชเธกเธเธฑเธเธเธธเน", "เธฃเธฒเธขเธฃเธฑเธเธญเธทเนเธเน"],
   };
 
   useEffect(() => {
@@ -68,19 +68,19 @@ export default function UniversalPetFinancePage() {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === "expense_context") { updated.category = "ค่าอาหาร"; updated.litter_id = ""; }
+      if (name === "expense_context") { updated.category = "เธเนเธฒเธญเธฒเธซเธฒเธฃ"; updated.litter_id = ""; }
       return updated;
     });
   };
 
   useEffect(() => {
-    if (activeTab === "income") setFormData((prev) => ({ ...prev, category: "ขายสัตว์เลี้ยง" }));
-    else setFormData((prev) => ({ ...prev, category: "ค่าอาหาร" }));
+    if (activeTab === "income") setFormData((prev) => ({ ...prev, category: "เธเธฒเธขเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ" }));
+    else setFormData((prev) => ({ ...prev, category: "เธเนเธฒเธญเธฒเธซเธฒเธฃ" }));
   }, [activeTab]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!formData.amount || Number(formData.amount) <= 0) return alert("กรุณาระบุจำนวนเงิน");
+    if (!formData.amount || Number(formData.amount) <= 0) return alert("เธเธฃเธธเธ“เธฒเธฃเธฐเธเธธเธเธณเธเธงเธเน€เธเธดเธ");
     setIsSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -93,7 +93,7 @@ export default function UniversalPetFinancePage() {
       if (error) throw error;
       setTransactions([data, ...transactions]);
       setFormData((prev) => ({ ...prev, amount: "", description: "", receipt_url: "", litter_id: "" }));
-      alert("✅ บันทึกรายการสำเร็จ!");
+      alert("โ… เธเธฑเธเธ—เธถเธเธฃเธฒเธขเธเธฒเธฃเธชเธณเน€เธฃเนเธ!");
     } catch (error: any) { alert(error.message); }
     finally { setIsSubmitting(false); }
   };
@@ -108,15 +108,15 @@ export default function UniversalPetFinancePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .fin-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .fin-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .fin-body { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
         .fin-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
         .fin-top-left { display: flex; align-items: center; gap: 14px; }
         .fin-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .fin-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .fin-title { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .fin-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .fin-sub { font-size: 12px; font-weight: 700; color: ${F.muted}; margin-top: 3px; }
         .fin-export { display: inline-flex; align-items: center; gap: 7px; background: ${F.ink}; color: white; padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all .15s; font-family: inherit; }
         .fin-export:hover { background: #1F2937; }
@@ -127,7 +127,7 @@ export default function UniversalPetFinancePage() {
         .fin-kpi-icon { position: absolute; top: 12px; right: 12px; opacity: 0.12; }
         .fin-kpi-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
         .fin-kpi.tax .fin-kpi-label { color: ${F.blue}; opacity: 0.7; }
-        .fin-kpi-value { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; }
+        .fin-kpi-value { font-family: inherit; font-size: 24px; font-weight: 700; }
         .fin-cols { display: grid; grid-template-columns: 5fr 7fr; gap: 20px; align-items: start; }
         /* form */
         .fin-form-card { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 22px; }
@@ -142,7 +142,7 @@ export default function UniversalPetFinancePage() {
         .fin-input, .fin-select, .fin-textarea { width: 100%; padding: 11px 13px; background: #FAFAFA; border: 1px solid ${F.line}; border-radius: 11px; font-size: 13px; font-weight: 600; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
         .fin-input:focus, .fin-select:focus, .fin-textarea:focus { border-color: ${F.lineMid}; background: white; }
         .fin-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; background-size: 16px; padding-right: 34px; cursor: pointer; }
-        .fin-amount { background: white; border: 1px solid ${F.lineMid}; font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; padding: 9px 13px; }
+        .fin-amount { background: white; border: 1px solid ${F.lineMid}; font-family: inherit; font-size: 18px; font-weight: 700; padding: 9px 13px; }
         .fin-litter { background: ${F.indigoSoft}; border-color: ${F.indigoBorder}; color: ${F.indigo}; }
         .fin-textarea { resize: none; }
         .fin-receipt-label { display: flex; align-items: center; gap: 5px; }
@@ -155,7 +155,7 @@ export default function UniversalPetFinancePage() {
         /* list */
         .fin-list-card { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; max-height: 680px; }
         .fin-list-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
-        .fin-list-title { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; }
+        .fin-list-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; }
         .fin-list-count { font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; }
         .fin-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
         .fin-empty { text-align: center; padding: 48px 20px; color: ${F.muted}; font-size: 14px; font-weight: 600; }
@@ -169,7 +169,7 @@ export default function UniversalPetFinancePage() {
         .fin-tx-cat { font-size: 14px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fin-tx-tax { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; background: ${F.blueSoft}; color: ${F.blue}; border: 1px solid ${F.blueBorder}; border-radius: 5px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
         .fin-tx-meta { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.04em; }
-        .fin-tx-amount { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+        .fin-tx-amount { font-family: inherit; font-size: 16px; font-weight: 700; flex-shrink: 0; }
         .fin-tx-amount.income { color: ${F.green}; }
         .fin-tx-amount.expense { color: ${F.ink}; }
         .fin-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -181,69 +181,69 @@ export default function UniversalPetFinancePage() {
       {loading ? (
         <div className="fin-loading">
           <div className="fin-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลดข้อมูลการเงิน...</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธฒเธฃเน€เธเธดเธ...</p>
         </div>
       ) : (
         <div className="fin-page">
           <div className="fin-body">
             <div className="fin-top">
               <div className="fin-top-left">
-                <button className="fin-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+                <button className="fin-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
                 <div>
-                  <h1 className="fin-title">บัญชีรายรับ-รายจ่าย</h1>
-                  <p className="fin-sub">บัญชีฟาร์ม &amp; ภาษี ประจำปี {currentYear}</p>
+                  <h1 className="fin-title">เธเธฑเธเธเธตเธฃเธฒเธขเธฃเธฑเธ-เธฃเธฒเธขเธเนเธฒเธข</h1>
+                  <p className="fin-sub">เธเธฑเธเธเธตเธเธฒเธฃเนเธก &amp; เธ เธฒเธฉเธต เธเธฃเธฐเธเธณเธเธต {currentYear}</p>
                 </div>
               </div>
-              <button className="fin-export" onClick={() => alert('ฟีเจอร์ Export Excel กำลังพัฒนา จะเปิดให้ใช้เร็วๆ นี้ครับ')}>
-                <Icon.Download /> Export ภาษี (Excel)
+              <button className="fin-export" onClick={() => alert('เธเธตเน€เธเธญเธฃเน Export Excel เธเธณเธฅเธฑเธเธเธฑเธ’เธเธฒ เธเธฐเน€เธเธดเธ”เนเธซเนเนเธเนเน€เธฃเนเธงเน เธเธตเนเธเธฃเธฑเธ')}>
+                <Icon.Download /> Export เธ เธฒเธฉเธต (Excel)
               </button>
             </div>
 
             <div className="fin-kpis">
               <div className="fin-kpi">
                 <div className="fin-kpi-icon" style={{ color: F.green }}><Icon.TrendingUp /></div>
-                <div className="fin-kpi-label">รายรับฟาร์ม (ปีนี้)</div>
-                <div className="fin-kpi-value" style={{ color: F.green }}>฿{totalIncome.toLocaleString()}</div>
+                <div className="fin-kpi-label">เธฃเธฒเธขเธฃเธฑเธเธเธฒเธฃเนเธก (เธเธตเธเธตเน)</div>
+                <div className="fin-kpi-value" style={{ color: F.green }}>เธฟ{totalIncome.toLocaleString()}</div>
               </div>
               <div className="fin-kpi">
                 <div className="fin-kpi-icon" style={{ color: F.red }}><Icon.TrendingDown /></div>
-                <div className="fin-kpi-label">รายจ่ายทั้งหมด (ปีนี้)</div>
-                <div className="fin-kpi-value" style={{ color: F.red }}>฿{totalExpense.toLocaleString()}</div>
+                <div className="fin-kpi-label">เธฃเธฒเธขเธเนเธฒเธขเธ—เธฑเนเธเธซเธกเธ” (เธเธตเธเธตเน)</div>
+                <div className="fin-kpi-value" style={{ color: F.red }}>เธฟ{totalExpense.toLocaleString()}</div>
               </div>
               <div className="fin-kpi">
-                <div className="fin-kpi-label">กำไรสุทธิ</div>
-                <div className="fin-kpi-value" style={{ color: netProfit >= 0 ? F.ink : F.red }}>{netProfit >= 0 ? '' : '-'}฿{Math.abs(netProfit).toLocaleString()}</div>
+                <div className="fin-kpi-label">เธเธณเนเธฃเธชเธธเธ—เธเธด</div>
+                <div className="fin-kpi-value" style={{ color: netProfit >= 0 ? F.ink : F.red }}>{netProfit >= 0 ? '' : '-'}เธฟ{Math.abs(netProfit).toLocaleString()}</div>
               </div>
               <div className="fin-kpi tax">
                 <div className="fin-kpi-icon" style={{ color: F.blue }}><Icon.Receipt /></div>
-                <div className="fin-kpi-label">รายจ่ายมีใบเสร็จ (หักภาษีได้)</div>
-                <div className="fin-kpi-value" style={{ color: F.blue }}>฿{taxDeductible.toLocaleString()}</div>
+                <div className="fin-kpi-label">เธฃเธฒเธขเธเนเธฒเธขเธกเธตเนเธเน€เธชเธฃเนเธ (เธซเธฑเธเธ เธฒเธฉเธตเนเธ”เน)</div>
+                <div className="fin-kpi-value" style={{ color: F.blue }}>เธฟ{taxDeductible.toLocaleString()}</div>
               </div>
             </div>
 
             <div className="fin-cols">
               <div className="fin-form-card">
                 <div className="fin-tabs">
-                  <button className={`fin-tab expense ${activeTab === 'expense' ? 'active' : ''}`} onClick={() => setActiveTab('expense')}>ลงรายจ่าย</button>
-                  <button className={`fin-tab income ${activeTab === 'income' ? 'active' : ''}`} onClick={() => setActiveTab('income')}>ลงรายรับ</button>
+                  <button className={`fin-tab expense ${activeTab === 'expense' ? 'active' : ''}`} onClick={() => setActiveTab('expense')}>เธฅเธเธฃเธฒเธขเธเนเธฒเธข</button>
+                  <button className={`fin-tab income ${activeTab === 'income' ? 'active' : ''}`} onClick={() => setActiveTab('income')}>เธฅเธเธฃเธฒเธขเธฃเธฑเธ</button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                   <div className="fin-field fin-grid2">
                     <div>
-                      <label className="fin-label">บัญชีของ</label>
+                      <label className="fin-label">เธเธฑเธเธเธตเธเธญเธ</label>
                       <select name="expense_context" className="fin-select" value={formData.expense_context} onChange={handleChange}>
-                        <option value="PERSONAL">🏠 สัตว์เลี้ยงส่วนตัว</option>
+                        <option value="PERSONAL">๐  เธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธเธชเนเธงเธเธ•เธฑเธง</option>
                         {farms.length > 0 && (
-                          <optgroup label="ธุรกิจฟาร์ม">
-                            <option value="ALL_FARMS">🏢 รวมทุกฟาร์ม</option>
-                            {farms.map((f) => <option key={f.id} value={f.id}>🏡 {f.farm_name}</option>)}
+                          <optgroup label="เธเธธเธฃเธเธดเธเธเธฒเธฃเนเธก">
+                            <option value="ALL_FARMS">๐ข เธฃเธงเธกเธ—เธธเธเธเธฒเธฃเนเธก</option>
+                            {farms.map((f) => <option key={f.id} value={f.id}>๐ก {f.farm_name}</option>)}
                           </optgroup>
                         )}
                       </select>
                     </div>
                     <div>
-                      <label className="fin-label">หมวดหมู่</label>
+                      <label className="fin-label">เธซเธกเธงเธ”เธซเธกเธนเน</label>
                       <select name="category" className="fin-select" value={formData.category} onChange={handleChange}>
                         {activeTab === "income"
                           ? categories.income.map((c) => <option key={c} value={c}>{c}</option>)
@@ -255,51 +255,51 @@ export default function UniversalPetFinancePage() {
                   {formData.expense_context !== "PERSONAL" && formData.expense_context !== "ALL_FARMS" && (
                     <div className="fin-field">
                       <select name="litter_id" className="fin-select fin-litter" value={formData.litter_id} onChange={handleChange}>
-                        <option value="">— ไม่ระบุครอก (รวมของฟาร์ม) —</option>
-                        {availableLitters.map((l) => <option key={l.id} value={l.id}>🐾 ครอก: {l.litter_code}</option>)}
+                        <option value="">โ€” เนเธกเนเธฃเธฐเธเธธเธเธฃเธญเธ (เธฃเธงเธกเธเธญเธเธเธฒเธฃเนเธก) โ€”</option>
+                        {availableLitters.map((l) => <option key={l.id} value={l.id}>๐พ เธเธฃเธญเธ: {l.litter_code}</option>)}
                       </select>
                     </div>
                   )}
 
                   <div className="fin-field fin-grid2">
                     <div>
-                      <label className="fin-label req">จำนวนเงิน (บาท)</label>
+                      <label className="fin-label req">เธเธณเธเธงเธเน€เธเธดเธ (เธเธฒเธ—)</label>
                       <input required type="number" name="amount" className="fin-input fin-amount" value={formData.amount} onChange={handleChange} placeholder="0.00" />
                     </div>
                     <div>
-                      <label className="fin-label req">วันที่ทำรายการ</label>
+                      <label className="fin-label req">เธงเธฑเธเธ—เธตเนเธ—เธณเธฃเธฒเธขเธเธฒเธฃ</label>
                       <input required type="date" name="transaction_date" className="fin-input" value={formData.transaction_date} onChange={handleChange} />
                     </div>
                   </div>
 
                   <div className="fin-field">
-                    <textarea name="description" className="fin-textarea" rows={2} value={formData.description} onChange={handleChange} placeholder="รายละเอียดเพิ่มเติม (เช่น ชื่อร้านค้า, รายการสินค้า)..." />
+                    <textarea name="description" className="fin-textarea" rows={2} value={formData.description} onChange={handleChange} placeholder="เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก (เน€เธเนเธ เธเธทเนเธญเธฃเนเธฒเธเธเนเธฒ, เธฃเธฒเธขเธเธฒเธฃเธชเธดเธเธเนเธฒ)..." />
                   </div>
 
                   <div className="fin-field">
-                    <label className="fin-label fin-receipt-label"><Icon.FileText /> เอกสารอ้างอิง / ใบกำกับภาษี</label>
-                    <input type="text" name="receipt_url" className="fin-input" value={formData.receipt_url} onChange={handleChange} placeholder="วางลิงก์รูปใบเสร็จ หรือเลขที่เอกสาร" />
+                    <label className="fin-label fin-receipt-label"><Icon.FileText /> เน€เธญเธเธชเธฒเธฃเธญเนเธฒเธเธญเธดเธ / เนเธเธเธณเธเธฑเธเธ เธฒเธฉเธต</label>
+                    <input type="text" name="receipt_url" className="fin-input" value={formData.receipt_url} onChange={handleChange} placeholder="เธงเธฒเธเธฅเธดเธเธเนเธฃเธนเธเนเธเน€เธชเธฃเนเธ เธซเธฃเธทเธญเน€เธฅเธเธ—เธตเนเน€เธญเธเธชเธฒเธฃ" />
                   </div>
 
                   <button type="button" className={`fin-submit ${activeTab}`} onClick={handleSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? 'กำลังบันทึก...' : `บันทึก${activeTab === 'income' ? 'รายรับ' : 'รายจ่าย'} 💾`}
+                    {isSubmitting ? 'เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...' : `เธเธฑเธเธ—เธถเธ${activeTab === 'income' ? 'เธฃเธฒเธขเธฃเธฑเธ' : 'เธฃเธฒเธขเธเนเธฒเธข'} ๐’พ`}
                   </button>
                 </form>
               </div>
 
               <div className="fin-list-card">
                 <div className="fin-list-head">
-                  <h2 className="fin-list-title">รายการล่าสุด</h2>
-                  <span className="fin-list-count">{transactions.length} รายการ</span>
+                  <h2 className="fin-list-title">เธฃเธฒเธขเธเธฒเธฃเธฅเนเธฒเธชเธธเธ”</h2>
+                  <span className="fin-list-count">{transactions.length} เธฃเธฒเธขเธเธฒเธฃ</span>
                 </div>
                 <div className="fin-list">
                   {transactions.length === 0 ? (
-                    <div className="fin-empty">ยังไม่มีรายการบันทึก</div>
+                    <div className="fin-empty">เธขเธฑเธเนเธกเนเธกเธตเธฃเธฒเธขเธเธฒเธฃเธเธฑเธเธ—เธถเธ</div>
                   ) : transactions.map((tx) => {
                     const isIncome = tx.transaction_type === 'income';
                     const farmObj = farms.find((f) => f.id === tx.farm_id);
                     const hasReceipt = !!tx.receipt_url;
-                    const ctxLabel = tx.farm_id === 'PERSONAL' ? 'ส่วนตัว' : (tx.farm_id === 'ALL_FARMS' ? 'รวมทุกฟาร์ม' : farmObj?.farm_name || 'ฟาร์ม');
+                    const ctxLabel = tx.farm_id === 'PERSONAL' ? 'เธชเนเธงเธเธ•เธฑเธง' : (tx.farm_id === 'ALL_FARMS' ? 'เธฃเธงเธกเธ—เธธเธเธเธฒเธฃเนเธก' : farmObj?.farm_name || 'เธเธฒเธฃเนเธก');
                     return (
                       <div key={tx.id} className="fin-tx">
                         <div className="fin-tx-left">
@@ -311,13 +311,13 @@ export default function UniversalPetFinancePage() {
                             </div>
                             <div className="fin-tx-meta">
                               <span>{new Date(tx.transaction_date).toLocaleDateString('th-TH')}</span>
-                              <span>•</span>
+                              <span>โ€ข</span>
                               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ctxLabel}</span>
                             </div>
                           </div>
                         </div>
                         <div className={`fin-tx-amount ${isIncome ? 'income' : 'expense'}`}>
-                          {isIncome ? '+' : '-'}฿{Number(tx.amount).toLocaleString()}
+                          {isIncome ? '+' : '-'}เธฟ{Number(tx.amount).toLocaleString()}
                         </div>
                       </div>
                     );

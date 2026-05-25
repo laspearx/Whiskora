@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -194,14 +194,14 @@ export default function PetIdCardPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .idc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .idc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .idc-body { max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px; }
         .idc-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .idc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .idc-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .idc-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .idc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
         .idc-sub { font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
         /* แสดงรูปบัตรที่ render แล้ว */
         .idc-display { display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; min-height: 400px; }
@@ -233,7 +233,7 @@ export default function PetIdCardPage() {
         /* โลโก้มุมซ้ายบน */
         .idc-brand { display: flex; align-items: center; gap: 12px; padding: 20px 26px 0; position: relative; z-index: 1; }
         .idc-brand-logo { height: 36px; width: auto; object-fit: contain; }
-        .idc-brand-logo-fallback { font-family: 'Prompt', sans-serif; font-size: 28px; font-weight: 700; color: ${F.pink}; letter-spacing: -1px; }
+        .idc-brand-logo-fallback { font-family: inherit; font-size: 28px; font-weight: 700; color: ${F.pink}; letter-spacing: -1px; }
         .idc-brand-titles { line-height: 1.25; }
         .idc-brand-en { font-size: 12px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.06em; }
         .idc-brand-th { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; }
@@ -244,7 +244,7 @@ export default function PetIdCardPage() {
         .idc-photo img { width: 100%; height: 100%; object-fit: cover; }
         .idc-petid-box { margin-top: 12px; background: rgba(253,242,245,0.7); border-radius: 12px; padding: 11px 14px; }
         .idc-petid-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
-        .idc-petid-num { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.2px; word-break: break-all; line-height: 1.2; }
+        .idc-petid-num { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.2px; word-break: break-all; line-height: 1.2; }
         .idc-petid-issue { font-size: 9px; color: ${F.muted}; margin-top: 3px; }
         /* ตารางข้อมูล (หัวข้อ: ค่า ต่อกันชิดซ้าย ไม่ตัดข้อความ) */
         .idc-rows { display: flex; flex-direction: column; padding-top: 2px; }
@@ -253,14 +253,14 @@ export default function PetIdCardPage() {
         .idc-row-icon { color: ${F.pink}; flex-shrink: 0; display: flex; margin-top: 2px; }
         .idc-row-content { min-width: 0; flex: 1; }
         .idc-row-th { font-size: 15px; font-weight: 600; color: ${F.inkSoft}; line-height: 1.35; }
-        .idc-row-val { font-family: 'Prompt', sans-serif; font-weight: 700; color: ${F.ink}; }
+        .idc-row-val { font-family: inherit; font-weight: 700; color: ${F.ink}; }
         .idc-row-val .gender { color: ${isMale ? '#2563EB' : '#DB2777'}; font-size: 16px; }
         .idc-row-en { font-size: 10px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         /* แถบล่าง */
         .idc-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-top: 1px solid #FCE0EC; position: relative; z-index: 1; background: rgba(255,255,255,0.4); flex-wrap: wrap; }
         .idc-foot-shield { color: ${F.pink}; display: flex; }
         .idc-foot-text { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
-        .idc-foot-text b { color: ${F.pink}; font-family: 'Prompt', sans-serif; font-weight: 700; }
+        .idc-foot-text b { color: ${F.pink}; font-family: inherit; font-weight: 700; }
         .idc-foot-sep { color: ${F.muted}; }
         @media (max-width: 768px) {
           .idc-body { padding: 16px 12px 60px; }

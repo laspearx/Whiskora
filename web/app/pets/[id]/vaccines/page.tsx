@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
@@ -63,14 +63,14 @@ function VaccineTimeline() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .vh-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .vh-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .vh-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 90px; }
         .vh-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
         .vh-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
         .vh-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
-        .vh-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .vh-title { font-family: inherit; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .vh-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
         /* filter chip */
         .vh-filter { display: inline-flex; align-items: center; gap: 8px; background: ${F.tealSoft}; padding: 7px 8px 7px 14px; border-radius: 12px; border: 1px solid ${F.tealBorder}; margin-bottom: 18px; }
@@ -94,7 +94,7 @@ function VaccineTimeline() {
         .vh-rec { background: white; padding: 18px; border-radius: 16px; border: 1px solid ${F.line}; transition: all .2s; }
         .vh-item.latest .vh-rec { border-color: ${F.tealBorder}; box-shadow: 0 2px 12px rgba(13,148,136,0.08); }
         .vh-rec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-        .vh-rec-name { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .vh-rec-name { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .vh-rec-date { font-size: 12px; font-weight: 500; color: ${F.muted}; margin-top: 2px; }
         .vh-rec-date b { color: ${F.inkSoft}; font-weight: 700; }
         .vh-badge { flex-shrink: 0; background: ${F.tealSoft}; color: ${F.teal}; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 11px; border-radius: 9px; border: 1px solid ${F.tealBorder}; white-space: nowrap; }

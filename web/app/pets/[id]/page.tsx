@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -563,15 +563,15 @@ export default function PetDetailPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .whiskora-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .whiskora-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .topbar { display: flex; align-items: center; gap: 14px; max-width: 1100px; margin: 0 auto; padding: 24px 20px 4px; }
         .topbar-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; color: #6B7280; cursor: pointer; border: 1px solid rgba(251,207,232,0.9); box-shadow: 0 2px 8px rgba(232,70,119,0.10); transition: all .18s ease; flex-shrink: 0; padding: 0; }
         .topbar-back:hover { color: ${F.pink}; border-color: ${F.pink}; box-shadow: 0 4px 14px rgba(232,70,119,0.22); transform: translateX(-1px); }
         .topbar-back:active { transform: scale(0.94); }
         .topbar-titles { display: flex; flex-direction: column; min-width: 0; }
-        .topbar-title { font-family: 'Prompt', sans-serif; font-size: 19px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .topbar-title { font-family: inherit; font-size: 19px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .topbar-sub { font-size: 11px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
         .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
         .btn-share { display: flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(251,207,232,0.7); background: white; font-size: 12px; font-weight: 600; color: #4B5563; cursor: pointer; box-shadow: 0 2px 8px rgba(232,70,119,0.08); transition: all .18s ease; }
@@ -594,7 +594,7 @@ export default function PetDetailPage() {
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
-        .pet-name { font-family: 'Prompt', sans-serif; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${isMale ? '#DBEAFE' : '#FCE7F3'}; color: ${isMale ? '#2563EB' : '#DB2777'}; flex-shrink: 0; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
@@ -759,7 +759,7 @@ export default function PetDetailPage() {
         .modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); padding: 16px; }
         .modal-box { background: white; width: 100%; max-width: 440px; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
         .modal-pad { padding: 24px; }
-        .modal-title { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; }
+        .modal-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; }
         .modal-sub { font-size: 12px; color: ${F.muted}; margin-top: 2px; margin-bottom: 18px; }
         .field-label { display: block; font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
         .field-input { width: 100%; padding: 12px 14px; border-radius: 12px; background: #F9FAFB; border: 1px solid ${F.lineMid}; outline: none; font-size: 14px; font-weight: 500; color: ${F.ink}; transition: all .15s; font-family: inherit; }
@@ -770,7 +770,7 @@ export default function PetDetailPage() {
         /* ─── Pedigree Modal (card style, controls at bottom) ─── */
         .ped-modal-card { background: white; width: 95vw; max-width: 1400px; height: 90vh; max-height: 90vh; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column; }
         .ped-modal-head { padding: 18px 24px; border-bottom: 1px solid ${F.line}; }
-        .ped-modal-title { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .ped-modal-title { display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .ped-modal-stage { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 24px; background: #FAFAFA; display: flex; align-items: center; justify-content: center; min-height: 200px; }
         .ped-modal-scaler { transform-origin: center center; transition: transform .15s ease; }
         .ped-modal-scaler .pedigree-tree { background: white; }

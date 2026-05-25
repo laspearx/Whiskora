@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -109,17 +109,17 @@ export default function CreateVaccinePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .vc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .vc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .vc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .vc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .vc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
         .vc-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
-        .vc-title { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .vc-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .vc-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
         .vc-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }
-        .vc-card-title { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+        .vc-card-title { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
         .vc-card-icon { color: ${F.teal}; display: flex; }
         .vc-field { margin-bottom: 16px; }
         .vc-field:last-child { margin-bottom: 0; }

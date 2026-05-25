@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -59,14 +59,14 @@ export default function LitterDetailPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .ld-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .ld-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .ld-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
         .ld-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .ld-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .ld-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .ld-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .ld-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
         .ld-title .code { color: ${F.pink}; }
         /* status card */
         .ld-status { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -83,14 +83,14 @@ export default function LitterDetailPage() {
         .ld-parent.sire .ld-parent-photo { border-color: #BFDBFE; color: ${F.blue}; }
         .ld-parent.dam .ld-parent-photo { border-color: ${F.pinkBorder}; color: ${F.pink}; }
         .ld-parent-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .ld-parent-name { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 700; color: ${F.ink}; margin-top: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .ld-parent-name { font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.ink}; margin-top: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         .ld-parent-role { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; }
         .ld-parent.sire .ld-parent-role { color: ${F.blue}; }
         .ld-parent.dam .ld-parent-role { color: ${F.pink}; }
         .ld-heart { color: ${F.pinkBorder}; flex-shrink: 0; }
         /* babies */
         .ld-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
-        .ld-sec-title { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .ld-sec-title { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .ld-sec-count { font-size: 11px; font-weight: 700; color: ${F.muted}; background: ${F.line}; padding: 4px 11px; border-radius: 999px; }
         .ld-empty { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 32px; text-align: center; font-size: 13px; font-weight: 600; color: ${F.muted}; }
         .ld-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
@@ -99,7 +99,7 @@ export default function LitterDetailPage() {
         .ld-baby-photo { aspect-ratio: 1; border-radius: 11px; overflow: hidden; background: ${F.bg}; position: relative; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
         .ld-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
         .ld-baby-weight { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.92); border-radius: 6px; padding: 1px 5px; font-size: 9px; font-weight: 700; color: ${F.inkSoft}; }
-        .ld-baby-name { font-family: 'Prompt', sans-serif; font-size: 12px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+        .ld-baby-name { font-family: inherit; font-size: 12px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
         .ld-baby-foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: auto; }
         .ld-baby-gender { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
         .ld-baby-gender.m { background: #EFF6FF; color: ${F.blue}; }

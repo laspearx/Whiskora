@@ -124,7 +124,7 @@ const S: Record<string, React.CSSProperties> = {
     position: 'fixed', inset: 0, zIndex: 99999,
     background: 'linear-gradient(160deg, #E84677 0%, #F472B6 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '24px', fontFamily: "'Sarabun', 'IBM Plex Sans Thai', sans-serif",
+    padding: '24px', fontFamily: "'Prompt', sans-serif",
     overflowY: 'auto',
   },
   card: {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -123,14 +123,14 @@ export default function CreateLitterPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .lc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .lc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .lc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .lc-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .lc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .lc-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .lc-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
+        .lc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
         .lc-sub { font-size: 13px; font-weight: 700; color: ${F.pink}; margin-top: 4px; }
         .lc-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }
         .lc-hero-emoji { text-align: center; font-size: 48px; margin-bottom: 18px; }

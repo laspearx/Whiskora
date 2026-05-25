@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
@@ -73,15 +73,15 @@ function ServiceDashboardContent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .svd-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .svd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .svd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .svd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .svd-top-left { display: flex; align-items: center; gap: 14px; }
         .svd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
         .svd-back:hover { color: ${F.blue}; border-color: ${F.blue}; transform: translateX(-1px); }
-        .svd-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
+        .svd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .svd-sub { font-size: 12px; font-weight: 700; color: ${F.blue}; margin-top: 2px; }
         .svd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.blue}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.25); transition: all .15s; white-space: nowrap; }
         .svd-add:hover { background: #1D4FD7; }
@@ -89,11 +89,11 @@ function ServiceDashboardContent() {
         .svd-stat { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 18px; position: relative; overflow: hidden; }
         .svd-stat-icon { position: absolute; right: -4px; top: -4px; font-size: 38px; opacity: 0.1; }
         .svd-stat-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-        .svd-stat-value { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; }
+        .svd-stat-value { font-family: inherit; font-size: 24px; font-weight: 700; }
         .svd-stat-unit { font-size: 10px; font-weight: 600; color: ${F.muted}; margin-left: 3px; }
         .svd-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .svd-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
-        .svd-sec-title { font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700; color: ${F.ink}; }
+        .svd-sec-title { font-family: inherit; font-size: 17px; font-weight: 700; color: ${F.ink}; }
         .svd-sec-link { font-size: 12px; font-weight: 700; color: ${F.blue}; text-decoration: none; }
         .svd-table-wrap { background: white; border: 1px solid ${F.line}; border-radius: 18px; overflow: hidden; }
         .svd-empty { padding: 44px; text-align: center; color: ${F.muted}; font-size: 14px; font-weight: 600; }

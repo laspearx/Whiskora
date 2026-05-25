@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
@@ -89,7 +89,7 @@ export default function EditProfilePage() {
       setImageSrc(null);
     } catch (err) {
       console.error(err);
-      alert("เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
+      alert("เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เนเธเธเธฒเธฃเธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเธ เธฒเธ");
     } finally { setIsUploading(false); }
   };
 
@@ -103,11 +103,11 @@ export default function EditProfilePage() {
       updated_at: new Date(),
     });
     if (error) {
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      alert("เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เนเธเธเธฒเธฃเธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ");
       setSaving(false);
     } else {
-      // ใช้ replace: หลังบันทึกเด้งไปโปรไฟล์ และถอดหน้าแก้ไขออกจาก history
-      // → กดย้อนกลับจากโปรไฟล์จะข้ามหน้าแก้ไข ไปหน้าก่อนหน้าเลย
+      // เนเธเน replace: เธซเธฅเธฑเธเธเธฑเธเธ—เธถเธเน€เธ”เนเธเนเธเนเธเธฃเนเธเธฅเน เนเธฅเธฐเธ–เธญเธ”เธซเธเนเธฒเนเธเนเนเธเธญเธญเธเธเธฒเธ history
+      // โ’ เธเธ”เธขเนเธญเธเธเธฅเธฑเธเธเธฒเธเนเธเธฃเนเธเธฅเนเธเธฐเธเนเธฒเธกเธซเธเนเธฒเนเธเนเนเธ เนเธเธซเธเนเธฒเธเนเธญเธเธซเธเนเธฒเน€เธฅเธข
       router.replace("/profile");
       router.refresh();
     }
@@ -116,14 +116,14 @@ export default function EditProfilePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .pe-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .pe-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .pe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .pe-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .pe-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .pe-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .pe-title { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .pe-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .pe-sub { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .pe-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 22px; }
         .pe-photo { position: relative; }
@@ -165,48 +165,48 @@ export default function EditProfilePage() {
       {loading ? (
         <div className="pe-loading">
           <div className="pe-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>เธเธณเธฅเธฑเธเนเธซเธฅเธ”...</p>
         </div>
       ) : (
         <div className="pe-page">
           <div className="pe-body">
             <div className="pe-header">
-              <button className="pe-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+              <button className="pe-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
               <div>
-                <h1 className="pe-title">แก้ไขโปรไฟล์</h1>
-                <p className="pe-sub">อัปเดตข้อมูลส่วนตัวของคุณ</p>
+                <h1 className="pe-title">เนเธเนเนเธเนเธเธฃเนเธเธฅเน</h1>
+                <p className="pe-sub">เธญเธฑเธเน€เธ”เธ•เธเนเธญเธกเธนเธฅเธชเนเธงเธเธ•เธฑเธงเธเธญเธเธเธธเธ“</p>
               </div>
             </div>
 
             <form onSubmit={handleSave}>
-              {/* รูปโปรไฟล์ */}
+              {/* เธฃเธนเธเนเธเธฃเนเธเธฅเน */}
               <div className="pe-photo-wrap">
                 <div className="pe-photo">
                   <div className="pe-photo-circle" onClick={() => fileInputRef.current?.click()}>
-                    {avatarUrl ? <img src={avatarUrl} alt="โปรไฟล์" /> : '👤'}
+                    {avatarUrl ? <img src={avatarUrl} alt="เนเธเธฃเนเธเธฅเน" /> : '๐‘ค'}
                   </div>
                   <button type="button" className="pe-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
                   <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} onClick={(e) => (e.currentTarget.value = "")} style={{ display: 'none' }} />
                 </div>
-                <p className="pe-photo-hint">แตะเพื่อเปลี่ยนรูปโปรไฟล์</p>
+                <p className="pe-photo-hint">เนเธ•เธฐเน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธเธฃเธนเธเนเธเธฃเนเธเธฅเน</p>
               </div>
 
               <div className="pe-card">
                 <div className="pe-field">
-                  <label className="pe-label">ชื่อ-นามสกุล</label>
-                  <input className="pe-input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="เช่น สมชาย ใจดี" />
+                  <label className="pe-label">เธเธทเนเธญ-เธเธฒเธกเธชเธเธธเธฅ</label>
+                  <input className="pe-input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข เนเธเธ”เธต" />
                 </div>
                 <div className="pe-field">
-                  <label className="pe-label">ชื่อผู้ใช้ (Username)</label>
-                  <input className="pe-input" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="เช่น somchai_pet" />
+                  <label className="pe-label">เธเธทเนเธญเธเธนเนเนเธเน (Username)</label>
+                  <input className="pe-input" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="เน€เธเนเธ somchai_pet" />
                 </div>
                 <div className="pe-field">
-                  <label className="pe-label">เบอร์โทรศัพท์</label>
+                  <label className="pe-label">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน</label>
                   <input type="tel" className="pe-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08X-XXX-XXXX" />
                 </div>
                 <div className="pe-field">
-                  <label className="pe-label">ที่อยู่ <span className="opt">(จังหวัด/พื้นที่)</span></label>
-                  <textarea className="pe-textarea" rows={2} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="เช่น กรุงเทพมหานคร" />
+                  <label className="pe-label">เธ—เธตเนเธญเธขเธนเน <span className="opt">(เธเธฑเธเธซเธงเธฑเธ”/เธเธทเนเธเธ—เธตเน)</span></label>
+                  <textarea className="pe-textarea" rows={2} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="เน€เธเนเธ เธเธฃเธธเธเน€เธ—เธเธกเธซเธฒเธเธเธฃ" />
                 </div>
               </div>
             </form>
@@ -214,9 +214,9 @@ export default function EditProfilePage() {
 
           <div className="pe-savebar">
             <div className="pe-savebar-inner">
-              <button type="button" className="pe-btn pe-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
+              <button type="button" className="pe-btn pe-btn-cancel" onClick={() => router.back()}>เธขเธเน€เธฅเธดเธ</button>
               <button type="button" className="pe-btn pe-btn-save" onClick={handleSave} disabled={saving}>
-                <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                <Icon.Save /> {saving ? "เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ..." : "เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ"}
               </button>
             </div>
           </div>
@@ -232,9 +232,9 @@ export default function EditProfilePage() {
             <div className="pe-modal-body">
               <input type="range" className="pe-zoom" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(Number(e.target.value))} />
               <div className="pe-modal-btns">
-                <button type="button" className="pe-btn pe-btn-cancel" style={{ flex: 1 }} onClick={() => setImageSrc(null)}>ยกเลิก</button>
+                <button type="button" className="pe-btn pe-btn-cancel" style={{ flex: 1 }} onClick={() => setImageSrc(null)}>เธขเธเน€เธฅเธดเธ</button>
                 <button type="button" className="pe-btn pe-btn-save" onClick={handleUploadCropped} disabled={isUploading}>
-                  {isUploading ? 'กำลังอัปโหลด...' : 'ยืนยัน'}
+                  {isUploading ? 'เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...' : 'เธขเธทเธเธขเธฑเธ'}
                 </button>
               </div>
             </div>

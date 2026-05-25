@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -11,21 +11,21 @@ const F = {
 };
 
 const SERVICE_CATEGORIES = [
-  { id: 'grooming', label: 'อาบน้ำตัดขน', emoji: '✂️', needAddress: true },
-  { id: 'transport', label: 'รับส่งสัตว์เลี้ยง', emoji: '🚗', needAddress: false },
-  { id: 'cat_hotel', label: 'โรงแรมสัตว์', emoji: '🏨', needAddress: true },
-  { id: 'pet_care', label: 'บริการดูแลสัตว์เลี้ยง', emoji: '🦮', needAddress: false },
-  { id: 'clinic', label: 'คลินิก / โรงพยาบาลสัตว์', emoji: '🏥', needAddress: true },
+  { id: 'grooming', label: 'เธญเธฒเธเธเนเธณเธ•เธฑเธ”เธเธ', emoji: 'โ๏ธ', needAddress: true },
+  { id: 'transport', label: 'เธฃเธฑเธเธชเนเธเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', emoji: '๐—', needAddress: false },
+  { id: 'cat_hotel', label: 'เนเธฃเธเนเธฃเธกเธชเธฑเธ•เธงเน', emoji: '๐จ', needAddress: true },
+  { id: 'pet_care', label: 'เธเธฃเธดเธเธฒเธฃเธ”เธนเนเธฅเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', emoji: '๐ฆฎ', needAddress: false },
+  { id: 'clinic', label: 'เธเธฅเธดเธเธดเธ / เนเธฃเธเธเธขเธฒเธเธฒเธฅเธชเธฑเธ•เธงเน', emoji: '๐ฅ', needAddress: true },
 ];
 
 const SPECIES = [
-  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
-  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
-  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
-  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
-  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
-  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
-  { id: 'raccoon', label: 'แร็กคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
+  { id: 'cat', label: 'เนเธกเธง', emoji: '๐ฑ' }, { id: 'dog', label: 'เธชเธธเธเธฑเธ', emoji: '๐ถ' },
+  { id: 'rabbit', label: 'เธเธฃเธฐเธ•เนเธฒเธข', emoji: '๐ฐ' }, { id: 'hamster', label: 'เนเธฎเธกเธชเน€เธ•เธญเธฃเน', emoji: '๐น' },
+  { id: 'bird', label: 'เธเธ', emoji: '๐ฆ' }, { id: 'squirrel', label: 'เธเธฃเธฐเธฃเธญเธ', emoji: '๐ฟ๏ธ' },
+  { id: 'hedgehog', label: 'เน€เธกเนเธเนเธเธฃเธฐ', emoji: '๐ฆ”' }, { id: 'fish', label: 'เธเธฅเธฒ', emoji: '๐' },
+  { id: 'turtle', label: 'เน€เธ•เนเธฒ', emoji: '๐ข' }, { id: 'frog', label: 'เธเธ', emoji: '๐ธ' },
+  { id: 'lizard', label: 'เธเธดเนเธเธเนเธฒ', emoji: '๐ฆ' }, { id: 'snake', label: 'เธเธน', emoji: '๐' },
+  { id: 'raccoon', label: 'เนเธฃเนเธเธเธนเธ', emoji: '๐ฆ' }, { id: 'other', label: 'เธชเธฑเธ•เธงเนเธญเธทเนเธเน', emoji: '๐พ' },
 ];
 
 const Icon = {
@@ -67,7 +67,7 @@ export default function RegisterServicePage() {
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('partner-photos').getPublicUrl(filePath);
       setImageUrl(publicUrl);
-    } catch (err: any) { alert('อัปโหลดรูปไม่สำเร็จ: ' + (err.message || '')); }
+    } catch (err: any) { alert('เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเนเธกเนเธชเธณเน€เธฃเนเธ: ' + (err.message || '')); }
     finally { setUploading(false); }
   };
 
@@ -77,8 +77,8 @@ export default function RegisterServicePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    if (!form.category) return alert('กรุณาเลือกประเภทบริการครับ');
-    if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับครับ');
+    if (!form.category) return alert('เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃเธเธฃเธฑเธ');
+    if (selectedSpecies.length === 0) return alert('เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธชเธฑเธ•เธงเนเธ—เธตเนเธฃเธญเธเธฃเธฑเธเธเธฃเธฑเธ');
     setIsLoading(true);
     try {
       const { error } = await supabase.from('services').insert([{
@@ -89,7 +89,7 @@ export default function RegisterServicePage() {
         supported_species: selectedSpecies.join(','),
       }]);
       if (error) throw error;
-      alert('🐾 บันทึกข้อมูลบริการเรียบร้อยแล้ว!');
+      alert('๐พ เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเธเธฃเธดเธเธฒเธฃเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง!');
       router.push('/profile');
     } catch (err: any) { alert('Error: ' + err.message); }
     finally { setIsLoading(false); }
@@ -98,14 +98,14 @@ export default function RegisterServicePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .sv-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .sv-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .sv-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .sv-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .sv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
         .sv-back:hover { color: ${F.blue}; border-color: ${F.blue}; transform: translateX(-1px); }
-        .sv-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .sv-title { font-family: inherit; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .sv-sub { font-size: 12px; font-weight: 600; color: ${F.blue}; margin-top: 2px; }
         .sv-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
         .sv-photo { position: relative; }
@@ -116,7 +116,7 @@ export default function RegisterServicePage() {
         .sv-photo-btn { position: absolute; bottom: -4px; right: -4px; width: 36px; height: 36px; border-radius: 50%; background: ${F.blue}; color: white; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .sv-photo-hint { margin-top: 10px; font-size: 11px; font-weight: 700; color: ${F.muted}; }
         .sv-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; margin-bottom: 16px; }
-        .sv-card-title { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 4px; }
+        .sv-card-title { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 4px; }
         .sv-card-note { font-size: 11px; color: ${F.muted}; margin-bottom: 16px; }
         .sv-field { margin-bottom: 16px; }
         .sv-field:last-child { margin-bottom: 0; }
@@ -143,10 +143,10 @@ export default function RegisterServicePage() {
       <div className="sv-page">
         <div className="sv-body">
           <div className="sv-header">
-            <button className="sv-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <button className="sv-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="sv-title">เปิดบริการสัตว์เลี้ยง ✂️</h1>
-              <p className="sv-sub">ขยายบริการให้เข้าถึงคนรักสัตว์มากขึ้น</p>
+              <h1 className="sv-title">เน€เธเธดเธ”เธเธฃเธดเธเธฒเธฃเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ โ๏ธ</h1>
+              <p className="sv-sub">เธเธขเธฒเธขเธเธฃเธดเธเธฒเธฃเนเธซเนเน€เธเนเธฒเธ–เธถเธเธเธเธฃเธฑเธเธชเธฑเธ•เธงเนเธกเธฒเธเธเธถเนเธ</p>
             </div>
           </div>
 
@@ -154,49 +154,49 @@ export default function RegisterServicePage() {
             <div className="sv-photo-wrap">
               <div className="sv-photo">
                 <div className={`sv-photo-box ${imageUrl ? 'has-img' : ''}`} onClick={() => fileInputRef.current?.click()}>
-                  {imageUrl ? <img src={imageUrl} alt="รูปบริการ" /> : (uploading ? '...' : <Icon.Scissors />)}
+                  {imageUrl ? <img src={imageUrl} alt="เธฃเธนเธเธเธฃเธดเธเธฒเธฃ" /> : (uploading ? '...' : <Icon.Scissors />)}
                 </div>
                 <button type="button" className="sv-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} onClick={(e) => (e.currentTarget.value = '')} style={{ display: 'none' }} />
               </div>
-              <p className="sv-photo-hint">{uploading ? 'กำลังอัปโหลด...' : imageUrl ? 'แตะเพื่อเปลี่ยนรูป' : 'อัปโหลดรูปร้าน / บริการ'}</p>
+              <p className="sv-photo-hint">{uploading ? 'เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...' : imageUrl ? 'เนเธ•เธฐเน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธเธฃเธนเธ' : 'เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเธฃเนเธฒเธ / เธเธฃเธดเธเธฒเธฃ'}</p>
             </div>
 
             <div className="sv-card">
               <div className="sv-field">
-                <label className="sv-label">ชื่อร้าน / ชื่อบริการ <span className="sv-req">*</span></label>
-                <input className="sv-input" required value={form.service_name} onChange={(e) => setForm({ ...form, service_name: e.target.value })} placeholder="ชื่อบริการของคุณ" />
+                <label className="sv-label">เธเธทเนเธญเธฃเนเธฒเธ / เธเธทเนเธญเธเธฃเธดเธเธฒเธฃ <span className="sv-req">*</span></label>
+                <input className="sv-input" required value={form.service_name} onChange={(e) => setForm({ ...form, service_name: e.target.value })} placeholder="เธเธทเนเธญเธเธฃเธดเธเธฒเธฃเธเธญเธเธเธธเธ“" />
               </div>
 
               <div className="sv-field">
-                <label className="sv-label">ประเภทบริการ <span className="sv-req">*</span></label>
+                <label className="sv-label">เธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃ <span className="sv-req">*</span></label>
                 <select className="sv-select" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="" disabled>เลือกประเภทบริการ</option>
+                  <option value="" disabled>เน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃ</option>
                   {SERVICE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
                 </select>
               </div>
 
               <div className="sv-field">
-                <label className="sv-label">เบอร์โทรศัพท์ <span className="sv-req">*</span></label>
+                <label className="sv-label">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน <span className="sv-req">*</span></label>
                 <input type="tel" className="sv-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
               </div>
 
               {showAddressField && (
                 <div className="sv-field">
-                  <label className="sv-label">ที่ตั้งหน้าร้าน / พิกัดบริการ 📍 <span className="sv-req">*</span></label>
-                  <textarea className="sv-textarea" rows={2} required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+                  <label className="sv-label">เธ—เธตเนเธ•เธฑเนเธเธซเธเนเธฒเธฃเนเธฒเธ / เธเธดเธเธฑเธ”เธเธฃเธดเธเธฒเธฃ ๐“ <span className="sv-req">*</span></label>
+                  <textarea className="sv-textarea" rows={2} required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เน€เธฅเธเธ—เธตเน, เธ–เธเธ, เนเธเธงเธ/เธ•เธณเธเธฅ, เน€เธเธ•/เธญเธณเน€เธ เธญ, เธเธฑเธเธซเธงเธฑเธ”..." />
                 </div>
               )}
 
               <div className="sv-field">
-                <label className="sv-label">รายละเอียดเพิ่มเติม</label>
-                <textarea className="sv-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="อธิบายจุดเด่นหรือรายละเอียดของบริการ..." />
+                <label className="sv-label">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก</label>
+                <textarea className="sv-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="เธญเธเธดเธเธฒเธขเธเธธเธ”เน€เธ”เนเธเธซเธฃเธทเธญเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธญเธเธเธฃเธดเธเธฒเธฃ..." />
               </div>
             </div>
 
             <div className="sv-card">
-              <div className="sv-card-title">บริการนี้รองรับสัตว์ชนิดใดบ้าง? <span className="sv-req">*</span></div>
-              <div className="sv-card-note">เลือกได้หลายชนิด</div>
+              <div className="sv-card-title">เธเธฃเธดเธเธฒเธฃเธเธตเนเธฃเธญเธเธฃเธฑเธเธชเธฑเธ•เธงเนเธเธเธดเธ”เนเธ”เธเนเธฒเธ? <span className="sv-req">*</span></div>
+              <div className="sv-card-note">เน€เธฅเธทเธญเธเนเธ”เนเธซเธฅเธฒเธขเธเธเธดเธ”</div>
               <div className="sv-species-grid">
                 {SPECIES.map((s) => (
                   <button key={s.id} type="button" className={`sv-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
@@ -211,7 +211,7 @@ export default function RegisterServicePage() {
         <div className="sv-savebar">
           <div className="sv-savebar-inner">
             <button type="button" className="sv-btn" onClick={handleSubmit} disabled={isLoading || uploading}>
-              {isLoading ? '⏳ กำลังบันทึก...' : '🐾 ยืนยันการสมัครบริการ'}
+              {isLoading ? 'โณ เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...' : '๐พ เธขเธทเธเธขเธฑเธเธเธฒเธฃเธชเธกเธฑเธเธฃเธเธฃเธดเธเธฒเธฃ'}
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
@@ -70,15 +70,15 @@ function ShopDashboardContent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .sd-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .sd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .sd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .sd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .sd-top-left { display: flex; align-items: center; gap: 14px; }
         .sd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
         .sd-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
-        .sd-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
+        .sd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .sd-sub { font-size: 12px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
         .sd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.teal}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(13,148,136,0.25); transition: all .15s; white-space: nowrap; }
         .sd-add:hover { background: #0B7E74; }
@@ -86,11 +86,11 @@ function ShopDashboardContent() {
         .sd-stat { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 18px; position: relative; overflow: hidden; }
         .sd-stat-icon { position: absolute; right: -4px; top: -4px; font-size: 38px; opacity: 0.1; }
         .sd-stat-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-        .sd-stat-value { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; }
+        .sd-stat-value { font-family: inherit; font-size: 24px; font-weight: 700; }
         .sd-stat-unit { font-size: 10px; font-weight: 600; color: ${F.muted}; margin-left: 3px; }
         .sd-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .sd-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
-        .sd-sec-title { font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700; color: ${F.ink}; }
+        .sd-sec-title { font-family: inherit; font-size: 17px; font-weight: 700; color: ${F.ink}; }
         .sd-sec-link { font-size: 12px; font-weight: 700; color: ${F.teal}; text-decoration: none; }
         .sd-table-wrap { background: white; border: 1px solid ${F.line}; border-radius: 18px; overflow: hidden; }
         .sd-empty { padding: 40px; text-align: center; color: ${F.muted}; font-size: 14px; font-weight: 600; }
@@ -102,7 +102,7 @@ function ShopDashboardContent() {
         .sd-prod-img { width: 38px; height: 38px; border-radius: 9px; overflow: hidden; background: ${F.tealSoft}; border: 1px solid ${F.line}; flex-shrink: 0; }
         .sd-prod-img img { width: 100%; height: 100%; object-fit: cover; }
         .sd-prod-name { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .sd-price { font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .sd-price { font-family: inherit; font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .sd-stock { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
         .sd-stock.low { background: #FEF2F2; color: ${F.red}; }
         .sd-stock.ok { background: #F0FDF4; color: ${F.green}; }

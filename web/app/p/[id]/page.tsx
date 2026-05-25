@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -342,9 +342,9 @@ export default function PublicPetProfilePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .whiskora-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .whiskora-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .public-banner { background: linear-gradient(135deg, #FFF0F4, #FDF2F5); border-bottom: 1px solid ${F.pinkBorder}; padding: 8px 16px; text-align: center; font-size: 12px; font-weight: 600; color: ${F.pink}; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .page-body { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
         .hero-section { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 24px; }
@@ -360,7 +360,7 @@ export default function PublicPetProfilePage() {
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
-        .pet-name { font-family: 'Prompt', sans-serif; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${isMale ? '#DBEAFE' : '#FCE7F3'}; color: ${isMale ? '#2563EB' : '#DB2777'}; flex-shrink: 0; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
@@ -379,7 +379,7 @@ export default function PublicPetProfilePage() {
         .contact-btn:hover { background: #D63F6A; box-shadow: 0 6px 20px rgba(232,70,119,0.4); transform: translateY(-1px); }
         .contact-btn:active { transform: scale(0.97); }
         .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-        .price-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; font-family: 'Prompt', sans-serif; background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+        .price-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; font-family: inherit; background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
         .farm-link-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: 24px; background: white; color: ${F.pink}; font-size: 14px; font-weight: 700; border: 1px solid ${F.pinkBorder}; cursor: pointer; text-decoration: none; transition: all .18s ease; }
         .farm-link-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; transform: translateY(-1px); }
         .farm-link-btn:active { transform: scale(0.97); }
@@ -463,7 +463,7 @@ export default function PublicPetProfilePage() {
         /* ─── Modals ─── */
         .modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); padding: 16px; }
         .contact-modal { background: white; width: 100%; max-width: 420px; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); padding: 24px; }
-        .contact-modal-title { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.ink}; text-align: center; }
+        .contact-modal-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; text-align: center; }
         .contact-modal-sub { font-size: 12px; color: ${F.muted}; text-align: center; margin-top: 2px; margin-bottom: 18px; }
         .contact-channel { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: all .15s; }
         .contact-channel:active { transform: scale(0.97); }
@@ -476,7 +476,7 @@ export default function PublicPetProfilePage() {
         .contact-close { width: 100%; padding: 12px; color: ${F.muted}; font-weight: 700; font-size: 14px; background: none; border: none; cursor: pointer; }
         .ped-modal-card { background: white; width: 95vw; max-width: 1400px; height: 90vh; max-height: 90vh; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column; }
         .ped-modal-head { padding: 18px 24px; border-bottom: 1px solid ${F.line}; }
-        .ped-modal-title { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .ped-modal-title { display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .ped-modal-stage { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 24px; background: #FAFAFA; display: flex; align-items: center; justify-content: center; min-height: 200px; }
         .ped-modal-scaler { transform-origin: center center; transition: transform .15s ease; }
         .ped-modal-scaler .pedigree-tree { background: white; }

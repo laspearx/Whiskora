@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -77,14 +77,14 @@ export default function FarmPetsPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .fpl-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .fpl-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .fpl-body { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
         .fpl-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .fpl-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .fpl-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
-        .fpl-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .fpl-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
         .fpl-title .count { color: ${F.pink}; }
         .fpl-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
         .fpl-clear { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.muted}; background: ${F.line}; padding: 6px 12px; border-radius: 999px; text-decoration: none; transition: all .15s; margin-top: 8px; }
@@ -94,7 +94,7 @@ export default function FarmPetsPage() {
         /* empty */
         .fpl-empty { background: #FAFAFA; border: 2px dashed ${F.lineMid}; border-radius: 24px; padding: 56px 24px; text-align: center; }
         .fpl-empty-emoji { font-size: 56px; opacity: 0.3; margin-bottom: 14px; }
-        .fpl-empty-title { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: ${F.inkSoft}; }
+        .fpl-empty-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.inkSoft}; }
         .fpl-empty-text { font-size: 14px; color: ${F.muted}; margin: 8px 0 22px; }
         .fpl-empty-btn { display: inline-block; background: ${F.pink}; color: white; padding: 13px 28px; border-radius: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .15s; }
         .fpl-empty-btn:hover { background: #D63F6A; }
@@ -106,7 +106,7 @@ export default function FarmPetsPage() {
         .fpl-photo img { width: 100%; height: 100%; object-fit: cover; }
         .fpl-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .fpl-name-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-        .fpl-name { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .fpl-name { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         .fpl-age { font-size: 11px; font-weight: 500; color: ${F.muted}; }
         .fpl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 7px 0; }
         .fpl-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid; }
@@ -115,7 +115,7 @@ export default function FarmPetsPage() {
         .fpl-breed-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; gap: 8px; }
         .fpl-breed-th { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fpl-breed-en { font-size: 11px; font-weight: 500; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fpl-price { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.pink}; white-space: nowrap; flex-shrink: 0; }
+        .fpl-price { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.pink}; white-space: nowrap; flex-shrink: 0; }
         .fpl-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .fpl-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: fplspin 1s linear infinite; }
         @keyframes fplspin { to { transform: rotate(360deg); } }

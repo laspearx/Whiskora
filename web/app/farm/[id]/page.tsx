@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -135,9 +135,9 @@ export default function PublicFarmProfile() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        .fp-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
         /* ── Cover ── */
         .fp-cover { position: relative; height: 280px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; }
@@ -154,7 +154,7 @@ export default function PublicFarmProfile() {
         .fp-avatar { width: 96px; height: 96px; border-radius: 50%; border: 4px solid white; margin-top: -56px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 40px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
         .fp-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .fp-id-main { flex: 1; min-width: 200px; }
-        .fp-name { font-family: 'Prompt', sans-serif; font-size: 26px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .fp-name { font-family: inherit; font-size: 26px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .fp-tagline { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; margin-top: 4px; }
         .fp-meta-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; font-size: 12px; color: ${F.muted}; font-weight: 600; }
         .fp-meta-item { display: inline-flex; align-items: center; gap: 5px; }
@@ -167,20 +167,20 @@ export default function PublicFarmProfile() {
         .fp-bio-toggle { color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; background: none; border: none; padding: 4px 0 0; display: inline-flex; align-items: center; gap: 3px; }
         .fp-quality { display: flex; align-items: flex-start; gap: 10px; border-left: 1px solid ${F.pinkBorder}; padding-left: 20px; min-width: 180px; }
         .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .fp-quality-title { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 700; color: ${F.ink}; }
+        .fp-quality-title { font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.ink}; }
         .fp-quality-sub { font-size: 11px; color: ${F.inkSoft}; line-height: 1.5; margin-top: 2px; }
         /* ── Stats ── */
         .fp-stats-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; margin-top: 16px; }
         .fp-stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         .fp-stat { text-align: center; }
         .fp-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: ${F.muted}; margin-bottom: 6px; }
-        .fp-stat-num { font-family: 'Prompt', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; }
+        .fp-stat-num { font-family: inherit; font-size: 28px; font-weight: 700; line-height: 1; }
         .fp-stat-unit { font-size: 11px; color: ${F.muted}; font-weight: 600; margin-top: 3px; }
         /* ── Section ── */
         .fp-section { margin-top: 20px; padding: 0 24px; }
         .fp-section-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; }
         .fp-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .fp-section-title { display: flex; align-items: center; gap: 8px; font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .fp-section-title { display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
         /* ── Farm info ── */
         .fp-info-grid { display: flex; flex-direction: column; gap: 0; }
         .fp-info-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px dotted ${F.lineMid}; }
@@ -197,13 +197,13 @@ export default function PublicFarmProfile() {
         .fp-pet-img img { width: 100%; height: 100%; object-fit: cover; }
         .fp-pet-ready-tag { position: absolute; top: 8px; left: 8px; background: ${F.pink}; color: white; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
         .fp-pet-info { padding: 12px 14px; }
-        .fp-pet-name { font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 5px; }
+        .fp-pet-name { font-family: inherit; font-size: 14px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 5px; }
         .fp-pet-name .g-m { color: #2563EB; }
         .fp-pet-name .g-f { color: #DB2777; }
         .fp-pet-breed { font-size: 11px; color: ${F.muted}; font-weight: 600; margin-top: 2px; }
         .fp-pet-age { font-size: 10px; color: ${F.muted}; margin-top: 1px; }
         .fp-pet-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-        .fp-pet-price { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 800; color: #C2410C; }
+        .fp-pet-price { font-family: inherit; font-size: 13px; font-weight: 800; color: #C2410C; }
         .fp-pet-pill { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: ${F.pinkSoft}; color: ${F.pink}; }
         .fp-empty { text-align: center; padding: 32px; color: ${F.muted}; font-size: 13px; font-weight: 600; }
         /* ── Sticky bottom CTA ── */
