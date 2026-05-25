@@ -170,6 +170,7 @@ export interface Shop {
   shop_name: string;
   name?: string | null;
   bio?: string | null;
+  address?: string | null;
   location?: string | null;
   profile_image_url?: string | null;
   is_verified?: boolean;

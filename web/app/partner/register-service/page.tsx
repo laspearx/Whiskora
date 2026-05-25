@@ -177,7 +177,7 @@ export default function RegisterServicePage() {
               </div>
 
               <div className="sv-field">
-                <label className="sv-label">เบอร์โทรศัพท์ติดต่อ <span className="sv-req">*</span></label>
+                <label className="sv-label">เบอร์โทรศัพท์ <span className="sv-req">*</span></label>
                 <input type="tel" className="sv-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
               </div>
 
@@ -189,7 +189,7 @@ export default function RegisterServicePage() {
               )}
 
               <div className="sv-field">
-                <label className="sv-label">รายละเอียดบริการเพิ่มเติม</label>
+                <label className="sv-label">รายละเอียดเพิ่มเติม</label>
                 <textarea className="sv-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="อธิบายจุดเด่นหรือรายละเอียดของบริการ..." />
               </div>
             </div>

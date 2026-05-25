@@ -34,7 +34,7 @@ export default function RegisterShopPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imageUrl, setImageUrl] = useState('');
-  const [form, setForm] = useState({ shop_name: '', phone: '', bio: '' });
+  const [form, setForm] = useState({ shop_name: '', phone: '', bio: '', address: '' });
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
 
   useEffect(() => {
@@ -72,6 +72,7 @@ export default function RegisterShopPage() {
     try {
       const { error } = await supabase.from('shops').insert([{
         user_id: userId, shop_name: form.shop_name, phone: form.phone, bio: form.bio,
+        address: form.address || null,
         image_url: imageUrl || null, supported_species: selectedSpecies,
       }]).select().single();
       if (error) throw error;
@@ -153,12 +154,16 @@ export default function RegisterShopPage() {
                 <input className="ps-input" required value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="ชื่อร้านค้าของคุณ" />
               </div>
               <div className="ps-field">
-                <label className="ps-label">เบอร์โทรศัพท์ติดต่อ <span className="ps-req">*</span></label>
+                <label className="ps-label">เบอร์โทรศัพท์ <span className="ps-req">*</span></label>
                 <input type="tel" className="ps-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
               </div>
               <div className="ps-field">
-                <label className="ps-label">เกี่ยวกับร้าน / ที่อยู่</label>
-                <textarea className="ps-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="ระบุรายละเอียดร้านค้าหรือที่อยู่เบื้องต้น..." />
+                <label className="ps-label">ที่อยู่ร้าน 📍</label>
+                <textarea className="ps-textarea" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              </div>
+              <div className="ps-field">
+                <label className="ps-label">รายละเอียดเพิ่มเติม</label>
+                <textarea className="ps-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="แนะนำร้านค้าหรือสินค้าเด่นของร้าน..." />
               </div>
             </div>
 

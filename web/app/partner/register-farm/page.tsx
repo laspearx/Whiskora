@@ -193,12 +193,12 @@ export default function RegisterFarmPage() {
               </div>
 
               <div className="pf-field">
-                <label className="pf-label">เบอร์โทรศัพท์ติดต่อฟาร์ม <span className="pf-req">*</span></label>
+                <label className="pf-label">เบอร์โทรศัพท์ <span className="pf-req">*</span></label>
                 <input type="tel" className="pf-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
               </div>
 
               <div className="pf-field">
-                <label className="pf-label">แนะนำฟาร์มของคุณสั้นๆ</label>
+                <label className="pf-label">รายละเอียดเพิ่มเติม</label>
                 <textarea className="pf-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="บอกเล่าประสบการณ์ ความตั้งใจ หรือสายพันธุ์ที่เพาะ..." />
               </div>
             </div>
