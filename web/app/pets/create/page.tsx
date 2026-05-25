@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { OTHER_SPECIES, speciesTh } from "@/lib/species";
+import { PET_GENDER } from "@/lib/constants";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -79,7 +80,7 @@ function CreatePetContent() {
   const [leg, setLeg] = useState("");
   const [coat, setCoat] = useState("");
   const [eyeColor, setEyeColor] = useState("");
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useState(PET_GENDER.MALE);
   const [birthdate, setBirthdate] = useState("");
   const [weight, setWeight] = useState("");
   const [allergies, setAllergies] = useState("");
@@ -334,8 +335,8 @@ function CreatePetContent() {
                 <div className="cp-field" style={{ marginBottom: 0 }}>
                   <label className="cp-label">เพศ</label>
                   <div className="cp-gender">
-                    <button type="button" className={`cp-gender-btn male ${gender === 'male' ? 'active' : ''}`} onClick={() => setGender('male')}>♂ ตัวผู้</button>
-                    <button type="button" className={`cp-gender-btn female ${gender === 'female' ? 'active' : ''}`} onClick={() => setGender('female')}>♀ ตัวเมีย</button>
+                    <button type="button" className={`cp-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)}>♂ ตัวผู้</button>
+                    <button type="button" className={`cp-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)}>♀ ตัวเมีย</button>
                   </div>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>

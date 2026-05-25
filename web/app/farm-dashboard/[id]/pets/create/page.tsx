@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
+import { PET_GENDER, PET_STATUS } from "@/lib/constants";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -72,7 +73,7 @@ export default function CreateFarmPetPage() {
   const [croppedImage, setCroppedImage] = useState<{ blob: Blob; url: string } | null>(null);
   const [showCropper, setShowCropper] = useState(false);
 
-  const [formData, setFormData] = useState({ name: "", breed: "", customBreed: "", gender: "male", birthDate: "", status: "", price: "" });
+  const [formData, setFormData] = useState({ name: "", breed: "", customBreed: "", gender: PET_GENDER.MALE, birthDate: "", status: PET_STATUS.UNSPECIFIED, price: "" });
 
   useEffect(() => {
     const fetchFarmInfo = async () => {
@@ -251,8 +252,8 @@ export default function CreateFarmPetPage() {
                   <div>
                     <label className="fpc-label">เพศ</label>
                     <select className="fpc-select" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
-                      <option value="male">♂ ตัวผู้</option>
-                      <option value="female">♀ ตัวเมีย</option>
+                      <option value={PET_GENDER.MALE}>♂ ตัวผู้</option>
+                      <option value={PET_GENDER.FEMALE}>♀ ตัวเมีย</option>
                     </select>
                   </div>
                   <div>
@@ -265,12 +266,12 @@ export default function CreateFarmPetPage() {
                   <div>
                     <label className="fpc-label">สถานะ</label>
                     <select className="fpc-select" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
-                      <option value="">-- ไม่ระบุ --</option>
-                      <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อพันธุ์ / แม่พันธุ์</option>
-                      <option value="เด็ก">เด็ก</option>
-                      <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
-                      <option value="ติดจอง">ติดจอง</option>
-                      <option value="ทำหมัน / ปลดระวาง">ทำหมัน / ปลดระวาง</option>
+                      <option value={PET_STATUS.UNSPECIFIED}>-- ไม่ระบุ --</option>
+                      <option value={PET_STATUS.KID}>เด็ก</option>
+                      <option value={PET_STATUS.BREEDER}>พ่อพันธุ์ / แม่พันธุ์</option>
+                      <option value={PET_STATUS.AVAILABLE}>พร้อมย้ายบ้าน</option>
+                      <option value={PET_STATUS.RESERVED}>ติดจอง</option>
+                      <option value={PET_STATUS.RETIRED}>ทำหมัน / ปลดระวาง</option>
                     </select>
                   </div>
                   <div>
