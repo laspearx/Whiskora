@@ -251,7 +251,7 @@ export default function CreateFarmPetPage() {
                 <div className="fpc-field fpc-grid-gender">
                   <div>
                     <label className="fpc-label">เพศ</label>
-                    <select className="fpc-select" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
+                    <select className="fpc-select" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as typeof PET_GENDER[keyof typeof PET_GENDER] })}>
                       <option value={PET_GENDER.MALE}>♂ ตัวผู้</option>
                       <option value={PET_GENDER.FEMALE}>♀ ตัวเมีย</option>
                     </select>
