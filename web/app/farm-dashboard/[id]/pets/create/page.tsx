@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
-import { PET_GENDER, PET_STATUS } from "@/lib/constants";
+import { PET_GENDER, PET_STATUS, type PetGender, type PetStatus } from "@/lib/constants";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -73,7 +73,7 @@ export default function CreateFarmPetPage() {
   const [croppedImage, setCroppedImage] = useState<{ blob: Blob; url: string } | null>(null);
   const [showCropper, setShowCropper] = useState(false);
 
-  const [formData, setFormData] = useState({ name: "", breed: "", customBreed: "", gender: PET_GENDER.MALE, birthDate: "", status: PET_STATUS.UNSPECIFIED, price: "" });
+  const [formData, setFormData] = useState<{ name: string; breed: string; customBreed: string; gender: PetGender; birthDate: string; status: PetStatus; price: string }>({ name: "", breed: "", customBreed: "", gender: PET_GENDER.MALE, birthDate: "", status: PET_STATUS.UNSPECIFIED, price: "" });
 
   useEffect(() => {
     const fetchFarmInfo = async () => {
@@ -251,7 +251,7 @@ export default function CreateFarmPetPage() {
                 <div className="fpc-field fpc-grid-gender">
                   <div>
                     <label className="fpc-label">เพศ</label>
-                    <select className="fpc-select" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as typeof PET_GENDER[keyof typeof PET_GENDER] })}>
+                    <select className="fpc-select" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as PetGender })}>
                       <option value={PET_GENDER.MALE}>♂ ตัวผู้</option>
                       <option value={PET_GENDER.FEMALE}>♀ ตัวเมีย</option>
                     </select>
@@ -265,7 +265,7 @@ export default function CreateFarmPetPage() {
                 <div className="fpc-field fpc-grid2" style={{ marginBottom: 0 }}>
                   <div>
                     <label className="fpc-label">สถานะ</label>
-                    <select className="fpc-select" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+                    <select className="fpc-select" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as PetStatus })}>
                       <option value={PET_STATUS.UNSPECIFIED}>-- ไม่ระบุ --</option>
                       <option value={PET_STATUS.KID}>เด็ก</option>
                       <option value={PET_STATUS.BREEDER}>พ่อพันธุ์ / แม่พันธุ์</option>
