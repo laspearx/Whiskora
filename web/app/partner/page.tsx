@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -55,15 +55,14 @@ export default function PartnerHubPage() {
   }, [router]);
 
   const categories = [
-    { title: 'เธเธฒเธฃเนเธกเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', desc: 'เธเธฑเธ”เธเธฒเธฃเธฃเธฐเธเธเน€เธเธฒเธฐเธเธฑเธเธเธธเน เธเธฃเธฐเธงเธฑเธ•เธดเธชเธฒเธขเน€เธฅเธทเธญเธ” เนเธฅเธฐเธงเธฑเธเธเธตเธเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', icon: <Icon.Farm />, theme: 'pink', items: myFarms, registerUrl: '/partner/register-farm', dash: '/farm-dashboard', nameKey: 'farm_name' },
-    { title: 'เธฃเนเธฒเธเธเนเธฒเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', desc: 'เน€เธเธดเธ”เธฃเนเธฒเธเธเธฒเธขเธญเธฒเธซเธฒเธฃ เธเธญเธเน€เธฅเนเธ เนเธฅเธฐเธญเธธเธเธเธฃเธ“เนเธชเธณเธซเธฃเธฑเธเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', icon: <Icon.Shop />, theme: 'teal', items: myShops, registerUrl: '/partner/register-shop', dash: '/shop-dashboard', nameKey: 'shop_name' },
-    { title: 'เธเธฃเธดเธเธฒเธฃเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ', desc: 'เธฃเธฐเธเธเธฃเธฑเธเธเธญเธเธเธดเธงเธญเธฒเธเธเนเธณ เธ•เธฑเธ”เธเธ เธเธฅเธดเธเธดเธ เธซเธฃเธทเธญเนเธฃเธเนเธฃเธกเธฃเธฑเธเธเธฒเธเน€เธฅเธตเนเธขเธ', icon: <Icon.Service />, theme: 'blue', items: myServices, registerUrl: '/partner/register-service', dash: '/service-dashboard', nameKey: 'service_name' },
+    { title: 'ฟาร์มสัตว์เลี้ยง', desc: 'จัดการระบบเพาะพันธุ์ ประวัติสายเลือด และวัคซีนสัตว์เลี้ยง', icon: <Icon.Farm />, theme: 'pink', items: myFarms, registerUrl: '/partner/register-farm', dash: '/farm-dashboard', nameKey: 'farm_name' },
+    { title: 'ร้านค้าสัตว์เลี้ยง', desc: 'เปิดร้านขายอาหาร ของเล่น และอุปกรณ์สำหรับสัตว์เลี้ยง', icon: <Icon.Shop />, theme: 'teal', items: myShops, registerUrl: '/partner/register-shop', dash: '/shop-dashboard', nameKey: 'shop_name' },
+    { title: 'บริการสัตว์เลี้ยง', desc: 'ระบบรับจองคิวอาบน้ำ ตัดขน คลินิก หรือโรงแรมรับฝากเลี้ยง', icon: <Icon.Service />, theme: 'blue', items: myServices, registerUrl: '/partner/register-service', dash: '/service-dashboard', nameKey: 'service_name' },
   ];
 
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .ph-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .ph-body { max-width: 1000px; margin: 0 auto; padding: 40px 20px 80px; }
@@ -95,14 +94,14 @@ export default function PartnerHubPage() {
       {loading ? (
         <div className="ph-loading">
           <div className="ph-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>เธเธณเธฅเธฑเธเนเธซเธฅเธ”...</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
         </div>
       ) : (
         <div className="ph-page">
           <div className="ph-body">
             <div className="ph-hero">
-              <h1>เธจเธนเธเธขเนเธฃเธงเธก<span className="accent">เธเธฒเธฃเนเธ—เน€เธเธญเธฃเน</span></h1>
-              <p>เธจเธนเธเธขเนเธฃเธงเธกเธเธฒเธฃเธเธฑเธ”เธเธฒเธฃเธเธธเธฃเธเธดเธเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธเธเธญเธเธเธธเธ“ เธเธขเธฒเธขเธเธฒเธฃเน€เธ•เธดเธเนเธ•เนเธฅเธฐเน€เธเนเธฒเธ–เธถเธเธเธฅเธธเนเธกเธฅเธนเธเธเนเธฒเธเธเธฃเธฑเธเธชเธฑเธ•เธงเนเนเธ”เนเธเนเธฒเธขเธเธงเนเธฒเธ—เธตเนเน€เธเธข เธเธฃเธเธเธเนเธเธ—เธตเนเน€เธ”เธตเธขเธง</p>
+              <h1>ศูนย์รวม<span className="accent">พาร์ทเนอร์</span></h1>
+              <p>ศูนย์รวมการจัดการธุรกิจสัตว์เลี้ยงของคุณ ขยายการเติบโตและเข้าถึงกลุ่มลูกค้าคนรักสัตว์ได้ง่ายกว่าที่เคย ครบจบในที่เดียว</p>
             </div>
 
             <div className="ph-grid">
@@ -116,10 +115,10 @@ export default function PartnerHubPage() {
 
                     {cat.items.length > 0 ? (
                       <div>
-                        <div className="ph-mine-label"><span className="ph-mine-dot" style={{ background: t.accent }} /> เธเธดเธเธเธฒเธฃเธเธญเธเธเธธเธ“</div>
+                        <div className="ph-mine-label"><span className="ph-mine-dot" style={{ background: t.accent }} /> กิจการของคุณ</div>
                         <div className="ph-items">
                           {cat.items.map((item: any) => (
-                            <Link key={item.id} href={`${cat.dash}/${item.id}?from=partner`} className="ph-item" style={{ ['--hb' as any]: t.border }}
+                            <Link key={item.id} href={`${cat.dash}/${item.id}?from=partner`} className="ph-item"
                               onMouseEnter={(e) => (e.currentTarget.style.borderColor = t.border)}
                               onMouseLeave={(e) => (e.currentTarget.style.borderColor = F.line)}>
                               <span className="ph-item-name">{item[cat.nameKey] || item.name}</span>
@@ -127,13 +126,13 @@ export default function PartnerHubPage() {
                             </Link>
                           ))}
                         </div>
-                        <Link href={cat.registerUrl} className="ph-add-link" style={{ color: t.accent }}><Icon.Plus /> เน€เธเธดเธ”เน€เธเธดเนเธกเธญเธตเธเนเธซเนเธ</Link>
+                        <Link href={cat.registerUrl} className="ph-add-link" style={{ color: t.accent }}><Icon.Plus /> เปิดเพิ่มอีกแห่ง</Link>
                       </div>
                     ) : (
                       <Link href={cat.registerUrl} className="ph-register-btn" style={{ background: t.accent }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = t.hover)}
                         onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}>
-                        เธชเธกเธฑเธเธฃเน€เธเธดเธ”{cat.title}
+                        สมัครเปิด{cat.title}
                       </Link>
                     )}
                   </div>

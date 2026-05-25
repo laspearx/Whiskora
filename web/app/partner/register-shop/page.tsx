@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -11,13 +11,13 @@ const F = {
 };
 
 const SPECIES = [
-  { id: 'cat', label: 'เนเธกเธง', emoji: '๐ฑ' }, { id: 'dog', label: 'เธซเธกเธฒ', emoji: '๐ถ' },
-  { id: 'rabbit', label: 'เธเธฃเธฐเธ•เนเธฒเธข', emoji: '๐ฐ' }, { id: 'hamster', label: 'เนเธฎเธกเธชเน€เธ•เธญเธฃเน', emoji: '๐น' },
-  { id: 'bird', label: 'เธเธ', emoji: '๐ฆ' }, { id: 'squirrel', label: 'เธเธฃเธฐเธฃเธญเธ', emoji: '๐ฟ๏ธ' },
-  { id: 'hedgehog', label: 'เน€เธกเนเธเนเธเธฃเธฐ', emoji: '๐ฆ”' }, { id: 'fish', label: 'เธเธฅเธฒ', emoji: '๐' },
-  { id: 'turtle', label: 'เน€เธ•เนเธฒ', emoji: '๐ข' }, { id: 'frog', label: 'เธเธ', emoji: '๐ธ' },
-  { id: 'lizard', label: 'เธเธดเนเธเธเนเธฒ', emoji: '๐ฆ' }, { id: 'snake', label: 'เธเธน', emoji: '๐' },
-  { id: 'raccoon', label: 'เนเธฃเนเธเธเธนเธ', emoji: '๐ฆ' }, { id: 'other', label: 'เธชเธฑเธ•เธงเนเธญเธทเนเธเน', emoji: '๐พ' },
+  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
+  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
+  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
+  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
+  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
+  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
+  { id: 'raccoon', label: 'แรคคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
 ];
 
 const Icon = {
@@ -57,7 +57,7 @@ export default function RegisterShopPage() {
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('partner-photos').getPublicUrl(filePath);
       setImageUrl(publicUrl);
-    } catch (err: any) { alert('เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเนเธกเนเธชเธณเน€เธฃเนเธ: ' + (err.message || '')); }
+    } catch (err: any) { alert('อัปโหลดรูปไม่สำเร็จ: ' + (err.message || '')); }
     finally { setUploading(false); }
   };
 
@@ -67,7 +67,7 @@ export default function RegisterShopPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    if (selectedSpecies.length === 0) return alert('เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธชเธฑเธ•เธงเนเธ—เธตเนเธฃเนเธฒเธเธฃเธญเธเธฃเธฑเธเธญเธขเนเธฒเธเธเนเธญเธข 1 เธเธฃเธฐเน€เธ เธ—เธเธฃเธฑเธ');
+    if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่ร้านรองรับอย่างน้อย 1 ประเภทก่อน');
     setIsLoading(true);
     try {
       const { error } = await supabase.from('shops').insert([{
@@ -76,7 +76,7 @@ export default function RegisterShopPage() {
         image_url: imageUrl || null, supported_species: selectedSpecies,
       }]).select().single();
       if (error) throw error;
-      alert('๐๏ธ เน€เธเธดเธ”เธฃเนเธฒเธ Pet Shop เธชเธณเน€เธฃเนเธ! เนเธเธเธฑเธ”เธเธฒเธฃเธชเธ•เนเธญเธเธชเธดเธเธเนเธฒเธเธฑเธเธเธฃเธฑเธ');
+      alert('🛍️ เปิดร้าน Pet Shop สำเร็จ!');
       router.push('/profile');
     } catch (err: any) { alert('Error: ' + err.message); }
     finally { setIsLoading(false); }
@@ -85,7 +85,6 @@ export default function RegisterShopPage() {
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .ps-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .ps-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
@@ -129,10 +128,10 @@ export default function RegisterShopPage() {
       <div className="ps-page">
         <div className="ps-body">
           <div className="ps-header">
-            <button className="ps-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
+            <button className="ps-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="ps-title">เน€เธเธดเธ”เธฃเนเธฒเธ Pet Shop ๐๏ธ</h1>
-              <p className="ps-sub">เน€เธเธฃเธฒเธฐเน€เธซเธฅเนเธฒเธเธเน€เธฅเธตเนเธขเธเธชเธฑเธ•เธงเน เธ•เนเธญเธเธเธฒเธฃเธเธธเธ“</p>
+              <h1 className="ps-title">เปิดร้าน Pet Shop 🛍️</h1>
+              <p className="ps-sub">เพราะเหล่าน้องเลี้ยงสัตว์ ต้องการคุณ</p>
             </div>
           </div>
 
@@ -140,36 +139,36 @@ export default function RegisterShopPage() {
             <div className="ps-photo-wrap">
               <div className="ps-photo">
                 <div className={`ps-photo-box ${imageUrl ? 'has-img' : ''}`} onClick={() => fileInputRef.current?.click()}>
-                  {imageUrl ? <img src={imageUrl} alt="เธฃเธนเธเธฃเนเธฒเธ" /> : (uploading ? '...' : <Icon.Bag />)}
+                  {imageUrl ? <img src={imageUrl} alt="รูปร้าน" /> : (uploading ? '...' : <Icon.Bag />)}
                 </div>
                 <button type="button" className="ps-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} onClick={(e) => (e.currentTarget.value = '')} style={{ display: 'none' }} />
               </div>
-              <p className="ps-photo-hint">{uploading ? 'เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...' : imageUrl ? 'เนเธ•เธฐเน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธเธฃเธนเธ' : 'เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเธฃเนเธฒเธ / เนเธฅเนเธเน'}</p>
+              <p className="ps-photo-hint">{uploading ? 'กำลังอัปโหลด...' : imageUrl ? 'แตะเพื่อเปลี่ยนรูป' : 'อัปโหลดรูปร้าน / โลโก้'}</p>
             </div>
 
             <div className="ps-card">
               <div className="ps-field">
-                <label className="ps-label">เธเธทเนเธญเธฃเนเธฒเธ Pet Shop <span className="ps-req">*</span></label>
-                <input className="ps-input" required value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="เธเธทเนเธญเธฃเนเธฒเธเธเนเธฒเธเธญเธเธเธธเธ“" />
+                <label className="ps-label">ชื่อร้าน Pet Shop <span className="ps-req">*</span></label>
+                <input className="ps-input" required value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="ชื่อร้านค้าของคุณ" />
               </div>
               <div className="ps-field">
-                <label className="ps-label">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน <span className="ps-req">*</span></label>
+                <label className="ps-label">เบอร์โทรศัพท์ <span className="ps-req">*</span></label>
                 <input type="tel" className="ps-input" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
               </div>
               <div className="ps-field">
-                <label className="ps-label">เธ—เธตเนเธญเธขเธนเนเธฃเนเธฒเธ ๐“</label>
-                <textarea className="ps-textarea" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เน€เธฅเธเธ—เธตเน, เธ–เธเธ, เนเธเธงเธ/เธ•เธณเธเธฅ, เน€เธเธ•/เธญเธณเน€เธ เธญ, เธเธฑเธเธซเธงเธฑเธ”..." />
+                <label className="ps-label">ที่อยู่ร้าน 📍</label>
+                <textarea className="ps-textarea" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
               </div>
               <div className="ps-field">
-                <label className="ps-label">เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เน€เธเธดเนเธกเน€เธ•เธดเธก</label>
-                <textarea className="ps-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="เนเธเธฐเธเธณเธฃเนเธฒเธเธเนเธฒเธซเธฃเธทเธญเธชเธดเธเธเนเธฒเน€เธ”เนเธเธเธญเธเธฃเนเธฒเธ..." />
+                <label className="ps-label">รายละเอียดเพิ่มเติม</label>
+                <textarea className="ps-textarea" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="แนะนำร้านค้าหรือสินค้าเด่นของร้าน..." />
               </div>
             </div>
 
             <div className="ps-card">
-              <div className="ps-card-title">เธฃเนเธฒเธเธเธญเธเธเธธเธ“เธกเธตเธเธญเธเธชเธณเธซเธฃเธฑเธเธชเธฑเธ•เธงเนเธเธเธดเธ”เนเธ”เธเนเธฒเธ? <span className="ps-req">*</span></div>
-              <div className="ps-card-note">เน€เธฅเธทเธญเธเนเธ”เนเธซเธฅเธฒเธขเธเธเธดเธ”</div>
+              <div className="ps-card-title">ร้านของคุณมีของสำหรับสัตว์ชนิดใดบ้าง? <span className="ps-req">*</span></div>
+              <div className="ps-card-note">เลือกได้หลายชนิด</div>
               <div className="ps-species-grid">
                 {SPECIES.map((s) => (
                   <button key={s.id} type="button" className={`ps-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
@@ -184,7 +183,7 @@ export default function RegisterShopPage() {
         <div className="ps-savebar">
           <div className="ps-savebar-inner">
             <button type="button" className="ps-btn" onClick={handleSubmit} disabled={isLoading || uploading}>
-              {isLoading ? 'โณ เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...' : '๐๏ธ เธขเธทเธเธขเธฑเธเธเธฒเธฃเน€เธเธดเธ”เธฃเนเธฒเธ'}
+              {isLoading ? '⏳ กำลังบันทึก...' : '🛍️ ยืนยันการเปิดร้าน'}
             </button>
           </div>
         </div>
