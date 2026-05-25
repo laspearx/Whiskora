@@ -27,6 +27,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --font-sans: 'Prompt', sans-serif;
+  --font-mono: ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }

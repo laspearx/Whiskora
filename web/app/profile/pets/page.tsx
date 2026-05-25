@@ -91,7 +91,7 @@ export default function MyPetsSummaryPage() {
         }
       `}</style>
 
-      <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-12 pb-24 animate-in fade-in duration-500 space-y-6" style={{ color: F.ink, fontFamily: 'var(--font-ui)' }}>
+      <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-12 pb-24 animate-in fade-in duration-500 space-y-6" style={{ color: F.ink }}>
         
         {/* 📋 Page Header */}
         <div className="px-1 mb-2 flex items-center gap-3">
