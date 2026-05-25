@@ -6,7 +6,7 @@ import { speciesToId } from "@/lib/species";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
-import { PET_GENDER, PET_STATUS } from "@/lib/constants";
+import { PET_GENDER, PET_STATUS, type PetGender } from "@/lib/constants";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -72,7 +72,7 @@ export default function EditPetPage() {
   const [customBreed, setCustomBreed] = useState("");
   const [color, setColor] = useState("");
   const [customColor, setCustomColor] = useState("");
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useState<PetGender>(PET_GENDER.MALE);
   const [birthdate, setBirthdate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [allergies, setAllergies] = useState("");

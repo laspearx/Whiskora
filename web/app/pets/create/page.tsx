@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { OTHER_SPECIES, speciesTh } from "@/lib/species";
-import { PET_GENDER } from "@/lib/constants";
+import { PET_GENDER, type PetGender } from "@/lib/constants";
 
 // โ”€โ”€โ”€ Premium CI Tokens โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 const F = {
@@ -80,7 +80,7 @@ function CreatePetContent() {
   const [leg, setLeg] = useState("");
   const [coat, setCoat] = useState("");
   const [eyeColor, setEyeColor] = useState("");
-  const [gender, setGender] = useState(PET_GENDER.MALE);
+  const [gender, setGender] = useState<PetGender>(PET_GENDER.MALE);
   const [birthdate, setBirthdate] = useState("");
   const [weight, setWeight] = useState("");
   const [allergies, setAllergies] = useState("");
