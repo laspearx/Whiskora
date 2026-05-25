@@ -3,125 +3,74 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
+
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
+  teal: '#0D9488', tealSoft: '#F0FDFA', tealBorder: '#99F6E4',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Save: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  Syringe: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>,
+};
 
 export default function CreateVaccinePage() {
   const router = useRouter();
   const params = useParams();
   const petId = params.id as string;
 
-  const [petName, setPetName] = useState<string>("");
-  
-  // 🌟 ปรับให้ค่าเริ่มต้นเป็นค่าว่าง เพื่อบังคับให้แสดงคำว่า "เลือกประเภท..."
+  const [petName, setPetName] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [customVaccineName, setCustomVaccineName] = useState("");
-  
-  // ตั้งค่าเริ่มต้นวันที่ฉีดให้เป็น "วันนี้" อัตโนมัติ
-  const [dateGiven, setDateGiven] = useState(() => new Date().toLocaleDateString('en-CA')); 
+  const [dateGiven, setDateGiven] = useState(() => new Date().toLocaleDateString('en-CA'));
   const [nextDue, setNextDue] = useState("");
-  
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchPetData = async () => {
+    const fetchPet = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push("/login");
-          return;
-        }
-
-        // ดึงชื่อสัตว์เลี้ยงมาแสดง เพื่อให้รู้ว่ากำลังเพิ่มวัคซีนให้ใคร
-        const { data, error } = await supabase
-          .from("pets")
-          .select("name")
-          .eq("id", petId)
-          .eq("user_id", session.user.id)
-          .single();
-
-        if (error || !data) {
-          alert("ไม่พบข้อมูลสัตว์เลี้ยง หรือคุณไม่มีสิทธิ์เข้าถึง");
-          router.push("/profile");
-          return;
-        }
-
+        if (!session) { router.push(`/login?redirect=${encodeURIComponent(`/pets/${petId}/vaccines/create`)}`); return; }
+        const { data, error } = await supabase.from("pets").select("name").eq("id", petId).eq("user_id", session.user.id).single();
+        if (error || !data) { router.push("/profile"); return; }
         setPetName(data.name);
-      } catch (error) {
-        console.error("Error fetching pet:", error);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch { router.push("/profile"); }
+      finally { setIsLoading(false); }
     };
-
-    if (petId) fetchPetData();
+    if (petId) fetchPet();
   }, [petId, router]);
 
-  // 🌟 ย้ายฟังก์ชัน Google Calendar ขึ้นมาไว้ตรงนี้ เพื่อให้ handleSubmit เรียกใช้ได้
-  const addVaccineToGoogleCalendar = async (
-    petName: string, 
-    vaccineName: string, 
-    nextDueDate: string // รับค่าเป็น YYYY-MM-DD เช่น '2026-04-15'
-  ) => {
+  // เพิ่มนัดวัคซีนลง Google Calendar (เฉพาะผู้ล็อกอินด้วย Google)
+  const addVaccineToGoogleCalendar = async (petName: string, vaccineName: string, nextDueDate: string) => {
     try {
-      // 1. ดึง session ปัจจุบันออกมา เพื่อหา provider_token (กุญแจ Google)
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // 🔑 provider_token จะมีค่าก็ต่อเมื่อลูกค้าล็อกอินด้วย Google เท่านั้น
-      const providerToken = session?.provider_token; 
-
+      const providerToken = session?.provider_token;
       if (!providerToken) {
         alert("ไม่สามารถบันทึกได้: กรุณาล็อกอินด้วย Google ใหม่อีกครั้งเพื่อรับสิทธิ์เข้าถึงปฏิทินครับ 🥲");
         return false;
       }
-
-      // 2. คำนวณวันสิ้นสุด (Google แบบ All-day event ต้องตั้งวัน end ให้บวกเพิ่มไปอีก 1 วันเสมอ)
       const startDate = new Date(nextDueDate);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 1);
       const endString = endDate.toISOString().split('T')[0];
-
-      // 3. เตรียมข้อมูลกล่องนัดหมายที่จะส่งไปปฏิทิน
       const event = {
         summary: `💉 นัดฉีดวัคซีน ${vaccineName} ให้น้อง ${petName}`,
         description: `แจ้งเตือนอัตโนมัติจากแอป Whiskora 🐾\nถึงเวลาพาน้อง ${petName} ไปรับวัคซีน ${vaccineName} แล้วครับ!`,
-        start: {
-          date: nextDueDate, // วันที่เริ่ม
-          timeZone: 'Asia/Bangkok',
-        },
-        end: {
-          date: endString,   // วันที่สิ้นสุด (+1 วัน)
-          timeZone: 'Asia/Bangkok',
-        },
-        // แถม! ตั้งค่าให้แจ้งเตือนล่วงหน้า 1 วัน และ 9 โมงเช้าของวันนั้น
-        reminders: {
-          useDefault: false,
-          overrides: [
-            { method: 'popup', minutes: 24 * 60 }, // เตือนล่วงหน้า 1 วัน
-            { method: 'popup', minutes: 60 * 9 },  // เตือนตอน 9 โมงเช้า
-          ],
-        },
+        start: { date: nextDueDate, timeZone: 'Asia/Bangkok' },
+        end: { date: endString, timeZone: 'Asia/Bangkok' },
+        reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 24 * 60 }, { method: 'popup', minutes: 60 * 9 }] },
       };
-
-      // 4. 🚀 ยิง API เข้า Google Calendar โดยตรง!
       const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${providerToken}`, // เอากุญแจมาเสียบตรงนี้
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${providerToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(event),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Google API Error:", errorData);
-        throw new Error('บันทึกลงปฏิทินไม่สำเร็จ โทเคนอาจจะหมดอายุ');
-      }
-
-      alert("✅ บันทึกนัดหมายลง Google Calendar เรียบร้อยแล้ว! ลองเช็คในแอปปฏิทินได้เลย 📅");
+      if (!response.ok) { console.error("Google API Error:", await response.json()); throw new Error('บันทึกลงปฏิทินไม่สำเร็จ'); }
+      alert("✅ บันทึกนัดหมายลง Google Calendar เรียบร้อยแล้ว! 📅");
       return true;
-
     } catch (error) {
       console.error("Calendar Error:", error);
       alert("เกิดข้อผิดพลาด หรือเซสชั่น Google หมดอายุ กรุณาล็อกอินใหม่อีกครั้งครับ");
@@ -129,52 +78,27 @@ export default function CreateVaccinePage() {
     }
   };
 
-  // 📝 ฟังก์ชันกดปุ่มบันทึก
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // เช็คว่าผู้ใช้ได้เลือกประเภทแล้วหรือยัง
-    if (!selectedType) {
-      alert("กรุณาเลือกประเภทบริการด้วยครับ");
-      return;
-    }
-
-    // กำหนดชื่อวัคซีนที่จะบันทึก ถ้าเลือก "อื่นๆ" ให้เอาข้อความที่พิมพ์เองมาใช้
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!selectedType) return alert("กรุณาเลือกประเภทบริการด้วยครับ");
     const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
-
-    if (!finalVaccineName || !dateGiven) {
-      alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
-      return;
-    }
+    if (!finalVaccineName || !dateGiven) return alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("vaccines")
-        .insert([{
-          pet_id: petId,
-          vaccine_name: finalVaccineName,
-          date_given: dateGiven,
-          next_due: nextDue || null
-        }]);
-
+      const { error } = await supabase.from("vaccines").insert([{
+        pet_id: petId, vaccine_name: finalVaccineName, date_given: dateGiven, next_due: nextDue || null,
+      }]);
       if (error) throw error;
 
-      // 🌟 แทรกตรงนี้! เซฟลง Database สำเร็จปุ๊บ ถามลูกค้าว่าอยากแอดลงปฏิทินไหม
       if (nextDue) {
         const wantToSync = confirm("💉 บันทึกวัคซีนสำเร็จ! 🐾 \n\nต้องการเพิ่มวันนัดถัดไปลงใน Google Calendar เพื่อแจ้งเตือนด้วยไหมครับ?");
-        if (wantToSync) {
-          // ถ้ายอมรับ ให้ยิง API (รอจนกว่าจะเสร็จ)
-          await addVaccineToGoogleCalendar(petName, finalVaccineName, nextDue);
-        }
+        if (wantToSync) await addVaccineToGoogleCalendar(petName, finalVaccineName, nextDue);
       } else {
-        // ถ้าไม่มีวันนัดครั้งถัดไป ก็ Alert ปกติ
         alert("💉 บันทึกประวัติวัคซีนเรียบร้อยแล้ว!");
       }
-
-      // เสร็จกระบวนการทั้งหมด เด้งกลับไปหน้าโปรไฟล์น้อง
-      router.push(`/pets/${petId}`); 
-      router.refresh(); 
+      router.push(`/pets/${petId}`);
+      router.refresh();
     } catch (error: any) {
       console.error("Error saving vaccine:", error);
       alert(`เกิดข้อผิดพลาด: ${error.message}`);
@@ -182,119 +106,106 @@ export default function CreateVaccinePage() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังดึงข้อมูล... ⏳</div>;
-
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-4 md:pt-12 pb-10 animate-in fade-in duration-700">
-      
-      {/* 🌟 ส่วน Header */}
-      <div className="flex items-center gap-3 mb-5 md:mb-8 max-w-xl mx-auto">
-        <Link href={`/pets/${petId}`} className="p-2 bg-white hover:bg-teal-50 text-gray-400 hover:text-teal-600 rounded-xl transition shadow-sm border border-gray-100">
-           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-           </svg>
-        </Link>
-        <div>
-          <h1 className="text-xl md:text-3xl font-black text-gray-800 tracking-tight">เพิ่มประวัติวัคซีน</h1>
-          <p className="text-xs text-teal-500 font-bold mt-0.5">สมุดพกของน้อง {petName}</p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .vc-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .vc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .vc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+        .vc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .vc-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
+        .vc-title { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .vc-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
+        .vc-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }
+        .vc-card-title { font-family: 'Prompt', sans-serif; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+        .vc-card-icon { color: ${F.teal}; display: flex; }
+        .vc-field { margin-bottom: 16px; }
+        .vc-field:last-child { margin-bottom: 0; }
+        .vc-label { display: block; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; margin-left: 2px; }
+        .vc-label .opt { color: ${F.muted}; font-weight: 500; }
+        .vc-req { color: ${F.pink}; }
+        .vc-input, .vc-select { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
+        .vc-input:focus, .vc-select:focus { border-color: ${F.teal}; box-shadow: 0 0 0 3px ${F.tealSoft}; }
+        .vc-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; cursor: pointer; }
+        .vc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .vc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .vc-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
+        .vc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
+        .vc-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
+        .vc-btn-cancel:hover { background: ${F.line}; }
+        .vc-btn-save { flex: 1; background: ${F.teal}; color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
+        .vc-btn-save:hover { background: #0B7E74; }
+        .vc-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .vc-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .vc-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vcspin 1s linear infinite; }
+        @keyframes vcspin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      {isLoading ? (
+        <div className="vc-loading">
+          <div className="vc-spinner" />
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังดึงข้อมูล...</p>
         </div>
-      </div>
-
-      <div className="max-w-xl mx-auto"> 
-        <form onSubmit={handleSubmit} className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-teal-50 space-y-6 md:space-y-8">
-          
-          <div className="flex justify-center mb-2">
-            <div className="w-20 h-20 bg-teal-50 text-teal-500 rounded-full flex items-center justify-center text-4xl shadow-sm border-4 border-white">
-              💉
+      ) : (
+        <div className="vc-page">
+          <div className="vc-body">
+            <div className="vc-header">
+              <button className="vc-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+              <div>
+                <h1 className="vc-title">เพิ่มประวัติวัคซีน</h1>
+                <p className="vc-sub">สมุดพกของน้อง {petName}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">ประเภทบริการ *</label>
-                <div className="relative">
-                  <select 
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    className={`w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-teal-300 focus:bg-white transition-all text-sm font-bold appearance-none cursor-pointer ${selectedType === "" ? "text-gray-400" : "text-gray-800"}`}
-                  >
-                    {/* 🌟 เพิ่ม option สำหรับให้เลือก และบังคับไม่ให้เลือกซ้ำ */}
-                    <option value="" disabled>เลือกประเภท</option>
+            <form onSubmit={handleSubmit}>
+              <div className="vc-card">
+                <div className="vc-card-title"><span className="vc-card-icon"><Icon.Syringe /></span> รายละเอียดการรับบริการ</div>
+
+                <div className="vc-field">
+                  <label className="vc-label">ประเภทบริการ / วัคซีน <span className="vc-req">*</span></label>
+                  <select className="vc-select" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
+                    <option value="" disabled>เลือกประเภทบริการ</option>
                     <option value="วัคซีนรวม">วัคซีนรวม</option>
                     <option value="วัคซีนพิษสุนัขบ้า">วัคซีนพิษสุนัขบ้า</option>
                     <option value="หยดหลังป้องกันเห็บหมัด">หยดหลังป้องกันเห็บหมัด</option>
                     <option value="ถ่ายพยาธิ">ถ่ายพยาธิ</option>
-                    <option value="วัคซีนเพิ่มเติม">วัคซีนเพิ่มเติม</option>
+                    <option value="วัคซีนเพิ่มเติม">วัคซีนเพิ่มเติม (พิมพ์ระบุเอง)</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-gray-400">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+
+                {selectedType === "วัคซีนเพิ่มเติม" && (
+                  <div className="vc-field">
+                    <label className="vc-label">ระบุชื่อบริการ / วัคซีน <span className="vc-req">*</span></label>
+                    <input type="text" className="vc-input" value={customVaccineName} onChange={(e) => setCustomVaccineName(e.target.value)} placeholder="เช่น วัคซีนลิวคีเมีย" />
+                  </div>
+                )}
+
+                <div className="vc-grid2">
+                  <div className="vc-field" style={{ marginBottom: 0 }}>
+                    <label className="vc-label">วันที่รับบริการ <span className="vc-req">*</span></label>
+                    <input type="date" className="vc-input" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} required />
+                  </div>
+                  <div className="vc-field" style={{ marginBottom: 0 }}>
+                    <label className="vc-label">วันนัดครั้งถัดไป <span className="opt">(ถ้ามี)</span></label>
+                    <input type="date" className="vc-input" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
                   </div>
                 </div>
               </div>
-
-              {/* 🌟 แสดงช่องให้พิมพ์เองเฉพาะตอนเลือกข้อ 5 */}
-              {selectedType === "วัคซีนเพิ่มเติม" && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">ระบุชื่อบริการ / วัคซีน *</label>
-                  <input 
-                    type="text" 
-                    value={customVaccineName} 
-                    onChange={(e) => setCustomVaccineName(e.target.value)} 
-                    required={selectedType === "วัคซีนเพิ่มเติม"}
-                    className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border border-teal-100 outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-bold text-teal-800" 
-                    placeholder="เช่น วัคซีนลิวคีเมีย" 
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* วันที่ฉีด และ วันนัดครั้งถัดไป */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">วันที่รับบริการ *</label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    value={dateGiven} 
-                    onChange={(e) => setDateGiven(e.target.value)} 
-                    required
-                    className="w-full h-[48px] px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-teal-300 text-sm font-medium text-gray-800 appearance-none block min-w-0 text-center" 
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 tracking-wider">วันนัดครั้งถัดไป <span className="text-gray-300 font-normal">(ถ้ามี)</span></label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    value={nextDue} 
-                    onChange={(e) => setNextDue(e.target.value)} 
-                    className="w-full h-[48px] px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-teal-300 text-sm font-medium text-gray-800 appearance-none block min-w-0 text-center" 
-                  />
-                </div>
-              </div>
-            </div>
+            </form>
           </div>
 
-          <hr className="border-gray-50" />
-
-          {/* ปุ่มบันทึก */}
-          <div className="flex gap-3 pt-2">
-            <Link href={`/pets/${petId}`} className="flex-1 text-center py-3.5 rounded-xl font-bold text-gray-400 bg-gray-100 hover:bg-gray-200 transition text-sm">
-              ยกเลิก
-            </Link>
-            <button 
-              type="submit" 
-              disabled={saving} 
-              className="flex-[2] py-3.5 rounded-xl font-bold text-white bg-teal-500 hover:bg-teal-600 shadow-lg shadow-teal-200 transition-all active:scale-95 disabled:opacity-50 text-sm flex justify-center items-center gap-2"
-            >
-              {saving ? "⏳ กำลังบันทึก..." : "💾 บันทึกประวัติ"}
-            </button>
+          <div className="vc-savebar">
+            <div className="vc-savebar-inner">
+              <button type="button" className="vc-btn vc-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
+              <button type="button" className="vc-btn vc-btn-save" onClick={handleSubmit} disabled={saving}>
+                <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกประวัติ"}
+              </button>
+            </div>
           </div>
-          
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

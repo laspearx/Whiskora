@@ -5,7 +5,21 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function LitterDetailsPage() {
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  blue: '#2563EB', green: '#16A34A', orange: '#F97316',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Heart: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>,
+};
+
+const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
+export default function LitterDetailPage() {
   const router = useRouter();
   const params = useParams();
   const farmId = params.id as string;
@@ -21,179 +35,158 @@ export default function LitterDetailsPage() {
     const fetchLitterDetails = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push('/login');
-
-        // 1. ดึงข้อมูลครอก
-        const { data: litterData, error: litterError } = await supabase
-          .from('litters')
-          .select('*')
-          .eq('id', litterId)
-          .single();
-
+        if (!session) return router.push(`/login?redirect=${encodeURIComponent(`/farm-dashboard/${farmId}/litters/${litterId}`)}`);
+        const { data: litterData, error: litterError } = await supabase.from('litters').select('*').eq('id', litterId).single();
         if (litterError) throw litterError;
         setLitter(litterData);
-
-        // 2. ดึงข้อมูลพ่อและแม่
-        const { data: parentsData } = await supabase
-          .from('pets')
-          .select('*')
-          .in('id', [litterData.sire_id, litterData.dam_id]);
-
+        const { data: parentsData } = await supabase.from('pets').select('*').in('id', [litterData.sire_id, litterData.dam_id]);
         if (parentsData) {
-          setSire(parentsData.find(p => p.id === litterData.sire_id));
-          setDam(parentsData.find(p => p.id === litterData.dam_id));
+          setSire(parentsData.find((p) => p.id === litterData.sire_id));
+          setDam(parentsData.find((p) => p.id === litterData.dam_id));
         }
-
-        // 3. ดึงรายชื่อลูกๆ ที่เกิดจากครอกนี้
-        const { data: babiesData } = await supabase
-          .from('pets')
-          .select('*')
-          .eq('litter_id', litterId)
-          .order('id', { ascending: true });
-
+        const { data: babiesData } = await supabase.from('pets').select('*').eq('litter_id', litterId).order('id', { ascending: true });
         if (babiesData) setBabies(babiesData);
-
       } catch (error) {
         console.error('Error:', error);
-        alert('ไม่พบข้อมูลครอกนี้ครับ');
         router.push(`/farm-dashboard/${farmId}`);
-      } finally {
-        setIsLoading(false);
-      }
+      } finally { setIsLoading(false); }
     };
-
     if (litterId) fetchLitterDetails();
   }, [litterId, farmId, router]);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดข้อมูลครอก... ⏳</div>;
-  if (!litter) return null;
+  const born = litter?.status === 'คลอดแล้ว';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-6 pb-20 animate-in fade-in duration-700 space-y-5 md:space-y-6">
-      
-      {/* 🔙 Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.back()} 
-            className="flex items-center justify-center w-10 h-10 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-600 rounded-xl transition shadow-sm border border-gray-100 flex-shrink-0"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight flex items-center gap-2">
-              🐾 ครอก <span className="text-pink-500">{litter.litter_code || 'ไม่ระบุ'}</span>
-            </h1>
-            <p className="text-[10px] md:text-xs font-bold text-gray-500 mt-0.5">รายละเอียดข้อมูลครอก</p>
-          </div>
-        </div>
-        
-        <Link 
-            href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`}
-            className="text-[11px] font-bold text-gray-400 hover:text-pink-500 bg-gray-50 hover:bg-pink-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
-            >✎ แก้ไข
-        </Link>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .ld-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .ld-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
+        .ld-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .ld-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .ld-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .ld-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .ld-title .code { color: ${F.pink}; }
+        /* status card */
+        .ld-status { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+        .ld-status-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 3px solid; }
+        .ld-status-info { flex: 1; min-width: 160px; }
+        .ld-status-badge { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid; margin-bottom: 6px; }
+        .ld-status-dates { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: ${F.muted}; }
+        .ld-birth-btn { background: ${F.pink}; color: white; padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all .15s; white-space: nowrap; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .ld-birth-btn:hover { background: #D63F6A; }
+        /* parents */
+        .ld-parents { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 22px; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 18px; }
+        .ld-parent { display: flex; flex-direction: column; align-items: center; text-decoration: none; width: 92px; }
+        .ld-parent-photo { width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 26px; background: ${F.bg}; }
+        .ld-parent.sire .ld-parent-photo { border-color: #BFDBFE; color: ${F.blue}; }
+        .ld-parent.dam .ld-parent-photo { border-color: ${F.pinkBorder}; color: ${F.pink}; }
+        .ld-parent-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ld-parent-name { font-family: 'Prompt', sans-serif; font-size: 13px; font-weight: 700; color: ${F.ink}; margin-top: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .ld-parent-role { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; }
+        .ld-parent.sire .ld-parent-role { color: ${F.blue}; }
+        .ld-parent.dam .ld-parent-role { color: ${F.pink}; }
+        .ld-heart { color: ${F.pinkBorder}; flex-shrink: 0; }
+        /* babies */
+        .ld-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
+        .ld-sec-title { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .ld-sec-count { font-size: 11px; font-weight: 700; color: ${F.muted}; background: ${F.line}; padding: 4px 11px; border-radius: 999px; }
+        .ld-empty { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 32px; text-align: center; font-size: 13px; font-weight: 600; color: ${F.muted}; }
+        .ld-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .ld-baby { background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 8px; text-decoration: none; transition: all .15s; display: flex; flex-direction: column; }
+        .ld-baby:hover { border-color: ${F.pinkBorder}; }
+        .ld-baby-photo { aspect-ratio: 1; border-radius: 11px; overflow: hidden; background: ${F.bg}; position: relative; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+        .ld-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ld-baby-weight { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.92); border-radius: 6px; padding: 1px 5px; font-size: 9px; font-weight: 700; color: ${F.inkSoft}; }
+        .ld-baby-name { font-family: 'Prompt', sans-serif; font-size: 12px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+        .ld-baby-foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: auto; }
+        .ld-baby-gender { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+        .ld-baby-gender.m { background: #EFF6FF; color: ${F.blue}; }
+        .ld-baby-gender.f { background: ${F.pinkSoft}; color: ${F.pink}; }
+        .ld-baby-status { font-size: 9px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ld-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .ld-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: ldspin 1s linear infinite; }
+        @keyframes ldspin { to { transform: rotate(360deg); } }
+      `}</style>
 
-      {/* 📋 Status & Info Card */}
-      <div className="bg-white p-4 md:p-5 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 flex-shrink-0 ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 border-green-100 text-green-500' : 'bg-orange-50 border-orange-100 text-orange-500'}`}>
-            <span className="text-xl">{litter.status === 'คลอดแล้ว' ? '🎉' : '⏳'}</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${litter.status === 'คลอดแล้ว' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                สถานะ: {litter.status}
-              </span>
+      {isLoading || !litter ? (
+        <div className="ld-loading">
+          <div className="ld-spinner" />
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลดข้อมูลครอก...</p>
+        </div>
+      ) : (
+        <div className="ld-page">
+          <div className="ld-body">
+            <div className="ld-top">
+              <button className="ld-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+              <h1 className="ld-title">🐾 ครอก <span className="code">{litter.litter_code || 'ไม่ระบุ'}</span></h1>
             </div>
-            <p className="text-[11px] font-bold text-gray-500 mt-1.5 flex gap-2">
-              <span>ทับ: {new Date(litter.mating_date).toLocaleDateString('th-TH')}</span>
-              <span className="text-gray-300">|</span>
-              <span className={litter.status === 'คลอดแล้ว' ? 'text-green-500' : 'text-pink-500'}>
-                {litter.status === 'คลอดแล้ว' && litter.actual_birth_date ? `คลอด: ${new Date(litter.actual_birth_date).toLocaleDateString('th-TH')}` : `กำหนด: ${new Date(litter.expected_birth_date).toLocaleDateString('th-TH')}`}
-              </span>
-            </p>
-          </div>
-        </div>
-        
-        {litter.status === 'รอคลอด' && (
-          <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="bg-pink-500 text-white hover:bg-pink-600 px-5 py-2.5 rounded-xl font-black text-xs transition shadow-sm text-center shrink-0 w-full sm:w-auto">
-            ✨ บันทึกคลอด
-          </Link>
-        )}
-      </div>
 
-      {/* 👨‍👩‍👦 พ่อแม่พันธุ์ */}
-      <div className="bg-white rounded-[1.5rem] border border-gray-100 p-5 shadow-sm">
-        <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">Parental Match</h2>
-        <div className="flex items-center justify-center gap-6 md:gap-10">
-          {/* พ่อ */}
-          <Link href={`/pets/${sire?.id}`} className="flex flex-col items-center group w-20 md:w-24">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-blue-50 group-hover:scale-105 transition-transform">
-              {sire?.image_url ? <img src={sire.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl">♂</div>}
-            </div>
-            <p className="mt-2 font-black text-gray-800 text-xs md:text-sm truncate w-full text-center">{sire?.name || 'ไม่ระบุ'}</p>
-            <span className="text-[9px] font-bold text-blue-400">SIRE</span>
-          </Link>
-
-          <div className="text-xl animate-pulse text-pink-300">❤️</div>
-
-          {/* แม่ */}
-          <Link href={`/pets/${dam?.id}`} className="flex flex-col items-center group w-20 md:w-24">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-pink-50 group-hover:scale-105 transition-transform">
-              {dam?.image_url ? <img src={dam.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl">♀</div>}
-            </div>
-            <p className="mt-2 font-black text-gray-800 text-xs md:text-sm truncate w-full text-center">{dam?.name || 'ไม่ระบุ'}</p>
-            <span className="text-[9px] font-bold text-pink-400">DAM</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* 🍼 รายชื่อลูกๆ (ปรับเป็น 3 การ์ดต่อแถว) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-           <h2 className="text-sm md:text-base font-black text-gray-800 flex items-center gap-1.5">
-             <span>🍼</span> สมาชิกในครอก
-           </h2>
-           <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{babies.length} ตัว</span>
-        </div>
-        
-        {babies.length === 0 ? (
-          <div className="bg-white rounded-[1.5rem] py-10 text-center border border-gray-100 shadow-sm">
-            <p className="text-xs font-bold text-gray-400">ยังไม่มีข้อมูลสมาชิกในครอก</p>
-          </div>
-        ) : (
-          /* 🌟 แก้ไขตรงนี้: grid-cols-3 เป็นมาตรฐาน 3 คอลัมน์บนมือถือ */
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-4">
-            {babies.map(baby => (
-              <Link key={baby.id} href={`/pets/${baby.id}`} className="bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 transition-all group relative flex flex-col">
-                <div className="aspect-square rounded-xl bg-gray-50 overflow-hidden mb-2 relative">
-                  {baby.image_url ? <img src={baby.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-10">🐾</div>}
-                  {/* กล่องน้ำหนัก */}
-                  <div className="absolute top-1 right-1 bg-white/90 backdrop-blur rounded px-1 py-0.5 text-[8px] font-black shadow-sm text-gray-600">
-                    {baby.weight ? `${baby.weight}g` : '-'}
-                  </div>
-                </div>
-                
-                {/* ชื่อ */}
-                <h4 className="font-black text-gray-800 text-[10px] md:text-xs truncate mb-1">{baby.name || 'ยังไม่ตั้งชื่อ'}</h4>
-                
-                {/* เพศ และ สถานะ (ลดขนาดฟอนต์เพื่อป้องกันการทับซ้อนใน 3 คอลัมน์) */}
-                <div className="flex items-center justify-between gap-1 mt-auto">
-                  <span className={`text-[8px] md:text-[9px] font-bold px-1.5 py-0.5 rounded ${baby.gender === 'male' || baby.gender === 'ตัวผู้' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
-                    {baby.gender === 'male' || baby.gender === 'ตัวผู้' ? '♂ ผู้' : '♀ เมีย'}
+            <div className="ld-status">
+              <div className="ld-status-icon" style={born ? { background: '#F0FDF4', borderColor: '#BBF7D0', color: F.green } : { background: '#FFF7ED', borderColor: '#FED7AA', color: F.orange }}>
+                {born ? '🎉' : '⏳'}
+              </div>
+              <div className="ld-status-info">
+                <span className="ld-status-badge" style={born ? { background: '#F0FDF4', color: F.green, borderColor: '#BBF7D0' } : { background: '#FFF7ED', color: F.orange, borderColor: '#FED7AA' }}>
+                  สถานะ: {litter.status}
+                </span>
+                <div className="ld-status-dates">
+                  <span>ทับ: {fmtDate(litter.mating_date)}</span>
+                  <span style={{ color: born ? F.green : F.pink }}>
+                    {born && litter.actual_birth_date ? `คลอด: ${fmtDate(litter.actual_birth_date)}` : `กำหนด: ${fmtDate(litter.expected_birth_date)}`}
                   </span>
-                  <span className="text-[8px] md:text-[9px] font-bold text-gray-400 truncate w-full text-right">{baby.status || 'เด็ก'}</span>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+              </div>
+              {litter.status === 'รอคลอด' && (
+                <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="ld-birth-btn">บันทึกการคลอด</Link>
+              )}
+            </div>
 
-    </div>
+            <div className="ld-parents">
+              <Link href={`/pets/${sire?.id}`} className="ld-parent sire">
+                <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : '♂'}</div>
+                <span className="ld-parent-name">{sire?.name || 'ไม่ระบุ'}</span>
+                <span className="ld-parent-role">SIRE</span>
+              </Link>
+              <span className="ld-heart"><Icon.Heart /></span>
+              <Link href={`/pets/${dam?.id}`} className="ld-parent dam">
+                <div className="ld-parent-photo">{dam?.image_url ? <img src={dam.image_url} alt={dam.name} /> : '♀'}</div>
+                <span className="ld-parent-name">{dam?.name || 'ไม่ระบุ'}</span>
+                <span className="ld-parent-role">DAM</span>
+              </Link>
+            </div>
+
+            <div className="ld-sec-head">
+              <h2 className="ld-sec-title">🍼 สมาชิกในครอก</h2>
+              <span className="ld-sec-count">{babies.length} ตัว</span>
+            </div>
+
+            {babies.length === 0 ? (
+              <div className="ld-empty">ยังไม่มีข้อมูลสมาชิกในครอก</div>
+            ) : (
+              <div className="ld-babies">
+                {babies.map((baby) => {
+                  const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
+                  return (
+                    <Link key={baby.id} href={`/pets/${baby.id}`} className="ld-baby">
+                      <div className="ld-baby-photo">
+                        {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : '🐾'}
+                        <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
+                      </div>
+                      <div className="ld-baby-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
+                      <div className="ld-baby-foot">
+                        <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`}>{isMale ? '♂ ผู้' : '♀ เมีย'}</span>
+                        <span className="ld-baby-status">{baby.status || 'เด็ก'}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

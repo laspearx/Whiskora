@@ -4,6 +4,20 @@ import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { speciesTh } from "@/lib/species";
+
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
+  orange: '#F97316', green: '#16A34A',
+  blue: '#2563EB', blueSoft: '#EFF6FF', blueBorder: '#BFDBFE',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Plus: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>,
+  Chevron: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+};
 
 function ServiceDashboardContent() {
   const router = useRouter();
@@ -15,193 +29,188 @@ function ServiceDashboardContent() {
   const [service, setService] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    pending: 0,
-    today: 0,
-    revenue: 0
-  });
-
-  const handleBackToParent = () => {
-    router.push(fromPage === 'partner' ? '/partner' : '/profile');
-  };
+  const [stats, setStats] = useState({ totalBookings: 0, pending: 0, today: 0, revenue: 0 });
 
   useEffect(() => {
-    const fetchServiceData = async () => {
+    const fetchData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push("/login");
-
-        // 1. ดึงข้อมูลสถานบริการ
-        const { data: serviceData } = await supabase
-          .from("services")
-          .select("*")
-          .eq("id", serviceId)
-          .single();
-        
+        if (!session) return router.push(`/login?redirect=${encodeURIComponent(`/service-dashboard/${serviceId}`)}`);
+        const { data: serviceData } = await supabase.from("services").select("*").eq("id", serviceId).single();
         if (!serviceData) return router.push("/partner");
         setService(serviceData);
-
-        // 2. ดึงข้อมูลการจอง (สมมติว่าใช้ตาราง service_bookings)
-        const { data: bookingsData } = await supabase
-          .from("service_bookings")
-          .select("*, pets(name, species)")
-          .eq("service_id", serviceId)
-          .order("booking_date", { ascending: true });
-
+        const today = new Date().toISOString().split("T")[0];
+        const { data: bookingsData } = await supabase.from("service_bookings").select("*, pets(name, species)").eq("service_id", serviceId).order("booking_date", { ascending: true });
         if (bookingsData) {
           setBookings(bookingsData);
-          const today = new Date().toISOString().split('T')[0];
           setStats({
             totalBookings: bookingsData.length,
-            pending: bookingsData.filter(b => b.status === "pending").length,
-            today: bookingsData.filter(b => b.booking_date === today).length,
-            revenue: 0 // รอเชื่อมระบบชำระเงินในอนาคต
+            pending: bookingsData.filter((b) => b.status === "pending").length,
+            today: bookingsData.filter((b) => b.booking_date === today).length,
+            revenue: 0,
           });
         }
-      } catch (error) {
-        console.error("Error:", error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error("Error:", error); }
+      finally { setLoading(false); }
     };
-
-    if (serviceId) fetchServiceData();
+    if (serviceId) fetchData();
   }, [serviceId, router]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-blue-500 font-bold animate-pulse">กำลังโหลด...⏳</div>;
+  const stat = [
+    { label: 'คิววันนี้', value: stats.today, unit: 'นัด', color: F.blue, icon: '📅' },
+    { label: 'รออนุมัติ', value: stats.pending, unit: 'รายการ', color: F.orange, icon: '⏳' },
+    { label: 'การจองทั้งหมด', value: stats.totalBookings, unit: 'ครั้ง', color: F.ink, icon: '📝' },
+    { label: 'รายได้สะสม', value: 0, unit: 'บาท', color: F.green, icon: '💰' },
+  ];
+  const tools = [
+    { href: `/service-dashboard/${serviceId}/manage-services?from=${fromPage}`, icon: '✂️', title: 'รายการบริการ', desc: 'ตั้งราคาและประเภทบริการ' },
+    { href: `/service-dashboard/${serviceId}/finance?from=${fromPage}`, icon: '📊', title: 'สรุปรายได้', desc: 'รายงานรายได้งานบริการ' },
+    { href: `/service-dashboard/${serviceId}/settings?from=${fromPage}`, icon: '🏥', title: 'ข้อมูลสถานบริการ', desc: 'ที่อยู่และเวลาเปิด-ปิด' },
+  ];
+  const statusLabel = (s: string) => s === 'confirmed' ? 'ยืนยันแล้ว' : s === 'pending' ? 'รอดำเนินการ' : 'เสร็จสิ้น';
+  const statusClass = (s: string) => s === 'confirmed' ? 'ok' : s === 'pending' ? 'pending' : 'done';
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-6 md:pt-10 pb-20 animate-in fade-in duration-700 space-y-8">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={handleBackToParent} className="p-2.5 bg-white hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition shadow-sm border border-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">{service?.service_name}</h1>
-            <p className="text-xs font-bold text-blue-500 mt-0.5">แดชบอร์ดจัดการงานบริการ</p>
-          </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .svd-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .svd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
+        .svd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+        .svd-top-left { display: flex; align-items: center; gap: 14px; }
+        .svd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .svd-back:hover { color: ${F.blue}; border-color: ${F.blue}; transform: translateX(-1px); }
+        .svd-title { font-family: 'Prompt', sans-serif; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
+        .svd-sub { font-size: 12px; font-weight: 700; color: ${F.blue}; margin-top: 2px; }
+        .svd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.blue}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.25); transition: all .15s; white-space: nowrap; }
+        .svd-add:hover { background: #1D4FD7; }
+        .svd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+        .svd-stat { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 18px; position: relative; overflow: hidden; }
+        .svd-stat-icon { position: absolute; right: -4px; top: -4px; font-size: 38px; opacity: 0.1; }
+        .svd-stat-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .svd-stat-value { font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700; }
+        .svd-stat-unit { font-size: 10px; font-weight: 600; color: ${F.muted}; margin-left: 3px; }
+        .svd-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .svd-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
+        .svd-sec-title { font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700; color: ${F.ink}; }
+        .svd-sec-link { font-size: 12px; font-weight: 700; color: ${F.blue}; text-decoration: none; }
+        .svd-table-wrap { background: white; border: 1px solid ${F.line}; border-radius: 18px; overflow: hidden; }
+        .svd-empty { padding: 44px; text-align: center; color: ${F.muted}; font-size: 14px; font-weight: 600; }
+        .svd-empty-emoji { font-size: 36px; display: block; margin-bottom: 8px; }
+        .svd-table { width: 100%; border-collapse: collapse; }
+        .svd-table th { padding: 13px 16px; text-align: left; font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.05em; background: #FAFAFA; border-bottom: 1px solid ${F.line}; }
+        .svd-table td { padding: 13px 16px; border-bottom: 1px solid ${F.line}; }
+        .svd-table tr:last-child td { border-bottom: none; }
+        .svd-pet-name { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; }
+        .svd-pet-species { font-size: 10px; color: ${F.muted}; }
+        .svd-svc { font-size: 13px; font-weight: 700; color: ${F.ink}; }
+        .svd-time { font-size: 10px; font-weight: 700; color: ${F.blue}; }
+        .svd-status { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+        .svd-status.ok { background: #F0FDF4; color: ${F.green}; }
+        .svd-status.pending { background: #FFF7ED; color: ${F.orange}; }
+        .svd-status.done { background: ${F.line}; color: ${F.muted}; }
+        .svd-manage { font-size: 11px; font-weight: 700; color: ${F.blue}; background: none; border: none; cursor: pointer; }
+        .svd-tools { display: flex; flex-direction: column; gap: 12px; }
+        .svd-tool { display: flex; align-items: center; gap: 13px; background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 16px; text-decoration: none; transition: all .15s; }
+        .svd-tool:hover { border-color: ${F.blueBorder}; }
+        .svd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.blueSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .svd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .svd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
+        .svd-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .svd-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.blueBorder}; border-top-color: ${F.blue}; animation: svdspin 1s linear infinite; }
+        @keyframes svdspin { to { transform: rotate(360deg); } }
+        @media (max-width: 720px) { .svd-stats { grid-template-columns: 1fr 1fr; } .svd-cols { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {loading ? (
+        <div className="svd-loading">
+          <div className="svd-spinner" />
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
         </div>
-        <Link href={`/service-dashboard/${serviceId}/manage-services?from=${fromPage}`} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition">
-          + เพิ่มบริการ
-        </Link>
-      </div>
-
-      {/* 📊 Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <StatCard label="คิววันนี้" value={stats.today} unit="นัด" color="text-blue-600" icon="📅" />
-        <StatCard label="รออนุมัติ" value={stats.pending} unit="รายการ" color="text-orange-500" icon="⏳" />
-        <StatCard label="การจองทั้งหมด" value={stats.totalBookings} unit="ครั้ง" color="text-gray-800" icon="📝" />
-        <StatCard label="รายได้สะสม" value="0" unit="บาท" color="text-green-600" icon="💰" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* 📅 ตารางนัดหมาย (Booking List) */}
-        <div className="md:col-span-8 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-lg font-black text-gray-800 flex items-center gap-2"><span>🗓️</span> รายการนัดหมายล่าสุด</h2>
-            <Link href={`/service-dashboard/${serviceId}/bookings?from=${fromPage}`} className="text-xs font-bold text-blue-600">ดูตารางทั้งหมด ➔</Link>
-          </div>
-          
-          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-            {bookings.length === 0 ? (
-              <div className="p-16 text-center text-gray-400 font-bold">
-                <p className="text-4xl mb-2">🎈</p>
-                ยังไม่มีการจองในขณะนี้
+      ) : (
+        <div className="svd-page">
+          <div className="svd-body">
+            <div className="svd-top">
+              <div className="svd-top-left">
+                <button className="svd-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+                <div>
+                  <h1 className="svd-title">{service?.service_name}</h1>
+                  <p className="svd-sub">แดชบอร์ดจัดการบริการ</p>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50/50 border-b border-gray-100">
-                      <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">สัตว์เลี้ยง</th>
-                      <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">บริการ/เวลา</th>
-                      <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">สถานะ</th>
-                      <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {bookings.slice(0, 5).map((booking) => (
-                      <tr key={booking.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-gray-700">{booking.pets?.name}</span>
-                            <span className="text-[10px] text-gray-400">{booking.pets?.species}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-black text-gray-800">{booking.service_type}</span>
-                            <span className="text-[10px] text-blue-500 font-bold">{booking.booking_time} น.</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-50 text-green-600' : 
-                            booking.status === 'pending' ? 'bg-orange-50 text-orange-500' : 'bg-gray-50 text-gray-400'
-                          }`}>
-                            {booking.status === 'confirmed' ? 'ยืนยันแล้ว' : booking.status === 'pending' ? 'รอดำเนินการ' : 'เสร็จสิ้น'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                           <button className="text-[11px] font-bold text-blue-500 hover:underline">จัดการ</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <Link href={`/service-dashboard/${serviceId}/manage-services?from=${fromPage}`} className="svd-add"><Icon.Plus /> จัดการบริการ</Link>
+            </div>
+
+            <div className="svd-stats">
+              {stat.map((s, i) => (
+                <div key={i} className="svd-stat">
+                  <div className="svd-stat-icon">{s.icon}</div>
+                  <div className="svd-stat-label">{s.label}</div>
+                  <div><span className="svd-stat-value" style={{ color: s.color }}>{s.value}</span><span className="svd-stat-unit">{s.unit}</span></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="svd-cols">
+              <div>
+                <div className="svd-sec-head">
+                  <h2 className="svd-sec-title">🗓️ รายการนัดหมายล่าสุด</h2>
+                  <Link href={`/service-dashboard/${serviceId}/bookings?from=${fromPage}`} className="svd-sec-link">ดูทั้งหมด →</Link>
+                </div>
+                <div className="svd-table-wrap">
+                  {bookings.length === 0 ? (
+                    <div className="svd-empty"><span className="svd-empty-emoji">🎈</span>ยังไม่มีการจองในขณะนี้</div>
+                  ) : (
+                    <table className="svd-table">
+                      <thead><tr><th>สัตว์เลี้ยง</th><th>บริการ/เวลา</th><th>สถานะ</th><th></th></tr></thead>
+                      <tbody>
+                        {bookings.slice(0, 5).map((booking) => (
+                          <tr key={booking.id}>
+                            <td>
+                              <div className="svd-pet-name">{booking.pets?.name}</div>
+                              <div className="svd-pet-species">{speciesTh(booking.pets?.species)}</div>
+                            </td>
+                            <td>
+                              <div className="svd-svc">{booking.service_type}</div>
+                              <div className="svd-time">{booking.booking_time} น.</div>
+                            </td>
+                            <td><span className={`svd-status ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span></td>
+                            <td style={{ textAlign: 'right' }}><button className="svd-manage">จัดการ</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
-            )}
+
+              <div>
+                <div className="svd-sec-head"><h2 className="svd-sec-title">🛠️ ตั้งค่าบริการ</h2></div>
+                <div className="svd-tools">
+                  {tools.map((t, i) => (
+                    <Link key={i} href={t.href} className="svd-tool">
+                      <div className="svd-tool-icon">{t.icon}</div>
+                      <div style={{ flex: 1 }}>
+                        <div className="svd-tool-title">{t.title}</div>
+                        <div className="svd-tool-desc">{t.desc}</div>
+                      </div>
+                      <span style={{ color: F.muted, display: 'flex' }}><Icon.Chevron /></span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* 🛠️ เครื่องมือจัดการ (Service Tools) */}
-        <div className="md:col-span-4 space-y-4">
-          <h2 className="text-lg font-black text-gray-800 px-2">🛠️ ตั้งค่าบริการ</h2>
-          <div className="grid grid-cols-1 gap-3">
-            <ToolLink href={`/service-dashboard/${serviceId}/manage-services?from=${fromPage}`} icon="✂️" title="รายการบริการ" desc="ตั้งราคาและประเภทบริการ" />
-            <ToolLink href={`/service-dashboard/${serviceId}/finance?from=${fromPage}`} icon="📊" title="สรุปรายได้" desc="รายงานรายได้งานบริการ" />
-            <ToolLink href={`/service-dashboard/${serviceId}/settings?from=${fromPage}`} icon="🏥" title="ข้อมูลสถานบริการ" desc="ที่อยู่และเวลาเปิด-ปิด" />
-          </div>
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-// Helper Components
-function StatCard({ label, value, unit, color, icon }: any) {
-  return (
-    <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden group">
-      <div className="absolute -right-2 -top-2 text-4xl opacity-10 group-hover:scale-125 transition-transform">{icon}</div>
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
-      <div className="flex items-baseline gap-1">
-        <span className={`text-2xl font-black ${color}`}>{value}</span>
-        <span className="text-[10px] font-bold text-gray-400">{unit}</span>
-      </div>
-    </div>
-  );
-}
-
-function ToolLink({ href, icon, title, desc }: any) {
-  return (
-    <Link href={href} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:border-blue-200 transition-all flex items-center gap-4 group">
-      <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition">{icon}</div>
-      <div>
-        <h4 className="text-sm font-black text-gray-800">{title}</h4>
-        <p className="text-[10px] font-bold text-gray-400">{desc}</p>
-      </div>
-    </Link>
+      )}
+    </>
   );
 }
 
 export default function ServiceDashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-blue-500 font-bold">🏥 Loading Whiskora...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #BFDBFE', borderTopColor: '#2563EB', animation: 'svdspin 1s linear infinite' }} /></div>}>
       <ServiceDashboardContent />
     </Suspense>
   );

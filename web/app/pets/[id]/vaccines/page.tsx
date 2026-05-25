@@ -5,16 +5,30 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// 🌟 ต้องแยก Component เนื้อหาออกมาเพื่อใช้ Suspense ครอบ (ป้องกัน Error ของ Next.js ตอนใช้ useSearchParams)
+const F = {
+  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
+  pink: '#E84677', orange: '#F97316',
+  teal: '#0D9488', tealLight: '#14B8A6', tealSoft: '#F0FDFA', tealBorder: '#99F6E4',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+};
+
+const Icon = {
+  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+  Plus: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>,
+  X: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  Calendar: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+};
+
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
 function VaccineTimeline() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  
   const petId = params.id as string;
-  const filterType = searchParams.get("type"); // ดึงประเภทวัคซีนจาก URL (ถ้ามี)
+  const filterType = searchParams.get("type");
 
-  const [petName, setPetName] = useState<string>("");
+  const [petName, setPetName] = useState("");
   const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,160 +37,154 @@ function VaccineTimeline() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          router.push("/login");
+          router.push(`/login?redirect=${encodeURIComponent(`/pets/${petId}/vaccines`)}`);
           return;
         }
-
-        // 1. ดึงชื่อสัตว์เลี้ยง
         const { data: petData, error: petError } = await supabase
-          .from("pets")
-          .select("name")
-          .eq("id", petId)
-          .eq("user_id", session.user.id)
-          .single();
-
+          .from("pets").select("name").eq("id", petId).eq("user_id", session.user.id).single();
         if (petError || !petData) throw petError;
         setPetName(petData.name);
 
-        // 2. ดึงข้อมูลประวัติวัคซีน
-        let query = supabase
-          .from("vaccines")
-          .select("*")
-          .eq("pet_id", petId)
-          .order("date_given", { ascending: false }); // เรียงจากล่าสุดไปเก่าสุด
-
-        // ถ้ามีการส่ง type มาจากหน้าก่อน ให้กรองเฉพาะประเภทนั้น
-        if (filterType) {
-          query = query.eq("vaccine_name", filterType);
-        }
-
+        let query = supabase.from("vaccines").select("*").eq("pet_id", petId).order("date_given", { ascending: false });
+        if (filterType) query = query.eq("vaccine_name", filterType);
         const { data: vaccineData, error: vacError } = await query;
         if (vacError) throw vacError;
-        
         if (vaccineData) setRecords(vaccineData);
-
       } catch (error) {
         console.error("Error fetching timeline:", error);
-        alert("ไม่สามารถดึงข้อมูลประวัติได้ครับ");
         router.push(`/pets/${petId}`);
       } finally {
         setIsLoading(false);
       }
     };
-
     if (petId) fetchHistory();
   }, [petId, filterType, router]);
 
-  if (isLoading) {
-    return <div className="min-h-[60vh] flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังจัดเตรียมข้อมูล... ⏳</div>;
-  }
-
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
-      
-      {/* 🌟 Header & ปุ่มย้อนกลับ */}
-      <div>
-        <div className="flex items-center gap-4">
-          <Link href={`/pets/${petId}`} className="p-2.5 bg-gray-50 hover:bg-teal-50 text-gray-400 hover:text-teal-600 rounded-xl transition shadow-sm border border-gray-100">
-             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-             </svg>
-          </Link>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">ประวัติสมุดพก</h1>
-            <p className="text-xs text-teal-500 font-bold mt-0.5">สมุดพกของน้อง {petName}</p>
-          </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .vh-page { font-family: 'Sarabun', sans-serif; min-height: 100vh; color: ${F.ink}; }
+        .vh-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 90px; }
+        .vh-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+        .vh-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .vh-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
+        .vh-title { font-family: 'Prompt', sans-serif; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
+        .vh-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
+        /* filter chip */
+        .vh-filter { display: inline-flex; align-items: center; gap: 8px; background: ${F.tealSoft}; padding: 7px 8px 7px 14px; border-radius: 12px; border: 1px solid ${F.tealBorder}; margin-bottom: 18px; }
+        .vh-filter-label { font-size: 10px; font-weight: 700; color: ${F.teal}; text-transform: uppercase; letter-spacing: 0.06em; }
+        .vh-filter-val { font-size: 13px; font-weight: 700; color: ${F.teal}; }
+        .vh-filter-x { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: white; color: ${F.muted}; align-items: center; justify-content: center; transition: all .15s; }
+        .vh-filter-x:hover { color: ${F.pink}; }
+        /* card wrapper */
+        .vh-card { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 24px; }
+        /* empty */
+        .vh-empty { text-align: center; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .vh-empty-emoji { font-size: 44px; }
+        .vh-empty-text { font-size: 14px; font-weight: 700; color: ${F.muted}; }
+        .vh-empty-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; background: ${F.teal}; color: white; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(13,148,136,0.3); transition: all .15s; }
+        .vh-empty-btn:hover { background: #0B7E74; }
+        /* timeline */
+        .vh-timeline { position: relative; border-left: 2px solid ${F.tealBorder}; margin-left: 8px; display: flex; flex-direction: column; gap: 22px; }
+        .vh-item { position: relative; padding-left: 26px; }
+        .vh-dot { position: absolute; left: -11px; top: 6px; width: 20px; height: 20px; border-radius: 50%; border: 4px solid white; background: ${F.lineMid}; }
+        .vh-item.latest .vh-dot { background: ${F.teal}; box-shadow: 0 0 0 4px ${F.tealSoft}; }
+        .vh-rec { background: white; padding: 18px; border-radius: 16px; border: 1px solid ${F.line}; transition: all .2s; }
+        .vh-item.latest .vh-rec { border-color: ${F.tealBorder}; box-shadow: 0 2px 12px rgba(13,148,136,0.08); }
+        .vh-rec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+        .vh-rec-name { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: ${F.ink}; }
+        .vh-rec-date { font-size: 12px; font-weight: 500; color: ${F.muted}; margin-top: 2px; }
+        .vh-rec-date b { color: ${F.inkSoft}; font-weight: 700; }
+        .vh-badge { flex-shrink: 0; background: ${F.tealSoft}; color: ${F.teal}; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 11px; border-radius: 9px; border: 1px solid ${F.tealBorder}; white-space: nowrap; }
+        .vh-next { background: #FAFAFA; border: 1px solid ${F.line}; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 11px; }
+        .vh-next-icon { width: 34px; height: 34px; border-radius: 10px; background: white; border: 1px solid ${F.line}; display: flex; align-items: center; justify-content: center; color: ${F.orange}; flex-shrink: 0; }
+        .vh-next-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.04em; }
+        .vh-next-val { font-size: 13px; font-weight: 700; color: ${F.orange}; margin-top: 1px; }
+        .vh-next-val.none { color: ${F.muted}; }
+        /* fab add */
+        .vh-fab { position: fixed; bottom: 20px; right: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; background: ${F.teal}; color: white; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(13,148,136,0.4); transition: all .18s; border: none; cursor: pointer; }
+        .vh-fab:hover { background: #0B7E74; transform: translateY(-1px); }
+        .vh-loading { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .vh-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vhspin 1s linear infinite; }
+        @keyframes vhspin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      {isLoading ? (
+        <div className="vh-loading">
+          <div className="vh-spinner" />
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังจัดเตรียมข้อมูล...</p>
         </div>
-
-        {/* ถ้ามี Filter ให้แสดงป้ายบอก และปุ่มล้าง Filter */}
-        {filterType && (
-          <div className="flex items-center gap-2 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100 w-fit mt-3 sm:mt-0">
-            <span className="text-[10px] text-teal-600 font-bold uppercase tracking-wider">กำลังดู:</span>
-            <span className="text-xs font-black text-teal-700">{filterType}</span>
-            <Link href={`/pets/${petId}/vaccines`} className="ml-2 bg-white text-gray-400 hover:text-red-500 rounded-full p-1 transition shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* 🌟 Timeline Section */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 shadow-sm relative">
-        {records.length === 0 ? (
-          <div className="text-center py-16 flex flex-col items-center justify-center">
-            <span className="text-4xl mb-3">📭</span>
-            <p className="text-gray-400 font-bold text-sm">ยังไม่มีประวัติในหมวดหมู่นี้</p>
-            <Link href={`/pets/${petId}/vaccines/create`} className="mt-4 text-xs bg-teal-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-teal-600 transition shadow-lg shadow-teal-200">
-              + เพิ่มประวัติใหม่
-            </Link>
-          </div>
-        ) : (
-          <div className="relative border-l-2 border-teal-100 ml-4 md:ml-6 space-y-8 pb-4">
-            {records.map((record, index) => (
-              <div key={record.id} className="relative pl-6 md:pl-8 group">
-                
-                {/* วงกลมบนเส้น Timeline */}
-                <div className={`absolute -left-[11px] top-1.5 w-5 h-5 rounded-full border-4 border-white shadow-sm transition-all duration-300
-                  ${index === 0 ? 'bg-teal-500 ring-4 ring-teal-50' : 'bg-gray-300 group-hover:bg-teal-400'}
-                `}></div>
-                
-                {/* การ์ดข้อมูล */}
-                <div className={`bg-white p-5 rounded-2xl border transition-all duration-300 shadow-sm
-                  ${index === 0 ? 'border-teal-200 shadow-md ring-1 ring-teal-50' : 'border-gray-100 hover:border-teal-100'}
-                `}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                    <div>
-                      <h3 className="text-sm font-black text-gray-800">{record.vaccine_name}</h3>
-                      <p className="text-xs text-gray-500 font-medium mt-0.5">
-                        <span className="font-bold text-gray-400 mr-1">วันที่รับบริการ:</span> 
-                        {new Date(record.date_given).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-                    
-                    {/* Badge แสดงสถานะล่าสุด (อันแรกสุด) */}
-                    {index === 0 && (
-                      <span className="inline-block bg-teal-50 text-teal-600 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-teal-100 self-start sm:self-auto">
-                        ล่าสุด ✨
-                      </span>
-                    )}
-                  </div>
-
-                  {/* วันนัดหมายครั้งถัดไป */}
-                  <div className="bg-gray-50/70 rounded-xl p-3.5 border border-gray-100 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-lg border border-gray-100 shrink-0">
-                      📅
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">วันนัดครั้งถัดไป</p>
-                      {record.next_due ? (
-                        <p className="text-xs font-black text-orange-500">
-                          {new Date(record.next_due).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
-                      ) : (
-                        <p className="text-xs font-bold text-gray-400">- ไม่มีการนัดหมาย -</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
+      ) : (
+        <div className="vh-page">
+          <div className="vh-body">
+            <div className="vh-header">
+              <button className="vh-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+              <div>
+                <h1 className="vh-title">ประวัติสมุดพก</h1>
+                <p className="vh-sub">สมุดพกของน้อง {petName}</p>
               </div>
-            ))}
+            </div>
+
+            {filterType && (
+              <div className="vh-filter">
+                <span className="vh-filter-label">กำลังดู</span>
+                <span className="vh-filter-val">{filterType}</span>
+                <Link href={`/pets/${petId}/vaccines`} className="vh-filter-x" aria-label="ล้างตัวกรอง"><Icon.X /></Link>
+              </div>
+            )}
+
+            <div className="vh-card">
+              {records.length === 0 ? (
+                <div className="vh-empty">
+                  <span className="vh-empty-emoji">📭</span>
+                  <p className="vh-empty-text">ยังไม่มีประวัติในหมวดหมู่นี้</p>
+                  <Link href={`/pets/${petId}/vaccines/create`} className="vh-empty-btn"><Icon.Plus /> เพิ่มประวัติใหม่</Link>
+                </div>
+              ) : (
+                <div className="vh-timeline">
+                  {records.map((record, index) => (
+                    <div key={record.id} className={`vh-item ${index === 0 ? 'latest' : ''}`}>
+                      <div className="vh-dot" />
+                      <div className="vh-rec">
+                        <div className="vh-rec-head">
+                          <div>
+                            <div className="vh-rec-name">{record.vaccine_name}</div>
+                            <div className="vh-rec-date"><b>วันที่รับบริการ:</b> {fmtDate(record.date_given)}</div>
+                          </div>
+                          {index === 0 && <span className="vh-badge">ล่าสุด ✨</span>}
+                        </div>
+                        <div className="vh-next">
+                          <div className="vh-next-icon"><Icon.Calendar /></div>
+                          <div>
+                            <div className="vh-next-label">วันนัดครั้งถัดไป</div>
+                            {record.next_due
+                              ? <div className="vh-next-val">{fmtDate(record.next_due)}</div>
+                              : <div className="vh-next-val none">— ไม่มีการนัดหมาย —</div>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+
+          {records.length > 0 && (
+            <Link href={`/pets/${petId}/vaccines/create`} className="vh-fab"><Icon.Plus /> เพิ่มประวัติ</Link>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
-// 🌟 Default Export: ครอบเนื้อหาด้วย Suspense เพื่อให้รองรับ useSearchParams ตามหลักการของ Next.js 13+
 export default function VaccinesHistoryPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-4 md:pt-12 pb-20">
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-teal-500 font-bold animate-pulse">กำลังโหลดหน้าต่าง...</div>}>
-        <VaccineTimeline />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #99F6E4', borderTopColor: '#0D9488', animation: 'vhspin 1s linear infinite' }} /></div>}>
+      <VaccineTimeline />
+    </Suspense>
   );
 }
