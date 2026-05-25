@@ -409,8 +409,8 @@ export default function EditPetPage() {
                 <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} className="premium-input" placeholder="ถ้ามี..." />
               </div>
               <div>
-                <label className="premium-label">หมายเหตุ</label>
-                <input type="text" value={traits} onChange={(e) => setTraits(e.target.value)} className="premium-input" placeholder="นิสัยส่วนตัว..." />
+                <label className="premium-label">นิสัย / หมายเหตุ</label>
+                <input type="text" value={traits} onChange={(e) => setTraits(e.target.value)} className="premium-input" placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
               </div>
             </div>
           </div>
@@ -423,14 +423,17 @@ export default function EditPetPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="premium-label">สถานะในฟาร์ม</label>
+                <label className="premium-label">สถานะ</label>
                 <select value={status} onChange={(e) => setStatus(e.target.value)} className="premium-input select-icon">
-                  <option value="">เด็กในบ้าน (ทั่วไป)</option>
+                  <option value="">-- ไม่ระบุ --</option>
+                  <option value="เด็ก">เด็ก</option>
                   <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อพันธุ์ / แม่พันธุ์</option>
                   <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
+                  <option value="ติดจอง">ติดจอง</option>
+                  <option value="ทำหมัน / ปลดระวาง">ทำหมัน / ปลดระวาง</option>
                 </select>
               </div>
-              {status === "พร้อมย้ายบ้าน" && (
+              {(status === "พร้อมย้ายบ้าน" || status === "ติดจอง") && (
                 <div className="animate-in fade-in zoom-in-95 duration-300">
                   <label className="premium-label" style={{ color: F.pink }}>ค่าตัว / สินสอด (บาท)</label>
                   <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="premium-input bg-pink-50 border-pink-100 text-pink-700 font-bold focus:bg-white" placeholder="เช่น 15000" />

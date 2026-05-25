@@ -7,7 +7,7 @@ export interface Farm {
   id: string;
   user_id: string;
   farm_name: string;
-  description?: string | null;
+  bio?: string | null;
   location?: string | null;
   province?: string | null;
   profile_image_url?: string | null;
@@ -169,7 +169,7 @@ export interface Shop {
   user_id: string;
   shop_name: string;
   name?: string | null;
-  description?: string | null;
+  bio?: string | null;
   location?: string | null;
   profile_image_url?: string | null;
   is_verified?: boolean;
@@ -195,7 +195,7 @@ export interface Service {
   user_id: string;
   service_name: string;
   name?: string | null;
-  description?: string | null;
+  bio?: string | null;
   service_type?: string | null;
   location?: string | null;
   profile_image_url?: string | null;

@@ -265,7 +265,7 @@ export default function CreateFarmPetPage() {
                   <div>
                     <label className="fpc-label">สถานะ</label>
                     <select className="fpc-select" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
-                      <option value="" disabled>เลือกประเภท</option>
+                      <option value="">-- ไม่ระบุ --</option>
                       <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อพันธุ์ / แม่พันธุ์</option>
                       <option value="เด็ก">เด็ก</option>
                       <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
