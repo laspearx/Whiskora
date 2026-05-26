@@ -87,7 +87,7 @@ export default function RecordBirthPage() {
         .rb-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 120px; }
         .rb-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
-        .rb-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .rb-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
         .rb-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
         .rb-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
         .rb-sub { font-size: 12px; font-weight: 700; color: ${F.pink}; margin-top: 4px; }
@@ -119,7 +119,7 @@ export default function RecordBirthPage() {
         .rb-btn:hover { background: #D63F6A; }
         .rb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .rb-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .rb-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: rbspin 1s linear infinite; }
+        .rb-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: rbspin 1s linear infinite; }
         @keyframes rbspin { to { transform: rotate(360deg); } }
       `}</style>
 

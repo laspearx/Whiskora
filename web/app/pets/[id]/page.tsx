@@ -567,7 +567,7 @@ export default function PetDetailPage() {
         * { box-sizing: border-box; }
         .whiskora-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .topbar { display: flex; align-items: center; gap: 14px; max-width: 1100px; margin: 0 auto; padding: 24px 20px 4px; }
-        .topbar-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #FFFFFF; color: #6B7280; cursor: pointer; border: 1px solid rgba(251,207,232,0.9); box-shadow: 0 2px 8px rgba(232,70,119,0.10); transition: all .18s ease; flex-shrink: 0; padding: 0; }
+        .topbar-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: #FFFFFF; color: #6B7280; cursor: pointer; border: 1px solid rgba(251,207,232,0.9); box-shadow: 0 2px 8px rgba(232,70,119,0.10); transition: all .18s ease; flex-shrink: 0; padding: 0; }
         .topbar-back:hover { color: ${F.pink}; border-color: ${F.pink}; box-shadow: 0 4px 14px rgba(232,70,119,0.22); transform: translateX(-1px); }
         .topbar-back:active { transform: scale(0.94); }
         .topbar-titles { display: flex; flex-direction: column; min-width: 0; }

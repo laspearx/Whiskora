@@ -76,7 +76,7 @@ function ShopDashboardContent() {
         .sd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .sd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .sd-top-left { display: flex; align-items: center; gap: 14px; }
-        .sd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .sd-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
         .sd-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
         .sd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .sd-sub { font-size: 12px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
@@ -115,7 +115,7 @@ function ShopDashboardContent() {
         .sd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .sd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         .sd-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .sd-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: sdspin 1s linear infinite; }
+        .sd-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: sdspin 1s linear infinite; }
         @keyframes sdspin { to { transform: rotate(360deg); } }
         @media (max-width: 720px) { .sd-stats { grid-template-columns: 1fr 1fr; } .sd-cols { grid-template-columns: 1fr; } }
       `}</style>

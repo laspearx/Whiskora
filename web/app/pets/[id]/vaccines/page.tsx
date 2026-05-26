@@ -68,7 +68,7 @@ function VaccineTimeline() {
         .vh-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .vh-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 90px; }
         .vh-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-        .vh-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .vh-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
         .vh-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
         .vh-title { font-family: inherit; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .vh-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
@@ -107,7 +107,7 @@ function VaccineTimeline() {
         .vh-fab { position: fixed; bottom: 20px; right: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; background: ${F.teal}; color: white; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(13,148,136,0.4); transition: all .18s; border: none; cursor: pointer; }
         .vh-fab:hover { background: #0B7E74; transform: translateY(-1px); }
         .vh-loading { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .vh-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vhspin 1s linear infinite; }
+        .vh-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vhspin 1s linear infinite; }
         @keyframes vhspin { to { transform: rotate(360deg); } }
       `}</style>
 

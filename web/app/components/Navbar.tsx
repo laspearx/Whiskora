@@ -94,18 +94,18 @@ export default function Navbar() {
 
           {/* ส่วนปุ่มด้านขวาสำหรับมือถือ */}
           <div className="md:hidden flex items-center gap-2">
-            <button 
+            <button
               onClick={() => handleProtectedAction('/profile')}
-              className="flex items-center justify-center w-10 h-10 bg-pink-50 text-pink-500 rounded-lg hover:bg-pink-100 transition shadow-sm border border-pink-100"
+              className="flex items-center justify-center w-10 h-10 bg-pink-50 text-pink-500 rounded-xl hover:bg-pink-100 transition shadow-sm border border-pink-100"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </button>
 
-            <button 
+            <button
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-800 rounded-lg focus:outline-none transition-colors border border-gray-200"
+              className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-800 rounded-xl focus:outline-none transition-colors border border-gray-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isOpen ? (

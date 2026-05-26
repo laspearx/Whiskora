@@ -79,7 +79,7 @@ function ServiceDashboardContent() {
         .svd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .svd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .svd-top-left { display: flex; align-items: center; gap: 14px; }
-        .svd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
+        .svd-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.blueBorder}; box-shadow: 0 2px 8px rgba(37,99,235,0.1); transition: all .18s ease; flex-shrink: 0; }
         .svd-back:hover { color: ${F.blue}; border-color: ${F.blue}; transform: translateX(-1px); }
         .svd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .svd-sub { font-size: 12px; font-weight: 700; color: ${F.blue}; margin-top: 2px; }
@@ -118,7 +118,7 @@ function ServiceDashboardContent() {
         .svd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .svd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         .svd-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .svd-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.blueBorder}; border-top-color: ${F.blue}; animation: svdspin 1s linear infinite; }
+        .svd-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.blueBorder}; border-top-color: ${F.blue}; animation: svdspin 1s linear infinite; }
         @keyframes svdspin { to { transform: rotate(360deg); } }
         @media (max-width: 720px) { .svd-stats { grid-template-columns: 1fr 1fr; } .svd-cols { grid-template-columns: 1fr; } }
       `}</style>
