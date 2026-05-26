@@ -141,11 +141,8 @@ export default function Navbar() {
               <Link href="/community" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/community') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>คอมมูนิตี้</Link>
               <Link href="/farm-hub" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/farm-hub') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ตลาดสัตว์เลี้ยง</Link>
               <Link href="/partner" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/partner') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>พาร์ทเนอร์ของเรา</Link>
-
-              <div className="border-t border-gray-100 mt-1 pt-1">
-                <Link href="/pet-knowledge" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-knowledge') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ความรู้สัตว์เลี้ยง</Link>
-                <Link href="/pet-tools" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-tools') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>Pet Tools</Link>
-              </div>
+              <Link href="/pet-knowledge" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-knowledge') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ความรู้สัตว์เลี้ยง</Link>
+              <Link href="/pet-tools" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-tools') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>Pet Tools</Link>
 
               <div className="border-t border-gray-100 mt-1 pt-1">
                 {session ? (

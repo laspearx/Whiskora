@@ -30,6 +30,7 @@ const THEME: Record<string, any> = {
 export default function PartnerHubPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
   const [myFarms, setMyFarms] = useState<any[]>([]);
   const [myShops, setMyShops] = useState<any[]>([]);
   const [myServices, setMyServices] = useState<any[]>([]);
@@ -37,9 +38,10 @@ export default function PartnerHubPage() {
   useEffect(() => {
     const fetchMyBusinesses = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner')}`); return; }
-        const userId = session.user.id;
+        const { data: { session: s } } = await supabase.auth.getSession();
+        setSession(s);
+        if (!s) { setLoading(false); return; }
+        const userId = s.user.id;
         const [farmsRes, shopsRes, servicesRes] = await Promise.all([
           supabase.from("farms").select("*").eq("user_id", userId),
           supabase.from("shops").select("*").eq("user_id", userId),
@@ -52,7 +54,7 @@ export default function PartnerHubPage() {
       finally { setLoading(false); }
     };
     fetchMyBusinesses();
-  }, [router]);
+  }, []);
 
   const categories = [
     { title: 'ฟาร์มสัตว์เลี้ยง', desc: 'จัดการระบบเพาะพันธุ์ ประวัติสายเลือด และวัคซีนสัตว์เลี้ยง', icon: <Icon.Farm />, theme: 'pink', items: myFarms, registerUrl: '/partner/register-farm', dash: '/farm-dashboard', nameKey: 'farm_name' },
@@ -96,14 +98,49 @@ export default function PartnerHubPage() {
           <div className="ph-spinner" />
           <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
         </div>
+      ) : !session ? (
+        /* ── Guest landing view ── */
+        <div className="ph-page">
+          <div className="ph-body">
+            <div className="ph-hero">
+              <h1>เปิดธุรกิจกับ<span className="accent"> Whiskora</span></h1>
+              <p>เข้าถึงลูกค้าหมื่นคนที่รักสัตว์เลี้ยง เปิดฟาร์ม ร้านค้า หรือบริการของคุณได้ฟรีในโปรแกรม Genesis — ไม่มีค่าธรรมเนียม</p>
+            </div>
+            <div className="ph-grid">
+              {categories.map((cat) => {
+                const t = THEME[cat.theme];
+                return (
+                  <div key={cat.title} className="ph-card">
+                    <div className="ph-icon" style={{ background: t.soft, color: t.accent }}>{cat.icon}</div>
+                    <h2 className="ph-title">{cat.title}</h2>
+                    <p className="ph-desc">{cat.desc}</p>
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(cat.registerUrl)}`}
+                      className="ph-register-btn"
+                      style={{ background: t.accent }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = t.hover)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
+                    >
+                      สมัครเปิด{cat.title}
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 28 }}>
+              <p style={{ fontSize: 13, color: F.muted, marginBottom: 10 }}>มีบัญชีแล้ว?</p>
+              <Link href="/login?redirect=/partner" style={{ fontSize: 14, fontWeight: 700, color: F.pink }}>เข้าสู่ระบบเพื่อจัดการกิจการ →</Link>
+            </div>
+          </div>
+        </div>
       ) : (
+        /* ── Authenticated dashboard view ── */
         <div className="ph-page">
           <div className="ph-body">
             <div className="ph-hero">
               <h1>ศูนย์รวม<span className="accent">พาร์ทเนอร์</span></h1>
               <p>ศูนย์รวมการจัดการธุรกิจสัตว์เลี้ยงของคุณ ขยายการเติบโตและเข้าถึงกลุ่มลูกค้าคนรักสัตว์ได้ง่ายกว่าที่เคย ครบจบในที่เดียว</p>
             </div>
-
             <div className="ph-grid">
               {categories.map((cat) => {
                 const t = THEME[cat.theme];
