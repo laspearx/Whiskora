@@ -86,6 +86,7 @@ export default function Navbar() {
             <Link href="/partner" className={`hover:text-pink-500 transition ${isActive('/partner') ? 'text-pink-500 font-bold' : ''}`}>พาร์ทเนอร์ของเรา</Link>
             <Link href="/pet-knowledge" className={`hover:text-pink-500 transition ${isActive('/pet-knowledge') ? 'text-pink-500 font-bold' : ''}`}>ความรู้</Link>
             <Link href="/pet-tools" className={`hover:text-pink-500 transition ${isActive('/pet-tools') ? 'text-pink-500 font-bold' : ''}`}>Tools</Link>
+            <Link href="/about" className={`hover:text-pink-500 transition ${isActive('/about') ? 'text-pink-500 font-bold' : ''}`}>เกี่ยวกับเรา</Link>
             
             {session ? (
               <button onClick={handleLogout} className="ml-2 text-red-400 hover:text-red-600 font-bold transition">ออกจากระบบ</button>
@@ -143,6 +144,7 @@ export default function Navbar() {
               <Link href="/partner" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/partner') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>พาร์ทเนอร์ของเรา</Link>
               <Link href="/pet-knowledge" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-knowledge') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ความรู้สัตว์เลี้ยง</Link>
               <Link href="/pet-tools" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-tools') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>Pet Tools</Link>
+              <Link href="/about" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/about') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>เกี่ยวกับเรา</Link>
 
               <div className="border-t border-gray-100 mt-1 pt-1">
                 {session ? (

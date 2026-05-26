@@ -20,13 +20,6 @@ const F = {
   purple:   '#7c5cbf',
 };
 
-// ─── Static sample farm data ─────────────────────────────────────────────────
-const FARMS = [
-  { id: '1', name: 'ฟาร์มน้องเหมียว',  loc: 'กรุงเทพฯ',    rating: 4.9, breed: 'แมวเปอร์เซีย',       certs: ['CFA'] },
-  { id: '2', name: 'The Paws Bangkok',  loc: 'นนทบุรี',      rating: 4.8, breed: 'โกลเด้น รีทรีฟเวอร์', certs: ['TICA'] },
-  { id: '3', name: 'Siam Feline',       loc: 'กรุงเทพฯ',    rating: 5.0, breed: 'แมววิเชียรมาศ',       certs: ['CFA'] },
-];
-
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
 const Icon = {
   Search: () => (
@@ -85,19 +78,9 @@ const Icon = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
     </svg>
   ),
-  Heart: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 21s-7-4.5-7-10a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 5.5-7 10-7 10"/>
-    </svg>
-  ),
   ArrowRight: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-    </svg>
-  ),
-  Star: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
   ),
   Check: () => (
@@ -309,65 +292,88 @@ export default function Home() {
 
         {/* ══════════════════════════════════════════════════════ FARM SECTION */}
         <section className="hp-section">
-          {/* Header */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, gap:16, flexWrap:'wrap' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.pink, marginBottom:6 }}>FARM HUB</div>
-              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5, margin:0 }}>ฟาร์มสัตว์เลี้ยงคุณภาพ</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'6px 0 0' }}>รับรองมาตรฐาน มีใบเซอร์ ดูแลโดยผู้เชี่ยวชาญ</p>
+              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5, margin:'0 0 8px' }}>ฟาร์มสัตว์เลี้ยงมาตรฐาน</h2>
+              <p style={{ fontSize:14, color:F.inkSoft, margin:0, maxWidth:520, lineHeight:1.6 }}>
+                Whiskora คัดเลือกเฉพาะฟาร์มที่ผ่านการตรวจสอบ — ไม่ใช่แค่ลงประกาศ แต่ต้องเป็นฟาร์มที่ดูแลสัตว์อย่างมีมาตรฐาน
+              </p>
             </div>
-            <Link href="/farm-hub" className="hp-see-all" style={{ fontSize:13, color:F.pink, fontWeight:600, transition:'color .15s', whiteSpace:'nowrap' }}>ดูทั้งหมด →</Link>
+            <button
+              className="hp-btn-pink"
+              style={{ background:F.pink, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.25)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }}
+              onClick={() => router.push('/farm-hub')}
+            >
+              ค้นหาฟาร์มทั้งหมด <Icon.ArrowRight />
+            </button>
           </div>
 
-          {/* Farm cards */}
+          {/* Standard criteria cards */}
           <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {FARMS.map(farm => (
-              <div
-                key={farm.id}
-                className="hp-farm-card"
-                style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, overflow:'hidden' }}
-                onClick={() => router.push(`/farm/${farm.id}`)}
-              >
-                <div style={{ height:160, background:`repeating-linear-gradient(135deg,${F.paper} 0 10px,#fff 10px 20px)`, display:'grid', placeItems:'center', position:'relative' }}>
-                  <span style={{ fontFamily:'var(--font-mono)', fontSize:10, color:F.muted, letterSpacing:1.5 }}>FARM PHOTO</span>
-                  <button
-                    className="hp-fav"
-                    style={{ position:'absolute', top:12, right:12, width:34, height:34, background:'rgba(255,255,255,.95)', borderRadius:999, border:'none', cursor:'pointer', display:'grid', placeItems:'center', color:F.muted, transition:'color .15s' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Icon.Heart />
-                  </button>
+            {[
+              {
+                emoji: '📋',
+                title: 'ยืนยันตัวตนและสถานที่',
+                desc: 'ฟาร์มทุกแห่งต้องยืนยันเอกสารและที่อยู่จริง ไม่รับฟาร์มนาม นามแฝง หรือขายแบบไม่มีหลักแหล่ง',
+                tags: ['บัตรประจำตัว', 'พิกัดจริง'],
+                color: F.pink,
+                bg: F.pinkSoft,
+              },
+              {
+                emoji: '💉',
+                title: 'ประวัติสุขภาพและวัคซีน',
+                desc: 'ฟาร์มต้องบันทึกประวัติสุขภาพ วัคซีน และการตรวจโรคของสัตว์แต่ละตัวผ่านระบบ Whiskora',
+                tags: ['วัคซีนครบ', 'ตรวจโรค'],
+                color: F.leaf,
+                bg: '#dcfce7',
+              },
+              {
+                emoji: '🧬',
+                title: 'ข้อมูลสายพันธุ์โปร่งใส',
+                desc: 'ผังสายเลือดสืบค้นได้ถึงรุ่นปู่ย่าตายาย รับรองโดย CFA / TICA หรือสมาคมผู้เพาะพันธุ์ที่ได้รับการรับรอง',
+                tags: ['CFA / TICA', 'Pedigree'],
+                color: F.sky,
+                bg: '#dbeafe',
+              },
+              {
+                emoji: '🏠',
+                title: 'สภาพแวดล้อมที่เหมาะสม',
+                desc: 'พื้นที่เลี้ยงต้องสะอาด อากาศถ่ายเท ไม่แออัด และสัตว์ต้องได้รับการสังสรรค์ตามธรรมชาติของสายพันธุ์',
+                tags: ['พื้นที่เหมาะสม', 'ดูแลดี'],
+                color: F.sun,
+                bg: '#fef9c3',
+              },
+              {
+                emoji: '📞',
+                title: 'ติดตามหลังการซื้อ',
+                desc: 'ฟาร์มที่มีคะแนนสูงต้องมีนโยบายรับผิดชอบหลังการซื้อ มีช่องทางติดต่อที่ชัดเจน และตอบกลับรีวิวจากผู้ซื้อ',
+                tags: ['ติดตามผล', 'รีวิวจริง'],
+                color: F.purple,
+                bg: '#ede9fe',
+              },
+              {
+                emoji: '⭐',
+                title: 'คะแนนจากผู้ใช้จริง',
+                desc: 'เรตติ้งคำนวณจากรีวิวผู้ซื้อจริงเท่านั้น ไม่มีการซื้อรีวิว ฟาร์มที่คะแนนต่ำกว่าเกณฑ์จะถูกระงับชั่วคราว',
+                tags: ['รีวิวจากผู้ซื้อ', 'โปร่งใส'],
+                color: F.sun,
+                bg: '#fef9c3',
+              },
+            ].map(item => (
+              <div key={item.title} className="hp-card" style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, padding:24 }}>
+                <div style={{ width:44, height:44, borderRadius:14, background:item.bg, display:'grid', placeItems:'center', fontSize:22, marginBottom:14 }}>
+                  {item.emoji}
                 </div>
-                <div style={{ padding:16 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
-                    <div>
-                      <div style={{ fontWeight:700, fontSize:15 }}>{farm.name}</div>
-                      <div style={{ fontSize:12, color:F.muted, marginTop:3 }}>{farm.loc} · {farm.breed}</div>
-                    </div>
-                    <div style={{ fontSize:13, fontWeight:700, display:'inline-flex', alignItems:'center', gap:3, color:F.sun, flexShrink:0 }}>
-                      <Icon.Star /> {farm.rating}
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', gap:6, marginTop:10, flexWrap:'wrap' }}>
-                    <span style={{ padding:'3px 9px', borderRadius:999, fontSize:10, fontWeight:700, background:'rgba(90,144,101,.12)', color:F.leaf }}>✓ ยืนยันแล้ว</span>
-                    {farm.certs.map(c => (
-                      <span key={c} style={{ padding:'3px 9px', borderRadius:999, fontSize:10, fontWeight:600, background:F.paper, color:F.inkSoft }}>{c}</span>
-                    ))}
-                  </div>
+                <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 8px', color:F.ink }}>{item.title}</h3>
+                <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 12px' }}>{item.desc}</p>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                  {item.tags.map(t => (
+                    <span key={t} style={{ padding:'3px 10px', borderRadius:999, fontSize:11, fontWeight:600, background:item.bg, color:item.color }}>{t}</span>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* CTA */}
-          <div style={{ marginTop:20, textAlign:'center' }}>
-            <button
-              className="hp-btn-pink"
-              style={{ background:F.pink, color:'#fff', padding:'13px 28px', borderRadius:16, fontWeight:700, fontSize:15, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.25)', display:'inline-flex', alignItems:'center', gap:8 }}
-              onClick={() => router.push('/farm-hub')}
-            >
-              ดูฟาร์มทั้งหมด <Icon.ArrowRight />
-            </button>
           </div>
         </section>
 
