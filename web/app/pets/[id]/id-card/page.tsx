@@ -223,8 +223,6 @@ export default function PetIdCardPage() {
         /* ═══ CARD (portrait 2:3 = 400×600px) ═══ */
         .card { width: 400px; height: 600px; background: linear-gradient(160deg, #FDEEF4 0%, #FFFFFF 40%, #FEF3F7 100%); border-radius: 24px; overflow: hidden; position: relative; border: 3px solid #FBCFE8; font-family: inherit; display: flex; flex-direction: column; }
 
-        /* dot pattern bg */
-        .card::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(232,70,119,0.12) 1.5px, transparent 1.5px); background-size: 16px 16px; pointer-events: none; z-index: 0; }
 
         /* Header */
         .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 20px 8px; gap: 3px; }
