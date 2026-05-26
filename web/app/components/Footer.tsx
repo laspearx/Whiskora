@@ -14,9 +14,9 @@ const F = {
 
 export default function Footer() {
   const footerSections = [
-    { title: 'ผู้ใช้งาน', links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/profile/pets' }, { label: 'คอมมูนิตี้', href: '/community' }] },
+    { title: 'ผู้ใช้งาน', links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/pet-id-card' }, { label: 'Pet Knowledge', href: '/pet-knowledge' }, { label: 'Pet Tools', href: '/pet-tools' }, { label: 'คอมมูนิตี้', href: '/community' }] },
     { title: 'พาร์ทเนอร์', links: [{ label: 'เปิดฟาร์ม', href: '/partner/register-farm' }, { label: 'เปิดร้านค้า', href: '/partner/register-shop' }, { label: 'Genesis Program', href: '/partner' }, { label: 'ราคา PRO', href: '/partner' }] },
-    { title: 'บริษัท', links: [{ label: 'เกี่ยวกับเรา', href: '/' }, { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' }, { label: 'ข้อกำหนด', href: '/' }, { label: 'ติดต่อ', href: '/' }] },
+    { title: 'บริษัท', links: [{ label: 'เกี่ยวกับเรา', href: '/about' }, { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' }, { label: 'ข้อกำหนด', href: '/' }, { label: 'ติดต่อ', href: '/' }] },
   ];
 
   return (

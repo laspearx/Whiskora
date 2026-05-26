@@ -222,7 +222,7 @@ export default function Home() {
                   className="btn-white"
                   style={{ background: '#fff', color: F.pink, padding: '14px 24px', borderRadius: 16, fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 20px rgba(232,70,119,.4)' }}
                   // 🌟 แก้ไขจุดที่ 1: เปลี่ยนลิงก์ไปที่ /profile/pets
-                  onClick={() => router.push('/profile/pets')}
+                  onClick={() => router.push('/pet-id-card')}
                 >
                   <span style={{ fontSize: 18 }}>🐾</span> เริ่มสร้างบัตรฟรี
                 </button>
@@ -328,7 +328,7 @@ export default function Home() {
               { href: '/service-hub?category=คลินิก',  icon: <Icon.Clinic />,    bg: '#dbeafe',   color: F.sky,   label: 'คลินิก' },
               { href: '/service-hub?category=กรูมมิ่ง', icon: <Icon.Scissors />, bg: '#dcfce7',   color: F.leaf,  label: 'กรูมมิ่ง' },
               { href: '/community',                     icon: <Icon.Community />, bg: '#fef9c3',   color: F.sun,   label: 'คอมมูนิตี้' },
-              { href: '/profile/pets',                  icon: <Icon.IdCard />,    bg: F.pinkSoft,  color: F.pink,  label: 'Pet ID Card' },
+              { href: '/pet-id-card',                   icon: <Icon.IdCard />,    bg: F.pinkSoft,  color: F.pink,  label: 'Pet ID Card' },
             ].map(cat => (
               <Link
                 key={cat.href}
