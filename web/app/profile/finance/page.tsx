@@ -235,7 +235,7 @@ export default function UniversalPetFinancePage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">วันที่ทำรายการ *</label>
-                <input required type="date" name="transaction_date" value={formData.transaction_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none h-[54px]" />
+                <input required type="date" name="transaction_date" value={formData.transaction_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-0 text-sm font-bold text-gray-800 outline-none h-[48px]" />
               </div>
             </div>
 

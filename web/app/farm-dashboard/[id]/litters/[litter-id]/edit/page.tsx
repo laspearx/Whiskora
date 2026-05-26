@@ -202,11 +202,11 @@ export default function EditLitterPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">วันที่บรีด</label>
-              <input type="date" name="mating_date" value={formData.mating_date} onChange={handleMatingDateChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-0 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-pink-300 text-center" />
+              <input type="date" name="mating_date" value={formData.mating_date} onChange={handleMatingDateChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-0 h-[48px] text-sm font-bold text-gray-800 outline-none focus:border-pink-300 text-center" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">กำหนดคลอด</label>
-              <input type="date" name="expected_birth_date" value={formData.expected_birth_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-0 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-pink-300 text-center" />
+              <input type="date" name="expected_birth_date" value={formData.expected_birth_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-0 h-[48px] text-sm font-bold text-gray-800 outline-none focus:border-pink-300 text-center" />
             </div>
           </div>
 

@@ -400,7 +400,7 @@ export default function EditPetPage() {
               </div>
               <div>
                 <label className="premium-label">วันเกิด</label>
-                <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} className="premium-input h-[42px]" />
+                <input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} className="premium-input h-[48px]" />
               </div>
             </div>
 

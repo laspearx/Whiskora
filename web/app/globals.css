@@ -41,3 +41,16 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
+
+/* ── Fix: iOS date input แสดงเป็น spinner สูงผิดปกติเมื่อว่างเปล่า ── */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 48px;
+  line-height: 48px;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  height: 24px;
+  line-height: 24px;
+}
