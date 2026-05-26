@@ -103,7 +103,7 @@ export default function PetIdCardPage() {
           if (farmData) setFarm(farmData);
         }
 
-        setBase64Logo(await fetchImageAsBase64('/logo - id card.PNG'));
+        setBase64Logo(await fetchImageAsBase64('/logo%20-%20id%20card.PNG'));
         setBase64Verified(await fetchImageAsBase64('/verified.png'));
         setBase64Paw(await fetchImageAsBase64('/paw.png'));
 
@@ -225,8 +225,8 @@ export default function PetIdCardPage() {
 
 
         /* Header */
-        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 20px 8px; gap: 3px; }
-        .card-hd-logo { height: 52px; width: auto; object-fit: contain; }
+        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 20px 6px; gap: 2px; }
+        .card-hd-logo { height: 46px; width: auto; object-fit: contain; }
         .card-hd-logo-text { font-size: 38px; font-weight: 900; color: ${F.pink}; letter-spacing: -1.5px; line-height: 1; }
         .card-hd-rule { width: 100%; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
         .card-hd-rule-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #FBCFE8, transparent); }
@@ -240,22 +240,20 @@ export default function PetIdCardPage() {
         .card-photo img { width: 100%; height: 100%; object-fit: cover; }
         /* stamp: direct child of card-media, centered on left column (col-center ≈ 106px from card edge) */
         .card-stamp { position: absolute; bottom: -42px; left: 107px; transform: translateX(-50%); z-index: 10; }
-        .card-qr-wrap { position: relative; background: white; border-radius: 16px; padding: 8px; border: 2px solid #FBCFE8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+        .card-qr-wrap { position: relative; background: white; border-radius: 16px; padding: 8px; border: 2px solid #FBCFE8; display: flex; align-items: center; justify-content: center; }
         .card-qr-img-wrap { position: relative; width: 100%; aspect-ratio: 1; }
         .card-qr-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
-        .card-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border-radius: 50%; background: white; overflow: hidden; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
-        .card-qr-label { font-size: 8px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
-        .card-qr-sub { font-size: 7px; font-weight: 600; color: ${F.muted}; text-align: center; }
+        .card-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 30px; height: 30px; border-radius: 50%; background: white; overflow: hidden; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
 
         /* Info rows */
-        .card-info { position: relative; z-index: 1; padding: 48px 16px 6px; display: flex; flex-direction: column; gap: 0; background: linear-gradient(180deg, #FEE8F0 0%, #FDF4F7 100%); }
-        .card-info-row { display: flex; align-items: center; gap: 0; padding: 4px 0; }
+        .card-info { position: relative; z-index: 1; padding: 44px 16px 4px; display: flex; flex-direction: column; gap: 0; background: linear-gradient(180deg, #FEE8F0 0%, #FDF4F7 100%); }
+        .card-info-row { display: flex; align-items: center; gap: 0; padding: 2px 0; }
         .card-row-divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(232,70,119,0.25) 20%, rgba(232,70,119,0.25) 80%, transparent); }
-        .card-icon-sq { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.85); border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
-        .card-label-col { display: flex; flex-direction: column; margin-left: 8px; min-width: 74px; flex-shrink: 0; }
-        .card-lbl-th { font-size: 10px; font-weight: 700; color: ${F.ink}; line-height: 1.2; }
-        .card-lbl-en { font-size: 8px; font-weight: 600; color: ${F.muted}; line-height: 1.2; }
-        .card-divider-v { width: 2px; height: 26px; background: ${F.pink}; opacity: 0.4; margin: 0 10px; flex-shrink: 0; }
+        .card-icon-sq { width: 26px; height: 26px; border-radius: 7px; background: rgba(255,255,255,0.85); border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
+        .card-label-col { display: flex; flex-direction: column; margin-left: 7px; min-width: 70px; flex-shrink: 0; }
+        .card-lbl-th { font-size: 10px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
+        .card-lbl-en { font-size: 7.5px; font-weight: 600; color: ${F.muted}; line-height: 1.15; }
+        .card-divider-v { width: 2px; height: 24px; background: ${F.pink}; opacity: 0.4; margin: 0 9px; flex-shrink: 0; }
         .card-val { font-family: inherit; font-size: 11px; font-weight: 700; color: ${F.ink}; flex: 1; line-height: 1.3; }
         .card-val.is-name { font-size: 14px; font-weight: 900; color: ${F.ink}; letter-spacing: 0.5px; }
         .card-gender { font-size: 15px; margin-left: 4px; }
@@ -342,8 +340,6 @@ export default function PetIdCardPage() {
                         : <PawSmall />}
                     </div>
                   </div>
-                  <div className="card-qr-label">สแกนดูโปรไฟล์</div>
-                  <div className="card-qr-sub">Scan to view profile</div>
                 </div>
                 {/* Stamp inside card-media so it inherits z-index:2 stacking context */}
                 <div className="card-stamp">
