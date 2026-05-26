@@ -118,12 +118,6 @@ export default function PetIdCardLandingPage() {
         .pic-cta-btn.active:hover { background: #D63F6A; transform: translateY(-1px); }
         .pic-cta-btn.inactive { background: #F3F4F6; color: #9CA3AF; cursor: not-allowed; }
 
-        /* login nudge */
-        .pic-login { text-align: center; padding: 24px; background: white; border-radius: 20px; border: 1.5px solid ${F.line}; margin-bottom: 24px; }
-        .pic-login p { font-size: 14px; color: ${F.inkSoft}; margin-bottom: 14px; line-height: 1.5; }
-        .pic-login a { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: ${F.pink}; color: white; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(232,70,119,0.3); transition: all .18s; }
-        .pic-login a:hover { background: #D63F6A; }
-
         @media (max-width: 480px) {
           .pic-wrap { padding: 16px 14px 90px; }
           .pic-features { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -177,21 +171,21 @@ export default function PetIdCardLandingPage() {
             <div className="pic-divider-line" />
           </div>
 
-          {!authed && !loading && (
-            <div className="pic-login">
-              <p>เข้าสู่ระบบเพื่อสร้างบัตรประจำตัวสัตว์เลี้ยงของคุณ</p>
-              <Link href="/login">เข้าสู่ระบบ</Link>
-            </div>
-          )}
-
-          {authed && !loading && pets.length === 0 && (
+          {!loading && (authed ? pets.length === 0 : true) && (
             <div className="pic-empty">
               <div className="pic-empty-icon">🐾</div>
-              <div className="pic-empty-title">ยังไม่มีสัตว์เลี้ยง</div>
+              <div className="pic-empty-title">
+                {authed ? 'ยังไม่มีสัตว์เลี้ยง' : 'เริ่มต้นด้วยการเพิ่มสัตว์เลี้ยง'}
+              </div>
               <p className="pic-empty-desc">
-                เพิ่มสัตว์เลี้ยงของคุณก่อน แล้วค่อยมาสร้าง Pet ID Card ได้เลย
+                {authed
+                  ? 'เพิ่มสัตว์เลี้ยงของคุณก่อน แล้วค่อยมาสร้าง Pet ID Card ได้เลย'
+                  : 'สร้างโปรไฟล์สัตว์เลี้ยงฟรี พร้อมรับ Pet ID Card ทันที'}
               </p>
-              <Link href="/pets/add" className="pic-empty-btn">
+              <Link
+                href={authed ? '/pets/create' : '/login?redirect=/pets/create'}
+                className="pic-empty-btn"
+              >
                 <Icon.Plus /> เพิ่มสัตว์เลี้ยง
               </Link>
             </div>
