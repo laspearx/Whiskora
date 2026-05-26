@@ -92,8 +92,8 @@ function AppointmentsList() {
         .ap-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .ap-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
         .ap-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
-        .ap-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; text-decoration: none; }
-        .ap-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .ap-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; text-decoration: none; }
+        .ap-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .ap-title { font-family: inherit; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .ap-date { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: ${F.pink}; margin-top: 3px; }
         .ap-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }

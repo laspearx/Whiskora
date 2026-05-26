@@ -144,7 +144,7 @@ export default function PublicFarmProfile() {
         .fp-cover img { width: 100%; height: 100%; object-fit: cover; }
         .fp-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 40%); }
         .fp-cover-top { position: absolute; top: 16px; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
-        .fp-cover-btn { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); color: ${F.ink}; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.12); transition: all .15s; }
+        .fp-cover-btn { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); color: ${F.ink}; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.12); transition: all .15s; }
         .fp-cover-btn:hover { background: white; transform: scale(1.05); }
         .fp-cover-verified { position: absolute; bottom: 16px; right: 20px; width: 84px; height: 84px; z-index: 2; }
         .fp-cover-verified img, .fp-cover-verified svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 12px rgba(232,70,119,0.3)); }

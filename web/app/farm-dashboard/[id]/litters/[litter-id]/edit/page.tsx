@@ -157,7 +157,7 @@ export default function EditLitterPage() {
       
       {/* 🔙 Header */}
       <div className="flex items-start gap-3 mb-6 md:mb-8">
-        <button onClick={() => router.back()} className="mt-0.5 p-2.5 bg-white hover:bg-pink-50 text-gray-400 hover:text-pink-500 rounded-xl transition shadow-sm border border-gray-100 shrink-0">
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <div className="flex flex-col">

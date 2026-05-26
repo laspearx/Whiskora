@@ -273,7 +273,7 @@ export default function EditPetPage() {
         
         {/* Header */}
         <div className="flex items-center gap-4 mb-10">
-          <button onClick={() => router.back()} className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-gray-900 transition-colors">
+          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <Icon.ArrowLeft />
           </button>
           <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: F.ink }}>Edit Profile</h1>

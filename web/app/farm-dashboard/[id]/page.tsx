@@ -203,8 +203,8 @@ function FarmDashboardContent() {
         /* ── Farm identity header ── */
         .fd-id-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
         .fd-id-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
-        .fd-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
-        .fd-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .fd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
+        .fd-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .fd-farm-avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid ${F.pinkBorder}; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 28px; }
         .fd-farm-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .fd-farm-name { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; display: flex; align-items: center; gap: 6px; }

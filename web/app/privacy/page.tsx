@@ -24,8 +24,8 @@ export default function PrivacyPolicyPage() {
         * { box-sizing: border-box; }
         .pv-page { font-family: inherit; color: ${F.ink}; }
         .pv-body { max-width: 820px; margin: 0 auto; padding: 24px 20px 80px; }
-        .pv-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; text-decoration: none; }
-        .pv-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .pv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; text-decoration: none; }
+        .pv-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .pv-hero { display: flex; align-items: center; gap: 16px; margin: 8px 0 22px; }
         .pv-hero-icon { width: 56px; height: 56px; border-radius: 18px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .pv-title { font-family: inherit; font-size: 28px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; }

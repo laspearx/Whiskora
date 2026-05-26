@@ -76,8 +76,8 @@ function ShopDashboardContent() {
         .sd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .sd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .sd-top-left { display: flex; align-items: center; gap: 14px; }
-        .sd-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
-        .sd-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
+        .sd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
+        .sd-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .sd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .sd-sub { font-size: 12px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
         .sd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.teal}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(13,148,136,0.25); transition: all .15s; white-space: nowrap; }

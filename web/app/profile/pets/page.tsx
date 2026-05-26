@@ -98,10 +98,8 @@ export default function MyPetsSummaryPage() {
           <button
             onClick={() => router.push('/profile')}
             aria-label="ย้อนกลับ"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-gray-500 shrink-0 transition-all active:scale-95"
-            style={{ border: `1px solid #FBCFE8`, boxShadow: '0 2px 8px rgba(232,70,119,0.1)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = F.pink; e.currentTarget.style.borderColor = F.pink; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = '#FBCFE8'; }}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-gray-700 shrink-0 transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-95"
+            style={{ border: '1px solid #E5E7EB', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
           >
             <Icon.ArrowLeft />
           </button>

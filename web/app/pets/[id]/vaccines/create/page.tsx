@@ -114,8 +114,8 @@ export default function CreateVaccinePage() {
         .vc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .vc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .vc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-        .vc-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.tealBorder}; box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: all .18s ease; flex-shrink: 0; }
-        .vc-back:hover { color: ${F.teal}; border-color: ${F.teal}; transform: translateX(-1px); }
+        .vc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
+        .vc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .vc-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .vc-sub { font-size: 13px; font-weight: 700; color: ${F.teal}; margin-top: 2px; }
         .vc-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }

@@ -128,8 +128,8 @@ export default function CreateLitterPage() {
         .lc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .lc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
         .lc-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
-        .lc-back { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,0.1); transition: all .18s ease; flex-shrink: 0; }
-        .lc-back:hover { color: ${F.pink}; border-color: ${F.pink}; transform: translateX(-1px); }
+        .lc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
+        .lc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .lc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.15; }
         .lc-sub { font-size: 13px; font-weight: 700; color: ${F.pink}; margin-top: 4px; }
         .lc-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; }

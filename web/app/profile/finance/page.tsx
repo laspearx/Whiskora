@@ -137,7 +137,7 @@ export default function UniversalPetFinancePage() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-gray-900 transition-colors">
+          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <Icon.ArrowLeft />
           </button>
           <div>
