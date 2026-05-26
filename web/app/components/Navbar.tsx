@@ -84,6 +84,8 @@ export default function Navbar() {
             <Link href="/community" className={`hover:text-pink-500 transition ${isActive('/community') ? 'text-pink-500 font-bold' : ''}`}>คอมมูนิตี้</Link>            
             <Link href="/farm-hub" className={`hover:text-pink-500 transition ${isActive('/farm-hub') ? 'text-pink-500 font-bold' : ''}`}>ตลาดสัตว์เลี้ยง</Link>
             <Link href="/partner" className={`hover:text-pink-500 transition ${isActive('/partner') ? 'text-pink-500 font-bold' : ''}`}>พาร์ทเนอร์ของเรา</Link>
+            <Link href="/pet-knowledge" className={`hover:text-pink-500 transition ${isActive('/pet-knowledge') ? 'text-pink-500 font-bold' : ''}`}>ความรู้</Link>
+            <Link href="/pet-tools" className={`hover:text-pink-500 transition ${isActive('/pet-tools') ? 'text-pink-500 font-bold' : ''}`}>Tools</Link>
             
             {session ? (
               <button onClick={handleLogout} className="ml-2 text-red-400 hover:text-red-600 font-bold transition">ออกจากระบบ</button>
@@ -94,6 +96,15 @@ export default function Navbar() {
 
           {/* ส่วนปุ่มด้านขวาสำหรับมือถือ */}
           <div className="md:hidden flex items-center gap-2">
+            <Link
+              href="/"
+              className="flex items-center justify-center w-10 h-10 bg-gray-50 text-gray-500 rounded-xl hover:bg-gray-100 transition shadow-sm border border-gray-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </Link>
+
             <button
               onClick={() => handleProtectedAction('/profile')}
               className="flex items-center justify-center w-10 h-10 bg-pink-50 text-pink-500 rounded-xl hover:bg-pink-100 transition shadow-sm border border-pink-100"
@@ -130,7 +141,12 @@ export default function Navbar() {
               <Link href="/community" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/community') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>คอมมูนิตี้</Link>
               <Link href="/farm-hub" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/farm-hub') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ตลาดสัตว์เลี้ยง</Link>
               <Link href="/partner" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/partner') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>พาร์ทเนอร์ของเรา</Link>
-              
+
+              <div className="border-t border-gray-100 mt-1 pt-1">
+                <Link href="/pet-knowledge" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-knowledge') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>ความรู้สัตว์เลี้ยง</Link>
+                <Link href="/pet-tools" onClick={() => setIsOpen(false)} className={`px-4 py-2.5 text-sm font-medium transition ${isActive('/pet-tools') ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`}>Pet Tools</Link>
+              </div>
+
               <div className="border-t border-gray-100 mt-1 pt-1">
                 {session ? (
                   <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition">ออกจากระบบ</button>
