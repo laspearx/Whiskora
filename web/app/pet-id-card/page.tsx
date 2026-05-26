@@ -183,7 +183,7 @@ export default function PetIdCardLandingPage() {
                   : 'สร้างโปรไฟล์สัตว์เลี้ยงฟรี พร้อมรับ Pet ID Card ทันที'}
               </p>
               <Link
-                href={authed ? '/pets/create' : '/login?redirect=/pets/create'}
+                href="/pets/create"
                 className="pic-empty-btn"
               >
                 <Icon.Plus /> เพิ่มสัตว์เลี้ยง

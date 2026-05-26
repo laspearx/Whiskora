@@ -99,7 +99,7 @@ function CreatePetContent() {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) router.push(`/login?redirect=${encodeURIComponent('/pets/create')}`);
+      if (!session) router.push(`/register?redirect=${encodeURIComponent('/pets/create')}`);
       else setUserId(session.user.id);
     };
     checkUser();
