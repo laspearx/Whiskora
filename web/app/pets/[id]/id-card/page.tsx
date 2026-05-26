@@ -15,14 +15,14 @@ const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Share: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
   Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-  Paw: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
-  Cat: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>,
-  Palette: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"/></svg>,
-  Calendar: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  Clock: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  Drop: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
-  Cross: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>,
-  Shield: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Paw: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
+  Cat: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>,
+  Palette: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"/></svg>,
+  Calendar: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Clock: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  Drop: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+  Cross: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>,
+  Shield: () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
   Verified: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="#E84677"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
 };
 
@@ -199,60 +199,60 @@ export default function PetIdCardPage() {
         .idc-btn-ghost:hover { border-color: ${F.pink}; color: ${F.pink}; }
         .idc-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 10px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; max-width: 760px; width: 100%; }
 
-        /* ═══ ตัวบัตร ═══ */
-        .idc-card { width: 760px; background: linear-gradient(135deg, #FEF1F6 0%, #FFFFFF 55%, #FEF1F6 100%); border-radius: 20px; overflow: hidden; position: relative; border: 5px solid #FCE0EC; font-family: inherit; }
+        /* ═══ ตัวบัตร ═══  760 × 479 px  ≈ ISO-7810 (1.586 : 1) */
+        .idc-card { width: 760px; height: 479px; background: linear-gradient(135deg, #FEF1F6 0%, #FFFFFF 55%, #FEF1F6 100%); border-radius: 20px; overflow: hidden; position: relative; border: 5px solid #FCE0EC; font-family: inherit; display: flex; flex-direction: column; }
         .idc-card-pattern { position: absolute; inset: 0; opacity: 0.45; pointer-events: none; background-image: radial-gradient(circle at 5% 90%, rgba(251,207,232,0.3) 0%, transparent 30%), radial-gradient(circle at 95% 10%, rgba(251,207,232,0.2) 0%, transparent 25%); }
 
         /* Header แถบด้านบน */
-        .idc-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px 14px; border-bottom: 1.5px solid #FCE0EC; position: relative; z-index: 1; }
-        .idc-brand { display: flex; align-items: center; gap: 10px; }
-        .idc-brand-logo { height: 32px; width: auto; object-fit: contain; }
-        .idc-brand-logo-fallback { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.pink}; letter-spacing: -1px; }
+        .idc-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 9px; border-bottom: 1.5px solid #FCE0EC; position: relative; z-index: 1; flex-shrink: 0; }
+        .idc-brand { display: flex; align-items: center; gap: 8px; }
+        .idc-brand-logo { height: 26px; width: auto; object-fit: contain; }
+        .idc-brand-logo-fallback { font-family: inherit; font-size: 20px; font-weight: 700; color: ${F.pink}; letter-spacing: -1px; }
         .idc-brand-titles { line-height: 1.25; }
-        .idc-brand-en { font-size: 11px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.07em; }
-        .idc-brand-th { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; }
-        .idc-verified-stamp { width: 58px; height: 58px; flex-shrink: 0; }
+        .idc-brand-en { font-size: 10px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.07em; }
+        .idc-brand-th { font-size: 9px; font-weight: 600; color: ${F.inkSoft}; }
+        .idc-verified-stamp { width: 50px; height: 50px; flex-shrink: 0; }
         .idc-verified-stamp img { width: 100%; height: 100%; object-fit: contain; }
-        .idc-verified-fallback { width: 58px; height: 58px; border-radius: 50%; border: 2.5px dashed ${F.pink}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${F.pink}; gap: 2px; }
-        .idc-verified-fallback-text { font-size: 6.5px; font-weight: 800; letter-spacing: 0.1em; color: ${F.pink}; text-transform: uppercase; }
+        .idc-verified-fallback { width: 50px; height: 50px; border-radius: 50%; border: 2px dashed ${F.pink}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${F.pink}; gap: 2px; }
+        .idc-verified-fallback-text { font-size: 6px; font-weight: 800; letter-spacing: 0.1em; color: ${F.pink}; text-transform: uppercase; }
 
-        /* Body: 3 คอลัมน์ */
-        .idc-body-grid { display: grid; grid-template-columns: 195px 1fr 130px; gap: 0; padding: 18px 22px 16px; position: relative; z-index: 1; align-items: stretch; }
+        /* Body: 3 คอลัมน์ — flex-1 เพื่อเติมพื้นที่ที่เหลือ */
+        .idc-body-grid { display: grid; grid-template-columns: 160px 1fr 120px; gap: 0; padding: 10px 18px 8px; position: relative; z-index: 1; align-items: stretch; flex: 1; min-height: 0; }
 
         /* คอลัมน์ซ้าย: รูป + ID */
-        .idc-col-left { padding-right: 18px; border-right: 1.5px solid #FCE0EC; }
-        .idc-photo { width: 100%; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+        .idc-col-left { padding-right: 14px; border-right: 1.5px solid #FCE0EC; display: flex; flex-direction: column; }
+        .idc-photo { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 40px; flex-shrink: 0; max-height: 152px; }
         .idc-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .idc-petid-box { margin-top: 10px; background: rgba(253,242,245,0.8); border-radius: 10px; padding: 10px 12px; border: 1px solid #FCE0EC; }
-        .idc-petid-label { display: flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
-        .idc-petid-num { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.5px; word-break: break-all; line-height: 1.2; }
-        .idc-petid-issue { font-size: 8.5px; color: ${F.muted}; margin-top: 4px; line-height: 1.4; }
+        .idc-petid-box { margin-top: 7px; background: rgba(253,242,245,0.8); border-radius: 8px; padding: 7px 10px; border: 1px solid #FCE0EC; flex: 1; }
+        .idc-petid-label { display: flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 800; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+        .idc-petid-num { font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.5px; word-break: break-all; line-height: 1.2; }
+        .idc-petid-issue { font-size: 7.5px; color: ${F.muted}; margin-top: 3px; line-height: 1.4; }
 
         /* คอลัมน์กลาง: แถวข้อมูล */
-        .idc-col-mid { padding: 2px 16px; }
-        .idc-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed rgba(252,224,236,0.8); }
+        .idc-col-mid { padding: 0 12px; display: flex; flex-direction: column; justify-content: space-evenly; }
+        .idc-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(252,224,236,0.8); }
         .idc-row:last-child { border-bottom: none; }
-        .idc-icon-circle { width: 26px; height: 26px; border-radius: 50%; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
-        .idc-row-label { font-size: 10.5px; font-weight: 600; color: ${F.muted}; min-width: 56px; flex-shrink: 0; }
-        .idc-row-val { font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.ink}; line-height: 1.3; flex: 1; min-width: 0; }
-        .idc-row-val.is-name { font-size: 15px; font-weight: 800; color: ${F.ink}; letter-spacing: 0.5px; }
-        .idc-gender { font-size: 15px; margin-left: 3px; }
+        .idc-icon-circle { width: 20px; height: 20px; border-radius: 50%; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
+        .idc-row-label { font-size: 9.5px; font-weight: 600; color: ${F.muted}; min-width: 48px; flex-shrink: 0; }
+        .idc-row-val { font-family: inherit; font-size: 12px; font-weight: 700; color: ${F.ink}; line-height: 1.2; flex: 1; min-width: 0; }
+        .idc-row-val.is-name { font-size: 14px; font-weight: 800; color: ${F.ink}; letter-spacing: 0.5px; }
+        .idc-gender { font-size: 14px; margin-left: 3px; }
         .idc-gender-m { color: #2563EB; }
         .idc-gender-f { color: #DB2777; }
 
         /* คอลัมน์ขวา: QR */
-        .idc-col-right { padding-left: 16px; border-left: 1.5px solid #FCE0EC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-        .idc-qr-wrap { position: relative; width: 110px; height: 110px; background: white; border-radius: 10px; padding: 4px; border: 1.5px solid #FCE0EC; }
+        .idc-col-right { padding-left: 12px; border-left: 1.5px solid #FCE0EC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+        .idc-qr-wrap { position: relative; width: 96px; height: 96px; background: white; border-radius: 10px; padding: 3px; border: 1.5px solid #FCE0EC; }
         .idc-qr-wrap img { width: 100%; height: 100%; object-fit: contain; }
-        .idc-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px; border-radius: 50%; background: white; border: 2px solid ${F.pink}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
-        .idc-qr-label { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
-        .idc-qr-sub { font-size: 8px; font-weight: 600; color: ${F.muted}; text-align: center; }
+        .idc-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid ${F.pink}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
+        .idc-qr-label { font-size: 8.5px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
+        .idc-qr-sub { font-size: 7.5px; font-weight: 600; color: ${F.muted}; text-align: center; }
 
         /* Footer */
-        .idc-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-top: 1.5px solid #FCE0EC; position: relative; z-index: 1; background: rgba(255,255,255,0.5); flex-wrap: wrap; }
-        .idc-foot-text { font-size: 11px; font-weight: 600; color: ${F.inkSoft}; }
+        .idc-footer { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 14px; border-top: 1.5px solid #FCE0EC; position: relative; z-index: 1; background: rgba(255,255,255,0.5); flex-wrap: wrap; flex-shrink: 0; }
+        .idc-foot-text { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; }
         .idc-foot-text b { color: ${F.pink}; font-family: inherit; font-weight: 700; }
-        .idc-foot-sep { color: ${F.muted}; font-size: 11px; }
+        .idc-foot-sep { color: ${F.muted}; font-size: 10px; }
 
         @media (max-width: 768px) {
           .idc-body { padding: 16px 12px 60px; }
