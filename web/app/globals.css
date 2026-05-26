@@ -40,6 +40,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Fix: form elements ไม่ inherit font-family จาก body (ปัญหา dropdown ฟ้อนท์ผิด) ── */
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* ── Heading scale มาตรฐาน ── */
+/* ขนาดนี้ใช้เป็น base — inline style หรือ Tailwind class ยังสามารถ override ได้ */
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; color: var(--ink); }
+h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.25; color: var(--ink); }
+h3 { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+
 a { color: inherit; text-decoration: none; }
 
 /* ── Fix: iOS date input แสดงเป็น spinner สูงผิดปกติเมื่อว่างเปล่า ── */
