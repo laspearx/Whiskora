@@ -542,6 +542,160 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ══════════════════════════════════════════════════════ MEMBER FEATURES */}
+        <section className="hp-section">
+          <div style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px', boxShadow:'0 20px 48px rgba(232,70,119,.16)' }}>
+            {/* deco blobs */}
+            <div style={{ position:'absolute', top:-80, right:-60, width:320, height:320, background:'radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%)', pointerEvents:'none' }} />
+            <div style={{ position:'absolute', bottom:-60, left:-40, width:200, height:200, background:'radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%)', pointerEvents:'none' }} />
+
+            {/* header */}
+            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+              <div>
+                <span style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(255,255,255,0.3)', display:'inline-block', marginBottom:14, color:'#fff' }}>
+                  FREE FOREVER · สมาชิกทั่วไป
+                </span>
+                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>
+                  สมัครฟรี แล้วได้อะไรบ้าง?
+                </h2>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,.85)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>
+                  บัญชี Whiskora ฟรีตลอดชีพ ไม่มีค่าธรรมเนียมรายเดือน ไม่ต้องบัตรเครดิต
+                </p>
+              </div>
+              <button
+                className="hp-btn-outline"
+                style={{ background:'#fff', color:F.pink, padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,.12)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }}
+                onClick={() => router.push('/register')}
+              >
+                สมัครเลยฟรี →
+              </button>
+            </div>
+
+            {/* feature grid */}
+            <div className="hp-two-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14 }}>
+              {[
+                {
+                  emoji: '🐾',
+                  title: 'เพิ่มสัตว์เลี้ยงได้ไม่จำกัด',
+                  desc: 'บันทึกชื่อ สายพันธุ์ วันเกิด รูปภาพ และข้อมูลพื้นฐานของน้องทุกตัว จัดเก็บไว้อย่างเป็นระเบียบในที่เดียว',
+                },
+                {
+                  emoji: '🪪',
+                  title: 'สมุดพกดิจิทัล (Pet ID Card)',
+                  desc: 'สร้างบัตรประจำตัวดิจิทัลให้น้อง พร้อม QR Code สำหรับแชร์ประวัติและโปรไฟล์ได้ทุกที่ทุกเวลา',
+                },
+                {
+                  emoji: '💉',
+                  title: 'ติดตามสุขภาพและวัคซีน',
+                  desc: 'บันทึกประวัติวัคซีน การตรวจสุขภาพ น้ำหนัก และโน้ตสุขภาพรายวัน พร้อมแจ้งเตือนเมื่อถึงเวลาฉีดวัคซีน',
+                },
+                {
+                  emoji: '💰',
+                  title: 'บันทึกค่าใช้จ่ายในการเลี้ยง',
+                  desc: 'จดบันทึกค่าอาหาร ค่าหมอ ค่ากรูมมิ่ง และค่าใช้จ่ายอื่นๆ ดูสรุปรายเดือนรายปีได้ในหน้า Finance',
+                },
+                {
+                  emoji: '🧬',
+                  title: 'ผังสายเลือด (Pedigree)',
+                  desc: 'สร้างและดูผังสายพันธุ์ของน้องย้อนหลังหลายรุ่น เหมาะสำหรับผู้เพาะพันธุ์และผู้ที่ซื้อสัตว์จากฟาร์ม',
+                },
+                {
+                  emoji: '📂',
+                  title: 'จัดเก็บเอกสารสำคัญ',
+                  desc: 'อัปโหลดและจัดเก็บใบรับรองสายพันธุ์ ผลตรวจโรค ใบวัคซีน และเอกสารสำคัญต่างๆ ในระบบ Cloud',
+                },
+              ].map(f => (
+                <div key={f.title} style={{ background:'rgba(255,255,255,0.14)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', borderRadius:18, padding:'20px 22px', display:'flex', gap:16, alignItems:'flex-start' }}>
+                  <div style={{ fontSize:28, flexShrink:0, marginTop:2 }}>{f.emoji}</div>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{f.title}</div>
+                    <div style={{ fontSize:12, color:'rgba(255,255,255,.8)', lineHeight:1.6 }}>{f.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════ PARTNER BENEFITS */}
+        <section className="hp-section">
+          <div style={{ background:F.ink, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px' }}>
+            <div style={{ position:'absolute', top:-80, left:-60, width:320, height:320, background:'radial-gradient(circle,rgba(232,70,119,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
+            <div style={{ position:'absolute', bottom:-60, right:-40, width:240, height:240, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
+
+            {/* header */}
+            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+              <div>
+                <span style={{ background:'rgba(232,70,119,0.25)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(232,70,119,0.4)', display:'inline-block', marginBottom:14, color:F.pink }}>
+                  GENESIS PROGRAM · เปิดรับพาร์ทเนอร์
+                </span>
+                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>
+                  พาร์ทเนอร์กับ Whiskora<br />
+                  <span style={{ color:F.pink }}>ได้อะไรบ้าง?</span>
+                </h2>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,.7)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>
+                  ไม่ว่าจะเป็นฟาร์ม ร้านค้า หรือคลินิก — เราช่วยให้ธุรกิจของคุณเติบโตได้เร็วขึ้น
+                </p>
+              </div>
+              <button
+                className="hp-btn-pink"
+                style={{ background:F.pink, color:'#fff', padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.4)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0, position:'relative', zIndex:2 }}
+                onClick={() => router.push('/partner')}
+              >
+                สมัครเป็นพาร์ทเนอร์ →
+              </button>
+            </div>
+
+            {/* benefit grid */}
+            <div className="hp-three-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+              {[
+                {
+                  emoji: '👥',
+                  title: 'เข้าถึงฐานลูกค้าหมื่นคน',
+                  desc: 'กลุ่มผู้ใช้ที่รักสัตว์เลี้ยงและพร้อมซื้อ ไม่ต้องเสียเวลาหาลูกค้าเอง เราส่งตรงมาให้',
+                  color: F.pink,
+                },
+                {
+                  emoji: '📊',
+                  title: 'ระบบจัดการครบวงจร',
+                  desc: 'แดชบอร์ดบริหารฟาร์ม ร้านค้า หรือบริการ จัดการสต็อก คิวจอง และเอกสารในที่เดียว',
+                  color: F.sky,
+                },
+                {
+                  emoji: '🆓',
+                  title: 'ฟรีในช่วง Genesis Program',
+                  desc: 'พาร์ทเนอร์รุ่นแรกไม่เสียค่า commission ค่าลงทะเบียน หรือค่ารายเดือนใดๆ ตลอดช่วงโปรแกรม',
+                  color: F.leaf,
+                },
+                {
+                  emoji: '🏅',
+                  title: 'ตราสัญลักษณ์ Verified',
+                  desc: 'ได้รับ badge "ยืนยันแล้ว" บนโปรไฟล์ เพิ่มความน่าเชื่อถือและโอกาสที่ลูกค้าจะเลือกคุณ',
+                  color: F.sun,
+                },
+                {
+                  emoji: '📣',
+                  title: 'โปรโมทผ่านแพลตฟอร์ม',
+                  desc: 'ฟาร์มและร้านค้าที่มีคะแนนดีจะถูกนำเสนอในหน้า Featured และการค้นหาลำดับต้น',
+                  color: F.purple,
+                },
+                {
+                  emoji: '🤝',
+                  title: 'ทีม Support พร้อมช่วยเหลือ',
+                  desc: 'ทีมงาน Whiskora พร้อมช่วยตั้งค่าระบบ ตอบคำถาม และให้คำแนะนำเพื่อให้ธุรกิจของคุณเริ่มได้เร็ว',
+                  color: F.pink,
+                },
+              ].map(b => (
+                <div key={b.title} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:18, padding:'22px 20px' }}>
+                  <div style={{ fontSize:28, marginBottom:12 }}>{b.emoji}</div>
+                  <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{b.title}</div>
+                  <div style={{ fontSize:12, color:'rgba(255,255,255,.65)', lineHeight:1.65 }}>{b.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ══════════════════════════════════════════════════════ COMMUNITY BAND */}
         <section className="hp-section">
           <div
