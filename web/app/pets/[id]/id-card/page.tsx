@@ -192,7 +192,7 @@ export default function PetIdCardPage() {
     { icon: <RI.Calendar />, labelTh: 'วันเกิด', labelEn: 'Date of Birth', val: fmtDate(pet.birth_date) },
     { icon: <RI.Clock />, labelTh: 'อายุ', labelEn: 'Age', val: calcAge(pet.birth_date) },
     { icon: <RI.Drop />, labelTh: 'กรุ๊ปเลือด', labelEn: 'Blood Type', val: pet.blood_type || '-' },
-    { icon: <RI.Cross />, labelTh: 'ทำหมัน', labelEn: 'Spayed / Neutered', val: pet.is_neutered ? 'ทำหมันแล้ว ✓' : 'ยังไม่ทำหมัน' },
+    { icon: <RI.Cross />, labelTh: 'ทำหมัน', labelEn: 'Spayed / Neutered', val: pet.is_neutered ? 'ทำหมันแล้ว' : 'ยังไม่ทำหมัน', isPill: true, pillNeutered: !!pet.is_neutered },
   ];
 
   return (
@@ -227,20 +227,23 @@ export default function PetIdCardPage() {
         .card::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(232,70,119,0.12) 1.5px, transparent 1.5px); background-size: 16px 16px; pointer-events: none; z-index: 0; }
 
         /* Header */
-        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 20px 10px; gap: 3px; }
-        .card-hd-sparkle { font-size: 11px; font-weight: 800; color: ${F.pinkLight}; letter-spacing: 0.18em; }
-        .card-hd-logo { height: 28px; width: auto; object-fit: contain; }
-        .card-hd-logo-text { font-size: 22px; font-weight: 900; color: ${F.pink}; letter-spacing: -1px; line-height: 1; }
-        .card-hd-rule { width: 100%; display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 20px 8px; gap: 4px; }
+        .card-hd-brand { display: flex; align-items: center; gap: 10px; }
+        .card-hd-sparkle { font-size: 16px; color: ${F.pinkLight}; line-height: 1; }
+        .card-hd-logo { height: 40px; width: auto; object-fit: contain; }
+        .card-hd-logo-text { font-size: 34px; font-weight: 900; color: ${F.pink}; letter-spacing: -1.5px; line-height: 1; }
+        .card-hd-rule { width: 100%; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
         .card-hd-rule-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #FBCFE8, transparent); }
         .card-hd-rule-text { font-size: 8px; font-weight: 800; letter-spacing: 0.2em; color: ${F.pink}; white-space: nowrap; }
-        .card-hd-sub { font-size: 9px; font-weight: 600; color: ${F.inkSoft}; letter-spacing: 0.1em; margin-top: 2px; }
+        .card-hd-sub { font-size: 9px; font-weight: 600; color: ${F.inkSoft}; letter-spacing: 0.08em; margin-top: 1px; }
 
         /* Media section */
-        .card-media { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 18px 16px; }
-        .card-photo-wrap { position: relative; }
+        .card-media { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 18px 0; }
+        .card-photo-wrap { position: relative; padding-bottom: 0; }
         .card-photo { width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 42px; border: 2px solid #FBCFE8; }
         .card-photo img { width: 100%; height: 100%; object-fit: cover; }
+        /* stamp overlaps bottom-center of photo into info section */
+        .card-stamp { position: absolute; bottom: -44px; left: 50%; transform: translateX(-50%); z-index: 10; }
         .card-qr-wrap { position: relative; background: white; border-radius: 16px; padding: 8px; border: 2px solid #FBCFE8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
         .card-qr-img-wrap { position: relative; width: 100%; aspect-ratio: 1; }
         .card-qr-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
@@ -248,14 +251,11 @@ export default function PetIdCardPage() {
         .card-qr-label { font-size: 8px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
         .card-qr-sub { font-size: 7px; font-weight: 600; color: ${F.muted}; text-align: center; }
 
-        /* Stamp centered between media and info */
-        .card-stamp { position: relative; z-index: 2; display: flex; justify-content: center; margin-top: -20px; margin-bottom: -20px; }
-
         /* Info rows */
-        .card-info { position: relative; z-index: 1; padding: 24px 18px 10px; display: flex; flex-direction: column; gap: 0; }
-        .card-info-row { display: flex; align-items: center; gap: 0; padding: 6px 0; }
+        .card-info { position: relative; z-index: 1; padding: 54px 18px 8px; display: flex; flex-direction: column; gap: 0; background: linear-gradient(180deg, #FEE8F0 0%, #FDF4F7 100%); }
+        .card-info-row { display: flex; align-items: center; gap: 0; padding: 5px 0; }
         .card-row-divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(251,207,232,0.7) 20%, rgba(251,207,232,0.7) 80%, transparent); }
-        .card-icon-sq { width: 32px; height: 32px; border-radius: 9px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
+        .card-icon-sq { width: 32px; height: 32px; border-radius: 9px; background: rgba(255,255,255,0.8); border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
         .card-label-col { display: flex; flex-direction: column; margin-left: 10px; min-width: 80px; flex-shrink: 0; }
         .card-lbl-th { font-size: 11px; font-weight: 700; color: ${F.ink}; line-height: 1.2; }
         .card-lbl-en { font-size: 9px; font-weight: 600; color: ${F.muted}; line-height: 1.2; }
@@ -265,6 +265,9 @@ export default function PetIdCardPage() {
         .card-gender { font-size: 15px; margin-left: 4px; }
         .card-gender-m { color: #2563EB; }
         .card-gender-f { color: #DB2777; }
+        .card-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .card-pill-green { background: #DCFCE7; color: #15803D; }
+        .card-pill-gray { background: rgba(255,255,255,0.7); color: #6B7280; border: 1px solid #E5E7EB; }
 
         /* Pet ID box */
         .card-petid { position: relative; z-index: 1; margin: 4px 18px 12px; background: linear-gradient(135deg, #E84677 0%, #F472B6 100%); border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
@@ -314,10 +317,13 @@ export default function PetIdCardPage() {
             >
               {/* Header */}
               <div className="card-hd">
-                <div className="card-hd-sparkle">✦ &nbsp; ✦ &nbsp; ✦</div>
-                {base64Logo && !base64Logo.startsWith('/')
-                  ? <img src={base64Logo} alt="Whiskora" className="card-hd-logo" />
-                  : <div className="card-hd-logo-text">whiskora</div>}
+                <div className="card-hd-brand">
+                  <span className="card-hd-sparkle">✦</span>
+                  {base64Logo && !base64Logo.startsWith('/')
+                    ? <img src={base64Logo} alt="Whiskora" className="card-hd-logo" />
+                    : <div className="card-hd-logo-text">whiskora</div>}
+                  <span className="card-hd-sparkle">✦</span>
+                </div>
                 <div className="card-hd-rule">
                   <div className="card-hd-rule-line" />
                   <div className="card-hd-rule-text">• PET IDENTIFICATION CARD •</div>
@@ -331,6 +337,12 @@ export default function PetIdCardPage() {
                 <div className="card-photo-wrap">
                   <div className="card-photo">
                     {base64Avatar ? <img src={base64Avatar} alt={pet.name} /> : '🐾'}
+                  </div>
+                  {/* Stamp overlaps bottom of photo into info section */}
+                  <div className="card-stamp">
+                    {base64Verified && !base64Verified.startsWith('/')
+                      ? <img src={base64Verified} alt="Verified" style={{ width: 88, height: 88, objectFit: 'contain', mixBlendMode: 'screen' }} />
+                      : <VerifiedStamp />}
                   </div>
                 </div>
                 <div className="card-qr-wrap">
@@ -349,13 +361,6 @@ export default function PetIdCardPage() {
                 </div>
               </div>
 
-              {/* Verified stamp */}
-              <div className="card-stamp">
-                {base64Verified && !base64Verified.startsWith('/')
-                  ? <img src={base64Verified} alt="Verified" style={{ width: 96, height: 96, objectFit: 'contain', mixBlendMode: 'screen' }} />
-                  : <VerifiedStamp />}
-              </div>
-
               {/* Info rows */}
               <div className="card-info">
                 {rows.map((r, i) => (
@@ -367,14 +372,22 @@ export default function PetIdCardPage() {
                         <span className="card-lbl-en">{r.labelEn}</span>
                       </div>
                       <div className="card-divider-v" />
-                      <div className={`card-val${r.isName ? ' is-name' : ''}`}>
-                        {r.val}
-                        {r.isName && (
-                          <span className={`card-gender ${isMale ? 'card-gender-m' : 'card-gender-f'}`}>
-                            {isMale ? '♂' : '♀'}
+                      {(r as any).isPill ? (
+                        <div className="card-val">
+                          <span className={`card-pill ${(r as any).pillNeutered ? 'card-pill-green' : 'card-pill-gray'}`}>
+                            {(r as any).pillNeutered ? '✓ ' : ''}{r.val}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <div className={`card-val${r.isName ? ' is-name' : ''}`}>
+                          {r.val}
+                          {r.isName && (
+                            <span className={`card-gender ${isMale ? 'card-gender-m' : 'card-gender-f'}`}>
+                              {isMale ? '♂' : '♀'}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {i < rows.length - 1 && <div className="card-row-divider" />}
                   </React.Fragment>
