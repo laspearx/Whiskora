@@ -151,6 +151,7 @@ export default function CreateLitterPage() {
         .lc-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .lc-btn:hover { background: #D63F6A; }
         .lc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        @media (max-width: 480px) { .lc-grid2 { grid-template-columns: 1fr; } }
       `}</style>
 
       <div className="lc-page">

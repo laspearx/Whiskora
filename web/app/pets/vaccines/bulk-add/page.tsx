@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-// โ”€โ”€โ”€ Premium CI Tokens โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
@@ -67,14 +67,13 @@ export default function BulkAddVaccinePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedType) return alert("เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃเธ”เนเธงเธขเธเธฃเธฑเธ");
-    if (selectedPetIds.length === 0) return alert("เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเน€เธ”เนเธเน เธญเธขเนเธฒเธเธเนเธญเธข 1 เธ•เธฑเธงเธเธฃเธฑเธ ๐พ");
-    const finalVaccineName = selectedType === "เธงเธฑเธเธเธตเธเน€เธเธดเนเธกเน€เธ•เธดเธก" ? customVaccineName : selectedType;
-    if (!finalVaccineName || !dateGiven) return alert("เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธทเนเธญเธเธฃเธดเธเธฒเธฃเนเธฅเธฐเธงเธฑเธเธ—เธตเนเธฃเธฑเธเธเธฃเธดเธเธฒเธฃเนเธซเนเธเธฃเธเธ–เนเธงเธเธเธฃเธฑเธ");
+    if (!selectedType) return alert("กรุณาเลือกประเภทบริการด้วยครับ");
+    if (selectedPetIds.length === 0) return alert("กรุณาเลือกเด็กๆ อย่างน้อย 1 ตัวครับ 🐾");
+    const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
+    if (!finalVaccineName || !dateGiven) return alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
 
     setSaving(true);
     try {
-      // เธ•เธฒเธฃเธฒเธ vaccines เนเธเนเธเธญเธฅเธฑเธกเธเน pet_id (เธ•เธฃเธเธเธฑเธ schema เธเธฃเธดเธ)
       const insertData = selectedPetIds.map((petId) => ({
         pet_id: petId,
         vaccine_name: finalVaccineName,
@@ -87,7 +86,7 @@ export default function BulkAddVaccinePage() {
       router.refresh();
     } catch (error: any) {
       console.error("Error saving vaccine:", error);
-      alert(`เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”: ${error.message}`);
+      alert(`เกิดข้อผิดพลาด: ${error.message}`);
       setSaving(false);
     }
   };
@@ -95,7 +94,6 @@ export default function BulkAddVaccinePage() {
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .bv-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .bv-body { max-width: 720px; margin: 0 auto; padding: 24px 20px 120px; }
@@ -147,77 +145,78 @@ export default function BulkAddVaccinePage() {
         .bv-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .bv-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: bvspin 1s linear infinite; }
         @keyframes bvspin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) { .bv-grid2 { grid-template-columns: 1fr; } }
       `}</style>
 
       {isLoading ? (
         <div className="bv-loading">
           <div className="bv-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>เธเธณเธฅเธฑเธเธ”เธถเธเธเนเธญเธกเธนเธฅ...</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังดึงข้อมูล...</p>
         </div>
       ) : (
         <div className="bv-page">
           <div className="bv-body">
             {/* Header */}
             <div className="bv-header">
-              <button className="bv-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
+              <button className="bv-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
               <div>
-                <h1 className="bv-title">เน€เธเธดเนเธกเธเธฃเธฐเธงเธฑเธ•เธดเนเธซเนเธซเธฅเธฒเธขเธ•เธฑเธง</h1>
-                <p className="bv-sub">เน€เธฅเธทเธญเธเน€เธ”เนเธเน เธ—เธตเนเนเธเธฃเธฑเธเธเธฃเธดเธเธฒเธฃเธเธฃเนเธญเธกเธเธฑเธ</p>
+                <h1 className="bv-title">เพิ่มประวัติให้หลายตัว</h1>
+                <p className="bv-sub">เลือกเด็กๆ ที่ไปรับบริการพร้อมกัน</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit}>
-              {/* เธเธฒเธฃเนเธ” 1: เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฃเธดเธเธฒเธฃ */}
+              {/* การ์ด 1: รายละเอียดบริการ */}
               <div className="bv-card">
-                <div className="bv-card-title"><span className="bv-card-icon"><Icon.Syringe /></span> เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฒเธฃเธฃเธฑเธเธเธฃเธดเธเธฒเธฃ</div>
+                <div className="bv-card-title"><span className="bv-card-icon"><Icon.Syringe /></span> รายละเอียดการรับบริการ</div>
 
                 <div className="bv-field">
-                  <label className="bv-label">เธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃ / เธงเธฑเธเธเธตเธ *</label>
+                  <label className="bv-label">ประเภทบริการ / วัคซีน *</label>
                   <select className="bv-select" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-                    <option value="" disabled>เน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฃเธดเธเธฒเธฃ</option>
-                    <option value="เธงเธฑเธเธเธตเธเธฃเธงเธก">เธงเธฑเธเธเธตเธเธฃเธงเธก</option>
-                    <option value="เธงเธฑเธเธเธตเธเธเธดเธฉเธชเธธเธเธฑเธเธเนเธฒ">เธงเธฑเธเธเธตเธเธเธดเธฉเธชเธธเธเธฑเธเธเนเธฒ</option>
-                    <option value="เธซเธขเธ”เธซเธฅเธฑเธเธเนเธญเธเธเธฑเธเน€เธซเนเธเธซเธกเธฑเธ”">เธซเธขเธ”เธซเธฅเธฑเธเธเนเธญเธเธเธฑเธเน€เธซเนเธเธซเธกเธฑเธ”</option>
-                    <option value="เธ–เนเธฒเธขเธเธขเธฒเธเธด">เธ–เนเธฒเธขเธเธขเธฒเธเธด</option>
-                    <option value="เธงเธฑเธเธเธตเธเน€เธเธดเนเธกเน€เธ•เธดเธก">เธงเธฑเธเธเธตเธเน€เธเธดเนเธกเน€เธ•เธดเธก (เธเธดเธกเธเนเธฃเธฐเธเธธเน€เธญเธ)</option>
+                    <option value="" disabled>เลือกประเภทบริการ</option>
+                    <option value="วัคซีนรวม">วัคซีนรวม</option>
+                    <option value="วัคซีนพิษสุนัขบ้า">วัคซีนพิษสุนัขบ้า</option>
+                    <option value="หยดหลังป้องกันเห็บหมัด">หยดหลังป้องกันเห็บหมัด</option>
+                    <option value="ถ่ายพยาธิ">ถ่ายพยาธิ</option>
+                    <option value="วัคซีนเพิ่มเติม">วัคซีนเพิ่มเติม (พิมพ์ระบุเอง)</option>
                   </select>
                 </div>
 
-                {selectedType === "เธงเธฑเธเธเธตเธเน€เธเธดเนเธกเน€เธ•เธดเธก" && (
+                {selectedType === "วัคซีนเพิ่มเติม" && (
                   <div className="bv-field">
-                    <label className="bv-label">เธฃเธฐเธเธธเธเธทเนเธญเธเธฃเธดเธเธฒเธฃ / เธงเธฑเธเธเธตเธ *</label>
-                    <input type="text" className="bv-input" value={customVaccineName} onChange={(e) => setCustomVaccineName(e.target.value)} placeholder="เน€เธเนเธ เธงเธฑเธเธเธตเธเธฅเธดเธงเธเธตเน€เธกเธตเธข" />
+                    <label className="bv-label">ระบุชื่อบริการ / วัคซีน *</label>
+                    <input type="text" className="bv-input" value={customVaccineName} onChange={(e) => setCustomVaccineName(e.target.value)} placeholder="เช่น วัคซีนลิวคีเมีย" />
                   </div>
                 )}
 
                 <div className="bv-grid2">
                   <div className="bv-field" style={{ marginBottom: 0 }}>
-                    <label className="bv-label">เธงเธฑเธเธ—เธตเนเธฃเธฑเธเธเธฃเธดเธเธฒเธฃ *</label>
+                    <label className="bv-label">วันที่รับบริการ *</label>
                     <input type="date" className="bv-input" value={dateGiven} onChange={(e) => setDateGiven(e.target.value)} required />
                   </div>
                   <div className="bv-field" style={{ marginBottom: 0 }}>
-                    <label className="bv-label">เธงเธฑเธเธเธฑเธ”เธเธฃเธฑเนเธเธ–เธฑเธ”เนเธ <span className="opt">(เธ–เนเธฒเธกเธต)</span></label>
+                    <label className="bv-label">วันนัดครั้งถัดไป <span className="opt">(ถ้ามี)</span></label>
                     <input type="date" className="bv-input" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
                   </div>
                 </div>
               </div>
 
-              {/* เธเธฒเธฃเนเธ” 2: เน€เธฅเธทเธญเธเธชเธกเธฒเธเธดเธ */}
+              {/* การ์ด 2: เลือกสมาชิก */}
               <div className="bv-card">
                 <div className="bv-members-head">
                   <div>
-                    <div className="bv-card-title" style={{ marginBottom: 4 }}><span className="bv-card-icon"><Icon.Paw /></span> เน€เธฅเธทเธญเธเธชเธกเธฒเธเธดเธ</div>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: F.muted, marginLeft: 2 }}>เน€เธฅเธทเธญเธเน€เธ”เนเธเน เธ—เธตเนเนเธเธฃเธฑเธเธเธฃเธดเธเธฒเธฃเธ”เนเธงเธขเธเธฑเธ *</p>
+                    <div className="bv-card-title" style={{ marginBottom: 4 }}><span className="bv-card-icon"><Icon.Paw /></span> เลือกสมาชิก</div>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: F.muted, marginLeft: 2 }}>เลือกเด็กๆ ที่ไปรับบริการด้วยกัน *</p>
                   </div>
                   {pets.length > 0 && (
                     <button type="button" className="bv-selectall" onClick={selectAllPets}>
-                      {selectedPetIds.length === pets.length ? "เธขเธเน€เธฅเธดเธเธ—เธฑเนเธเธซเธกเธ”" : "เน€เธฅเธทเธญเธเธ—เธฑเนเธเธซเธกเธ”"}
+                      {selectedPetIds.length === pets.length ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด"}
                     </button>
                   )}
                 </div>
 
                 {pets.length === 0 ? (
-                  <div className="bv-empty">เธขเธฑเธเนเธกเนเธกเธตเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ โ€” เน€เธเธดเนเธกเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธเธเนเธญเธเธเธฐเธเธฃเธฑเธ ๐พ</div>
+                  <div className="bv-empty">ยังไม่มีสัตว์เลี้ยง — เพิ่มสัตว์เลี้ยงก่อนนะครับ 🐾</div>
                 ) : (
                   <div className="bv-pets-grid">
                     {pets.map((pet) => {
@@ -226,7 +225,7 @@ export default function BulkAddVaccinePage() {
                         <div key={pet.id} className={`bv-pet ${isSelected ? 'sel' : ''}`} onClick={() => togglePetSelection(pet.id)}>
                           <div className="bv-pet-avatar-wrap">
                             <div className="bv-pet-avatar">
-                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '๐พ'}
+                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
                             </div>
                             <div className="bv-pet-check"><Icon.Check /></div>
                           </div>
@@ -243,9 +242,9 @@ export default function BulkAddVaccinePage() {
           {/* Save bar */}
           <div className="bv-savebar">
             <div className="bv-savebar-inner">
-              <button type="button" className="bv-btn bv-btn-cancel" onClick={() => router.back()}>เธขเธเน€เธฅเธดเธ</button>
+              <button type="button" className="bv-btn bv-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
               <button type="button" className="bv-btn bv-btn-save" onClick={handleSubmit} disabled={saving || selectedPetIds.length === 0}>
-                <Icon.Save /> {saving ? "เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ..." : `เธเธฑเธเธ—เธถเธเธเธฃเธฐเธงเธฑเธ•เธด (${selectedPetIds.length} เธ•เธฑเธง)`}
+                <Icon.Save /> {saving ? "กำลังบันทึก..." : `บันทึกประวัติ (${selectedPetIds.length} ตัว)`}
               </button>
             </div>
           </div>

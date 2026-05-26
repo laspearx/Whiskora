@@ -141,6 +141,7 @@ export default function CreateVaccinePage() {
         .vc-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .vc-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vcspin 1s linear infinite; }
         @keyframes vcspin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) { .vc-grid2 { grid-template-columns: 1fr; } }
       `}</style>
 
       {isLoading ? (

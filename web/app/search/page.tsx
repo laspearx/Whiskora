@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -43,7 +43,6 @@ function SearchResults() {
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .sr-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .sr-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
@@ -74,34 +73,34 @@ function SearchResults() {
       <div className="sr-page">
         <div className="sr-body">
           <div className="sr-header">
-            <button className="sr-back" onClick={() => router.back()} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
+            <button className="sr-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="sr-title">เธเธฅเธเธฒเธฃเธเนเธเธซเธฒ</h1>
-              <p className="sr-sub">เธเธณเธเนเธเธซเธฒ: "{query}"</p>
+              <h1 className="sr-title">ผลการค้นหา</h1>
+              <p className="sr-sub">คำค้นหา: "{query}"</p>
             </div>
           </div>
 
           {isLoading ? (
             <div className="sr-loading">
               <div className="sr-spinner" />
-              <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>เธเธณเธฅเธฑเธเธเนเธเธซเธฒเธเธฒเธฃเนเธก...</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังค้นหาฟาร์ม...</p>
             </div>
           ) : farms.length === 0 ? (
             <div className="sr-empty">
-              <div className="sr-empty-emoji">๐•ต๏ธ</div>
-              <h2 className="sr-empty-title">เนเธกเนเธเธเธเธฒเธฃเนเธกเธ—เธตเนเธเธธเธ“เธเนเธเธซเธฒ</h2>
-              <p className="sr-empty-text">เธฅเธญเธเนเธเนเธเธณเธเนเธเธซเธฒเธญเธทเนเธเธ”เธนเธญเธตเธเธเธฃเธฑเนเธเธเธฐเธเธฃเธฑเธ</p>
+              <div className="sr-empty-emoji">🕵️</div>
+              <h2 className="sr-empty-title">ไม่พบฟาร์มที่คุณค้นหา</h2>
+              <p className="sr-empty-text">ลองใช้คำค้นหาอื่นดูอีกครั้งนะครับ</p>
             </div>
           ) : (
             <div className="sr-grid">
               {farms.map((farm) => (
                 <Link href={`/farm/${farm.id}`} key={farm.id} className="sr-card">
                   <div className="sr-card-avatar">
-                    {farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : '๐ก'}
+                    {farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : '🏡'}
                   </div>
                   <div className="sr-card-info">
                     <div className="sr-card-name">{farm.farm_name}</div>
-                    <div className="sr-card-meta">{farm.bio || `เธเธฒเธฃเนเธก${speciesTh(farm.species) || 'เธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ'}เธเธ Whiskora`}</div>
+                    <div className="sr-card-meta">{farm.bio || `ฟาร์ม${speciesTh(farm.species) || 'สัตว์เลี้ยง'}บน Whiskora`}</div>
                   </div>
                   <span className="sr-card-arrow"><Icon.Chevron /></span>
                 </Link>

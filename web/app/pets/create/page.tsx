@@ -1,13 +1,13 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { OTHER_SPECIES, speciesTh } from "@/lib/species";
-import { PET_GENDER, type PetGender } from "@/lib/constants";
+import { PET_GENDER } from "@/lib/constants";
 
-// โ”€โ”€โ”€ Premium CI Tokens โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
@@ -15,44 +15,44 @@ const F = {
   line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
 };
 
-// โ”€โ”€โ”€ เธชเธฒเธขเธเธฑเธเธเธธเนเธ•เธฒเธกเธเธเธดเธ”เธชเธฑเธ•เธงเน โ”€โ”€โ”€
+// ─── สายพันธุ์ตามชนิดสัตว์ ───
 const breedData: Record<string, string[]> = {
-  cat: ["เนเธกเธงเธเนเธฒเธ / เธเธฑเธเธเธธเนเธเธชเธก (Domestic / Mix)", "เนเธเธเธเธฒ (Konja)", "เธเธฒเธงเธกเธ“เธต (Khao Manee)", "เนเธเธฃเธฒเธ / เธชเธตเธชเธงเธฒเธ” (Korat)", "เธ”เธตเธงเธญเธ เน€เธฃเนเธเธเน (Devon Rex)", "เธเธฃเธดเธ•เธดเธ เธเนเธญเธ•เนเธฎเธฃเน (British Shorthair)", "เน€เธเธเธเธญเธฅ (Bengal)", "เน€เธเธญเธฃเนเน€เธเธตเธข (Persian)", "เธกเธฑเธเธเนเธเธดเนเธ (Munchkin)", "เน€เธกเธเธเธนเธ (Maine Coon)", "เนเธฃเนเธเธ”เธญเธฅ (Ragdoll)", "เธงเธดเน€เธเธตเธขเธฃเธกเธฒเธจ (Siamese)", "เธจเธธเธ เธฅเธฑเธเธฉเธ“เน (Suphalak)", "เธชเธเนเธญเธ•เธ•เธดเธ เนเธเธฅเธ”เน (Scottish Fold)", "เธชเธเธดเธเธเน (Sphynx)", "เธญเน€เธกเธฃเธดเธเธฑเธ เธเธญเธฃเนเธ•เนเธฎเธฃเน (American Shorthair)", "เน€เธญเนเธเนเธเธ•เธดเธ เธเธญเธฃเนเธ•เนเธฎเธฃเน (Exotic Shorthair)", "เธญเธทเนเธเน"],
-  dog: ["เธเธฑเธเธเธธเนเธ—เธฒเธ / เธเธฑเธเธเธธเนเธเธชเธก (Mixed)", "เธเธญเธฃเนเธเธตเน (Corgi)", "เธเธดเธเธฐ เธญเธดเธเธธ (Shiba Inu)", "เธเธดเธงเธฒเธงเธฒ (Chihuahua)", "เธเธดเธชเธธ (Shih Tzu)", "เธเธฒเธกเธญเธขเธ”เน (Samoyed)", "เนเธเธเธตเน€เธฃเธตเธขเธ เธฎเธฑเธชเธเธตเน (Siberian Husky)", "เนเธเนเธเธฃเธฑเธชเน€เธเธฅเธฅเน เน€เธ—เธญเธฃเนเน€เธฃเธตเธข (Jack Russell)", "เนเธ—เธขเธเธฒเธเนเธเนเธง (Thai Bangkaew)", "เนเธ—เธขเธซเธฅเธฑเธเธญเธฒเธ (Thai Ridgeback)", "เธเธตเน€เธเธดเนเธฅ (Beagle)", "เธเธญเธกเน€เธกเธญเน€เธฃเน€เธเธตเธขเธ (Pomeranian)", "เธเธธเธ”เน€เธ”เธดเนเธฅเธ—เธญเธข (Toy Poodle)", "เน€เธเธฃเธเธเน เธเธนเธฅเธ”เนเธญเธ (French Bulldog)", "เธขเธญเธฃเนเธเน€เธเธตเธขเธฃเน เน€เธ—เธญเธฃเนเน€เธฃเธตเธข (Yorkshire Terrier)", "เธฅเธฒเธเธฃเธฒเธ”เธญเธฃเน เธฃเธตเธ—เธฃเธตเธเน€เธงเธญเธฃเน (Labrador)", "เนเธเธฅเน€เธ”เนเธ เธฃเธตเธ—เธฃเธตเธเน€เธงเธญเธฃเน (Golden Retriever)", "เธญเน€เธกเธฃเธดเธเธฑเธ เธเธนเธฅเธฅเธตเน (American Bully)", "เธญเธฅเธฒเธชเธเธฑเธ เธกเธฒเธฅเธฒเธกเธดเธงเธ—เน (Alaskan Malamute)", "เธญเธทเนเธเน"],
-  rabbit: ["เธฎเธญเธฅเนเธฅเธเธ”เน เธฅเธญเธ (Holland Lop)", "เน€เธเน€เธเธญเธฃเนเนเธฅเธเธ”เน เธ”เธงเธญเธฃเนเธ (Netherland Dwarf)", "เธกเธดเธเธดเน€เธฃเนเธเธเน (Mini Rex)", "เนเธฅเธญเนเธญเธเน€เธฎเธ” (Lionhead)", "เธญเธดเธเธฅเธดเธ เนเธญเธเนเธเธฃเนเธฒ (English Angora)", "เน€เธเธฃเธเธเน เธฅเธญเธ (French Lop)", "เธญเธทเนเธเน"],
-  hamster: ["เธงเธดเธเน€เธ—เธญเธฃเนเนเธงเธ—เน (Winter White)", "เนเธเน€เธฃเธตเธขเธ (Syrian)", "เนเธฃเนเธเธฃเธญเธเธชเธเธต (Roborovski)", "เนเธเธกเธเนเน€เธเธฅเธฅเน (Campbell)", "เธญเธทเนเธเน"],
-  bird: ["เธเธญเธเธฑเธช (Forpus)", "เธเนเธญเธเธเธฒเน€เธ—เธฅ (Cockatiel)", "เธเธฑเธเธเธญเธเธฑเธงเธฃเน (Sun Conure)", "เน€เธฅเธดเธเน€เธเธดเธฃเนเธ” (Lovebird)", "เธซเธเธชเนเธซเธขเธ (Budgerigar)", "เนเธญเธเธฃเธดเธเธฑเธเน€เธเธฃเธขเน (African Grey)", "เธกเธฒเธเธญเธงเน (Macaw)", "เธเธฃเธตเธเธเธตเธ (Green Cheek)", "เธญเธทเนเธเน"],
-  squirrel: ["เธเธฃเธฐเธฃเธญเธเธเธดเธ (Flying Squirrel)", "เธเธนเธเธฒเธฃเนเนเธเธฅเน€เธ”เธญเธฃเน (Sugar Glider)", "เนเธเธฃเธตเนเธ”เนเธญเธ (Prairie Dog)", "เธเธฃเธฐเธฃเธญเธเธ”เธ (Finlayson's)", "เธญเธทเนเธเน"],
-  hedgehog: ["เน€เธกเนเธเนเธเธฃเธฐเนเธญเธเธฃเธดเธเธฑเธ (African Pygmy)", "เธญเธทเนเธเน"],
-  fish: ["เธเธฅเธฒเธเธฑเธ” (Betta)", "เธเธฅเธฒเธเธฒเธฃเนเธ (Koi)", "เธเธฅเธฒเธ—เธญเธ (Goldfish)", "เธเธฅเธฒเธซเธฒเธเธเธเธขเธนเธ (Guppy)", "เธเธฅเธฒเธซเธกเธญเธชเธต (Flowerhorn)", "เธเธฅเธฒเธกเธฑเธเธเธฃ (Arowana)", "เธญเธทเนเธเน"],
-  turtle: ["เธเธนเธเธฒเธ•เนเธฒ (Sulcata)", "เธ”เธฒเธงเธญเธดเธเน€เธ”เธตเธข (Indian Star)", "เธญเธฑเธฅเธ”เธฃเธฒเธเธฃเนเธฒ (Aldabra)", "เน€เธ•เนเธฒเธเธตเนเธเธธเนเธ (Red-eared Slider)", "เน€เธ•เนเธฒเธซเธกเธนเธเธดเธ (Pig-nosed)", "เธญเธทเนเธเน"],
-  frog: ["เธฎเธญเธฃเนเธเธเธฃเนเธญเธ (Horned Frog)", "เนเธงเธ—เนเธ—เธฃเธตเธเธฃเนเธญเธ (White's Tree Frog)", "เธญเธถเนเธเนเธกเนเธซเธเธฒเธง (Chubby Frog)", "เธเธเธฅเธนเธเธจเธฃเธเธดเธฉ (Poison Dart)", "เธญเธทเนเธเน"],
-  lizard: ["เน€เธเธตเธขเธฃเนเธ”เธ”เธฃเธฒเธเนเธญเธ (Bearded Dragon)", "เน€เธ•เธเธน (Tegu)", "เธญเธตเธเธฑเธงเธเนเธฒ (Iguana)", "เธเธฒเน€เธกเน€เธฅเธตเนเธขเธ (Chameleon)", "เน€เธเธฃเธชเน€เธ•เธ”เน€เธเธ•เธธเนเธ (Crested Gecko)", "เน€เธฅเธเน€เธเธดเธฃเนเธ”เน€เธเธ•เธธเนเธ (Leopard Gecko)", "เธญเธทเนเธเน"],
-  snake: ["เธเธญเธฃเนเธเธชเน€เธเธ (Corn Snake)", "เธเธญเธฅเนเธเธเธญเธ (Ball Python)", "เธฎเนเธญเธเนเธเธช (Hognose)", "เธเธดเธเธชเน€เธเธ (King Snake)", "เธกเธดเธฅเธเนเธชเน€เธเธ (Milk Snake)", "เธญเธทเนเธเน"],
-  raccoon: ["เนเธฃเนเธเธเธนเธ (Raccoon)", "เธญเธทเนเธเน"],
-  other: ["เน€เธกเธตเธขเธฃเนเนเธเธ• (Meerkat)", "เน€เธเธญเธฃเนเน€เธฃเธ— (Ferret)", "เธเธดเธเธเธดเธฅเธฅเนเธฒ (Chinchilla)", "เธเธธเธเน€เธเธเธตเน (Bushbaby)", "เธญเธทเนเธเน"],
+  cat: ["แมวบ้าน / พันธุ์ผสม (Domestic / Mix)", "โกนจา (Konja)", "ขาวมณี (Khao Manee)", "โคราช / สีสวาด (Korat)", "ดีวอน เร็กซ์ (Devon Rex)", "บริติช ช็อตแฮร์ (British Shorthair)", "เบงกอล (Bengal)", "เปอร์เซีย (Persian)", "มันช์กิ้น (Munchkin)", "เมนคูน (Maine Coon)", "แร็กดอล (Ragdoll)", "วิเชียรมาศ (Siamese)", "ศุภลักษณ์ (Suphalak)", "สก็อตติช โฟลด์ (Scottish Fold)", "สฟิงซ์ (Sphynx)", "อเมริกัน ชอร์ตแฮร์ (American Shorthair)", "เอ็กโซติก ชอร์ตแฮร์ (Exotic Shorthair)", "อื่นๆ"],
+  dog: ["พันธุ์ทาง / พันธุ์ผสม (Mixed)", "คอร์กี้ (Corgi)", "ชิบะ อินุ (Shiba Inu)", "ชิวาวา (Chihuahua)", "ชิสุ (Shih Tzu)", "ซามอยด์ (Samoyed)", "ไซบีเรียน ฮัสกี้ (Siberian Husky)", "แจ็ครัสเซลล์ เทอร์เรีย (Jack Russell)", "ไทยบางแก้ว (Thai Bangkaew)", "ไทยหลังอาน (Thai Ridgeback)", "บีเกิ้ล (Beagle)", "ปอมเมอเรเนียน (Pomeranian)", "พุดเดิ้ลทอย (Toy Poodle)", "เฟรนช์ บูลด็อก (French Bulldog)", "ยอร์กเชียร์ เทอร์เรีย (Yorkshire Terrier)", "ลาบราดอร์ รีทรีฟเวอร์ (Labrador)", "โกลเด้น รีทรีฟเวอร์ (Golden Retriever)", "อเมริกัน บูลลี่ (American Bully)", "อลาสกัน มาลามิวท์ (Alaskan Malamute)", "อื่นๆ"],
+  rabbit: ["ฮอลแลนด์ ลอป (Holland Lop)", "เนเธอร์แลนด์ ดวอร์ฟ (Netherland Dwarf)", "มินิเร็กซ์ (Mini Rex)", "ไลอ้อนเฮด (Lionhead)", "อิงลิช แองโกร่า (English Angora)", "เฟรนช์ ลอป (French Lop)", "อื่นๆ"],
+  hamster: ["วินเทอร์ไวท์ (Winter White)", "ไซเรียน (Syrian)", "โรโบรอฟสกี (Roborovski)", "แคมป์เบลล์ (Campbell)", "อื่นๆ"],
+  bird: ["ฟอพัส (Forpus)", "ค็อกคาเทล (Cockatiel)", "ซันคอนัวร์ (Sun Conure)", "เลิฟเบิร์ด (Lovebird)", "หงส์หยก (Budgerigar)", "แอฟริกันเกรย์ (African Grey)", "มาคอว์ (Macaw)", "กรีนชีค (Green Cheek)", "อื่นๆ"],
+  squirrel: ["กระรอกบิน (Flying Squirrel)", "ชูการ์ไกลเดอร์ (Sugar Glider)", "แพรี่ด็อก (Prairie Dog)", "กระรอกดง (Finlayson's)", "อื่นๆ"],
+  hedgehog: ["เม่นแคระแอฟริกัน (African Pygmy)", "อื่นๆ"],
+  fish: ["ปลากัด (Betta)", "ปลาคาร์ป (Koi)", "ปลาทอง (Goldfish)", "ปลาหางนกยูง (Guppy)", "ปลาหมอสี (Flowerhorn)", "ปลามังกร (Arowana)", "อื่นๆ"],
+  turtle: ["ซูคาต้า (Sulcata)", "ดาวอินเดีย (Indian Star)", "อัลดราบร้า (Aldabra)", "เต่าญี่ปุ่น (Red-eared Slider)", "เต่าหมูบิน (Pig-nosed)", "อื่นๆ"],
+  frog: ["ฮอร์นฟร็อก (Horned Frog)", "ไวท์ทรีฟร็อก (White's Tree Frog)", "อึ่งแม่หนาว (Chubby Frog)", "กบลูกศรพิษ (Poison Dart)", "อื่นๆ"],
+  lizard: ["เบียร์ดดราก้อน (Bearded Dragon)", "เตกู (Tegu)", "อีกัวน่า (Iguana)", "คาเมเลี่ยน (Chameleon)", "เครสเตดเกตุโก (Crested Gecko)", "เลพเพิร์ดเกตุโก (Leopard Gecko)", "อื่นๆ"],
+  snake: ["คอร์นสเนค (Corn Snake)", "บอลไพธอน (Ball Python)", "ฮ็อกโนส (Hognose)", "คิงสเนค (King Snake)", "มิลค์สเนค (Milk Snake)", "อื่นๆ"],
+  raccoon: ["แร็กคูน (Raccoon)", "อื่นๆ"],
+  other: ["เมียร์แคต (Meerkat)", "เฟอร์เรท (Ferret)", "ชินชิลล่า (Chinchilla)", "บุชเบบี้ (Bushbaby)", "อื่นๆ"],
 };
 
-// โ”€โ”€โ”€ เธชเธต (เธชเธตเธเธทเนเธ) / เธฅเธฒเธข / เธซเธน / เธเธฒ / เธเธ / เธชเธตเธ•เธฒ (เธญเนเธฒเธเธญเธดเธเธเธฒเธฃเนเธ• Housecat) โ”€โ”€โ”€
+// ─── สี (สีพื้น) / ลาย / หู / ขา / ขน / สีตา (อ้างอิงชาร์ต Housecat) ───
 const COLOR_DATA: Record<string, string[]> = {
-  cat: ["เธ”เธณ (Black)", "เธเธฅเธน / เน€เธ—เธฒ (Blue / Grey)", "เธเนเธญเธเนเธเนเธฅเธ• (Chocolate)", "เนเธฅเนเธฅเธ (Lilac)", "เธเธดเธเธเธฒเธกเธญเธ (Cinnamon)", "เธเธญเธงเนเธ (Fawn)", "เนเธ”เธ / เธชเนเธก (Red / Orange)", "เธเธฃเธตเธก (Cream)", "เธเธฒเธง (White)", "เธ—เธญเธฃเนเธ•เธตเน / เธชเธตเน€เธเธฃเธญเธฐ (Tortoiseshell)", "เธญเธทเนเธเน"],
-  dog: ["เธ”เธณ (Black)", "เธเธฒเธง (White)", "เธเนเธณเธ•เธฒเธฅ / เธเนเธญเธเนเธเนเธฅเธ• (Brown / Chocolate)", "เธ—เธญเธ / เน€เธซเธฅเธทเธญเธ (Golden / Yellow)", "เธเธฃเธตเธก (Cream)", "เนเธ”เธ / เธเนเธณเธ•เธฒเธฅเนเธ”เธ (Red)", "เน€เธ—เธฒ / เธเธฅเธน (Grey / Blue)", "เธเธญเธงเนเธ (Fawn)", "เธชเธฒเธกเธชเธต (Tricolor)", "เธฅเธฒเธขเธซเธดเธเธญเนเธญเธ (Merle)", "เธฅเธฒเธขเน€เธชเธทเธญ (Brindle)", "เธญเธทเนเธเน"],
-  other: ["เธ”เธณ (Black)", "เธเธฒเธง (White)", "เธเนเธณเธ•เธฒเธฅ (Brown)", "เน€เธ—เธฒ (Grey)", "เธเธฃเธตเธก (Cream)", "เธซเธฅเธฒเธขเธชเธต (Multi-color)", "เน€เธเธทเธญเธ (Albino)", "เธญเธทเนเธเน"],
+  cat: ["ดำ (Black)", "บลู / เทา (Blue / Grey)", "ช็อกโกแลต (Chocolate)", "ไลแลค (Lilac)", "ซินนามอน (Cinnamon)", "ฟอว์น (Fawn)", "แดง / ส้ม (Red / Orange)", "ครีม (Cream)", "ขาว (White)", "ทอร์ตี้ / สีเปรอะ (Tortoiseshell)", "อื่นๆ"],
+  dog: ["ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น (Fawn)", "สามสี (Tricolor)", "ลายหินอ่อน (Merle)", "ลายเสือ (Brindle)", "อื่นๆ"],
+  other: ["ดำ (Black)", "ขาว (White)", "น้ำตาล (Brown)", "เทา (Grey)", "ครีม (Cream)", "หลายสี (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
 };
 const PATTERN_DATA: Record<string, string[]> = {
-  cat: ["เธชเธตเน€เธ”เธตเธขเธงเธฅเนเธงเธ (Solid)", "เธฅเธฒเธขเธชเธฅเธดเธ”-เนเธกเธเน€เธเธญเน€เธฃเธฅ (Mackerel Tabby)", "เธฅเธฒเธขเธชเธฅเธดเธ”-เธเธฅเธฒเธชเธชเธดเธ (Classic Tabby)", "เธฅเธฒเธขเธเธธเธ” (Spotted Tabby)", "เธฅเธฒเธขเธ—เธดเธเธ•เน (Ticked Tabby)", "เธชเธตเนเธ•เนเธก / เธเนเธญเธขเธ—เน (Colorpoint)", "เธชเธญเธเธชเธต / เธเธฒเธงเนเธ•เนเธก (Bicolor)", "เธ—เธญเธฃเนเธ•เธตเน (Tortie)", "เธชเธฒเธกเธชเธต / เนเธเธฅเธดเนเธ (Calico)", "เธ—เธดเธเธเธดเนเธ-เธเธดเธเธเธดเธฅเธฅเนเธฒ (Chinchilla)", "เธ—เธดเธเธเธดเนเธ-เน€เธเธ”เน€เธ”เธ” (Shaded)", "เธ—เธดเธเธเธดเนเธ-เธชเนเธกเธ (Smoke)", "เธญเธทเนเธเน"],
-  default: ["เธชเธตเน€เธ”เธตเธขเธงเธฅเนเธงเธ (Solid)", "เธชเธญเธเธชเธต (Bicolor)", "เธซเธฅเธฒเธขเธชเธต / เธฅเธงเธ”เธฅเธฒเธขเธเธชเธก (Multi-color)", "เน€เธเธทเธญเธ (Albino)", "เธญเธทเนเธเน"],
+  cat: ["สีเดียวล้วน (Solid)", "ลายสลิด-แมคเคอเรล (Mackerel Tabby)", "ลายสลิด-คลาสสิก (Classic Tabby)", "ลายจุด (Spotted Tabby)", "ลายทิคต์ (Ticked Tabby)", "สีแต้ม / พ้อยท์ (Colorpoint)", "สองสี / ขาวแต้ม (Bicolor)", "ทอร์ตี้ (Tortie)", "สามสี / แคลิโค (Calico)", "ทิปปิ้ง-ชินชิลล่า (Chinchilla)", "ทิปปิ้ง-เฉดเดด (Shaded)", "ทิปปิ้ง-สโมก (Smoke)", "อื่นๆ"],
+  default: ["สีเดียวล้วน (Solid)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
 };
-const EYE_OPTIONS = ["เน€เธเธตเธขเธง (Green)", "เน€เธฎเน€เธเธฅ (Hazel)", "เธ—เธญเธ (Gold)", "เน€เธซเธฅเธทเธญเธ (Yellow)", "เธญเธณเธเธฑเธ (Amber)", "เธชเนเธก (Orange)", "เธเธญเธเน€เธเธญเธฃเน (Copper)", "เธเนเธฒ (Blue)", "เธ•เธฒเธชเธญเธเธชเธต (Odd-eyed)", "เธ•เธฒเธซเธฅเธฒเธขเธชเธตเนเธเธ”เธงเธเน€เธ”เธตเธขเธง (Dichroic)", "เธญเธทเนเธเน"];
-const EAR_OPTIONS = ["เธซเธนเธ•เธฑเนเธ", "เธซเธนเธเธฑเธ", "เธซเธนเธเธฅเธดเธ"];
-const LEG_OPTIONS = ["เธเธฒเธชเธฑเนเธ", "เธเธฒเธขเธฒเธง"];
-const COAT_OPTIONS = ["เธเธเธชเธฑเนเธ", "เธเธเธขเธฒเธง", "เธเธเธซเธขเธดเธ", "เนเธกเนเธกเธตเธเธ"];
+const EYE_OPTIONS = ["เขียว (Green)", "เฮเซล (Hazel)", "ทอง (Gold)", "เหลือง (Yellow)", "อำพัน (Amber)", "ส้ม (Orange)", "คอปเปอร์ (Copper)", "ฟ้า (Blue)", "ตาสองสี (Odd-eyed)", "ตาหลายสีในดวงเดียว (Dichroic)", "อื่นๆ"];
+const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
+const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
+const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
 
 const colorOptionsFor = (s: string) => COLOR_DATA[s] || COLOR_DATA.other;
 const patternOptionsFor = (s: string) => PATTERN_DATA[s] || PATTERN_DATA.default;
 
 
-// โ”€โ”€โ”€ Icons โ”€โ”€โ”€
+// ─── Icons ───
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Camera: () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
@@ -67,10 +67,10 @@ function CreatePetContent() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // เธเธญเธฃเนเธก
+  // ฟอร์ม
   const [name, setName] = useState("");
-  const [species, setSpecies] = useState<string>("cat"); // cat / dog / (เธเธเธดเธ”เธญเธทเนเธเน€เธเนเธ string เธ•เธฃเธเน)
-  const [pickOther, setPickOther] = useState(false);      // เน€เธเธดเธ”เนเธซเธกเธ”เน€เธฅเธทเธญเธเธชเธฑเธ•เธงเนเธญเธทเนเธ
+  const [species, setSpecies] = useState<string>("cat");
+  const [pickOther, setPickOther] = useState(false);
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
   const [color, setColor] = useState("");
@@ -80,14 +80,14 @@ function CreatePetContent() {
   const [leg, setLeg] = useState("");
   const [coat, setCoat] = useState("");
   const [eyeColor, setEyeColor] = useState("");
-  const [gender, setGender] = useState<PetGender>(PET_GENDER.MALE);
+  const [gender, setGender] = useState(PET_GENDER.MALE);
   const [birthdate, setBirthdate] = useState("");
   const [weight, setWeight] = useState("");
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // เธเธฃเธญเธเธฃเธนเธ
+  // ครอปรูป
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -105,7 +105,6 @@ function CreatePetContent() {
     checkUser();
   }, [router]);
 
-  // เธเธเธดเธ”เธ—เธตเนเนเธเนเน€เธฅเธทเธญเธเธเธธเธ” dropdown (species เน€เธเนเธ id เธญเธฑเธเธเธคเธฉเธฅเนเธงเธ)
   const speciesKey = breedData[species] ? species : 'other';
   const colorKey = species === 'cat' ? 'cat' : species === 'dog' ? 'dog' : 'other';
   const isCat = species === 'cat';
@@ -116,7 +115,7 @@ function CreatePetContent() {
     setPattern(""); setEar(""); setLeg(""); setCoat(""); setEyeColor("");
   };
 
-  // โ”€โ”€ เธฃเธนเธ โ”€โ”€
+  // ── รูป ──
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const reader = new FileReader();
@@ -149,19 +148,19 @@ function CreatePetContent() {
       setAvatarUrl(publicUrl);
       setImageSrc(null);
     } catch (err: any) {
-      alert("เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเนเธกเนเธชเธณเน€เธฃเนเธ: " + (err.message || ''));
+      alert("อัปโหลดรูปไม่สำเร็จ: " + (err.message || ''));
     } finally { setIsUploading(false); }
   };
 
-  // โ”€โ”€ เธเธฑเธเธ—เธถเธ (เนเธกเนเธกเธต status โ€” เธชเธฑเธ•เธงเนเธชเนเธงเธเธ•เธฑเธง) โ”€โ”€
+  // ── บันทึก (ไม่มี status — สัตว์ส่วนตัว) ──
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return alert("เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธทเนเธญเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ");
+    if (!name.trim()) return alert("กรุณากรอกชื่อสัตว์เลี้ยง");
     setSaving(true);
 
-    const finalSpecies = species; // เน€เธเนเธเน€เธเนเธ id เธญเธฑเธเธเธคเธฉ (cat/dog/rabbit...) เธ•เธฒเธกเธกเธฒเธ•เธฃเธเธฒเธเธเธฅเธฒเธ
-    const finalBreed = breed === 'เธญเธทเนเธเน' ? customBreed : breed;
-    const finalColor = color === 'เธญเธทเนเธเน' ? customColor : color;
+    const finalSpecies = species;
+    const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
+    const finalColor = color === 'อื่นๆ' ? customColor : color;
 
     const { data, error } = await supabase.from("pets").insert({
       user_id: userId,
@@ -184,7 +183,7 @@ function CreatePetContent() {
     }).select();
 
     if (error) {
-      alert("เธเธฑเธเธ—เธถเธเนเธกเนเธชเธณเน€เธฃเนเธ: " + error.message);
+      alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else if (data && data.length > 0) {
       router.push(`/pets/${data[0].id}`);
@@ -195,7 +194,6 @@ function CreatePetContent() {
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .cp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .cp-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 120px; }
@@ -265,6 +263,7 @@ function CreatePetContent() {
         .cp-zoom { width: 100%; accent-color: ${F.pink}; margin-bottom: 16px; }
         .cp-modal-btns { display: flex; gap: 10px; }
         @media (max-width: 480px) {
+          .cp-grid2 { grid-template-columns: 1fr; }
           .cp-grid3 { grid-template-columns: 1fr 1fr; }
           .cp-other-grid { grid-template-columns: repeat(3, 1fr); }
         }
@@ -274,39 +273,39 @@ function CreatePetContent() {
         <div className="cp-body">
           {/* Header */}
           <div className="cp-header">
-            <button className="cp-back" onClick={() => router.push(fromRedirect && fromRedirect.startsWith('/') ? fromRedirect : '/profile')} aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></button>
+            <button className="cp-back" onClick={() => router.push(fromRedirect && fromRedirect.startsWith('/') ? fromRedirect : '/profile')} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="cp-title">เน€เธเธดเนเธกเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ</h1>
-              <p className="cp-sub">เน€เธเธดเนเธกเน€เธเธทเนเธญเธเธฃเธฑเธเน€เธเนเธฒเธชเธนเนเธเธฃเธญเธเธเธฃเธฑเธงเธเธญเธเธเธธเธ“</p>
+              <h1 className="cp-title">เพิ่มสัตว์เลี้ยง</h1>
+              <p className="cp-sub">เพิ่มเพื่อนรักเข้าสู่ครอบครัวของคุณ</p>
             </div>
           </div>
 
           <form onSubmit={handleSave}>
-            {/* เธฃเธนเธ */}
+            {/* รูป */}
             <div className="cp-photo-wrap">
               <div className="cp-photo">
                 <div className="cp-photo-circle" onClick={() => originalImageSrc ? setImageSrc(originalImageSrc) : fileInputRef.current?.click()}>
-                  {avatarUrl ? <img src={avatarUrl} alt="เธฃเธนเธเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ" /> : (species === 'cat' ? '๐ฑ' : species === 'dog' ? '๐ถ' : '๐พ')}
+                  {avatarUrl ? <img src={avatarUrl} alt="รูปสัตว์เลี้ยง" /> : (species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾')}
                 </div>
                 <button type="button" className="cp-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} onClick={(e) => (e.currentTarget.value = "")} style={{ display: 'none' }} />
               </div>
-              <p className="cp-photo-hint">{originalImageSrc ? "เนเธ•เธฐเน€เธเธทเนเธญเธเธฃเธฑเธเธ•เธณเนเธซเธเนเธเธฃเธนเธ" : "เธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเธ เธฒเธ"}</p>
+              <p className="cp-photo-hint">{originalImageSrc ? "แตะเพื่อปรับตำแหน่งรูป" : "อัปโหลดรูปภาพ"}</p>
             </div>
 
-            {/* เธเธฒเธฃเนเธ” 1: เธเนเธญเธกเธนเธฅเธเธทเนเธเธเธฒเธ */}
+            {/* การ์ด 1: ข้อมูลพื้นฐาน */}
             <div className="cp-card">
-              <div className="cp-card-title">เธเนเธญเธกเธนเธฅเธเธทเนเธเธเธฒเธ</div>
+              <div className="cp-card-title">ข้อมูลพื้นฐาน</div>
 
               <div className="cp-field">
-                <label className="cp-label">เธเธทเนเธญเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ</label>
-                <input className="cp-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="เน€เธเนเธ เธเนเธญเธเธ–เธธเธเธ—เธญเธ" required />
+                <label className="cp-label">ชื่อสัตว์เลี้ยง</label>
+                <input className="cp-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น น้องถุงทอง" required />
               </div>
 
               <div className="cp-field">
-                <label className="cp-label">เธเธฃเธฐเน€เธ เธ—</label>
+                <label className="cp-label">ประเภท</label>
                 <div className="cp-species">
-                  {[{ id: 'cat', emoji: '๐ฑ', lbl: 'เนเธกเธง' }, { id: 'dog', emoji: '๐ถ', lbl: 'เธซเธกเธฒ' }, { id: 'other', emoji: '๐พ', lbl: 'เธญเธทเนเธเน' }].map((t) => {
+                  {[{ id: 'cat', emoji: '🐱', lbl: 'แมว' }, { id: 'dog', emoji: '🐶', lbl: 'หมา' }, { id: 'other', emoji: '🐾', lbl: 'อื่นๆ' }].map((t) => {
                     const active = t.id === 'other' ? (pickOther || (species !== 'cat' && species !== 'dog')) : species === t.id;
                     return (
                       <button key={t.id} type="button" className={`cp-species-btn ${active ? 'active' : ''}`}
@@ -333,73 +332,73 @@ function CreatePetContent() {
 
               <div className="cp-grid2">
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เน€เธเธจ</label>
+                  <label className="cp-label">เพศ</label>
                   <div className="cp-gender">
-                    <button type="button" className={`cp-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)}>โ เธ•เธฑเธงเธเธนเน</button>
-                    <button type="button" className={`cp-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)}>โ€ เธ•เธฑเธงเน€เธกเธตเธข</button>
+                    <button type="button" className={`cp-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)}>♂ ตัวผู้</button>
+                    <button type="button" className={`cp-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)}>♀ ตัวเมีย</button>
                   </div>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธงเธฑเธเน€เธเธดเธ” <span className="opt">(เธ–เนเธฒเธ—เธฃเธฒเธ)</span></label>
+                  <label className="cp-label">วันเกิด <span className="opt">(ถ้าทราบ)</span></label>
                   <input type="date" className="cp-input" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
                 </div>
               </div>
             </div>
 
-            {/* เธเธฒเธฃเนเธ” 2: เธฅเธฑเธเธฉเธ“เธฐ */}
+            {/* การ์ด 2: ลักษณะ */}
             <div className="cp-card">
-              <div className="cp-card-title">เธฅเธฑเธเธฉเธ“เธฐเนเธฅเธฐเธฃเธนเธเธเธฃเธฃเธ“</div>
+              <div className="cp-card-title">ลักษณะและรูปพรรณ</div>
 
               {(species === 'cat' || species === 'dog' || breedData[species]) && (
                 <div className="cp-field">
-                  <label className="cp-label">เธชเธฒเธขเธเธฑเธเธเธธเน</label>
+                  <label className="cp-label">สายพันธุ์</label>
                   <select className="cp-select" value={breed} onChange={(e) => setBreed(e.target.value)}>
-                    <option value="">เน€เธฅเธทเธญเธเธชเธฒเธขเธเธฑเธเธเธธเน...</option>
+                    <option value="">เลือกสายพันธุ์...</option>
                     {(breedData[speciesKey] || []).map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
-                  {breed === 'เธญเธทเนเธเน' && (
-                    <input className="cp-input" style={{ marginTop: 8 }} value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} placeholder="เธฃเธฐเธเธธเธชเธฒเธขเธเธฑเธเธเธธเนเน€เธเธดเนเธกเน€เธ•เธดเธก..." />
+                  {breed === 'อื่นๆ' && (
+                    <input className="cp-input" style={{ marginTop: 8 }} value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} placeholder="ระบุสายพันธุ์เพิ่มเติม..." />
                   )}
                 </div>
               )}
 
               <div className="cp-grid2">
                 <div className="cp-field">
-                  <label className="cp-label">เธชเธต (เธชเธตเธเธทเนเธ)</label>
+                  <label className="cp-label">สี (สีพื้น)</label>
                   <select className="cp-select" value={color} onChange={(e) => setColor(e.target.value)}>
-                    <option value="">เน€เธฅเธทเธญเธเธชเธต...</option>
+                    <option value="">เลือกสี...</option>
                     {colorOptionsFor(colorKey).map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="cp-field">
-                  <label className="cp-label">เธฅเธฒเธข / เธฅเธงเธ”เธฅเธฒเธข</label>
+                  <label className="cp-label">ลาย / ลวดลาย</label>
                   <select className="cp-select" value={pattern} onChange={(e) => setPattern(e.target.value)}>
-                    <option value="">เน€เธฅเธทเธญเธเธฅเธฒเธข...</option>
+                    <option value="">เลือกลาย...</option>
                     {patternOptionsFor(speciesKey === 'cat' ? 'cat' : 'default').map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
-              {color === 'เธญเธทเนเธเน' && (
-                <input className="cp-input" style={{ marginTop: -6, marginBottom: 16 }} value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="เธฃเธฐเธเธธเธชเธตเธ”เนเธงเธขเธ•เธเน€เธญเธ..." />
+              {color === 'อื่นๆ' && (
+                <input className="cp-input" style={{ marginTop: -6, marginBottom: 16 }} value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="ระบุสีด้วยตนเอง..." />
               )}
 
               <div className="cp-grid3">
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธฅเธฑเธเธฉเธ“เธฐเธซเธน</label>
+                  <label className="cp-label">ลักษณะหู</label>
                   <select className="cp-select" value={ear} onChange={(e) => setEar(e.target.value)}>
                     <option value="">-</option>
                     {EAR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธฅเธฑเธเธฉเธ“เธฐเธเธฒ</label>
+                  <label className="cp-label">ลักษณะขา</label>
                   <select className="cp-select" value={leg} onChange={(e) => setLeg(e.target.value)}>
                     <option value="">-</option>
                     {LEG_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธฅเธฑเธเธฉเธ“เธฐเธเธ</label>
+                  <label className="cp-label">ลักษณะขน</label>
                   <select className="cp-select" value={coat} onChange={(e) => setCoat(e.target.value)}>
                     <option value="">-</option>
                     {COAT_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -409,29 +408,29 @@ function CreatePetContent() {
 
               <div className="cp-grid2" style={{ marginTop: 16 }}>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธชเธตเธ•เธฒ</label>
+                  <label className="cp-label">สีตา</label>
                   <select className="cp-select" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)}>
-                    <option value="">เน€เธฅเธทเธญเธเธชเธตเธ•เธฒ...</option>
+                    <option value="">เลือกสีตา...</option>
                     {EYE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">เธเนเธณเธซเธเธฑเธ (เธเธ.) <span className="opt">(เธ–เนเธฒเธ—เธฃเธฒเธ)</span></label>
-                  <input type="number" step="0.1" min="0" className="cp-input" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="เน€เธเนเธ 3.5" />
+                  <label className="cp-label">น้ำหนัก (กก.) <span className="opt">(ถ้าทราบ)</span></label>
+                  <input type="number" step="0.1" min="0" className="cp-input" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="เช่น 3.5" />
                 </div>
               </div>
             </div>
 
-            {/* เธเธฒเธฃเนเธ” 3: เน€เธเธดเนเธกเน€เธ•เธดเธก */}
+            {/* การ์ด 3: เพิ่มเติม */}
             <div className="cp-card">
-              <div className="cp-card-title">เธเนเธญเธกเธนเธฅเน€เธเธดเนเธกเน€เธ•เธดเธก</div>
+              <div className="cp-card-title">ข้อมูลเพิ่มเติม</div>
               <div className="cp-field">
-                <label className="cp-label">เธชเธดเนเธเธ—เธตเนเนเธเน <span className="opt">(เธ–เนเธฒเธกเธต)</span></label>
-                <input className="cp-input" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="เน€เธเนเธ เนเธเนเธญเธฒเธซเธฒเธฃเธ—เธฐเน€เธฅ, เนเธเนเธขเธฒเธเธฒเธเธเธเธดเธ”" />
+                <label className="cp-label">สิ่งที่แพ้ <span className="opt">(ถ้ามี)</span></label>
+                <input className="cp-input" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="เช่น แพ้อาหารทะเล, แพ้ยาบางชนิด" />
               </div>
               <div className="cp-field">
-                <label className="cp-label">เธเธดเธชเธฑเธข / เธซเธกเธฒเธขเน€เธซเธ•เธธ <span className="opt">(เธ–เนเธฒเธกเธต)</span></label>
-                <input className="cp-input" value={traits} onChange={(e) => setTraits(e.target.value)} placeholder="เน€เธเนเธ เธเธตเนเธญเนเธญเธ เธเธญเธเธเธญเธเธ•เธฑเธ" />
+                <label className="cp-label">นิสัย / หมายเหตุ <span className="opt">(ถ้ามี)</span></label>
+                <input className="cp-input" value={traits} onChange={(e) => setTraits(e.target.value)} placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
               </div>
             </div>
           </form>
@@ -440,9 +439,9 @@ function CreatePetContent() {
         {/* Save bar */}
         <div className="cp-savebar">
           <div className="cp-savebar-inner">
-            <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push('/profile')}>เธขเธเน€เธฅเธดเธ</button>
+            <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push('/profile')}>ยกเลิก</button>
             <button type="button" className="cp-btn cp-btn-save" onClick={handleSave} disabled={saving}>
-              <Icon.Save /> {saving ? "เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ..." : "เน€เธเธดเนเธกเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ"}
+              <Icon.Save /> {saving ? "กำลังบันทึก..." : "เพิ่มสัตว์เลี้ยง"}
             </button>
           </div>
         </div>
@@ -458,9 +457,9 @@ function CreatePetContent() {
             <div className="cp-modal-body">
               <input type="range" className="cp-zoom" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(Number(e.target.value))} />
               <div className="cp-modal-btns">
-                <button type="button" className="cp-btn cp-btn-cancel" style={{ flex: 1 }} onClick={() => setImageSrc(null)}>เธขเธเน€เธฅเธดเธ</button>
+                <button type="button" className="cp-btn cp-btn-cancel" style={{ flex: 1 }} onClick={() => setImageSrc(null)}>ยกเลิก</button>
                 <button type="button" className="cp-btn cp-btn-save" onClick={handleUploadCropped} disabled={isUploading}>
-                  {isUploading ? 'เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...' : 'เธขเธทเธเธขเธฑเธ'}
+                  {isUploading ? 'กำลังอัปโหลด...' : 'ยืนยัน'}
                 </button>
               </div>
             </div>

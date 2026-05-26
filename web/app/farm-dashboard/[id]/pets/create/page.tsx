@@ -186,6 +186,10 @@ export default function CreateFarmPetPage() {
         .fpc-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .fpc-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: fpcspin 1s linear infinite; }
         @keyframes fpcspin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) {
+          .fpc-grid-gender { grid-template-columns: 1fr; }
+          .fpc-grid2 { grid-template-columns: 1fr; }
+        }
         /* cropper modal */
         .fpc-crop-modal { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: rgba(0,0,0,0.92); }
         .fpc-crop-area { position: relative; flex: 1; }

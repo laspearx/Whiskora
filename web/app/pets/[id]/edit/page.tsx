@@ -390,7 +390,7 @@ export default function EditPetPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="premium-label">เพศ</label>
                 <div className="flex gap-2">
@@ -474,7 +474,7 @@ export default function EditPetPage() {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <label className="premium-label">ขน (Coat)</label>
                       <select value={coat} onChange={(e) => setCoat(e.target.value)} className="premium-input select-icon"><option value="">เลือก...</option><option>Shorthair</option><option>Longhair</option></select>
@@ -494,7 +494,7 @@ export default function EditPetPage() {
                   </div>
                 </>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="premium-label">ลวดลาย (Pattern)</label>
                     <input type="text" value={pattern} onChange={(e) => setPattern(e.target.value)} className="premium-input" placeholder="เช่น ลายจุด, ทักซิโด้" />

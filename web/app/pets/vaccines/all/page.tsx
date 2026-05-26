@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// โ”€โ”€โ”€ Premium CI Tokens โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
@@ -37,37 +37,37 @@ function AppointmentsList() {
           return;
         }
 
-        // 1. เธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธเธ—เธฑเนเธเธซเธกเธ”เธเธญเธเธเธนเนเนเธเน
+        // 1. สัตว์เลี้ยงทั้งหมดของผู้ใช้
         const { data: petsData } = await supabase
           .from("pets").select("id, name, image_url").eq("user_id", session.user.id);
         if (!petsData || petsData.length === 0) { setLoading(false); return; }
 
         const petIds = petsData.map((p) => p.id);
 
-        // 2. เธงเธฑเธเธเธตเธ/เธเธฑเธ”เธซเธกเธฒเธขเธเธญเธเธชเธฑเธ•เธงเนเธ—เธธเธเธ•เธฑเธง
+        // 2. วัคซีน/นัดหมายของสัตว์ทุกตัว
         const { data: vacData } = await supabase
           .from("vaccines").select("*").in("pet_id", petIds);
 
         if (vacData) {
-          // 3. เธเธฃเธญเธเน€เธเธเธฒเธฐเธงเธฑเธเธ—เธตเนเธ•เธฃเธเธเธฑเธ
+          // 3. กรองเฉพาะวันที่ตรงกัน
           const filteredAppts = vacData.filter(
             (a) => a.next_due && a.next_due.split("T")[0] === dateParam
           );
-          // 4. เธเธนเธเธเนเธญเธกเธนเธฅเธชเธฑเธ•เธงเนเน€เธฅเธตเนเธขเธ
+          // 4. ผูกข้อมูลสัตว์เลี้ยง
           const mergedData = filteredAppts.map((appt) => ({
             ...appt, pet: petsData.find((p) => p.id === appt.pet_id),
           }));
-          // 5. เธเธฑเธ”เธเธฅเธธเนเธกเธ•เธฒเธกเธเธทเนเธญเธงเธฑเธเธเธตเธ/เธเธฃเธดเธเธฒเธฃ
+          // 5. จัดกลุ่มตามชื่อวัคซีน/บริการ
           const groupedData = mergedData.reduce((acc: any, cur: any) => {
-            const type = cur.vaccine_name || 'เธญเธทเนเธเน';
+            const type = cur.vaccine_name || 'อื่นๆ';
             if (!acc[type]) acc[type] = [];
             acc[type].push(cur);
             return acc;
           }, {});
           const finalArray = Object.keys(groupedData).map((key) => {
-            let emoji = '๐’';
-            if (key.includes('เน€เธซเนเธ') || key.includes('เธซเธขเธ”')) emoji = '๐’ง';
-            else if (key.includes('เธเธขเธฒเธเธด')) emoji = '๐’';
+            let emoji = '💉';
+            if (key.includes('เห็บ') || key.includes('หยด')) emoji = '💧';
+            else if (key.includes('พยาธิ')) emoji = '💊';
             return { vaccineName: key, emoji, items: groupedData[key] };
           });
           setGroupedAppointments(finalArray);
@@ -83,12 +83,11 @@ function AppointmentsList() {
 
   const formattedDate = dateParam
     ? new Date(dateParam).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
-    : 'เนเธกเนเธฃเธฐเธเธธเธงเธฑเธเธ—เธตเน';
+    : 'ไม่ระบุวันที่';
 
   return (
     <>
       <style>{`
-
         * { box-sizing: border-box; }
         .ap-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .ap-body { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
@@ -128,22 +127,22 @@ function AppointmentsList() {
       <div className="ap-page">
         <div className="ap-body">
           <div className="ap-header">
-            <Link href="/profile" className="ap-back" aria-label="เธขเนเธญเธเธเธฅเธฑเธ"><Icon.ArrowLeft /></Link>
+            <Link href="/profile" className="ap-back" aria-label="ย้อนกลับ"><Icon.ArrowLeft /></Link>
             <div>
-              <h1 className="ap-title">เธฃเธฒเธขเธเธฒเธฃเธเธฑเธ”เธซเธกเธฒเธข</h1>
-              <span className="ap-date"><Icon.Calendar /> เธเธฃเธฐเธเธณเธงเธฑเธเธ—เธตเน {formattedDate}</span>
+              <h1 className="ap-title">รายการนัดหมาย</h1>
+              <span className="ap-date"><Icon.Calendar /> ประจำวันที่ {formattedDate}</span>
             </div>
           </div>
 
           {loading ? (
             <div className="ap-loading">
               <div className="ap-spinner" />
-              <p className="ap-loading-text">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธฑเธ”เธซเธกเธฒเธข...</p>
+              <p className="ap-loading-text">กำลังโหลดข้อมูลนัดหมาย...</p>
             </div>
           ) : groupedAppointments.length === 0 ? (
             <div className="ap-empty">
-              <span className="ap-empty-emoji">๐“ญ</span>
-              <p className="ap-empty-text">เนเธกเนเธกเธตเธเธฑเธ”เธซเธกเธฒเธขเนเธเธงเธฑเธเธเธตเน</p>
+              <span className="ap-empty-emoji">📭</span>
+              <p className="ap-empty-text">ไม่มีนัดหมายในวันนี้</p>
             </div>
           ) : (
             groupedAppointments.map((group, gi) => (
@@ -152,18 +151,18 @@ function AppointmentsList() {
                   <div className="ap-group-icon">{group.emoji}</div>
                   <div>
                     <div className="ap-group-title">{group.vaccineName}</div>
-                    <div className="ap-group-count">{group.items.length} เธ•เธฑเธง</div>
+                    <div className="ap-group-count">{group.items.length} ตัว</div>
                   </div>
                 </div>
                 <div className="ap-items">
                   {group.items.map((appt: any, idx: number) => (
                     <Link key={idx} href={`/pets/${appt.pet_id}`} className="ap-item">
                       <div className="ap-item-avatar">
-                        {appt.pet?.image_url ? <img src={appt.pet.image_url} alt={appt.pet.name} /> : '๐พ'}
+                        {appt.pet?.image_url ? <img src={appt.pet.image_url} alt={appt.pet.name} /> : '🐾'}
                       </div>
                       <div className="ap-item-info">
-                        <div className="ap-item-tag">เธเธฑเธ”เธเธญเธเธเนเธญเธ</div>
-                        <div className="ap-item-name">{appt.pet?.name || 'เนเธกเนเธ—เธฃเธฒเธเธเธทเนเธญ'}</div>
+                        <div className="ap-item-tag">นัดของน้อง</div>
+                        <div className="ap-item-name">{appt.pet?.name || 'ไม่ทราบชื่อ'}</div>
                       </div>
                       <span className="ap-item-arrow"><Icon.ChevronRight /></span>
                     </Link>

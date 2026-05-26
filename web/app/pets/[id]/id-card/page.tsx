@@ -217,7 +217,7 @@ export default function PetIdCardPage() {
         .idc-verified-fallback-text { font-size: 6.5px; font-weight: 800; letter-spacing: 0.1em; color: ${F.pink}; text-transform: uppercase; }
 
         /* Body: 3 คอลัมน์ */
-        .idc-body-grid { display: grid; grid-template-columns: 195px 1fr 130px; gap: 0; padding: 18px 22px 16px; position: relative; z-index: 1; align-items: start; }
+        .idc-body-grid { display: grid; grid-template-columns: 195px 1fr 130px; gap: 0; padding: 18px 22px 16px; position: relative; z-index: 1; align-items: stretch; }
 
         /* คอลัมน์ซ้าย: รูป + ID */
         .idc-col-left { padding-right: 18px; border-right: 1.5px solid #FCE0EC; }
