@@ -78,6 +78,8 @@ export default function PetIdCardPage() {
   const [base64Avatar, setBase64Avatar] = useState<string | null>(null);
   const [base64Qr, setBase64Qr] = useState<string | null>(null);
   const [base64Logo, setBase64Logo] = useState<string | null>(null);
+  const [base64Verified, setBase64Verified] = useState<string | null>(null);
+  const [base64Paw, setBase64Paw] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +104,8 @@ export default function PetIdCardPage() {
         }
 
         setBase64Logo(await fetchImageAsBase64('/logo.png'));
+        setBase64Verified(await fetchImageAsBase64('/verified.png'));
+        setBase64Paw(await fetchImageAsBase64('/paw.png'));
 
         if (petData.image_url) setBase64Avatar(await fetchImageAsBase64(petData.image_url));
 
@@ -135,7 +139,7 @@ export default function PetIdCardPage() {
       }
     };
     generateImage();
-  }, [loading, pet, profile, farm, base64Qr, base64Avatar, base64Logo]);
+  }, [loading, pet, profile, farm, base64Qr, base64Avatar, base64Logo, base64Verified, base64Paw]);
 
   const publicUrl = `${baseUrl}/p/${petId}`;
 
@@ -216,14 +220,14 @@ export default function PetIdCardPage() {
         .idc-btn-ghost:hover { border-color: ${F.pink}; color: ${F.pink}; }
         .idc-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 10px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; max-width: 400px; width: 100%; }
 
-        /* ═══ CARD (portrait) ═══ */
-        .card { width: 400px; background: linear-gradient(160deg, #FDEEF4 0%, #FFFFFF 40%, #FEF3F7 100%); border-radius: 24px; overflow: hidden; position: relative; border: 3px solid #FBCFE8; font-family: inherit; display: flex; flex-direction: column; }
+        /* ═══ CARD (portrait 2:3 = 400×600px) ═══ */
+        .card { width: 400px; height: 600px; background: linear-gradient(160deg, #FDEEF4 0%, #FFFFFF 40%, #FEF3F7 100%); border-radius: 24px; overflow: hidden; position: relative; border: 3px solid #FBCFE8; font-family: inherit; display: flex; flex-direction: column; }
 
         /* dot pattern bg */
         .card::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(232,70,119,0.12) 1.5px, transparent 1.5px); background-size: 16px 16px; pointer-events: none; z-index: 0; }
 
         /* Header */
-        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 18px 20px 12px; gap: 4px; }
+        .card-hd { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 20px 10px; gap: 3px; }
         .card-hd-sparkle { font-size: 11px; font-weight: 800; color: ${F.pinkLight}; letter-spacing: 0.18em; }
         .card-hd-logo { height: 28px; width: auto; object-fit: contain; }
         .card-hd-logo-text { font-size: 22px; font-weight: 900; color: ${F.pink}; letter-spacing: -1px; line-height: 1; }
@@ -233,15 +237,14 @@ export default function PetIdCardPage() {
         .card-hd-sub { font-size: 9px; font-weight: 600; color: ${F.inkSoft}; letter-spacing: 0.1em; margin-top: 2px; }
 
         /* Media section */
-        .card-media { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 8px 20px 20px; }
+        .card-media { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 18px 16px; }
         .card-photo-wrap { position: relative; }
         .card-photo { width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 42px; border: 2px solid #FBCFE8; }
         .card-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .card-photo-badge { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: ${F.pink}; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; box-shadow: 0 2px 6px rgba(232,70,119,0.4); }
         .card-qr-wrap { position: relative; background: white; border-radius: 16px; padding: 8px; border: 2px solid #FBCFE8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
         .card-qr-img-wrap { position: relative; width: 100%; aspect-ratio: 1; }
         .card-qr-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
-        .card-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px; border-radius: 50%; background: white; border: 2px solid ${F.pink}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
+        .card-qr-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border-radius: 50%; background: white; overflow: hidden; display: flex; align-items: center; justify-content: center; color: ${F.pink}; }
         .card-qr-label { font-size: 8px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.4; }
         .card-qr-sub { font-size: 7px; font-weight: 600; color: ${F.muted}; text-align: center; }
 
@@ -249,8 +252,8 @@ export default function PetIdCardPage() {
         .card-stamp { position: relative; z-index: 2; display: flex; justify-content: center; margin-top: -20px; margin-bottom: -20px; }
 
         /* Info rows */
-        .card-info { position: relative; z-index: 1; padding: 28px 20px 16px; display: flex; flex-direction: column; gap: 0; }
-        .card-info-row { display: flex; align-items: center; gap: 0; padding: 9px 0; }
+        .card-info { position: relative; z-index: 1; padding: 24px 18px 10px; display: flex; flex-direction: column; gap: 0; }
+        .card-info-row { display: flex; align-items: center; gap: 0; padding: 6px 0; }
         .card-row-divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(251,207,232,0.7) 20%, rgba(251,207,232,0.7) 80%, transparent); }
         .card-icon-sq { width: 32px; height: 32px; border-radius: 9px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; color: ${F.pink}; flex-shrink: 0; }
         .card-label-col { display: flex; flex-direction: column; margin-left: 10px; min-width: 80px; flex-shrink: 0; }
@@ -264,7 +267,7 @@ export default function PetIdCardPage() {
         .card-gender-f { color: #DB2777; }
 
         /* Pet ID box */
-        .card-petid { position: relative; z-index: 1; margin: 4px 20px 16px; background: linear-gradient(135deg, #E84677 0%, #F472B6 100%); border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+        .card-petid { position: relative; z-index: 1; margin: 4px 18px 12px; background: linear-gradient(135deg, #E84677 0%, #F472B6 100%); border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
         .card-petid-left { display: flex; flex-direction: column; gap: 2px; }
         .card-petid-paw-label { display: flex; align-items: center; gap: 5px; }
         .card-petid-label { font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.85); letter-spacing: 0.18em; text-transform: uppercase; }
@@ -329,14 +332,17 @@ export default function PetIdCardPage() {
                   <div className="card-photo">
                     {base64Avatar ? <img src={base64Avatar} alt={pet.name} /> : '🐾'}
                   </div>
-                  <div className="card-photo-badge">♡</div>
                 </div>
                 <div className="card-qr-wrap">
                   <div className="card-qr-img-wrap">
                     {base64Qr
                       ? <img src={base64Qr} alt="QR Code" />
                       : <div style={{ width: '100%', height: '100%', background: F.line, borderRadius: 8 }} />}
-                    <div className="card-qr-center"><PawSmall /></div>
+                    <div className="card-qr-center">
+                      {base64Paw && !base64Paw.startsWith('/')
+                        ? <img src={base64Paw} alt="paw" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%' }} />
+                        : <PawSmall />}
+                    </div>
                   </div>
                   <div className="card-qr-label">สแกนดูโปรไฟล์</div>
                   <div className="card-qr-sub">Scan to view profile</div>
@@ -345,7 +351,9 @@ export default function PetIdCardPage() {
 
               {/* Verified stamp */}
               <div className="card-stamp">
-                <VerifiedStamp />
+                {base64Verified && !base64Verified.startsWith('/')
+                  ? <img src={base64Verified} alt="Verified" style={{ width: 96, height: 96, objectFit: 'contain', mixBlendMode: 'screen' }} />
+                  : <VerifiedStamp />}
               </div>
 
               {/* Info rows */}
