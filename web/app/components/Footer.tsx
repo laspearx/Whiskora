@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 
-// ─── Premium CI Tokens ──────────────────────────────────
 const F = {
   ink: '#111827',
   inkSoft: '#4B5563',
@@ -13,35 +13,55 @@ const F = {
 };
 
 export default function Footer() {
+  const t = useTranslations('footer');
+
   const footerSections = [
-    { title: 'ผู้ใช้งาน', links: [{ label: 'ค้นหาฟาร์ม', href: '/farm-hub' }, { label: 'จองคลินิก', href: '/service-hub' }, { label: 'Pet ID Card', href: '/pet-id-card' }, { label: 'Pet Knowledge', href: '/pet-knowledge' }, { label: 'Pet Tools', href: '/pet-tools' }, { label: 'คอมมูนิตี้', href: '/community' }] },
-    { title: 'พาร์ทเนอร์', links: [{ label: 'เปิดฟาร์ม', href: '/partner/register-farm' }, { label: 'เปิดร้านค้า', href: '/partner/register-shop' }, { label: 'Genesis Program', href: '/partner' }, { label: 'ราคา PRO', href: '/partner' }] },
-    { title: 'บริษัท', links: [{ label: 'เกี่ยวกับเรา', href: '/about' }, { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' }, { label: 'ข้อกำหนด', href: '/' }, { label: 'ติดต่อ', href: '/' }] },
+    {
+      title: t('sectionUsers'),
+      links: [
+        { label: t('findFarm'), href: '/farm-hub' },
+        { label: t('bookClinic'), href: '/service-hub' },
+        { label: t('petIdCard'), href: '/pet-id-card' },
+        { label: t('petKnowledge'), href: '/pet-knowledge' },
+        { label: t('petTools'), href: '/pet-tools' },
+        { label: t('community'), href: '/community' },
+      ],
+    },
+    {
+      title: t('sectionPartners'),
+      links: [
+        { label: t('openFarm'), href: '/partner/register-farm' },
+        { label: t('openShop'), href: '/partner/register-shop' },
+        { label: t('genesisProgram'), href: '/partner' },
+        { label: t('proPricing'), href: '/partner' },
+      ],
+    },
+    {
+      title: t('sectionCompany'),
+      links: [
+        { label: t('aboutUs'), href: '/about' },
+        { label: t('privacy'), href: '/privacy' },
+        { label: t('terms'), href: '/' },
+        { label: t('contact'), href: '/' },
+      ],
+    },
   ];
 
   return (
     <footer className="w-full max-w-7xl mx-auto px-5 md:px-6 mt-10 md:mt-16 pt-8 md:pt-12 pb-20 md:pb-24" style={{ borderTop: `1px solid ${F.line}` }}>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-10">
-        
-        {/* Brand Section */}
+
         <div className="col-span-2 md:col-span-1 space-y-4 md:-mt-4">
           <div className="flex items-center gap-2">
-            <Image 
-              src="/logo.png" 
-              alt="Whiskora Logo" 
-              width={140}
-              height={40}
-              className="h-auto"
-            />
+            <Image src="/logo.png" alt="Whiskora Logo" width={140} height={40} className="h-auto" />
           </div>
           <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.6 }} className="max-w-xs">
-            ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง <br />
-            <span className="opacity-70">One platform, every pet life.</span>
+            {t('tagline')} <br />
+            <span className="opacity-70">{t('taglineSub')}</span>
           </p>
         </div>
 
-        {/* Links Sections */}
         {footerSections.map((section) => (
           <div key={section.title} className="space-y-4">
             <h4 style={{ fontSize: 11, letterSpacing: '0.1em', color: F.muted }} className="font-bold uppercase">
@@ -50,8 +70,8 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {section.links.map((link) => (
                 <li key={link.label}>
-                  <Link 
-                    href={link.href} 
+                  <Link
+                    href={link.href as any}
                     className="text-[13px] transition-colors hover:text-pink-500 block"
                     style={{ color: F.inkSoft }}
                   >
@@ -64,15 +84,14 @@ export default function Footer() {
         ))}
       </div>
 
-      {/* Bottom Bar */}
       <div className="mt-6 md:mt-8 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-gray-50" style={{ fontSize: 11, color: F.muted }}>
         <div className="flex items-center gap-2">
-          <span>© 2026 Whiskora</span>
+          <span>{t('copyright')}</span>
           <span className="opacity-30">|</span>
-          <span>Made in Bangkok</span>
+          <span>{t('madeIn')}</span>
         </div>
         <div className="flex items-center gap-6">
-          <span>PDPA compliant</span>
+          <span>{t('pdpa')}</span>
           <span className="opacity-50">V1.1.4</span>
         </div>
       </div>
