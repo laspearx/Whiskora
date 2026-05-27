@@ -9,7 +9,9 @@ export async function GET(request: Request) {
   // อ่านหน้าปลายทางที่ต้องเด้งกลับ (ส่งมาจาก login/register ผ่าน ?next=)
   const nextParam = searchParams.get('next') || '/profile'
   // กัน open-redirect: รับเฉพาะ path ภายในเว็บเท่านั้น
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/profile'
+  const rawNext = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/profile'
+  // Prepend default locale so middleware doesn't double-redirect
+  const next = rawNext.startsWith('/th/') || rawNext.startsWith('/en/') ? rawNext : `/th${rawNext}`
 
   if (code) {
     const cookieStore = await cookies()
@@ -30,7 +32,6 @@ export async function GET(request: Request) {
     )
 
     await supabase.auth.exchangeCodeForSession(code)
-    // เด้งกลับหน้าที่ผู้ใช้ตั้งใจจะไป (เช่นหน้า id-card ที่เพิ่งกดดู)
     return NextResponse.redirect(`${origin}${next}`)
   }
 
