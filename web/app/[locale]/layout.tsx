@@ -1,12 +1,17 @@
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { routing } from '@/i18n/routing';
+import { I18nProvider } from '@/i18n/context';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import ScrollToTop from '@/app/components/ScrollToTop';
 import BrowserChecker from '@/app/components/BrowserChecker';
 import HtmlLang from '@/app/components/HtmlLang';
+
+const locales = ['th', 'en'];
+
+async function getMessages(locale: string) {
+  if (locale === 'en') return (await import('@/messages/en.json')).default;
+  return (await import('@/messages/th.json')).default;
+}
 
 export default async function LocaleLayout({
   children,
@@ -17,14 +22,14 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
-  if (!routing.locales.includes(locale as 'th' | 'en')) {
+  if (!locales.includes(locale)) {
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = await getMessages(locale);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <I18nProvider locale={locale} messages={messages as Record<string, any>}>
       <HtmlLang />
       <BrowserChecker />
       <ScrollToTop />
@@ -33,6 +38,6 @@ export default async function LocaleLayout({
         {children}
       </main>
       <Footer />
-    </NextIntlClientProvider>
+    </I18nProvider>
   );
 }

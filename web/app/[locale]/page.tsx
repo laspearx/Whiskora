@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/i18n/context';
 import { Link, useRouter } from '@/i18n/navigation';
 
 const F = {

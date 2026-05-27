@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/i18n/context';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useSearchParams } from "next/navigation";
 

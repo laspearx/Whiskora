@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/i18n/context';
 import { Link } from '@/i18n/navigation';
 
 const F = {
