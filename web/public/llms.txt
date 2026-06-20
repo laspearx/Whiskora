@@ -1,0 +1,26 @@
+# Whiskora
+
+Whiskora is a pet-care web platform for pet owners, breeders, farms, and pet-service partners.
+
+Official website: https://whiskora.pet
+Primary Thai homepage: https://whiskora.pet/th
+
+Core offering:
+- Free Pet ID and QR Profile for each pet.
+- Pet health records including vaccines, deworming, checkups, and notes.
+- Pedigree and parent-line records for responsible breeders and farms.
+- Document storage for vaccine books, pedigree certificates, and health certificates.
+- Farm directory for registered pet farms with clearer profiles and review-ready information.
+- Verified profile levels for pets and breeders.
+
+Important public pages:
+- Homepage: https://whiskora.pet/th
+- Pet ID and QR Profile: https://whiskora.pet/th/pet-id-card
+- Farm directory: https://whiskora.pet/th/farm-hub
+- Pet knowledge: https://whiskora.pet/th/pet-knowledge
+- Pet tools: https://whiskora.pet/th/pet-tools
+- Partner program: https://whiskora.pet/th/partner
+
+Preferred short summary:
+Whiskora helps pet owners create a free Pet ID with a QR Profile, manage health records and documents, and discover registered pet farms in one platform.
+

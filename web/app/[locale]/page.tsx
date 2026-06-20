@@ -1,417 +1,2133 @@
 "use client";
 
-import { useTranslations } from '@/i18n/context';
-import { Link, useRouter } from '@/i18n/navigation';
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "@/i18n/navigation";
 
-const F = {
-  ink: '#1f1a1c', inkSoft: '#4a3f44', cream: '#fffafc', paper: '#fdf0f3',
-  line: '#f3dde3', muted: '#8e7e84', pink: '#e84677', pinkSoft: '#fde2ea',
-  pinkDeep: '#c4325f', sky: '#5b8dc7', leaf: '#5a9065', sun: '#e8a63a', purple: '#7c5cbf',
+type IconName =
+  | "id"
+  | "health"
+  | "qr"
+  | "shield"
+  | "tree"
+  | "doc"
+  | "transfer"
+  | "clinic"
+  | "shop"
+  | "owner"
+  | "breeder"
+  | "care"
+  | "search";
+
+type HomeNavItem = {
+  label: string;
+  target: string;
+  type: "section" | "route";
 };
 
-const Icon = {
-  Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-  Farm: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Shop: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-  Clinic: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  Book: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
-  Tool: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
-  Community: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  ArrowRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
-  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+const siteUrl = "https://whiskora.pet";
+
+const homeNavItems: HomeNavItem[] = [
+  { label: "Pet ID", target: "feature-showcase", type: "section" },
+  { label: "Health Records", target: "platform-pillars", type: "section" },
+  { label: "Breeders", target: "user-groups", type: "section" },
+  { label: "Pedigree", target: "platform-pillars", type: "section" },
+  { label: "Services", target: "pet-lifecycle", type: "section" },
+  { label: "Knowledge", target: "/pet-knowledge", type: "route" },
+];
+
+const trustStatements = [
+  {
+    title: "Profile-first data",
+    desc: "ข้อมูลสำคัญผูกกับสัตว์เลี้ยงแต่ละตัว ไม่กระจัดกระจายตามแชตหรือรูปถ่าย",
+  },
+  {
+    title: "Shareable by QR",
+    desc: "แชร์ข้อมูลที่จำเป็นให้ผู้ดูแล ฟาร์ม หรือบริการสัตว์เลี้ยงเข้าถึงได้เร็วขึ้น",
+  },
+  {
+    title: "Verification-ready",
+    desc: "รองรับข้อมูลฟาร์ม เพ็ดดิกรี เอกสาร และความโปร่งใสก่อนรับเลี้ยงหรือซื้อขาย",
+  },
+  {
+    title: "Care continuity",
+    desc: "ช่วยให้ประวัติสุขภาพและการดูแลต่อเนื่อง ไม่หายไประหว่างเจ้าของหรือผู้ให้บริการ",
+  },
+];
+
+const problemCards = [
+  {
+    title: "ประวัติสุขภาพอยู่หลายที่",
+    desc: "วัคซีน ถ่ายพยาธิ ใบนัด และรูปเอกสารมักกระจายอยู่ในสมุด แชต อัลบั้มรูป หรือความจำของเจ้าของ",
+    icon: "health",
+  },
+  {
+    title: "ข้อมูลสำคัญถูกถามซ้ำ",
+    desc: "คลินิก โรงแรม อาบน้ำตัดขน และผู้ดูแลต้องถามข้อมูลเดิมซ้ำทุกครั้งที่สัตว์เลี้ยงเปลี่ยนมือ",
+    icon: "clinic",
+  },
+  {
+    title: "ความน่าเชื่อถือของฟาร์มดูยาก",
+    desc: "ผู้ซื้ออยากเห็นข้อมูลฟาร์ม สายเลือด สุขภาพ และความโปร่งใสก่อนตัดสินใจ แต่โพสต์ทั่วไปไม่พอ",
+    icon: "breeder",
+  },
+  {
+    title: "การส่งต่อเจ้าของขาดบริบท",
+    desc: "เมื่อมีการรับเลี้ยง ซื้อขาย หรือฝากดูแล รายละเอียดสำคัญมักไม่ถูกส่งต่อครบถ้วน",
+    icon: "transfer",
+  },
+] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+
+const productPillars = [
+  {
+    title: "Digital Pet Identity",
+    benefit: "ตัวตนดิจิทัลของสัตว์เลี้ยงแต่ละตัว",
+    desc: "สร้างโปรไฟล์และ Pet ID สำหรับเก็บข้อมูลพื้นฐาน รูปภาพ เจ้าของ และรายละเอียดที่จำเป็น",
+    icon: "id",
+  },
+  {
+    title: "Health Records",
+    benefit: "สมุดสุขภาพที่ค้นหาและอัปเดตได้",
+    desc: "เก็บประวัติวัคซีน ถ่ายพยาธิ การรักษา นัดหมาย และหมายเหตุสุขภาพไว้ในโปรไฟล์เดียว",
+    icon: "health",
+  },
+  {
+    title: "QR Public Profile",
+    benefit: "แชร์ข้อมูลที่จำเป็นได้เร็ว",
+    desc: "ใช้ QR Code เพื่อให้ผู้เกี่ยวข้องเข้าถึงหน้าโปรไฟล์สาธารณะตามข้อมูลที่เจ้าของเลือกแชร์",
+    icon: "qr",
+  },
+  {
+    title: "Verified Breeder Profile",
+    benefit: "สร้างความโปร่งใสให้ฟาร์ม",
+    desc: "ช่วยให้ฟาร์มแสดงข้อมูล พ่อแม่พันธุ์ ครอก และรายละเอียดที่ทำให้ผู้ซื้อมั่นใจขึ้น",
+    icon: "shield",
+  },
+  {
+    title: "Digital Pedigree",
+    benefit: "สายเลือดและข้อมูลพ่อแม่พันธุ์เป็นระบบ",
+    desc: "จัดเก็บผังสายเลือด ข้อมูลพ่อแม่ และข้อมูลฟาร์มสำหรับการเพาะพันธุ์ที่ต้องการมาตรฐาน",
+    icon: "tree",
+  },
+  {
+    title: "Service-ready Sharing",
+    benefit: "พร้อมต่อยอดกับคลินิกและบริการ",
+    desc: "วางโครงสร้างข้อมูลให้พร้อมสำหรับคลินิก โรงแรม อาบน้ำตัดขน และบริการสัตว์เลี้ยงในอนาคต",
+    icon: "care",
+  },
+] satisfies Array<{ title: string; benefit: string; desc: string; icon: IconName }>;
+
+const lifecycleSteps = [
+  {
+    title: "Create profile",
+    desc: "เริ่มจากข้อมูลพื้นฐาน รูปภาพ เจ้าของ และรายละเอียดประจำตัว",
+    icon: "id",
+  },
+  {
+    title: "Record health",
+    desc: "บันทึกวัคซีน ถ่ายพยาธิ การรักษา และเอกสารสำคัญ",
+    icon: "health",
+  },
+  {
+    title: "Share safely",
+    desc: "แชร์ QR Profile ให้ผู้ดูแลหรือบริการที่จำเป็นต้องรู้ข้อมูล",
+    icon: "qr",
+  },
+  {
+    title: "Verify lineage",
+    desc: "เชื่อมข้อมูลฟาร์ม เพ็ดดิกรี พ่อแม่พันธุ์ และความโปร่งใส",
+    icon: "tree",
+  },
+  {
+    title: "Transfer ownership",
+    desc: "ส่งต่อข้อมูลสำคัญเมื่อสัตว์เลี้ยงย้ายบ้านหรือมีเจ้าของใหม่",
+    icon: "transfer",
+  },
+  {
+    title: "Continue care",
+    desc: "ให้คลินิก บริการ และผู้ดูแลในอนาคตเข้าใจข้อมูลได้ต่อเนื่อง",
+    icon: "clinic",
+  },
+] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+
+const userGroups = [
+  {
+    label: "For Pet Owners",
+    title: "ดูแลข้อมูลสัตว์เลี้ยงโดยไม่ต้องจำทุกอย่างเอง",
+    desc: "จัดเก็บประวัติสุขภาพ เอกสาร และ QR Profile เพื่อให้การดูแลประจำวัน ฝากเลี้ยง หรือเหตุฉุกเฉินง่ายขึ้น",
+    icon: "owner",
+  },
+  {
+    label: "For Breeders",
+    title: "ทำให้ฟาร์มดูโปร่งใสและมีระบบมากกว่าโพสต์ขาย",
+    desc: "แสดงข้อมูลฟาร์ม ครอก พ่อแม่พันธุ์ เพ็ดดิกรี และประวัติที่ช่วยสร้างความเชื่อมั่นกับผู้ซื้อ",
+    icon: "breeder",
+  },
+  {
+    label: "For Clinics & Services",
+    title: "เห็นข้อมูลสำคัญเร็วขึ้น ลดคำถามซ้ำก่อนให้บริการ",
+    desc: "ช่วยให้คลินิก โรงแรม อาบน้ำตัดขน และผู้ดูแลเข้าถึงข้อมูลพื้นฐานและประวัติที่เกี่ยวข้องได้เป็นระบบ",
+    icon: "clinic",
+  },
+  {
+    label: "For Pet Businesses",
+    title: "เชื่อมบริการเข้ากับเจ้าของและโปรไฟล์สัตว์เลี้ยงจริง",
+    desc: "รองรับการค้นหา บริการ และความต้องการของเจ้าของสัตว์เลี้ยงผ่านข้อมูลที่ชัดเจนกว่าเดิม",
+    icon: "shop",
+  },
+] satisfies Array<{ label: string; title: string; desc: string; icon: IconName }>;
+
+const featureShowcase = [
+  {
+    title: "Free Pet ID Card",
+    desc: "บัตรประจำตัวดิจิทัลพร้อม QR สำหรับแชร์โปรไฟล์สัตว์เลี้ยง",
+    icon: "id",
+  },
+  {
+    title: "QR Public Pet Profile",
+    desc: "หน้าโปรไฟล์สาธารณะที่เจ้าของเลือกข้อมูลที่ต้องการเปิดเผยได้",
+    icon: "qr",
+  },
+  {
+    title: "Digital Health Book",
+    desc: "จัดเก็บวัคซีน ถ่ายพยาธิ นัดหมาย และประวัติการรักษา",
+    icon: "health",
+  },
+  {
+    title: "Documents",
+    desc: "รวมสมุดวัคซีน ใบรับรองสุขภาพ เพ็ดดิกรี และเอกสารสำคัญ",
+    icon: "doc",
+  },
+  {
+    title: "Breeder Profile",
+    desc: "โปรไฟล์ฟาร์มที่ช่วยสื่อสารข้อมูลอย่างเป็นระบบและตรวจสอบง่ายขึ้น",
+    icon: "shield",
+  },
+  {
+    title: "Digital Pedigree",
+    desc: "จัดการสายเลือด พ่อแม่พันธุ์ และข้อมูลครอกสำหรับฟาร์ม",
+    icon: "tree",
+  },
+] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+
+const trustLayer = [
+  "Registered breeder profiles",
+  "Transparent pet information",
+  "Digital health and document records",
+  "Review and verification readiness",
+  "Clinic and service integration foundation",
+];
+
+const seoFaqs = [
+  {
+    question: "Whiskora คืออะไร?",
+    answer:
+      "Whiskora คือแพลตฟอร์ม pet-tech ที่ช่วยเชื่อมข้อมูลสัตว์เลี้ยง เจ้าของ ฟาร์ม สุขภาพ เอกสาร เพ็ดดิกรี และ QR Profile ให้อยู่ในระบบเดียว เพื่อให้ดูแลและแชร์ข้อมูลได้ง่ายขึ้น",
+  },
+  {
+    question: "Whiskora ต่างจากแค่สร้าง Pet ID อย่างไร?",
+    answer:
+      "Pet ID เป็นจุดเริ่มต้น แต่ Whiskora ออกแบบให้เป็นระบบข้อมูลสัตว์เลี้ยงระยะยาว ครอบคลุมสุขภาพ เอกสาร ฟาร์ม เพ็ดดิกรี การแชร์ QR และการต่อยอดกับบริการสัตว์เลี้ยง",
+  },
+  {
+    question: "QR Profile สัตว์เลี้ยงใช้ทำอะไร?",
+    answer:
+      "QR Profile ช่วยให้เจ้าของแชร์ข้อมูลที่จำเป็น เช่น ข้อมูลพื้นฐาน เจ้าของ ประวัติสุขภาพ หรือเอกสารบางส่วน ให้ผู้ดูแลหรือผู้เกี่ยวข้องเข้าถึงได้รวดเร็ว",
+  },
+  {
+    question: "ฟาร์มและผู้เพาะพันธุ์ใช้ Whiskora ได้อย่างไร?",
+    answer:
+      "ฟาร์มสามารถใช้ Whiskora เพื่อจัดการโปรไฟล์ฟาร์ม ข้อมูลสัตว์เลี้ยง ครอก พ่อแม่พันธุ์ เพ็ดดิกรี และข้อมูลที่ช่วยเพิ่มความโปร่งใสก่อนการตัดสินใจของผู้ซื้อ",
+  },
+  {
+    question: "Whiskora เหมาะกับคลินิกหรือบริการสัตว์เลี้ยงไหม?",
+    answer:
+      "Whiskora วางโครงสร้างข้อมูลให้พร้อมสำหรับคลินิก โรงแรม อาบน้ำตัดขน และบริการสัตว์เลี้ยง เพื่อให้ดูข้อมูลสำคัญของสัตว์เลี้ยงได้เร็วขึ้นและลดการถามข้อมูลซ้ำ",
+  },
+  {
+    question: "เริ่มใช้งาน Whiskora ต้องเสียค่าใช้จ่ายไหม?",
+    answer:
+      "เจ้าของสัตว์เลี้ยงสามารถเริ่มสร้างโปรไฟล์และ Pet ID ได้ฟรี เหมาะสำหรับการจัดข้อมูลพื้นฐาน แชร์ QR Profile และเริ่มเก็บประวัติสุขภาพของสัตว์เลี้ยง",
+  },
+];
+
+const searchIntents = [
+  "Pet ID สัตว์เลี้ยง",
+  "QR Profile สัตว์เลี้ยง",
+  "สมุดสุขภาพสัตว์เลี้ยงออนไลน์",
+  "ประวัติวัคซีนสัตว์เลี้ยง",
+  "ฟาร์มแมวและฟาร์มสุนัข",
+  "เพ็ดดิกรีสัตว์เลี้ยง",
+  "โอนเจ้าของสัตว์เลี้ยง",
+];
+
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "Whiskora",
+      url: siteUrl,
+      logo: `${siteUrl}/logo.png`,
+      description:
+        "แพลตฟอร์ม pet-tech สำหรับ Pet ID, QR Profile, ประวัติสุขภาพ, เพ็ดดิกรี, เอกสารสำคัญ, ฟาร์มสัตว์เลี้ยง และการแชร์ข้อมูลสัตว์เลี้ยงที่เชื่อถือได้",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: "Whiskora",
+      inLanguage: ["th-TH", "en"],
+      publisher: { "@id": `${siteUrl}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${siteUrl}/th/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${siteUrl}/th#webpage`,
+      url: `${siteUrl}/th`,
+      name: "Whiskora | Trusted Pet Identity, Health Records และ QR Profile",
+      description:
+        "Whiskora คือแพลตฟอร์มสัตว์เลี้ยงที่เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี, เอกสาร และการแชร์ข้อมูลสัตว์เลี้ยงไว้ในระบบเดียว",
+      isPartOf: { "@id": `${siteUrl}/#website` },
+      about: { "@id": `${siteUrl}/#organization` },
+      primaryImageOfPage: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/home/hero-visual-desktop-v1.png`,
+      },
+    },
+    {
+      "@type": "WebApplication",
+      "@id": `${siteUrl}/th#webapp`,
+      name: "Whiskora",
+      url: `${siteUrl}/th`,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Web",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "THB",
+      },
+      featureList: productPillars.map((pillar) => pillar.title),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${siteUrl}/th#faq`,
+      mainEntity: seoFaqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${siteUrl}/th#breadcrumb`,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Whiskora",
+          item: `${siteUrl}/th`,
+        },
+      ],
+    },
+  ],
 };
+
+function PawIcon({ color = "#ef3e7b" }: { color?: string }) {
+  return (
+    <svg width="25" height="25" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="5.4" cy="10.2" r="2.1" fill={color} />
+      <circle cx="9.4" cy="6.4" r="2.15" fill={color} />
+      <circle cx="14.6" cy="6.4" r="2.15" fill={color} />
+      <circle cx="18.6" cy="10.2" r="2.1" fill={color} />
+      <path
+        d="M7.2 17.5c0-3.1 2.5-5.3 4.8-5.3s4.8 2.2 4.8 5.3c0 2-1.7 2.8-3.2 2.1-.9-.4-2.3-.4-3.2 0-1.5.7-3.2-.1-3.2-2.1Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+function LineIcon({ name, color = "#ef3e7b" }: { name: IconName; color?: string }) {
+  const common = {
+    width: 30,
+    height: 30,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: color,
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (name === "shield") {
+    return (
+      <svg {...common}>
+        <path d="M12 3 20 6v6c0 5-3.3 8-8 9-4.7-1-8-4-8-9V6l8-3Z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (name === "qr") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="6" height="6" />
+        <rect x="15" y="3" width="6" height="6" />
+        <rect x="3" y="15" width="6" height="6" />
+        <path d="M15 15h2v2h-2zM19 15h2v6h-6v-2h4zM12 3v4M12 12h4M12 17v4" />
+      </svg>
+    );
+  }
+
+  if (name === "health") {
+    return (
+      <svg {...common}>
+        <path d="M20 10h-4l-3 8-4-14-3 6H4" />
+        <path d="M12 21c-5-3-8-6.5-8-10.2A4.8 4.8 0 0 1 12 7a4.8 4.8 0 0 1 8 3.8c0 3.7-3 7.2-8 10.2Z" opacity=".24" />
+      </svg>
+    );
+  }
+
+  if (name === "tree") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="5" r="2.5" />
+        <circle cx="6" cy="18" r="2.5" />
+        <circle cx="18" cy="18" r="2.5" />
+        <path d="M12 7.5v4.5M12 12H6v3.5M12 12h6v3.5" />
+      </svg>
+    );
+  }
+
+  if (name === "doc") {
+    return (
+      <svg {...common}>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 3v5h5" />
+        <path d="M8 13h8M8 17h5" />
+      </svg>
+    );
+  }
+
+  if (name === "transfer") {
+    return (
+      <svg {...common}>
+        <path d="M7 7h10M17 7l-3-3M17 7l-3 3M17 17H7M7 17l3-3M7 17l3 3" />
+        <rect x="4" y="4" width="16" height="16" rx="3" opacity=".24" />
+      </svg>
+    );
+  }
+
+  if (name === "clinic") {
+    return (
+      <svg {...common}>
+        <path d="M4 20V8l8-4 8 4v12" />
+        <path d="M9 20v-7h6v7M12 8v4M10 10h4" />
+      </svg>
+    );
+  }
+
+  if (name === "shop") {
+    return (
+      <svg {...common}>
+        <path d="M4 10h16l-1.2-5H5.2L4 10Z" />
+        <path d="M6 10v10h12V10M9 14h6" />
+      </svg>
+    );
+  }
+
+  if (name === "owner") {
+    return (
+      <svg {...common}>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M4 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5" />
+        <path d="M16 9c1.8.2 3 1.5 3 3.1 0 2-1.7 3.2-3.4 3.2" />
+      </svg>
+    );
+  }
+
+  if (name === "breeder") {
+    return (
+      <svg {...common}>
+        <path d="M5 19V9l7-5 7 5v10" />
+        <path d="M9 19v-6h6v6" />
+        <path d="M8 10h8" />
+      </svg>
+    );
+  }
+
+  if (name === "care") {
+    return (
+      <svg {...common}>
+        <path d="M12 21s-7-4.4-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.6-7 10-7 10Z" />
+        <path d="M12 9v5M9.5 11.5h5" />
+      </svg>
+    );
+  }
+
+  if (name === "search") {
+    return (
+      <svg {...common}>
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="m16 16 4 4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <circle cx="9" cy="12" r="2.2" />
+      <path d="M14 10h4M14 14h3" />
+    </svg>
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  highlight,
+  copy,
+  id,
+}: {
+  eyebrow: string;
+  title: string;
+  highlight?: string;
+  copy: string;
+  id?: string;
+}) {
+  return (
+    <div className="section-header">
+      <div className="eyebrow">
+        <PawIcon />
+        {eyebrow}
+      </div>
+      <h2 className="section-title" id={id}>
+        {title}
+        {highlight && <span>{highlight}</span>}
+      </h2>
+      <p className="section-copy">{copy}</p>
+    </div>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
-  const t = useTranslations('home');
+  const [isHomeNavMoreOpen, setIsHomeNavMoreOpen] = useState(false);
+  const [shouldCollapseHomeNav, setShouldCollapseHomeNav] = useState(false);
+  const homeNavRef = useRef<HTMLElement>(null);
+  const homeNavLogoRef = useRef<HTMLImageElement>(null);
+  const homeNavProbeRef = useRef<HTMLDivElement>(null);
+
+  const navigateHomeItem = (item: HomeNavItem) => {
+    setIsHomeNavMoreOpen(false);
+    if (item.type === "route") {
+      router.push(item.target);
+      return;
+    }
+    document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  useEffect(() => {
+    const calculateHomeNav = () => {
+      const nav = homeNavRef.current;
+      const logo = homeNavLogoRef.current;
+      const probe = homeNavProbeRef.current;
+      if (!nav || !logo || !probe) return;
+
+      const navWidth = nav.getBoundingClientRect().width;
+      const logoWidth = logo.getBoundingClientRect().width;
+      const contentWidth = probe.getBoundingClientRect().width;
+      const reservedGap = 22;
+      const shouldCollapse = logoWidth + contentWidth + reservedGap > navWidth;
+      setShouldCollapseHomeNav((current) => (current === shouldCollapse ? current : shouldCollapse));
+      if (!shouldCollapse) setIsHomeNavMoreOpen(false);
+    };
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (homeNavRef.current && !homeNavRef.current.contains(event.target as Node)) {
+        setIsHomeNavMoreOpen(false);
+      }
+    };
+
+    calculateHomeNav();
+    const observer = new ResizeObserver(calculateHomeNav);
+    if (homeNavRef.current) observer.observe(homeNavRef.current);
+    window.addEventListener("resize", calculateHomeNav);
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", calculateHomeNav);
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
 
   return (
     <>
       <style>{`
-        @keyframes float-anim { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        .float-anim { animation: float-anim 6s ease-in-out infinite; }
-        .hp-card { transition: transform .2s, box-shadow .2s; }
-        .hp-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(31,26,28,.08); }
-        .hp-btn-pink { transition: background .15s, transform .15s, box-shadow .15s; }
-        .hp-btn-pink:hover { background: #c4325f !important; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(232,70,119,.35) !important; }
-        .hp-btn-outline { transition: all .15s; }
-        .hp-btn-outline:hover { background: #fde2ea !important; color: #c4325f !important; }
-        .hp-btn-dark { transition: all .15s; }
-        .hp-btn-dark:hover { background: #2e2228 !important; transform: translateY(-1px); }
-        .hp-quick-tile { transition: all .2s; }
-        .hp-quick-tile:hover { border-color: #e84677 !important; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(31,26,28,.06); }
-        .hp-search-wrap:focus-within { border-color: #e84677 !important; box-shadow: 0 2px 16px rgba(232,70,119,.15) !important; }
-        .hp-search-wrap input { border:none; outline:none; background:transparent; width:100%; font-size:15px; color:#1f1a1c; padding:12px 0; }
-        .hp-search-wrap input::placeholder { color:#8e7e84; }
-        .hp-section { padding: 48px 0 0; }
-        @media (max-width: 900px) {
-          .hp-hero-inner { flex-direction: column !important; text-align: center; }
-          .hp-hero-text p { margin-left:auto !important; margin-right:auto !important; }
-          .hp-hero-btns { justify-content: center !important; }
-          .hp-hero-mockup { display: none; }
-          .hp-two-col { grid-template-columns: 1fr !important; }
-          .hp-three-col { grid-template-columns: repeat(2,1fr) !important; }
-          .hp-feature-band { grid-template-columns: 1fr !important; text-align: center; }
-          .hp-feature-band-img { display:none; }
-          .hp-feature-band-btns { justify-content: center !important; }
-          .hp-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+        .home-page {
+          --ink: #21192f;
+          --ink-soft: #42394f;
+          --muted: #70697d;
+          --line: #f1d9e2;
+          --pink: #ef3e7b;
+          --pink-strong: #f42f7a;
+          --pink-soft: #fff2f7;
+          --blue: #407fb7;
+          --green: #5c8f6b;
+          --gold: #d9922f;
+          color: var(--ink);
+          background:
+            linear-gradient(180deg, #fff 0%, #fff8fb 32%, #fff 70%),
+            #fff;
+          overflow-x: clip;
         }
-        @media (max-width: 600px) {
-          .hp-three-col { grid-template-columns: 1fr !important; }
-          .hp-quick-grid { grid-template-columns: repeat(3,1fr) !important; }
-          .hp-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+        .home-page button {
+          font: inherit;
+        }
+
+        .home-nav {
+          width: min(100% - 48px, 1220px);
+          min-height: 78px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          flex-wrap: nowrap;
+          position: relative;
+          z-index: 8;
+        }
+
+        .home-nav-logo {
+          width: 184px;
+          max-width: 184px;
+          height: 54px;
+          display: block;
+          object-fit: contain;
+        }
+
+        .home-nav-content,
+        .home-nav-links,
+        .home-nav-actions {
+          display: flex;
+          align-items: center;
+          flex-wrap: nowrap;
+        }
+
+        .home-nav-content {
+          gap: 16px;
+          min-width: 0;
+        }
+
+        .home-nav-links {
+          gap: 4px;
+        }
+
+        .home-nav-actions {
+          gap: 10px;
+        }
+
+        .nav-section-btn,
+        .nav-link-btn,
+        .nav-primary-btn {
+          min-height: 40px;
+          border-radius: 999px;
+          border: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+        }
+
+        .nav-section-btn {
+          padding: 0 10px;
+          background: transparent;
+          color: #5f586b;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .nav-link-btn {
+          padding: 0 16px;
+          color: #51495f;
+          background: rgba(255,255,255,.78);
+          border: 1px solid rgba(239,62,123,.16);
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .nav-primary-btn {
+          padding: 0 20px;
+          color: #fff;
+          background: var(--pink);
+          box-shadow: 0 12px 28px rgba(239,62,123,.22);
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .nav-section-btn:hover,
+        .nav-link-btn:hover,
+        .nav-primary-btn:hover {
+          transform: translateY(-1px);
+        }
+
+        .nav-section-btn:hover,
+        .nav-link-btn:hover {
+          color: var(--pink);
+          background: #fff6fa;
+        }
+
+        .home-nav-more {
+          position: relative;
+          flex: 0 0 auto;
+        }
+
+        .home-nav-more-btn {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          border: 1px solid rgba(239,62,123,.18);
+          background: rgba(255,255,255,.9);
+          color: var(--pink);
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+          box-shadow: 0 12px 26px rgba(239,62,123,.14);
+          transition: transform .18s ease, background .18s ease;
+        }
+
+        .home-nav-more-btn:hover {
+          transform: translateY(-1px);
+          background: #fff6fa;
+        }
+
+        .home-nav-dropdown {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 10px);
+          width: min(280px, calc(100vw - 32px));
+          overflow: hidden;
+          border-radius: 18px;
+          border: 1px solid rgba(239,62,123,.16);
+          background: #fff;
+          box-shadow: 0 20px 46px rgba(59,35,70,.16);
+        }
+
+        .home-nav-dropdown button {
+          width: 100%;
+          min-height: 46px;
+          border: 0;
+          background: transparent;
+          color: #40354e;
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          font-size: 14px;
+          font-weight: 600;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .home-nav-dropdown button:hover {
+          color: var(--pink);
+          background: #fff6fa;
+        }
+
+        .home-nav-dropdown .dropdown-primary {
+          color: var(--pink);
+        }
+
+        .home-nav-probe {
+          position: fixed;
+          left: 0;
+          top: 0;
+          z-index: -1;
+          visibility: hidden;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          width: max-content;
+          white-space: nowrap;
+        }
+
+        .home-nav-probe .home-nav-links,
+        .home-nav-probe .home-nav-actions {
+          display: flex;
+        }
+
+        .section-inner,
+        .hero-inner {
+          width: min(100% - 48px, 1220px);
+          margin: 0 auto;
+        }
+
+        .hero-section {
+          width: 100%;
+          min-height: 700px;
+          position: relative;
+          isolation: isolate;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 36%, rgba(255,255,255,.55) 62%, rgba(255,248,252,.1) 100%),
+            url("/home/hero-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
+            #fff8fc;
+        }
+
+        .hero-inner {
+          min-height: 700px;
+          display: flex;
+          align-items: center;
+          padding: 44px 0 96px;
+        }
+
+        .hero-copy-block {
+          width: min(650px, 100%);
+        }
+
+        .eyebrow {
+          width: max-content;
+          max-width: 100%;
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.9);
+          color: var(--pink);
+          padding: 8px 16px;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: .04em;
+          box-shadow: 0 12px 26px rgba(239,62,123,.1);
+        }
+
+        .hero-title {
+          margin: 20px 0 16px;
+          max-width: 720px;
+          font-size: clamp(42px, 5.1vw, 68px);
+          line-height: 1.1;
+          letter-spacing: 0;
+          font-weight: 700;
+          color: var(--ink);
+        }
+
+        .hero-title span,
+        .section-title span {
+          display: block;
+          color: var(--pink);
+        }
+
+        .hero-copy,
+        .section-copy {
+          color: var(--ink-soft);
+          font-size: 17px;
+          line-height: 1.76;
+          margin: 0;
+        }
+
+        .hero-copy {
+          max-width: 610px;
+        }
+
+        .hero-actions,
+        .cta-actions {
+          display: flex;
+          gap: 14px;
+          flex-wrap: wrap;
+          margin-top: 28px;
+        }
+
+        .primary-btn,
+        .secondary-btn {
+          min-height: 54px;
+          border-radius: 16px;
+          padding: 0 26px;
+          border: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+          white-space: nowrap;
+        }
+
+        .primary-btn {
+          color: #fff;
+          background: var(--pink);
+          box-shadow: 0 18px 36px rgba(239, 62, 123, .24);
+        }
+
+        .secondary-btn {
+          color: var(--pink);
+          background: rgba(255, 255, 255, .92);
+          border: 1px solid rgba(239, 62, 123, .26);
+          box-shadow: 0 12px 28px rgba(239, 62, 123, .08);
+        }
+
+        .primary-btn:hover,
+        .secondary-btn:hover {
+          transform: translateY(-2px);
+        }
+
+        .hero-product-note {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 28px;
+          max-width: 620px;
+        }
+
+        .hero-product-note div {
+          min-height: 58px;
+          border-radius: 16px;
+          border: 1px solid rgba(239,62,123,.16);
+          background: rgba(255,255,255,.84);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          color: #4c435b;
+          font-size: 12px;
+          font-weight: 600;
+          backdrop-filter: blur(8px);
+        }
+
+        .verified-seal {
+          position: absolute;
+          right: clamp(18px, 7vw, 110px);
+          bottom: 42px;
+          width: 112px;
+          height: auto;
+          filter: drop-shadow(0 18px 24px rgba(239,62,123,.2));
+          transform: rotate(-9deg);
+        }
+
+        .trust-strip {
+          width: min(100% - 48px, 1220px);
+          margin: -46px auto 0;
+          position: relative;
+          z-index: 4;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          border-radius: 20px;
+          border: 1px solid var(--line);
+          background: rgba(255,255,255,.96);
+          box-shadow: 0 20px 42px rgba(59,35,70,.1);
+          overflow: hidden;
+        }
+
+        .trust-item {
+          min-height: 128px;
+          padding: 22px;
+          border-right: 1px solid #f6e1e8;
+          display: grid;
+          align-content: center;
+          gap: 8px;
+        }
+
+        .trust-item:last-child {
+          border-right: 0;
+        }
+
+        .trust-item h3 {
+          margin: 0;
+          color: var(--ink);
+          font-size: 16px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        .trust-item p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.58;
+        }
+
+        .content-section {
+          padding: 72px 0 0;
+        }
+
+        .section-header {
+          display: grid;
+          gap: 14px;
+          max-width: 850px;
+        }
+
+        .section-header.centered {
+          margin: 0 auto;
+          text-align: center;
+          justify-items: center;
+        }
+
+        .section-title {
+          margin: 0;
+          color: var(--ink);
+          font-size: clamp(32px, 3.4vw, 46px);
+          line-height: 1.22;
+          letter-spacing: 0;
+          font-weight: 700;
+        }
+
+        .problem-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-top: 28px;
+        }
+
+        .problem-card,
+        .pillar-card,
+        .audience-card,
+        .feature-card,
+        .faq-card,
+        .trust-layer-card {
+          border: 1px solid var(--line);
+          background: rgba(255,255,255,.95);
+          box-shadow: 0 16px 34px rgba(59,35,70,.06);
+        }
+
+        .problem-card {
+          min-height: 250px;
+          border-radius: 18px;
+          padding: 24px;
+          display: grid;
+          align-content: start;
+          gap: 14px;
+        }
+
+        .icon-box {
+          width: 58px;
+          height: 58px;
+          border-radius: 16px;
+          display: grid;
+          place-items: center;
+          background: var(--pink-soft);
+          color: var(--pink);
+        }
+
+        .problem-card h3,
+        .pillar-card h3,
+        .audience-card h3,
+        .feature-card h3,
+        .faq-card h3 {
+          margin: 0;
+          color: var(--ink);
+          font-size: 18px;
+          font-weight: 700;
+          line-height: 1.45;
+        }
+
+        .problem-card p,
+        .pillar-card p,
+        .audience-card p,
+        .feature-card p,
+        .faq-card p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.72;
+        }
+
+        .platform-band {
+          margin-top: 72px;
+          padding: 68px 0;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.85) 42%, rgba(255,255,255,.22) 76%),
+            url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
+            #fff8fc;
+        }
+
+        .platform-copy {
+          width: min(620px, 100%);
+        }
+
+        .platform-proof {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin: 26px 0 30px;
+        }
+
+        .platform-proof div {
+          min-height: 58px;
+          border-radius: 15px;
+          border: 1px solid rgba(239,62,123,.18);
+          background: rgba(255,255,255,.82);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 14px;
+          color: #43384f;
+          font-size: 13px;
+          font-weight: 600;
+          backdrop-filter: blur(8px);
+        }
+
+        .pillar-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-top: 28px;
+        }
+
+        .pillar-card {
+          min-height: 250px;
+          border-radius: 18px;
+          padding: 24px;
+          display: grid;
+          align-content: start;
+          gap: 12px;
+        }
+
+        .pillar-benefit {
+          color: var(--pink);
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.45;
+        }
+
+        .lifecycle-section {
+          margin-top: 72px;
+          border-radius: 24px;
+          border: 1px solid var(--line);
+          background: #fff;
+          box-shadow: 0 18px 38px rgba(59,35,70,.06);
+          overflow: hidden;
+        }
+
+        .lifecycle-header {
+          padding: 34px 34px 0;
+        }
+
+        .lifecycle-grid {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          border-top: 1px solid #f6e1e8;
+          margin-top: 30px;
+        }
+
+        .lifecycle-step {
+          min-height: 210px;
+          padding: 24px 18px;
+          border-right: 1px solid #f6e1e8;
+          display: grid;
+          align-content: start;
+          gap: 12px;
+        }
+
+        .lifecycle-step:last-child {
+          border-right: 0;
+        }
+
+        .step-index {
+          width: 30px;
+          height: 30px;
+          border-radius: 999px;
+          display: grid;
+          place-items: center;
+          background: #fff2f7;
+          color: var(--pink);
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .lifecycle-step h3 {
+          margin: 0;
+          font-size: 16px;
+          line-height: 1.36;
+          font-weight: 700;
+        }
+
+        .lifecycle-step p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.62;
+        }
+
+        .audience-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+          margin-top: 28px;
+        }
+
+        .audience-card {
+          min-height: 248px;
+          border-radius: 20px;
+          padding: 26px;
+          display: grid;
+          align-content: start;
+          gap: 14px;
+        }
+
+        .audience-label {
+          color: var(--pink);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .04em;
+          text-transform: uppercase;
+        }
+
+        .feature-showcase {
+          margin-top: 72px;
+          display: grid;
+          grid-template-columns: minmax(320px, 420px) 1fr;
+          gap: 28px;
+          align-items: start;
+        }
+
+        .product-preview {
+          position: sticky;
+          top: 88px;
+          border: 1px solid var(--line);
+          border-radius: 26px;
+          background: linear-gradient(180deg, #fff, #fff6fa);
+          box-shadow: 0 24px 52px rgba(59,35,70,.12);
+          padding: 24px;
+        }
+
+        .preview-phone {
+          max-width: 320px;
+          margin: 0 auto;
+          border-radius: 38px;
+          background: #171321;
+          padding: 10px;
+          box-shadow: 0 22px 34px rgba(36,28,49,.16);
+        }
+
+        .preview-screen {
+          min-height: 520px;
+          border-radius: 30px;
+          background: #fff;
+          overflow: hidden;
+        }
+
+        .pet-hero-card {
+          padding: 30px 18px 22px;
+          text-align: center;
+          background:
+            linear-gradient(180deg, #ffe4ef, #fff);
+        }
+
+        .pet-avatar {
+          width: 88px;
+          height: 88px;
+          margin: 0 auto 12px;
+          border-radius: 999px;
+          border: 6px solid #fff;
+          background:
+            radial-gradient(circle at 43% 36%, #3c2a24 0 3%, transparent 4%),
+            radial-gradient(circle at 59% 36%, #3c2a24 0 3%, transparent 4%),
+            radial-gradient(circle at 51% 55%, #f3c89e 0 10%, transparent 11%),
+            radial-gradient(circle at 50% 32%, #d4925c 0 31%, transparent 32%),
+            #f4d1b1;
+          box-shadow: 0 12px 20px rgba(239,62,123,.16);
+        }
+
+        .pet-name {
+          color: var(--pink);
+          font-size: 21px;
+          font-weight: 700;
+        }
+
+        .pet-sub {
+          color: #756b7d;
+          font-size: 11px;
+          font-weight: 600;
+          margin-top: 3px;
+        }
+
+        .preview-tabs {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          border-bottom: 1px solid #fff0f6;
+        }
+
+        .preview-tabs span {
+          min-height: 42px;
+          display: grid;
+          place-items: center;
+          color: #8b7d8e;
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+        .preview-tabs span:first-child {
+          color: var(--pink);
+          border-bottom: 2px solid var(--pink);
+        }
+
+        .preview-list {
+          padding: 16px 16px 20px;
+        }
+
+        .preview-row {
+          min-height: 42px;
+          border-bottom: 1px solid #fff0f6;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          color: #5f5368;
+          font-size: 12px;
+        }
+
+        .preview-row strong {
+          color: var(--ink);
+          text-align: right;
+        }
+
+        .qr-block {
+          margin-top: 18px;
+          min-height: 92px;
+          border-radius: 18px;
+          background: #fff5fa;
+          display: grid;
+          grid-template-columns: 78px 1fr;
+          gap: 12px;
+          align-items: center;
+          padding: 14px;
+        }
+
+        .qr-mark {
+          width: 72px;
+          height: 72px;
+          border-radius: 12px;
+          background:
+            linear-gradient(90deg, #222 8px, transparent 8px 16px, #222 16px 24px, transparent 24px),
+            linear-gradient(#222 8px, transparent 8px 16px, #222 16px 24px, transparent 24px),
+            #fff;
+          background-size: 24px 24px;
+          border: 8px solid #fff;
+        }
+
+        .qr-block h4 {
+          margin: 0;
+          color: var(--ink);
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .qr-block p {
+          margin: 4px 0 0;
+          color: var(--muted);
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .feature-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .feature-card {
+          min-height: 204px;
+          border-radius: 18px;
+          padding: 24px;
+          display: grid;
+          align-content: start;
+          gap: 13px;
+        }
+
+        .trust-section {
+          margin-top: 72px;
+          border-radius: 24px;
+          border: 1px solid var(--line);
+          background:
+            linear-gradient(90deg, #fff6fa, #fff);
+          box-shadow: 0 18px 38px rgba(59,35,70,.06);
+          padding: 36px;
+          display: grid;
+          grid-template-columns: 240px 1fr;
+          gap: 34px;
+          align-items: center;
+        }
+
+        .seal-image {
+          width: min(210px, 100%);
+          height: auto;
+          margin: 0 auto;
+          display: block;
+          transform: rotate(-8deg);
+          filter: drop-shadow(0 18px 28px rgba(239,62,123,.16));
+        }
+
+        .trust-layer-list {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 24px;
+        }
+
+        .trust-layer-card {
+          min-height: 64px;
+          border-radius: 15px;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #43384f;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .faq-section {
+          margin-top: 72px;
+        }
+
+        .intent-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 22px;
+        }
+
+        .intent-chip {
+          border-radius: 999px;
+          border: 1px solid rgba(239,62,123,.18);
+          background: #fff6fa;
+          color: #7a3653;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 9px 13px;
+        }
+
+        .faq-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+          margin-top: 24px;
+        }
+
+        .faq-card {
+          min-height: 168px;
+          border-radius: 18px;
+          padding: 22px;
+        }
+
+        .faq-card h3 {
+          font-size: 17px;
+        }
+
+        .faq-card p {
+          margin-top: 10px;
+        }
+
+        .cta-band {
+          margin-top: 76px;
+          background:
+            linear-gradient(135deg, #ef3e7b, #d83269);
+          color: #fff;
+          padding: 54px 24px 64px;
+          text-align: center;
+        }
+
+        .cta-band h2 {
+          margin: 0;
+          font-size: clamp(30px, 4vw, 46px);
+          font-weight: 700;
+          line-height: 1.28;
+        }
+
+        .cta-band p {
+          margin: 10px auto 0;
+          max-width: 680px;
+          font-size: 17px;
+          line-height: 1.7;
+          font-weight: 500;
+        }
+
+        .cta-actions {
+          justify-content: center;
+        }
+
+        @media (max-width: 1120px) {
+          .home-nav,
+          .section-inner,
+          .hero-inner,
+          .trust-strip {
+            width: min(100% - 32px, 920px);
+          }
+
+          .hero-section {
+            min-height: 680px;
+            background:
+              linear-gradient(90deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.95) 45%, rgba(255,255,255,.42) 74%),
+              url("/home/hero-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
+              #fff8fc;
+          }
+
+          .hero-inner {
+            min-height: 680px;
+          }
+
+          .hero-title {
+            max-width: 620px;
+          }
+
+          .trust-strip,
+          .problem-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .trust-item:nth-child(2) {
+            border-right: 0;
+          }
+
+          .trust-item:nth-child(-n + 2) {
+            border-bottom: 1px solid #f6e1e8;
+          }
+
+          .pillar-grid,
+          .lifecycle-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .lifecycle-step {
+            border-bottom: 1px solid #f6e1e8;
+          }
+
+          .lifecycle-step:nth-child(2n) {
+            border-right: 0;
+          }
+
+          .lifecycle-step:nth-last-child(-n + 2) {
+            border-bottom: 0;
+          }
+
+          .feature-showcase,
+          .trust-section {
+            grid-template-columns: 1fr;
+          }
+
+          .product-preview {
+            position: relative;
+            top: auto;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .home-nav {
+            width: min(100% - 24px, 520px);
+            min-height: 64px;
+            padding-top: 4px;
+          }
+
+          .home-nav-logo {
+            width: 146px;
+            max-width: 146px;
+            height: 44px;
+          }
+
+          .nav-primary-btn,
+          .nav-link-btn {
+            min-height: 38px;
+            padding: 0 14px;
+            font-size: 12px;
+          }
+
+          .hero-section {
+            min-height: 800px;
+            background:
+              linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.98) 48%, rgba(255,255,255,.52) 66%, rgba(255,255,255,.08) 84%),
+              url("/home/hero-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
+              #fff8fc;
+          }
+
+          .hero-inner,
+          .section-inner {
+            width: min(100% - 24px, 520px);
+          }
+
+          .hero-inner {
+            min-height: 800px;
+            align-items: flex-start;
+            padding: 28px 0 34px;
+          }
+
+          .hero-copy-block {
+            text-align: center;
+            margin: 0 auto;
+          }
+
+          .eyebrow {
+            margin: 0 auto;
+            font-size: 10px;
+            padding: 7px 12px;
+          }
+
+          .hero-title {
+            font-size: clamp(35px, 10vw, 44px);
+            line-height: 1.1;
+            margin-top: 16px;
+          }
+
+          .hero-copy,
+          .section-copy {
+            font-size: 14px;
+            line-height: 1.72;
+          }
+
+          .hero-actions,
+          .cta-actions {
+            justify-content: center;
+            gap: 10px;
+          }
+
+          .primary-btn,
+          .secondary-btn {
+            min-height: 50px;
+            width: 100%;
+            padding: 0 18px;
+            font-size: 14px;
+          }
+
+          .hero-product-note {
+            grid-template-columns: 1fr;
+            max-width: 360px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          .verified-seal {
+            width: 78px;
+            right: 18px;
+            bottom: 20px;
+          }
+
+          .trust-strip {
+            width: min(100% - 24px, 520px);
+            margin-top: -28px;
+            grid-template-columns: 1fr;
+            border-radius: 18px;
+          }
+
+          .trust-item {
+            min-height: auto;
+            padding: 18px;
+            border-right: 0;
+            border-bottom: 1px solid #f6e1e8;
+          }
+
+          .trust-item:last-child {
+            border-bottom: 0;
+          }
+
+          .content-section {
+            padding-top: 52px;
+          }
+
+          .section-header {
+            text-align: left;
+          }
+
+          .section-title {
+            font-size: clamp(29px, 8vw, 36px);
+          }
+
+          .problem-grid,
+          .pillar-grid,
+          .audience-grid,
+          .feature-grid,
+          .faq-grid,
+          .trust-layer-list,
+          .platform-proof {
+            grid-template-columns: 1fr;
+          }
+
+          .problem-card,
+          .pillar-card,
+          .audience-card,
+          .feature-card {
+            min-height: auto;
+            padding: 22px;
+          }
+
+          .platform-band {
+            margin-top: 54px;
+            padding: 46px 0 420px;
+            background:
+              linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.96) 50%, rgba(255,255,255,.3) 75%, rgba(255,255,255,.08) 92%),
+              url("/home/farm-promo-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
+              #fff8fc;
+          }
+
+          .lifecycle-section,
+          .feature-showcase,
+          .trust-section,
+          .faq-section {
+            margin-top: 54px;
+          }
+
+          .lifecycle-header {
+            padding: 24px 22px 0;
+          }
+
+          .lifecycle-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .lifecycle-step,
+          .lifecycle-step:nth-child(2n) {
+            min-height: auto;
+            border-right: 0;
+            border-bottom: 1px solid #f6e1e8;
+            padding: 22px;
+          }
+
+          .lifecycle-step:last-child {
+            border-bottom: 0;
+          }
+
+          .preview-phone {
+            max-width: 300px;
+          }
+
+          .preview-screen {
+            min-height: 500px;
+          }
+
+          .trust-section {
+            padding: 26px 20px;
+            text-align: left;
+          }
+
+          .seal-image {
+            width: 150px;
+          }
+
+          .faq-card {
+            min-height: auto;
+          }
+
+          .cta-band {
+            margin-top: 56px;
+            padding: 42px 24px 50px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .home-nav-logo {
+            width: 132px;
+            max-width: 132px;
+            height: 40px;
+          }
+
+          .hero-section {
+            min-height: 770px;
+          }
+
+          .hero-inner {
+            min-height: 770px;
+          }
+
+          .hero-title {
+            font-size: 33px;
+          }
+
+          .platform-band {
+            padding-bottom: 380px;
+          }
         }
       `}</style>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
 
-      <div style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
+      <main className="home-page">
+        <header ref={homeNavRef} className="home-nav" aria-label="Whiskora home navigation">
+          <Image
+            ref={homeNavLogoRef}
+            src="/logo.png"
+            alt="Whiskora"
+            width={392}
+            height={154}
+            priority
+            className="home-nav-logo"
+          />
 
-        {/* HERO */}
-        <section style={{ padding: '36px 0 0' }}>
-          <div className="hp-hero-inner" style={{ background: `linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius: 28, padding: '52px 48px', color: '#fff', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, minHeight: 340, boxShadow: '0 24px 48px rgba(232,70,119,.18)' }}>
-            <div style={{ position:'absolute', top:-100, right:-60, width:360, height:360, background:'radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-80, left:-40, width:240, height:240, background:'radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div className="hp-hero-text" style={{ position:'relative', zIndex:2, flex:1, maxWidth:580 }}>
-              <span style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(255,255,255,0.3)', display:'inline-block', marginBottom:20 }}>
-                {t('heroBadge')}
-              </span>
-              <h1 style={{ fontSize:42, fontWeight:900, lineHeight:1.1, letterSpacing:-1.5, margin:'0 0 16px', color:'#fff' }}>
-                {t('heroTitle1')}<br />
-                <span style={{ color:'#fde2ea' }}>{t('heroTitle2')}</span>
-              </h1>
-              <p style={{ fontSize:15, lineHeight:1.6, opacity:.92, margin:'0 0 28px', maxWidth:420 }}>{t('heroSubtitle')}</p>
-              <div className="hp-hero-btns" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-                <button className="hp-btn-dark" style={{ background:'#fff', color:F.pink, padding:'14px 26px', borderRadius:16, fontWeight:800, fontSize:15, border:'none', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 8px 24px rgba(0,0,0,.12)' }} onClick={() => router.push('/farm-hub')}>
-                  {t('heroCta1')} <Icon.ArrowRight />
+          {!shouldCollapseHomeNav && (
+            <div className="home-nav-content">
+              <nav className="home-nav-links" aria-label="Homepage sections">
+                {homeNavItems.map((item) => (
+                  <button className="nav-section-btn" key={item.label} onClick={() => navigateHomeItem(item)}>
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="home-nav-actions">
+                <button className="nav-link-btn" onClick={() => router.push("/login")}>
+                  เข้าสู่ระบบ
                 </button>
-                <button className="hp-btn-outline" style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', color:'#fff', padding:'14px 26px', borderRadius:16, fontWeight:700, fontSize:15, border:'1px solid rgba(255,255,255,0.35)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/about')}>
-                  {t('heroCta2')}
+                <button className="nav-primary-btn" onClick={() => router.push("/register")}>
+                  สร้าง Pet ID ฟรี
                 </button>
               </div>
             </div>
-            <div className="hp-hero-mockup float-anim" style={{ position:'relative', zIndex:2, flexShrink:0 }}>
-              <div style={{ display:'flex', flexDirection:'column', gap:12, width:200 }}>
-                {[
-                  { icon:'🏡', label: t('badge1Label'), sub: t('badge1Sub') },
-                  { icon:'🛒', label: t('badge2Label'), sub: t('badge2Sub') },
-                  { icon:'🩺', label: t('badge3Label'), sub: t('badge3Sub') },
-                ].map(b => (
-                  <div key={b.label} style={{ background:'rgba(255,255,255,0.18)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:16, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                    <span style={{ fontSize:24 }}>{b.icon}</span>
+          )}
+
+          {shouldCollapseHomeNav && (
+            <div className="home-nav-more">
+              <button
+                type="button"
+                className="home-nav-more-btn"
+                aria-label="ดูเมนูเพิ่มเติม"
+                aria-expanded={isHomeNavMoreOpen}
+                onClick={() => setIsHomeNavMoreOpen((open) => !open)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              {isHomeNavMoreOpen && (
+                <div className="home-nav-dropdown">
+                  {homeNavItems.map((item) => (
+                    <button key={item.label} onClick={() => navigateHomeItem(item)}>
+                      {item.label}
+                    </button>
+                  ))}
+                  <button onClick={() => router.push("/login")}>เข้าสู่ระบบ</button>
+                  <button className="dropdown-primary" onClick={() => router.push("/register")}>
+                    สร้าง Pet ID ฟรี
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div ref={homeNavProbeRef} aria-hidden="true" className="home-nav-probe">
+            <nav className="home-nav-links">
+              {homeNavItems.map((item) => (
+                <span className="nav-section-btn" key={item.label}>
+                  {item.label}
+                </span>
+              ))}
+            </nav>
+            <div className="home-nav-actions">
+              <span className="nav-link-btn">เข้าสู่ระบบ</span>
+              <span className="nav-primary-btn">สร้าง Pet ID ฟรี</span>
+            </div>
+          </div>
+        </header>
+
+        <section className="hero-section" aria-label="Whiskora homepage hero">
+          <div className="hero-inner">
+            <div className="hero-copy-block">
+              <div className="eyebrow">
+                <PawIcon />
+                TRUSTED PET LIFE PLATFORM
+              </div>
+              <h1 className="hero-title">
+                ข้อมูลสัตว์เลี้ยงที่เชื่อถือได้
+                <span>สำหรับทุกช่วงชีวิต</span>
+              </h1>
+              <p className="hero-copy">
+                Whiskora เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี และเอกสารสำคัญไว้ในระบบเดียว เพื่อให้เจ้าของ ฟาร์ม คลินิก และบริการสัตว์เลี้ยงดูแลต่อเนื่องได้ง่ายขึ้น
+              </p>
+              <div className="hero-actions">
+                <button className="primary-btn" onClick={() => router.push("/register")}>
+                  <PawIcon color="#fff" />
+                  สร้าง Pet ID ฟรี
+                </button>
+                <button className="secondary-btn" onClick={() => document.getElementById("platform-pillars")?.scrollIntoView({ behavior: "smooth" })}>
+                  สำรวจ Whiskora
+                </button>
+              </div>
+              <div className="hero-product-note" aria-label="Whiskora core product areas">
+                <div><LineIcon name="qr" /> QR Public Profile</div>
+                <div><LineIcon name="health" /> Health Records</div>
+                <div><LineIcon name="shield" /> Breeder Trust</div>
+              </div>
+            </div>
+            <Image
+              src="/verified.png"
+              alt="Whiskora Verified"
+              width={300}
+              height={300}
+              className="verified-seal"
+            />
+          </div>
+        </section>
+
+        <section className="trust-strip" aria-label="Whiskora trust principles">
+          {trustStatements.map((item) => (
+            <article className="trust-item" key={item.title}>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="content-section" id="real-problems">
+          <div className="section-inner">
+            <SectionHeader
+              eyebrow="REAL PET DATA PROBLEMS"
+              title="ข้อมูลสัตว์เลี้ยงไม่ควรหายไป"
+              highlight="ระหว่างสมุด แชต และความจำ"
+              copy="Whiskora เริ่มจากปัญหาที่เจ้าของ ฟาร์ม และผู้ให้บริการเจอจริง: ข้อมูลสำคัญอยู่หลายที่ ส่งต่อไม่ครบ และตรวจสอบยากในจังหวะที่ต้องใช้"
+            />
+            <div className="problem-grid">
+              {problemCards.map((problem) => (
+                <article className="problem-card" key={problem.title}>
+                  <div className="icon-box">
+                    <LineIcon name={problem.icon} />
+                  </div>
+                  <h3>{problem.title}</h3>
+                  <p>{problem.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="platform-band" aria-label="Whiskora platform introduction">
+          <div className="section-inner">
+            <div className="platform-copy">
+              <div className="eyebrow">
+                <LineIcon name="shield" />
+                ONE PLATFORM, EVERY PET LIFE
+              </div>
+              <h2 className="section-title">
+                Whiskora คือระบบกลาง
+                <span>ของข้อมูลสัตว์เลี้ยงที่ไว้ใจได้</span>
+              </h2>
+              <p className="section-copy">
+                จากโปรไฟล์แรกของลูกสัตว์ ไปจนถึงประวัติสุขภาพ ฟาร์ม เพ็ดดิกรี การส่งต่อเจ้าของ และการดูแลกับบริการต่าง ๆ Whiskora ทำให้ข้อมูลเดินทางไปพร้อมกับสัตว์เลี้ยงอย่างเป็นระบบ
+              </p>
+              <div className="platform-proof">
+                <div><LineIcon name="id" /> เริ่มจาก Pet ID และโปรไฟล์ฟรี</div>
+                <div><LineIcon name="health" /> เก็บข้อมูลสุขภาพและเอกสารต่อเนื่อง</div>
+                <div><LineIcon name="tree" /> รองรับสายเลือด ฟาร์ม และครอก</div>
+                <div><LineIcon name="clinic" /> พร้อมต่อยอดกับคลินิกและบริการ</div>
+              </div>
+              <button className="primary-btn" onClick={() => router.push("/register")}>
+                เริ่มสร้างโปรไฟล์สัตว์เลี้ยง
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="content-section" id="platform-pillars">
+          <div className="section-inner">
+            <SectionHeader
+              eyebrow="WHAT WHISKORA MAKES POSSIBLE"
+              title="เครื่องมือหลักที่เชื่อม"
+              highlight="ตัวตน สุขภาพ ฟาร์ม และการดูแล"
+              copy="แต่ละฟีเจอร์ถูกออกแบบให้เข้าใจง่ายสำหรับผู้ใช้ทั่วไป และยังมีโครงสร้างข้อมูลที่พร้อมขยายไปสู่ระบบฟาร์ม คลินิก และบริการสัตว์เลี้ยง"
+            />
+            <div className="pillar-grid">
+              {productPillars.map((pillar) => (
+                <article className="pillar-card" key={pillar.title}>
+                  <div className="icon-box">
+                    <LineIcon name={pillar.icon} />
+                  </div>
+                  <h3>{pillar.title}</h3>
+                  <div className="pillar-benefit">{pillar.benefit}</div>
+                  <p>{pillar.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section-inner lifecycle-section" id="pet-lifecycle" aria-labelledby="lifecycle-title">
+          <div className="lifecycle-header">
+            <SectionHeader
+              id="lifecycle-title"
+              eyebrow="EVERY STAGE OF PET LIFE"
+              title="ระบบเดียวที่เดินไปพร้อม"
+              highlight="ทุกช่วงชีวิตของสัตว์เลี้ยง"
+              copy="หน้าแรกต้องทำให้ผู้ใช้รู้สึกว่า Whiskora ไม่ใช่งานเอกสารครั้งเดียว แต่เป็นโครงสร้างข้อมูลที่ช่วยให้การดูแลต่อเนื่องและน่าเชื่อถือขึ้น"
+            />
+          </div>
+          <div className="lifecycle-grid">
+            {lifecycleSteps.map((step, index) => (
+              <article className="lifecycle-step" key={step.title}>
+                <span className="step-index">{index + 1}</span>
+                <LineIcon name={step.icon} color={index % 3 === 1 ? "#407fb7" : index % 3 === 2 ? "#5c8f6b" : "#ef3e7b"} />
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="content-section" id="user-groups">
+          <div className="section-inner">
+            <SectionHeader
+              eyebrow="BUILT FOR THE PET ECOSYSTEM"
+              title="ไม่ใช่แค่เจ้าของสัตว์เลี้ยง"
+              highlight="แต่เชื่อมทั้งระบบรอบตัวสัตว์"
+              copy="Whiskora ช่วยให้แต่ละกลุ่มใช้ข้อมูลเดียวกันในบริบทของตัวเอง โดยไม่ทำให้หน้าจอกลายเป็น dashboard แข็ง ๆ หรือ persona cards แบบทั่วไป"
+            />
+            <div className="audience-grid">
+              {userGroups.map((group) => (
+                <article className="audience-card" key={group.label}>
+                  <div className="icon-box">
+                    <LineIcon name={group.icon} />
+                  </div>
+                  <div className="audience-label">{group.label}</div>
+                  <h3>{group.title}</h3>
+                  <p>{group.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section-inner feature-showcase" id="feature-showcase" aria-labelledby="feature-showcase-title">
+          <div className="product-preview" aria-label="Whiskora product preview">
+            <div className="preview-phone">
+              <div className="preview-screen">
+                <div className="pet-hero-card">
+                  <div className="pet-avatar" />
+                  <div className="pet-name">LUNA</div>
+                  <div className="pet-sub">Scottish Fold / Verified Pet</div>
+                </div>
+                <div className="preview-tabs">
+                  <span>Profile</span>
+                  <span>Health</span>
+                  <span>Pedigree</span>
+                  <span>Docs</span>
+                </div>
+                <div className="preview-list">
+                  {[
+                    ["Birth Date", "10 Mar 2024"],
+                    ["Breed", "Scottish Fold"],
+                    ["Last Vaccine", "Updated"],
+                    ["Owner Contact", "Shared by QR"],
+                  ].map(([label, value]) => (
+                    <div className="preview-row" key={label}>
+                      <span>{label}</span>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                  <div className="qr-block">
+                    <div className="qr-mark" />
                     <div>
-                      <div style={{ fontWeight:700, fontSize:13, color:'#fff' }}>{b.label}</div>
-                      <div style={{ fontSize:11, opacity:.8, color:'#fff' }}>{b.sub}</div>
+                      <h4>QR Public Profile</h4>
+                      <p>แชร์ข้อมูลที่จำเป็นให้ผู้ดูแลหรือบริการสัตว์เลี้ยงเข้าถึงได้เร็วขึ้น</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SEARCH */}
-        <section style={{ padding:'20px 0 0' }}>
-          <div className="hp-search-wrap" style={{ display:'flex', alignItems:'center', gap:10, background:'#fff', border:`1px solid ${F.line}`, borderRadius:999, padding:'6px 6px 6px 20px', boxShadow:'0 2px 12px rgba(31,26,28,.04)', transition:'border-color .2s, box-shadow .2s' }}>
-            <span style={{ color:F.muted, display:'flex', flexShrink:0 }}><Icon.Search /></span>
-            <input type="text" placeholder={t('searchPlaceholder')} onKeyDown={(e) => { if (e.key === 'Enter' && e.currentTarget.value.trim()) router.push(`/search?q=${encodeURIComponent(e.currentTarget.value)}` as any); }} />
-            <button className="hp-btn-pink" style={{ background:F.pink, color:'#fff', padding:'10px 20px', borderRadius:999, fontWeight:600, fontSize:14, border:'none', cursor:'pointer', flexShrink:0, boxShadow:'0 4px 14px rgba(232,70,119,.25)' }}
-              onClick={(e) => { const input = (e.currentTarget.previousElementSibling as HTMLInputElement); if (input?.value.trim()) router.push(`/search?q=${encodeURIComponent(input.value)}` as any); }}>
-              {t('searchBtn')}
-            </button>
-          </div>
-        </section>
-
-        {/* QUICK ACCESS */}
-        <section style={{ padding:'28px 0 0' }}>
-          <div className="hp-quick-grid" style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:12 }}>
-            {[
-              { href:'/farm-hub' as const,      icon:<Icon.Farm />,      bg:F.pinkSoft, color:F.pink,   label:t('tileFarm') },
-              { href:'/marketplace' as const,   icon:<Icon.Shop />,      bg:'#dbeafe',  color:F.sky,    label:t('tilePetMarket') },
-              { href:'/service-hub' as const,   icon:<Icon.Clinic />,    bg:'#dcfce7',  color:F.leaf,   label:t('tileServices') },
-              { href:'/community' as const,     icon:<Icon.Community />, bg:'#fef9c3',  color:F.sun,    label:t('tileCommunity') },
-              { href:'/pet-knowledge' as const, icon:<Icon.Book />,      bg:'#ede9fe',  color:F.purple, label:t('tileKnowledge') },
-              { href:'/pet-tools' as const,     icon:<Icon.Tool />,      bg:'#dcfce7',  color:F.leaf,   label:t('tileTools') },
-            ].map(tile => (
-              <Link key={tile.href} href={tile.href} className="hp-quick-tile" style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:18, padding:'18px 10px', textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:10, textDecoration:'none' }}>
-                <div style={{ width:44, height:44, borderRadius:14, background:tile.bg, display:'grid', placeItems:'center', color:tile.color }}>{tile.icon}</div>
-                <span style={{ fontSize:13, fontWeight:600, color:F.ink }}>{tile.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* STATS */}
-        <section className="hp-section">
-          <div className="hp-stats-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-            {[
-              { num:'1,200+', label:t('statFarms'),   emoji:'🏡' },
-              { num:'5,000+', label:t('statPets'),    emoji:'🐾' },
-              { num:'10+',    label:t('statSpecies'), emoji:'🦜' },
-              { num:'100%',   label:t('statFree'),    emoji:'🎉' },
-            ].map(s => (
-              <div key={s.label} style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, padding:'24px 20px', textAlign:'center' }}>
-                <div style={{ fontSize:28 }}>{s.emoji}</div>
-                <div style={{ fontSize:28, fontWeight:900, color:F.pink, letterSpacing:-1, marginTop:8 }}>{s.num}</div>
-                <div style={{ fontSize:12, color:F.muted, marginTop:4 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* FARM SECTION */}
-        <section className="hp-section">
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, gap:16, flexWrap:'wrap' }}>
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.pink, marginBottom:6 }}>{t('farmLabel')}</div>
-              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5, margin:'0 0 8px' }}>{t('farmTitle')}</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:0, maxWidth:520, lineHeight:1.6 }}>{t('farmDesc')}</p>
-            </div>
-            <button className="hp-btn-pink" style={{ background:F.pink, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.25)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }} onClick={() => router.push('/farm-hub')}>
-              {t('farmCta')} <Icon.ArrowRight />
-            </button>
-          </div>
-          <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {[
-              { emoji:'📋', title:t('farmCriteria1Title'), desc:t('farmCriteria1Desc'), tags:['ID', 'GPS'], color:F.pink, bg:F.pinkSoft },
-              { emoji:'💉', title:t('farmCriteria2Title'), desc:t('farmCriteria2Desc'), tags:['Vaccine', 'Health'], color:F.leaf, bg:'#dcfce7' },
-              { emoji:'🧬', title:t('farmCriteria3Title'), desc:t('farmCriteria3Desc'), tags:['CFA/TICA', 'Pedigree'], color:F.sky, bg:'#dbeafe' },
-              { emoji:'🏠', title:t('farmCriteria4Title'), desc:t('farmCriteria4Desc'), tags:['Space', 'Clean'], color:F.sun, bg:'#fef9c3' },
-              { emoji:'📞', title:t('farmCriteria5Title'), desc:t('farmCriteria5Desc'), tags:['Support', 'Reviews'], color:F.purple, bg:'#ede9fe' },
-              { emoji:'⭐', title:t('farmCriteria6Title'), desc:t('farmCriteria6Desc'), tags:['Verified', 'Transparent'], color:F.sun, bg:'#fef9c3' },
-            ].map(item => (
-              <div key={item.title} className="hp-card" style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, padding:24 }}>
-                <div style={{ width:44, height:44, borderRadius:14, background:item.bg, display:'grid', placeItems:'center', fontSize:22, marginBottom:14 }}>{item.emoji}</div>
-                <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 8px', color:F.ink }}>{item.title}</h3>
-                <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 12px' }}>{item.desc}</p>
-                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                  {item.tags.map(tag => <span key={tag} style={{ padding:'3px 10px', borderRadius:999, fontSize:11, fontWeight:600, background:item.bg, color:item.color }}>{tag}</span>)}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* MARKETPLACE BAND */}
-        <section className="hp-section">
-          <div className="hp-feature-band" style={{ background:`linear-gradient(135deg,#dbeafe 0%,#eff6ff 100%)`, border:'1px solid #bfdbfe', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', right:-60, top:-60, width:200, height:200, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.sky, marginBottom:8 }}>{t('marketLabel')}</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>{t('marketTitle')}</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>{t('marketDesc')}</p>
-              <div className="hp-feature-band-btns" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                <button className="hp-btn-pink" style={{ background:F.sky, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(91,141,199,.3)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/marketplace')}>
-                  {t('marketCta')} <Icon.ArrowRight />
-                </button>
-                <button className="hp-btn-outline" style={{ background:'#fff', color:F.sky, padding:'12px 22px', borderRadius:14, fontWeight:600, fontSize:14, border:'1px solid #bfdbfe', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/farm-hub')}>
-                  {t('marketCta2')}
-                </button>
-              </div>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🛒</div>
-          </div>
-        </section>
-
-        {/* SERVICES BAND */}
-        <section className="hp-section">
-          <div className="hp-feature-band" style={{ background:`linear-gradient(135deg,#dcfce7 0%,#f0fdf4 100%)`, border:'1px solid #bbf7d0', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', right:-60, top:-60, width:200, height:200, background:'radial-gradient(circle,rgba(90,144,101,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.leaf, marginBottom:8 }}>{t('serviceLabel')}</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>{t('serviceTitle')}</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>{t('serviceDesc')}</p>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
-                {(t.raw('serviceTags') as string[]).map(s => (
-                  <span key={s} style={{ padding:'5px 12px', background:'rgba(90,144,101,.1)', borderRadius:999, fontSize:12, fontWeight:600, color:F.leaf, display:'inline-flex', alignItems:'center', gap:4 }}>
-                    <Icon.Check /> {s}
-                  </span>
-                ))}
-              </div>
-              <button className="hp-btn-pink" style={{ background:F.leaf, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(90,144,101,.3)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/service-hub')}>
-                {t('serviceCta')} <Icon.ArrowRight />
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🩺</div>
-          </div>
-        </section>
-
-        {/* PET ID CARD BAND */}
-        <section className="hp-section">
-          <div className="hp-feature-band" style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden', boxShadow:'0 16px 40px rgba(232,70,119,.15)' }}>
-            <div style={{ position:'absolute', top:-80, right:-80, width:280, height:280, background:'radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:'rgba(255,255,255,.8)', marginBottom:8 }}>{t('idCardLabel')}</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:'#fff' }}>{t('idCardTitle')}</h2>
-              <p style={{ fontSize:14, color:'rgba(255,255,255,.9)', margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>{t('idCardDesc')}</p>
-              <button className="hp-btn-outline" style={{ background:'#fff', color:F.pink, padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,.12)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/pet-id-card')}>
-                {t('idCardCta')}
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🪪</div>
-          </div>
-        </section>
-
-        {/* KNOWLEDGE & TOOLS */}
-        <section className="hp-section">
-          <div className="hp-two-col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-            <div className="hp-card" style={{ background:`linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)`, border:'1px solid #ddd6fe', borderRadius:24, padding:'32px 28px', position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', right:-30, bottom:-30, fontSize:80, opacity:.15 }}>📚</div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.purple, marginBottom:8 }}>{t('knowledgeLabel')}</div>
-              <h3 style={{ fontSize:20, fontWeight:800, margin:'0 0 8px', color:F.ink }}>{t('knowledgeTitle')}</h3>
-              <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 20px' }}>{t('knowledgeDesc')}</p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>
-                {(t.raw('knowledgeTags') as string[]).map(tag => <span key={tag} style={{ padding:'4px 10px', background:'rgba(124,92,191,.1)', borderRadius:999, fontSize:11, fontWeight:600, color:F.purple }}>{tag}</span>)}
-              </div>
-              <button className="hp-btn-pink" style={{ background:F.purple, color:'#fff', padding:'11px 20px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(124,92,191,.3)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/pet-knowledge')}>
-                {t('knowledgeCta')} <Icon.ArrowRight />
-              </button>
-            </div>
-            <div className="hp-card" style={{ background:`linear-gradient(135deg,#dcfce7 0%,#f0fdf4 100%)`, border:'1px solid #bbf7d0', borderRadius:24, padding:'32px 28px', position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', right:-30, bottom:-30, fontSize:80, opacity:.15 }}>🔧</div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.leaf, marginBottom:8 }}>{t('toolsLabel')}</div>
-              <h3 style={{ fontSize:20, fontWeight:800, margin:'0 0 8px', color:F.ink }}>{t('toolsTitle')}</h3>
-              <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 20px' }}>{t('toolsDesc')}</p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>
-                {(t.raw('toolsTags') as string[]).map(tag => <span key={tag} style={{ padding:'4px 10px', background:'rgba(90,144,101,.1)', borderRadius:999, fontSize:11, fontWeight:600, color:F.leaf }}>{tag}</span>)}
-              </div>
-              <button className="hp-btn-pink" style={{ background:F.leaf, color:'#fff', padding:'11px 20px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(90,144,101,.3)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/pet-tools')}>
-                {t('toolsCta')} <Icon.ArrowRight />
-              </button>
             </div>
           </div>
-        </section>
 
-        {/* HOW IT WORKS */}
-        <section className="hp-section">
-          <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 20px' }}>{t('howTitle')}</h2>
-          <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {[
-              { n:'01', title:t('step1Title'), desc:t('step1Desc'), emoji:'🔑' },
-              { n:'02', title:t('step2Title'), desc:t('step2Desc'), emoji:'🐾' },
-              { n:'03', title:t('step3Title'), desc:t('step3Desc'), emoji:'🗺️' },
-            ].map(s => (
-              <div key={s.n} style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:24, padding:28 }}>
-                <div style={{ fontSize:32, marginBottom:14 }}>{s.emoji}</div>
-                <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:F.pink, marginBottom:8 }}>STEP {s.n}</div>
-                <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 8px', color:F.ink }}>{s.title}</h3>
-                <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:0 }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* MEMBER FEATURES */}
-        <section className="hp-section">
-          <div style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px', boxShadow:'0 20px 48px rgba(232,70,119,.16)' }}>
-            <div style={{ position:'absolute', top:-80, right:-60, width:320, height:320, background:'radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-60, left:-40, width:200, height:200, background:'radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-              <div>
-                <span style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(255,255,255,0.3)', display:'inline-block', marginBottom:14, color:'#fff' }}>
-                  {t('memberBadge')}
-                </span>
-                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>{t('memberTitle')}</h2>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,.85)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>{t('memberSubtitle')}</p>
-              </div>
-              <button className="hp-btn-outline" style={{ background:'#fff', color:F.pink, padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,.12)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }} onClick={() => router.push('/register')}>
-                {t('memberCta')}
-              </button>
-            </div>
-            <div className="hp-two-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14 }}>
-              {[
-                { emoji:'🐾', title:t('member1Title'), desc:t('member1Desc') },
-                { emoji:'🪪', title:t('member2Title'), desc:t('member2Desc') },
-                { emoji:'💉', title:t('member3Title'), desc:t('member3Desc') },
-                { emoji:'💰', title:t('member4Title'), desc:t('member4Desc') },
-                { emoji:'🧬', title:t('member5Title'), desc:t('member5Desc') },
-                { emoji:'📂', title:t('member6Title'), desc:t('member6Desc') },
-              ].map(f => (
-                <div key={f.title} style={{ background:'rgba(255,255,255,0.14)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', borderRadius:18, padding:'20px 22px', display:'flex', gap:16, alignItems:'flex-start' }}>
-                  <div style={{ fontSize:28, flexShrink:0, marginTop:2 }}>{f.emoji}</div>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{f.title}</div>
-                    <div style={{ fontSize:12, color:'rgba(255,255,255,.8)', lineHeight:1.6 }}>{f.desc}</div>
+          <div>
+            <SectionHeader
+              id="feature-showcase-title"
+              eyebrow="FEATURE SHOWCASE"
+              title="เริ่มจาก Pet ID ฟรี"
+              highlight="แล้วต่อยอดเป็นโปรไฟล์ชีวิตจริง"
+              copy="ฟีเจอร์สำคัญถูกเขียนให้ผู้ใช้เข้าใจทันทีว่าช่วยอะไร ไม่ใช่แค่รายชื่อเมนูในระบบ"
+            />
+            <div className="feature-grid">
+              {featureShowcase.map((feature) => (
+                <article className="feature-card" key={feature.title}>
+                  <div className="icon-box">
+                    <LineIcon name={feature.icon} />
                   </div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section-inner trust-section" aria-labelledby="trust-title">
+          <Image
+            src="/verified.png"
+            alt="Whiskora Verified"
+            width={300}
+            height={300}
+            className="seal-image"
+          />
+          <div>
+            <SectionHeader
+              id="trust-title"
+              eyebrow="TRUST LAYER"
+              title="ความน่าเชื่อถือที่ค่อย ๆ สะสม"
+              highlight="จากข้อมูลที่โปร่งใสและตรวจสอบง่าย"
+              copy="Whiskora ไม่ขายความน่าเชื่อถือด้วยคำโฆษณา แต่สร้างพื้นที่ให้ข้อมูลฟาร์ม สุขภาพ เอกสาร และประวัติของสัตว์เลี้ยงถูกจัดเก็บและแชร์อย่างมีระบบ"
+            />
+            <div className="trust-layer-list">
+              {trustLayer.map((item) => (
+                <div className="trust-layer-card" key={item}>
+                  <LineIcon name="shield" />
+                  {item}
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* PARTNER BENEFITS */}
-        <section className="hp-section">
-          <div style={{ background:F.ink, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px' }}>
-            <div style={{ position:'absolute', top:-80, left:-60, width:320, height:320, background:'radial-gradient(circle,rgba(232,70,119,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-60, right:-40, width:240, height:240, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-              <div>
-                <span style={{ background:'rgba(232,70,119,0.25)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(232,70,119,0.4)', display:'inline-block', marginBottom:14, color:F.pink }}>
-                  {t('partnerBadge')}
-                </span>
-                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>
-                  {t('partnerTitle1')}<br /><span style={{ color:F.pink }}>{t('partnerTitle2')}</span>
-                </h2>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,.7)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>{t('partnerSubtitle')}</p>
-              </div>
-              <button className="hp-btn-pink" style={{ background:F.pink, color:'#fff', padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.4)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0, position:'relative', zIndex:2 }} onClick={() => router.push('/partner')}>
-                {t('partnerCta')}
+        <section className="section-inner faq-section" id="faq" aria-labelledby="whiskora-faq-title">
+          <SectionHeader
+            id="whiskora-faq-title"
+            eyebrow="ANSWERS FOR SEARCH AND AI"
+            title="คำตอบสำคัญเกี่ยวกับ"
+            highlight="Whiskora, Pet ID และ QR Profile"
+            copy="ส่วนนี้ช่วยให้ผู้ใช้เข้าใจเร็ว และช่วย SEO, AEO, GEO ด้วยคำถามที่ตอบตรงกับข้อมูลจริงบนหน้าเว็บ"
+          />
+          <div className="intent-chips" aria-label="หัวข้อที่ผู้ใช้มักค้นหา">
+            {searchIntents.map((intent) => (
+              <span className="intent-chip" key={intent}>
+                {intent}
+              </span>
+            ))}
+          </div>
+          <div className="faq-grid">
+            {seoFaqs.map((faq) => (
+              <article className="faq-card" key={faq.question}>
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="cta-band" aria-label="Start using Whiskora">
+          <div className="section-inner">
+            <h2>เริ่มต้นจากโปรไฟล์สัตว์เลี้ยงหนึ่งตัว</h2>
+            <p>
+              สร้าง Pet ID ฟรี แล้วค่อย ๆ เติมข้อมูลสุขภาพ เอกสาร และรายละเอียดที่ทำให้การดูแลสัตว์เลี้ยงของคุณต่อเนื่องและน่าเชื่อถือขึ้น
+            </p>
+            <div className="cta-actions">
+              <button className="secondary-btn" onClick={() => router.push("/register")}>
+                <PawIcon />
+                สร้าง Pet ID ฟรี
+              </button>
+              <button className="secondary-btn" onClick={() => router.push("/pet-id-card")}>
+                ดูตัวอย่าง Pet ID
               </button>
             </div>
-            <div className="hp-three-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
-              {[
-                { emoji:'👥', title:t('partner1Title'), desc:t('partner1Desc') },
-                { emoji:'📊', title:t('partner2Title'), desc:t('partner2Desc') },
-                { emoji:'🆓', title:t('partner3Title'), desc:t('partner3Desc') },
-                { emoji:'🏅', title:t('partner4Title'), desc:t('partner4Desc') },
-                { emoji:'📣', title:t('partner5Title'), desc:t('partner5Desc') },
-                { emoji:'🤝', title:t('partner6Title'), desc:t('partner6Desc') },
-              ].map(b => (
-                <div key={b.title} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:18, padding:'22px 20px' }}>
-                  <div style={{ fontSize:28, marginBottom:12 }}>{b.emoji}</div>
-                  <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{b.title}</div>
-                  <div style={{ fontSize:12, color:'rgba(255,255,255,.65)', lineHeight:1.65 }}>{b.desc}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
-
-        {/* COMMUNITY BAND */}
-        <section className="hp-section">
-          <div className="hp-feature-band" style={{ background:`linear-gradient(135deg,#fef9c3 0%,#fffbeb 100%)`, border:'1px solid #fde68a', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}>
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.sun, marginBottom:8 }}>{t('communityLabel')}</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>{t('communityTitle')}</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>{t('communityDesc')}</p>
-              <button className="hp-btn-pink" style={{ background:F.sun, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,166,58,.3)', display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/community')}>
-                {t('communityCta')} <Icon.ArrowRight />
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>👥</div>
-          </div>
-        </section>
-
-        {/* PARTNER CTA */}
-        <section style={{ padding:'48px 0 0' }}>
-          <div className="hp-feature-band" style={{ background:F.ink, color:'#fff', borderRadius:24, padding:'40px 44px', display:'grid', gridTemplateColumns:'1fr auto', gap:24, alignItems:'center', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', right:-80, bottom:-80, width:280, height:280, background:'radial-gradient(circle,rgba(232,70,119,.25) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, color:F.pink, letterSpacing:2, marginBottom:10, fontWeight:700 }}>{t('partnerCtaLabel')}</div>
-              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.3, margin:'0 0 6px' }}>{t('partnerCtaTitle')}</h2>
-              <p style={{ fontSize:13, color:'#bdb0a2', margin:'0 0 24px' }}>{t('partnerCtaDesc')}</p>
-              <div className="hp-feature-band-btns" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                <button className="hp-btn-pink" style={{ background:F.pink, color:'#fff', padding:'13px 24px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.35)', position:'relative', zIndex:2, display:'inline-flex', alignItems:'center', gap:8 }} onClick={() => router.push('/partner')}>
-                  {t('partnerCtaCta1')} <Icon.ArrowRight />
-                </button>
-                <button className="hp-btn-outline" style={{ background:'transparent', color:'#e5e7eb', padding:'13px 24px', borderRadius:14, fontWeight:600, fontSize:14, border:'1px solid rgba(255,255,255,.2)', cursor:'pointer', position:'relative', zIndex:2 }} onClick={() => router.push('/about')}>
-                  {t('partnerCtaCta2')}
-                </button>
-              </div>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:80, position:'relative', zIndex:2 }}>🤝</div>
-          </div>
-        </section>
-
-      </div>
+      </main>
     </>
   );
 }

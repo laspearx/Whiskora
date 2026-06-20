@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from '@/i18n/context';
-import { Link } from '@/i18n/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 
 const F = {
   ink: '#111827',
@@ -14,6 +14,9 @@ const F = {
 
 export default function Footer() {
   const t = useTranslations('footer');
+  const pathname = usePathname();
+
+  if (pathname === '/') return null;
 
   const footerSections = [
     {

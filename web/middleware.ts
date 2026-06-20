@@ -7,6 +7,10 @@ const defaultLocale = 'th';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname === '/pet-id-card-preview' || pathname.startsWith('/pet-id-card-preview/')) {
+    return NextResponse.next();
+  }
+
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
