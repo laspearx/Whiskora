@@ -191,10 +191,17 @@ export default function Home() {
           .hp-three-col { grid-template-columns: 1fr !important; }
           .hp-quick-grid { grid-template-columns: repeat(3,1fr) !important; }
           .hp-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .hp-mobile-trim { display: none !important; }
+          .hp-mobile-compact { display: block !important; }
+          .hp-section { padding-top: 28px; }
+          .hp-feature-band { padding: 24px 20px !important; border-radius: 20px !important; }
+          .hp-quick-tile { padding: 14px 8px !important; border-radius: 16px !important; gap: 8px !important; }
+          .hp-quick-tile div { width: 38px !important; height: 38px !important; border-radius: 12px !important; }
+          .hp-quick-tile span { font-size: 12px !important; }
         }
       `}</style>
 
-      <div style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
+      <div className="hp-home-content" style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
 
         {/* ══════════════════════════════════════════════════════ HERO */}
         <section style={{ padding: '36px 0 0' }}>
@@ -317,8 +324,50 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="hp-mobile-compact" style={{ display:'none', padding:'28px 0 0' }}>
+          <div style={{ display:'grid', gap:12 }}>
+            {[
+              { title:'หาเพื่อนใหม่จากฟาร์ม', desc:'ดูสัตว์พร้อมย้ายและฟาร์มที่ตรวจสอบแล้ว', href:'/farm-hub', color:F.pink, icon:<Icon.Farm /> },
+              { title:'สร้าง Pet ID ฟรี', desc:'เก็บ QR Profile และประวัติน้องไว้ในที่เดียว', href:'/pet-id-card', color:F.sky, icon:<Icon.IdCard /> },
+              { title:'บริการใกล้ตัว', desc:'คลินิก กรูมมิ่ง ฝากเลี้ยง และบริการสัตว์เลี้ยง', href:'/service-hub', color:F.leaf, icon:<Icon.Clinic /> },
+            ].map(item => (
+              <button
+                key={item.href}
+                className="hp-card"
+                style={{ width:'100%', background:'#fff', border:`1px solid ${F.line}`, borderRadius:18, padding:'16px 18px', display:'grid', gridTemplateColumns:'42px 1fr auto', gap:14, alignItems:'center', textAlign:'left', cursor:'pointer' }}
+                onClick={() => router.push(item.href)}
+              >
+                <span style={{ width:42, height:42, borderRadius:14, background:F.pinkSoft, display:'grid', placeItems:'center', color:item.color }}>
+                  {item.icon}
+                </span>
+                <span>
+                  <span style={{ display:'block', fontSize:14, fontWeight:800, color:F.ink }}>{item.title}</span>
+                  <span style={{ display:'block', fontSize:12, lineHeight:1.45, color:F.muted, marginTop:3 }}>{item.desc}</span>
+                </span>
+                <span style={{ color:item.color, display:'flex' }}><Icon.ArrowRight /></span>
+              </button>
+            ))}
+          </div>
+          <div style={{ marginTop:14, display:'flex', gap:10 }}>
+            <button
+              className="hp-btn-outline"
+              style={{ flex:1, background:'#fff', color:F.inkSoft, padding:'12px 14px', borderRadius:14, fontWeight:700, fontSize:13, border:`1px solid ${F.line}`, cursor:'pointer' }}
+              onClick={() => router.push('/about')}
+            >
+              อ่านเกี่ยวกับเรา
+            </button>
+            <button
+              className="hp-btn-pink"
+              style={{ flex:1, background:F.pink, color:'#fff', padding:'12px 14px', borderRadius:14, fontWeight:800, fontSize:13, border:'none', cursor:'pointer' }}
+              onClick={() => router.push('/partner')}
+            >
+              สำหรับพาร์ทเนอร์
+            </button>
+          </div>
+        </section>
+
         {/* ══════════════════════════════════════════════════════ STATS */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div
             className="hp-stats-grid"
             style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}
@@ -339,7 +388,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ FARM SECTION */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, gap:16, flexWrap:'wrap' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.pink, marginBottom:6 }}>FARM HUB</div>
@@ -426,7 +475,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ MARKETPLACE BAND */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div
             className="hp-feature-band"
             style={{ background:`linear-gradient(135deg,#dbeafe 0%,#eff6ff 100%)`, border:'1px solid #bfdbfe', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
@@ -460,7 +509,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ SERVICES BAND */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div
             className="hp-feature-band"
             style={{ background:`linear-gradient(135deg,#dcfce7 0%,#f0fdf4 100%)`, border:'1px solid #bbf7d0', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
@@ -492,7 +541,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ PET ID CARD BAND */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div
             className="hp-feature-band"
             style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden', boxShadow:'0 16px 40px rgba(232,70,119,.15)' }}
@@ -517,7 +566,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ KNOWLEDGE & TOOLS */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div className="hp-two-col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
             {/* Knowledge */}
             <div
@@ -572,7 +621,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ HOW IT WORKS */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 20px' }}>เริ่มต้นง่ายมาก</h2>
           <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
             {[
@@ -591,7 +640,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ MEMBER FEATURES */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px', boxShadow:'0 20px 48px rgba(232,70,119,.16)' }}>
             {/* deco blobs */}
             <div style={{ position:'absolute', top:-80, right:-60, width:320, height:320, background:'radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%)', pointerEvents:'none' }} />
@@ -666,7 +715,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ PARTNER BENEFITS */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div style={{ background:F.ink, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px' }}>
             <div style={{ position:'absolute', top:-80, left:-60, width:320, height:320, background:'radial-gradient(circle,rgba(232,70,119,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
             <div style={{ position:'absolute', bottom:-60, right:-40, width:240, height:240, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
@@ -745,7 +794,7 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════════════════════════════════════ COMMUNITY BAND */}
-        <section className="hp-section">
+        <section className="hp-section hp-mobile-trim">
           <div
             className="hp-feature-band"
             style={{ background:`linear-gradient(135deg,#fef9c3 0%,#fffbeb 100%)`, border:'1px solid #fde68a', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
