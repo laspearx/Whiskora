@@ -750,9 +750,9 @@ export default function Home() {
         }
 
         .home-nav-logo {
-          width: 184px;
-          max-width: 184px;
-          height: 54px;
+          width: 218px;
+          max-width: 218px;
+          height: auto;
           display: block;
           object-fit: contain;
         }
@@ -1874,9 +1874,9 @@ export default function Home() {
           }
 
           .home-nav-logo {
-            width: 184px;
-            max-width: 184px;
-            height: 48px;
+            width: 204px;
+            max-width: 204px;
+            height: auto;
           }
 
           .home-nav-content {
@@ -2121,9 +2121,9 @@ export default function Home() {
 
         @media (max-width: 420px) {
           .home-nav-logo {
-            width: 168px;
-            max-width: 168px;
-            height: 44px;
+            width: 192px;
+            max-width: 54vw;
+            height: auto;
           }
 
           .hero-section {
