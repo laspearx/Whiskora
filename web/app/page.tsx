@@ -98,7 +98,30 @@ export default function Home() {
     <>
       <style>{`
         @keyframes float-anim { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes float-soft { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,-6px,0)} }
+        @keyframes hp-fade-up { from{opacity:0; transform:translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)} }
+        @keyframes hp-pop-in { 0%{opacity:0; transform:translateY(14px) scale(.94)} 70%{opacity:1; transform:translateY(-2px) scale(1.015)} 100%{opacity:1; transform:translateY(0) scale(1)} }
+        @keyframes hp-gradient-pan { 0%{background-position:0% 50%} 100%{background-position:100% 50%} }
+        @keyframes hp-glow-breathe { 0%,100%{box-shadow:0 24px 48px rgba(232,70,119,.18)} 50%{box-shadow:0 30px 62px rgba(232,70,119,.28)} }
+        @keyframes hp-blob-drift-a { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-18px,16px,0) scale(1.06)} }
+        @keyframes hp-blob-drift-b { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(20px,-14px,0) scale(.96)} }
+
         .float-anim { animation: float-anim 6s ease-in-out infinite; }
+        .hp-hero-inner {
+          background-size: 180% 180% !important;
+          animation: hp-fade-up .7s cubic-bezier(.2,.8,.2,1) both, hp-gradient-pan 14s ease-in-out infinite alternate, hp-glow-breathe 6s ease-in-out infinite;
+        }
+        .hp-hero-inner > div:nth-child(1) { animation: hp-blob-drift-a 12s ease-in-out infinite; }
+        .hp-hero-inner > div:nth-child(2) { animation: hp-blob-drift-b 14s ease-in-out infinite; }
+        .hp-hero-text > * { animation: hp-fade-up .65s cubic-bezier(.2,.8,.2,1) both; }
+        .hp-hero-text > *:nth-child(1) { animation-delay: .12s; }
+        .hp-hero-text > *:nth-child(2) { animation-delay: .2s; }
+        .hp-hero-text > *:nth-child(3) { animation-delay: .28s; }
+        .hp-hero-text > *:nth-child(4) { animation-delay: .36s; }
+        .hp-hero-mockup > div > div { animation: hp-pop-in .6s cubic-bezier(.2,.8,.2,1) both; }
+        .hp-hero-mockup > div > div:nth-child(1) { animation-delay: .24s; }
+        .hp-hero-mockup > div > div:nth-child(2) { animation-delay: .38s; }
+        .hp-hero-mockup > div > div:nth-child(3) { animation-delay: .52s; }
 
         .hp-card { transition: transform .2s, box-shadow .2s; }
         .hp-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(31,26,28,.08); }
@@ -126,6 +149,31 @@ export default function Home() {
         .hp-search-wrap input::placeholder { color:#8e7e84; }
 
         .hp-section { padding: 48px 0 0; }
+        .hp-motion-in { animation: hp-fade-up .72s cubic-bezier(.2,.8,.2,1) both; }
+        .hp-quick-tile, .hp-card, .hp-farm-card { animation: hp-pop-in .55s cubic-bezier(.2,.8,.2,1) backwards; }
+        .hp-quick-tile:nth-child(2), .hp-card:nth-child(2), .hp-farm-card:nth-child(2) { animation-delay: .06s; }
+        .hp-quick-tile:nth-child(3), .hp-card:nth-child(3), .hp-farm-card:nth-child(3) { animation-delay: .12s; }
+        .hp-quick-tile:nth-child(4), .hp-card:nth-child(4), .hp-farm-card:nth-child(4) { animation-delay: .18s; }
+        .hp-quick-tile:nth-child(5), .hp-card:nth-child(5), .hp-farm-card:nth-child(5) { animation-delay: .24s; }
+        .hp-quick-tile:nth-child(6), .hp-card:nth-child(6), .hp-farm-card:nth-child(6) { animation-delay: .3s; }
+        .hp-feature-band { animation: hp-fade-up .7s cubic-bezier(.2,.8,.2,1) both; }
+        .hp-feature-band-img { animation: float-soft 5.5s ease-in-out infinite; }
+
+        @supports (animation-timeline: view()) {
+          .hp-section {
+            animation: hp-fade-up linear both;
+            animation-timeline: view();
+            animation-range: entry 0% cover 24%;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .float-anim, .hp-hero-inner, .hp-hero-inner > div, .hp-hero-text > *, .hp-hero-mockup > div > div,
+          .hp-motion-in, .hp-quick-tile, .hp-card, .hp-farm-card, .hp-feature-band, .hp-feature-band-img, .hp-section {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
 
         @media (max-width: 900px) {
           .hp-hero-inner { flex-direction: column !important; text-align: center; }
