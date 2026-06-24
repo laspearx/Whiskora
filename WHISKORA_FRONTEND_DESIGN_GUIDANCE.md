@@ -6,6 +6,8 @@ For homepage-specific redesign work, also read `WHISKORA_HOMEPAGE_REDESIGN_BRIEF
 
 Whiskora is a premium pet-tech platform, not a cute pet toy app and not a generic SaaS dashboard. The interface should feel warm, trustworthy, polished, calm, and production-ready.
 
+Whiskora should be designed mobile-first because most real users are expected to open and use the website from a phone. Desktop layouts should feel premium and expansive, but they must never drive decisions that make the mobile experience harder to use.
+
 ## Brand Personality
 
 Whiskora should communicate:
@@ -33,6 +35,7 @@ Use soft premium pet-care aesthetics. The UI should feel like a real product tha
 
 Design should prioritize:
 
+- Mobile-first usability
 - Clear hierarchy
 - Strong typography
 - Thoughtful whitespace

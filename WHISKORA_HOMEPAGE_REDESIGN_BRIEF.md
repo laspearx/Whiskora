@@ -6,6 +6,8 @@ You are acting as a senior product designer, senior frontend engineer, and produ
 
 Your task is to redesign the Whiskora homepage into a polished, production-ready landing page that clearly communicates what Whiskora is, why it matters, who it serves, and what features are available. The target quality should feel like a professional pet-tech platform website, not an AI-generated mockup, not a cute pet template, and not a generic SaaS landing page.
 
+Whiskora is mobile-first. Most visitors and future users are expected to browse, create pet profiles, scan QR profiles, read articles, and check farm information from a phone. Design mobile flows, hierarchy, spacing, tap targets, and reading comfort first; then expand the same story into richer desktop layouts.
+
 ## Product Context
 
 Whiskora is a pet-tech platform that connects pet owners, breeders, clinics, pet shops, and pet services through trusted pet data. Whiskora helps users create digital pet profiles, digital pet ID cards, public pet profiles with QR codes, health records, vaccination records, breeder profiles, verified breeder information, digital pedigree, ownership transfer, and future clinic/service integrations.
@@ -135,6 +137,30 @@ This section should feel credible and calm, not salesy.
 - Thai text must be readable, natural, and visually balanced.
 - The page must be responsive and polished on mobile and desktop.
 - Homepage images should be visual-only when text, CTA buttons, logos, QR details, or verification seals are rendered by the website. Do not bake the Whiskora verification seal into hero backgrounds if the page overlays the real `verified.png` seal separately.
+
+## Reference Direction From `Design Whiskora Homepage.zip`
+
+Use the provided reference as design direction, not as code to copy directly. The reference is strongest when it behaves like a premium storytelling website: cinematic full-width sections, real pet/lifestyle imagery, and clear editorial rhythm. Do not follow its desktop-first instruction for Whiskora's production site; Whiskora's real product direction is mobile-first.
+
+Apply these ideas to Whiskora:
+
+- Prioritize the mobile website experience first, then expand to desktop. Avoid app-style navigation patterns, but make the phone experience the easiest and most polished version of the site.
+- Use fewer, more meaningful sections with strong visual contrast instead of many same-looking cards.
+- Let photography and wide visual panels carry the emotional tone, while HTML renders all real copy, CTAs, badges, logos, QR labels, and verification assets.
+- Use website navigation patterns: top navigation, section anchors, clear CTA hierarchy, and footer links. Avoid app-style bottom navigation, tab bars, or phone-only interaction patterns on the public homepage.
+- Keep motion optional and lightweight. Do not introduce new animation dependencies only to mimic the reference.
+- Avoid copying reference elements that conflict with Whiskora's quality bar, especially emoji icons, fake stats, excessive floating mini-cards, and decorative product mockups that make the page feel like an app preview instead of a trustworthy web platform.
+- Recommended homepage rhythm: hero, trust/problem insight, platform introduction, farm directory story, product pillars, lifecycle, ecosystem audiences, feature showcase, trust layer, knowledge center, FAQ, final CTA.
+
+## Mobile Scroll Motion
+
+Homepage movement should be mobile-first, lightweight, and functional. Use scroll reveal to help users feel progression between sections, not to decorate the page.
+
+- Prefer subtle fade + short upward movement for section headers, cards, and large story panels.
+- Keep mobile animation distance shorter than desktop so the page feels responsive while scrolling with a thumb.
+- Avoid heavy parallax, continuous JavaScript scroll handlers, layout-shifting animation, or motion that could make long Thai text hard to read.
+- Respect `prefers-reduced-motion` and show all content immediately for users who reduce motion.
+- Do not add animation dependencies unless there is a clear product reason.
 
 ## Implementation Requirements
 

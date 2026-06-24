@@ -30,10 +30,10 @@ const siteUrl = "https://whiskora.pet";
 const homeNavItems: HomeNavItem[] = [
   { label: "Pet ID", target: "feature-showcase", type: "section" },
   { label: "Health Records", target: "platform-pillars", type: "section" },
-  { label: "Breeders", target: "user-groups", type: "section" },
-  { label: "Pedigree", target: "platform-pillars", type: "section" },
+  { label: "Farms", target: "farm-directory", type: "section" },
   { label: "Services", target: "pet-lifecycle", type: "section" },
-  { label: "Knowledge", target: "/pet-knowledge", type: "route" },
+  { label: "Knowledge", target: "knowledge-preview", type: "section" },
+  { label: "For Business", target: "user-groups", type: "section" },
 ];
 
 const trustStatements = [
@@ -217,6 +217,42 @@ const trustLayer = [
   "Review and verification readiness",
   "Clinic and service integration foundation",
 ];
+
+const farmHighlights = [
+  {
+    title: "ข้อมูลฟาร์มที่อ่านง่าย",
+    desc: "รวมข้อมูลฟาร์ม สายพันธุ์ ครอก พ่อแม่พันธุ์ และเอกสารสำคัญไว้ในโปรไฟล์เดียว",
+    icon: "breeder",
+  },
+  {
+    title: "ตรวจสอบก่อนตัดสินใจ",
+    desc: "ช่วยให้ผู้รับสัตว์เลี้ยงเห็นข้อมูลสุขภาพ ประวัติวัคซีน และความโปร่งใสได้ชัดขึ้น",
+    icon: "shield",
+  },
+  {
+    title: "เชื่อมต่อกับเจ้าของใหม่",
+    desc: "ส่งต่อข้อมูลที่จำเป็นพร้อม Pet ID เพื่อให้การดูแลต่อเนื่องหลังย้ายบ้าน",
+    icon: "transfer",
+  },
+] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+
+const knowledgeHighlights = [
+  {
+    tag: "เริ่มเลี้ยงสัตว์",
+    title: "รับลูกแมวหรือลูกสุนัขเข้าบ้าน ต้องเตรียมอะไรบ้าง",
+    desc: "เช็กลิสต์แรกสำหรับบ้านใหม่ ค่าใช้จ่ายเบื้องต้น และข้อมูลที่ควรบันทึกตั้งแต่วันแรก",
+  },
+  {
+    tag: "สุขภาพและวัคซีน",
+    title: "สมุดวัคซีนสัตว์เลี้ยงควรมีข้อมูลอะไรบ้าง",
+    desc: "อธิบายข้อมูลสุขภาพที่ควรเก็บ วิธีอ่านประวัติ และเหตุผลที่ข้อมูลดิจิทัลช่วยลดการตกหล่น",
+  },
+  {
+    tag: "ฟาร์มและความโปร่งใส",
+    title: "เลือกฟาร์มอย่างไรให้มั่นใจมากขึ้น",
+    desc: "คำถามที่ควรถาม เอกสารที่ควรเห็น และข้อมูลที่ช่วยให้การรับสัตว์เลี้ยงรับผิดชอบขึ้น",
+  },
+] satisfies Array<{ tag: string; title: string; desc: string }>;
 
 const seoFaqs = [
   {
@@ -507,7 +543,7 @@ function SectionHeader({
   id?: string;
 }) {
   return (
-    <div className="section-header">
+    <div className="section-header" data-reveal>
       <div className="eyebrow">
         <PawIcon />
         {eyebrow}
@@ -524,7 +560,7 @@ function SectionHeader({
 export default function Home() {
   const router = useRouter();
   const [isHomeNavMoreOpen, setIsHomeNavMoreOpen] = useState(false);
-  const [shouldCollapseHomeNav, setShouldCollapseHomeNav] = useState(false);
+  const [shouldCollapseHomeNav, setShouldCollapseHomeNav] = useState(true);
   const homeNavRef = useRef<HTMLElement>(null);
   const homeNavLogoRef = useRef<HTMLImageElement>(null);
   const homeNavProbeRef = useRef<HTMLDivElement>(null);
@@ -572,6 +608,34 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const revealItems = Array.from(document.querySelectorAll<HTMLElement>(".home-page [data-reveal]"));
+    if (!revealItems.length) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+      revealItems.forEach((item) => item.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.14,
+        rootMargin: "0px 0px -10% 0px",
+      }
+    );
+
+    revealItems.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <style>{`
@@ -588,7 +652,7 @@ export default function Home() {
           --gold: #d9922f;
           color: var(--ink);
           background:
-            linear-gradient(180deg, #fff 0%, #fff8fb 32%, #fff 70%),
+            linear-gradient(180deg, #fff 0%, #fff8fb 28%, #fff 58%, #fff7fb 100%),
             #fff;
           overflow-x: clip;
         }
@@ -597,9 +661,84 @@ export default function Home() {
           font: inherit;
         }
 
+        .home-page [data-reveal] {
+          opacity: 1;
+          transform: none;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .home-page [data-reveal] {
+            opacity: 0;
+            transform: translate3d(0, 26px, 0);
+            transition:
+              opacity .68s cubic-bezier(.22, 1, .36, 1),
+              transform .68s cubic-bezier(.22, 1, .36, 1);
+            will-change: opacity, transform;
+          }
+
+          .home-page [data-reveal="panel"] {
+            transform: translate3d(0, 30px, 0) scale(.985);
+          }
+
+          .home-page [data-reveal].is-visible {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+
+          .trust-item:nth-child(2),
+          .problem-card:nth-child(2),
+          .pillar-card:nth-child(2),
+          .audience-card:nth-child(2),
+          .feature-card:nth-child(2),
+          .faq-card:nth-child(2),
+          .farm-proof-card:nth-child(2),
+          .knowledge-card:nth-child(2),
+          .lifecycle-step:nth-child(2),
+          .trust-layer-card:nth-child(2) {
+            transition-delay: .06s;
+          }
+
+          .trust-item:nth-child(3),
+          .problem-card:nth-child(3),
+          .pillar-card:nth-child(3),
+          .audience-card:nth-child(3),
+          .feature-card:nth-child(3),
+          .faq-card:nth-child(3),
+          .farm-proof-card:nth-child(3),
+          .knowledge-card:nth-child(3),
+          .lifecycle-step:nth-child(3),
+          .trust-layer-card:nth-child(3) {
+            transition-delay: .12s;
+          }
+
+          .trust-item:nth-child(4),
+          .problem-card:nth-child(4),
+          .pillar-card:nth-child(4),
+          .audience-card:nth-child(4),
+          .feature-card:nth-child(4),
+          .faq-card:nth-child(4),
+          .lifecycle-step:nth-child(4),
+          .trust-layer-card:nth-child(4) {
+            transition-delay: .18s;
+          }
+
+          .pillar-card:nth-child(5),
+          .feature-card:nth-child(5),
+          .lifecycle-step:nth-child(5),
+          .trust-layer-card:nth-child(5) {
+            transition-delay: .24s;
+          }
+
+          .pillar-card:nth-child(6),
+          .feature-card:nth-child(6),
+          .lifecycle-step:nth-child(6) {
+            transition-delay: .3s;
+          }
+        }
+
         .home-nav {
-          width: min(100% - 48px, 1220px);
-          min-height: 78px;
+          width: min(100% - 56px, 1360px);
+          min-height: 84px;
           margin: 0 auto;
           display: flex;
           align-items: center;
@@ -772,13 +911,13 @@ export default function Home() {
 
         .section-inner,
         .hero-inner {
-          width: min(100% - 48px, 1220px);
+          width: min(100% - 56px, 1320px);
           margin: 0 auto;
         }
 
         .hero-section {
           width: 100%;
-          min-height: 700px;
+          min-height: 760px;
           position: relative;
           isolation: isolate;
           background:
@@ -788,14 +927,14 @@ export default function Home() {
         }
 
         .hero-inner {
-          min-height: 700px;
+          min-height: 760px;
           display: flex;
           align-items: center;
-          padding: 44px 0 96px;
+          padding: 56px 0 110px;
         }
 
         .hero-copy-block {
-          width: min(650px, 100%);
+          width: min(690px, 100%);
         }
 
         .eyebrow {
@@ -817,7 +956,7 @@ export default function Home() {
         .hero-title {
           margin: 20px 0 16px;
           max-width: 720px;
-          font-size: clamp(42px, 5.1vw, 68px);
+          font-size: clamp(46px, 5.2vw, 76px);
           line-height: 1.1;
           letter-spacing: 0;
           font-weight: 700;
@@ -919,7 +1058,7 @@ export default function Home() {
         }
 
         .trust-strip {
-          width: min(100% - 48px, 1220px);
+          width: min(100% - 56px, 1320px);
           margin: -46px auto 0;
           position: relative;
           z-index: 4;
@@ -961,7 +1100,7 @@ export default function Home() {
         }
 
         .content-section {
-          padding: 72px 0 0;
+          padding: 92px 0 0;
         }
 
         .section-header {
@@ -1046,8 +1185,8 @@ export default function Home() {
         }
 
         .platform-band {
-          margin-top: 72px;
-          padding: 68px 0;
+          margin-top: 92px;
+          padding: 88px 0;
           background:
             linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.85) 42%, rgba(255,255,255,.22) 76%),
             url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
@@ -1078,6 +1217,73 @@ export default function Home() {
           font-size: 13px;
           font-weight: 600;
           backdrop-filter: blur(8px);
+        }
+
+        .farm-directory-section {
+          margin-top: 92px;
+          padding: 0;
+        }
+
+        .farm-story-panel {
+          position: relative;
+          min-height: 560px;
+          border-radius: 30px;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          background:
+            linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.92) 42%, rgba(255,255,255,.26) 72%, rgba(255,255,255,.04) 100%),
+            url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
+            #fff8fc;
+          box-shadow: 0 28px 68px rgba(59,35,70,.1);
+        }
+
+        .farm-story-copy {
+          width: min(610px, 100%);
+          padding: clamp(34px, 5vw, 64px);
+          position: relative;
+          z-index: 2;
+        }
+
+        .farm-story-proof {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+          margin-top: 28px;
+        }
+
+        .farm-proof-card {
+          min-height: 184px;
+          border-radius: 18px;
+          border: 1px solid rgba(239,62,123,.16);
+          background: rgba(255,255,255,.9);
+          box-shadow: 0 16px 36px rgba(59,35,70,.08);
+          padding: 22px;
+          display: grid;
+          align-content: start;
+          gap: 12px;
+          backdrop-filter: blur(10px);
+        }
+
+        .farm-proof-card h3 {
+          margin: 0;
+          color: var(--ink);
+          font-size: 17px;
+          font-weight: 700;
+          line-height: 1.42;
+        }
+
+        .farm-proof-card p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.68;
+        }
+
+        .farm-story-actions {
+          display: flex;
+          gap: 14px;
+          flex-wrap: wrap;
+          margin-top: 28px;
         }
 
         .pillar-grid {
@@ -1390,6 +1596,110 @@ export default function Home() {
           font-weight: 700;
         }
 
+        .knowledge-preview-section {
+          margin-top: 92px;
+          padding: 76px 0;
+          background: #0b1020;
+          color: #fff;
+        }
+
+        .knowledge-preview-section .section-header {
+          max-width: 760px;
+        }
+
+        .knowledge-preview-section .section-title {
+          color: #fff;
+        }
+
+        .knowledge-preview-section .section-copy {
+          color: rgba(255,255,255,.62);
+        }
+
+        .knowledge-layout {
+          display: grid;
+          grid-template-columns: minmax(0, .92fr) minmax(360px, 1fr);
+          gap: 26px;
+          align-items: stretch;
+          margin-top: 34px;
+        }
+
+        .knowledge-featured {
+          min-height: 430px;
+          border-radius: 26px;
+          overflow: hidden;
+          position: relative;
+          border: 1px solid rgba(255,255,255,.1);
+          background:
+            linear-gradient(180deg, rgba(11,16,32,.08) 0%, rgba(11,16,32,.88) 100%),
+            url("/home/hero-visual-desktop-v1.png") right bottom / auto 100% no-repeat,
+            #151a2d;
+          box-shadow: 0 26px 60px rgba(0,0,0,.24);
+        }
+
+        .knowledge-featured-content {
+          position: absolute;
+          inset: auto 0 0 0;
+          padding: 34px;
+          max-width: 620px;
+        }
+
+        .article-tag {
+          width: max-content;
+          max-width: 100%;
+          display: inline-flex;
+          align-items: center;
+          min-height: 30px;
+          border-radius: 999px;
+          padding: 0 12px;
+          background: rgba(239,62,123,.16);
+          border: 1px solid rgba(239,62,123,.28);
+          color: #ff8cb5;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .knowledge-featured h3,
+        .knowledge-card h3 {
+          margin: 12px 0 0;
+          color: #fff;
+          font-weight: 700;
+          line-height: 1.36;
+        }
+
+        .knowledge-featured h3 {
+          max-width: 560px;
+          font-size: clamp(25px, 2.8vw, 38px);
+        }
+
+        .knowledge-featured p,
+        .knowledge-card p {
+          margin: 12px 0 0;
+          color: rgba(255,255,255,.62);
+          line-height: 1.72;
+        }
+
+        .knowledge-list {
+          display: grid;
+          gap: 14px;
+        }
+
+        .knowledge-card {
+          min-height: 132px;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,.1);
+          background: rgba(255,255,255,.045);
+          padding: 22px;
+          box-shadow: 0 18px 42px rgba(0,0,0,.12);
+        }
+
+        .knowledge-card h3 {
+          font-size: 18px;
+        }
+
+        .knowledge-card p {
+          font-size: 13px;
+        }
+
         .faq-section {
           margin-top: 72px;
         }
@@ -1515,7 +1825,8 @@ export default function Home() {
           }
 
           .feature-showcase,
-          .trust-section {
+          .trust-section,
+          .knowledge-layout {
             grid-template-columns: 1fr;
           }
 
@@ -1523,9 +1834,39 @@ export default function Home() {
             position: relative;
             top: auto;
           }
+
+          .farm-story-panel {
+            min-height: 760px;
+            background:
+              linear-gradient(180deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 48%, rgba(255,255,255,.42) 75%, rgba(255,255,255,.04) 100%),
+              url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
+              #fff8fc;
+          }
+
+          .farm-story-copy {
+            width: 100%;
+          }
+
+          .farm-story-proof {
+            grid-template-columns: 1fr;
+            max-width: 540px;
+          }
         }
 
         @media (max-width: 760px) {
+          @media (prefers-reduced-motion: no-preference) {
+            .home-page [data-reveal],
+            .home-page [data-reveal="panel"] {
+              transform: translate3d(0, 18px, 0);
+              transition-duration: .54s;
+              transition-delay: 0s;
+            }
+
+            .home-page [data-reveal].is-visible {
+              transform: translate3d(0, 0, 0);
+            }
+          }
+
           .home-nav {
             width: min(100% - 24px, 520px);
             min-height: 64px;
@@ -1533,9 +1874,13 @@ export default function Home() {
           }
 
           .home-nav-logo {
-            width: 146px;
-            max-width: 146px;
-            height: 44px;
+            width: 184px;
+            max-width: 184px;
+            height: 48px;
+          }
+
+          .home-nav-content {
+            display: none;
           }
 
           .nav-primary-btn,
@@ -1602,10 +1947,12 @@ export default function Home() {
           }
 
           .hero-product-note {
-            grid-template-columns: 1fr;
-            max-width: 360px;
-            margin-left: auto;
-            margin-right: auto;
+            display: none;
+          }
+
+          .home-page .trust-item[data-reveal] {
+            opacity: 1;
+            transform: none;
           }
 
           .verified-seal {
@@ -1650,7 +1997,8 @@ export default function Home() {
           .feature-grid,
           .faq-grid,
           .trust-layer-list,
-          .platform-proof {
+          .platform-proof,
+          .farm-story-proof {
             grid-template-columns: 1fr;
           }
 
@@ -1674,8 +2022,54 @@ export default function Home() {
           .lifecycle-section,
           .feature-showcase,
           .trust-section,
-          .faq-section {
+          .faq-section,
+          .farm-directory-section,
+          .knowledge-preview-section {
             margin-top: 54px;
+          }
+
+          .farm-story-panel {
+            min-height: 780px;
+            border-radius: 22px;
+            background:
+              linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.96) 45%, rgba(255,255,255,.38) 72%, rgba(255,255,255,.04) 94%),
+              url("/home/farm-promo-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
+              #fff8fc;
+          }
+
+          .farm-story-copy {
+            padding: 26px 20px 330px;
+          }
+
+          .farm-proof-card {
+            min-height: auto;
+            padding: 20px;
+          }
+
+          .farm-story-actions {
+            justify-content: stretch;
+          }
+
+          .knowledge-preview-section {
+            padding: 52px 0;
+          }
+
+          .knowledge-featured {
+            min-height: 440px;
+            border-radius: 22px;
+            background:
+              linear-gradient(180deg, rgba(11,16,32,.08) 0%, rgba(11,16,32,.9) 100%),
+              url("/home/hero-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
+              #151a2d;
+          }
+
+          .knowledge-featured-content {
+            padding: 24px;
+          }
+
+          .knowledge-card {
+            min-height: auto;
+            padding: 20px;
           }
 
           .lifecycle-header {
@@ -1727,9 +2121,9 @@ export default function Home() {
 
         @media (max-width: 420px) {
           .home-nav-logo {
-            width: 132px;
-            max-width: 132px;
-            height: 40px;
+            width: 168px;
+            max-width: 168px;
+            height: 44px;
           }
 
           .hero-section {
@@ -1746,6 +2140,14 @@ export default function Home() {
 
           .platform-band {
             padding-bottom: 380px;
+          }
+
+          .farm-story-panel {
+            min-height: 750px;
+          }
+
+          .farm-story-copy {
+            padding-bottom: 300px;
           }
         }
       `}</style>
@@ -1873,7 +2275,7 @@ export default function Home() {
 
         <section className="trust-strip" aria-label="Whiskora trust principles">
           {trustStatements.map((item) => (
-            <article className="trust-item" key={item.title}>
+            <article className="trust-item" key={item.title} data-reveal>
               <h3>{item.title}</h3>
               <p>{item.desc}</p>
             </article>
@@ -1890,7 +2292,7 @@ export default function Home() {
             />
             <div className="problem-grid">
               {problemCards.map((problem) => (
-                <article className="problem-card" key={problem.title}>
+                <article className="problem-card" key={problem.title} data-reveal>
                   <div className="icon-box">
                     <LineIcon name={problem.icon} />
                   </div>
@@ -1904,7 +2306,7 @@ export default function Home() {
 
         <section className="platform-band" aria-label="Whiskora platform introduction">
           <div className="section-inner">
-            <div className="platform-copy">
+            <div className="platform-copy" data-reveal="panel">
               <div className="eyebrow">
                 <LineIcon name="shield" />
                 ONE PLATFORM, EVERY PET LIFE
@@ -1929,6 +2331,39 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="section-inner farm-directory-section" id="farm-directory" aria-labelledby="farm-directory-title">
+          <div className="farm-story-panel" data-reveal="panel">
+            <div className="farm-story-copy">
+              <SectionHeader
+                id="farm-directory-title"
+                eyebrow="VERIFIED FARM DIRECTORY"
+                title="ฟาร์มคุณภาพควรถูกค้นเจอ"
+                highlight="ด้วยข้อมูลที่ตรวจสอบได้"
+                copy="หน้าแนะนำฟาร์มของ Whiskora ควรให้ความรู้สึกเหมือนพื้นที่คัดกรองที่ไว้ใจได้ ไม่ใช่แค่หน้ารวมโพสต์ขายสัตว์เลี้ยง"
+              />
+              <div className="farm-story-proof">
+                {farmHighlights.map((item) => (
+                  <article className="farm-proof-card" key={item.title} data-reveal>
+                    <div className="icon-box">
+                      <LineIcon name={item.icon} />
+                    </div>
+                    <h3>{item.title}</h3>
+                    <p>{item.desc}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="farm-story-actions">
+                <button className="primary-btn" onClick={() => router.push("/farm-hub")}>
+                  ดูฟาร์มในระบบ
+                </button>
+                <button className="secondary-btn" onClick={() => router.push("/partner/register-farm")}>
+                  สมัครฟาร์มกับ Whiskora
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="content-section" id="platform-pillars">
           <div className="section-inner">
             <SectionHeader
@@ -1939,7 +2374,7 @@ export default function Home() {
             />
             <div className="pillar-grid">
               {productPillars.map((pillar) => (
-                <article className="pillar-card" key={pillar.title}>
+                <article className="pillar-card" key={pillar.title} data-reveal>
                   <div className="icon-box">
                     <LineIcon name={pillar.icon} />
                   </div>
@@ -1964,7 +2399,7 @@ export default function Home() {
           </div>
           <div className="lifecycle-grid">
             {lifecycleSteps.map((step, index) => (
-              <article className="lifecycle-step" key={step.title}>
+              <article className="lifecycle-step" key={step.title} data-reveal>
                 <span className="step-index">{index + 1}</span>
                 <LineIcon name={step.icon} color={index % 3 === 1 ? "#407fb7" : index % 3 === 2 ? "#5c8f6b" : "#ef3e7b"} />
                 <h3>{step.title}</h3>
@@ -1984,7 +2419,7 @@ export default function Home() {
             />
             <div className="audience-grid">
               {userGroups.map((group) => (
-                <article className="audience-card" key={group.label}>
+                <article className="audience-card" key={group.label} data-reveal>
                   <div className="icon-box">
                     <LineIcon name={group.icon} />
                   </div>
@@ -1998,7 +2433,7 @@ export default function Home() {
         </section>
 
         <section className="section-inner feature-showcase" id="feature-showcase" aria-labelledby="feature-showcase-title">
-          <div className="product-preview" aria-label="Whiskora product preview">
+          <div className="product-preview" aria-label="Whiskora product preview" data-reveal="panel">
             <div className="preview-phone">
               <div className="preview-screen">
                 <div className="pet-hero-card">
@@ -2046,7 +2481,7 @@ export default function Home() {
             />
             <div className="feature-grid">
               {featureShowcase.map((feature) => (
-                <article className="feature-card" key={feature.title}>
+                <article className="feature-card" key={feature.title} data-reveal>
                   <div className="icon-box">
                     <LineIcon name={feature.icon} />
                   </div>
@@ -2058,7 +2493,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section-inner trust-section" aria-labelledby="trust-title">
+        <section className="section-inner trust-section" aria-labelledby="trust-title" data-reveal="panel">
           <Image
             src="/verified.png"
             alt="Whiskora Verified"
@@ -2076,11 +2511,48 @@ export default function Home() {
             />
             <div className="trust-layer-list">
               {trustLayer.map((item) => (
-                <div className="trust-layer-card" key={item}>
+                <div className="trust-layer-card" key={item} data-reveal>
                   <LineIcon name="shield" />
                   {item}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="knowledge-preview-section" id="knowledge-preview" aria-labelledby="knowledge-preview-title">
+          <div className="section-inner">
+            <SectionHeader
+              id="knowledge-preview-title"
+              eyebrow="PET KNOWLEDGE CENTER"
+              title="ความรู้สัตว์เลี้ยงที่พาคนใช้ข้อมูลจริง"
+              highlight="ไม่ใช่บทความลอย ๆ"
+              copy="Reference ชุดใหม่ให้จังหวะเหมือนนิตยสารพรีเมียม บัดดี้จึงวาง Knowledge Center ให้เป็น editorial section ที่โยงกลับไปยัง Pet ID, วัคซีน, ฟาร์ม และการดูแลต่อเนื่องอย่างเป็นธรรมชาติ"
+            />
+            <div className="knowledge-layout">
+              <article className="knowledge-featured" data-reveal="panel">
+                <div className="knowledge-featured-content">
+                  <span className="article-tag">Pet ID & Care Continuity</span>
+                  <h3>ข้อมูลอะไรควรอยู่ในโปรไฟล์สัตว์เลี้ยง เพื่อให้ดูแลต่อได้จริง</h3>
+                  <p>
+                    ใช้บทความเป็นประตูให้เจ้าของเข้าใจว่าการสร้างโปรไฟล์ไม่ใช่แค่ทำบัตรสวย ๆ แต่คือการจัดระเบียบข้อมูลสุขภาพ เอกสาร และการแชร์กับคนที่ดูแลสัตว์เลี้ยง
+                  </p>
+                  <div className="farm-story-actions">
+                    <button className="primary-btn" onClick={() => router.push("/pet-knowledge")}>
+                      อ่านบทความทั้งหมด
+                    </button>
+                  </div>
+                </div>
+              </article>
+              <div className="knowledge-list">
+                {knowledgeHighlights.map((article) => (
+                  <article className="knowledge-card" key={article.title} data-reveal>
+                    <span className="article-tag">{article.tag}</span>
+                    <h3>{article.title}</h3>
+                    <p>{article.desc}</p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -2102,7 +2574,7 @@ export default function Home() {
           </div>
           <div className="faq-grid">
             {seoFaqs.map((faq) => (
-              <article className="faq-card" key={faq.question}>
+              <article className="faq-card" key={faq.question} data-reveal>
                 <h3>{faq.question}</h3>
                 <p>{faq.answer}</p>
               </article>
@@ -2110,7 +2582,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="cta-band" aria-label="Start using Whiskora">
+        <section className="cta-band" aria-label="Start using Whiskora" data-reveal="panel">
           <div className="section-inner">
             <h2>เริ่มต้นจากโปรไฟล์สัตว์เลี้ยงหนึ่งตัว</h2>
             <p>
