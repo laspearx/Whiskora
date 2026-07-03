@@ -7,14 +7,18 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const F = {
-  ink: "#21192F",
-  inkSoft: "#51485D",
-  muted: "#8B8294",
-  pink: "#EF3E7B",
-  pinkDeep: "#D83269",
-  blush: "#FFF7FA",
-  line: "#F1D9E2",
-  green: "#35A86E",
+  ink: "#1f1a1c",
+  inkSoft: "#4a3f44",
+  cream: "#fffafc",
+  paper: "#fdf0f3",
+  line: "#f3dde3",
+  muted: "#8e7e84",
+  pink: "#e84677",
+  pinkSoft: "#fde2ea",
+  pinkDeep: "#c4325f",
+  sky: "#5b8dc7",
+  leaf: "#5a9065",
+  sun: "#e8a63a",
 };
 
 const Icon = {
@@ -42,24 +46,6 @@ const Icon = {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9 6 10.4 4h3.2L15 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3Z" />
       <circle cx="12" cy="13" r="3.2" />
-    </svg>
-  ),
-  Bell: () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-      <path d="M10 21h4" />
-    </svg>
-  ),
-  Chat: () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.2 9 9 0 0 1-3.8-.8L3 21l1.7-5a8 8 0 0 1-.7-3.4A8.4 8.4 0 0 1 12.5 4 8.4 8.4 0 0 1 21 11.5Z" />
-      <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" />
-    </svg>
-  ),
-  CheckBadge: () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2.8 14.6 5l3.4.2.7 3.3 2.2 2.5-1.4 3.1.5 3.4-3.2 1.3-1.8 2.9-3-1.7-3 1.7-1.8-2.9L4 17.5l.5-3.4L3.1 11l2.2-2.5L6 5.2 9.4 5 12 2.8Z" />
-      <path d="m8.8 12.2 2.1 2.1 4.5-4.8" />
     </svg>
   ),
   Health: () => (
@@ -95,6 +81,11 @@ const Icon = {
       <path d="M3 10 12 3l9 7" />
       <path d="M5 9.5V21h14V9.5" />
       <path d="M9 21v-6h6v6" />
+    </svg>
+  ),
+  Check: () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m8.8 12.2 2.1 2.1 4.5-4.8" />
     </svg>
   ),
   ArrowRight: () => (
@@ -273,7 +264,7 @@ export default function ProfilePage() {
     <>
       <style>{`
         @keyframes profile-rise {
-          from { opacity: 0; transform: translateY(18px) scale(.98); }
+          from { opacity: 0; transform: translateY(16px) scale(.985); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
@@ -282,20 +273,11 @@ export default function ProfilePage() {
           50% { transform: translateY(-6px); }
         }
 
-        @keyframes profile-shine {
-          from { transform: translateX(-120%) rotate(16deg); }
-          to { transform: translateX(160%) rotate(16deg); }
-        }
-
         .profile-page {
           min-height: 100vh;
-          background:
-            radial-gradient(circle at 8% 8%, rgba(255, 226, 238, .82), transparent 28%),
-            radial-gradient(circle at 92% 2%, rgba(244, 222, 255, .72), transparent 30%),
-            linear-gradient(180deg, #fffefe 0%, #fff8fb 45%, #ffffff 72%, #fff7fb 100%);
+          padding: 32px 0 84px;
           color: ${F.ink};
           font-family: var(--font-ui), inherit;
-          overflow-x: clip;
         }
 
         .profile-page svg {
@@ -310,136 +292,60 @@ export default function ProfilePage() {
         }
 
         .profile-shell {
-          width: 100%;
-          max-width: 1040px;
-          margin: 0 auto;
-          padding: 18px 0 88px;
-        }
-
-        .profile-topbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          margin: 6px 0 22px;
-          animation: profile-rise .5s ease both;
-        }
-
-        .profile-brand {
-          color: ${F.pink};
-          font-size: clamp(30px, 8vw, 46px);
-          line-height: 1;
-          font-weight: 900;
-          letter-spacing: -0.04em;
-        }
-
-        .profile-brand span {
-          display: inline-grid;
-          place-items: center;
-          width: .82em;
-          height: .82em;
-          margin: 0 .02em;
-          border-radius: 999px;
-          background: ${F.pink};
-          color: white;
-          font-size: .52em;
-          vertical-align: .08em;
-        }
-
-        .topbar-actions {
-          display: flex;
-          gap: 10px;
-        }
-
-        .topbar-button {
-          position: relative;
-          width: 42px;
-          height: 42px;
-          border: 1px solid #f3dce5;
-          border-radius: 16px;
-          background: rgba(255, 255, 255, .86);
-          color: ${F.ink};
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 10px 26px rgba(59, 35, 70, .06);
-          cursor: pointer;
-        }
-
-        .topbar-button.has-dot::after {
-          content: "";
-          position: absolute;
-          top: 9px;
-          right: 10px;
-          width: 9px;
-          height: 9px;
-          border-radius: 999px;
-          background: ${F.pink};
-          border: 2px solid white;
-        }
-
-        .profile-page-heading {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 14px;
-          margin: 0 0 22px;
-          text-align: center;
-          animation: profile-rise .55s ease .05s both;
-        }
-
-        .profile-page-heading h1 {
-          margin: 0;
-          color: ${F.ink};
-          font-size: clamp(28px, 7vw, 40px);
-          font-weight: 900;
-          line-height: 1.15;
-          letter-spacing: -0.03em;
-        }
-
-        .heading-paw {
-          color: #ffd2e2;
-          animation: profile-float 4.8s ease-in-out infinite;
-        }
-
-        .profile-card,
-        .profile-panel {
-          border: 1px solid ${F.line};
-          border-radius: 28px;
-          background: rgba(255, 255, 255, .9);
-          box-shadow: 0 18px 38px rgba(59, 35, 70, .08);
-          backdrop-filter: blur(14px);
+          display: grid;
+          gap: 18px;
         }
 
         .profile-hero {
-          animation: profile-rise .62s ease .1s both;
-        }
-
-        .profile-panel {
           position: relative;
           overflow: hidden;
-          padding: 24px;
-          display: grid;
-          grid-template-columns: auto minmax(0, 1fr);
-          gap: 24px;
-          align-items: center;
+          border-radius: 28px;
+          padding: 30px;
+          color: white;
+          background: linear-gradient(135deg, ${F.pink} 0%, #f06d98 58%, #f8a5c2 100%);
+          box-shadow: 0 24px 48px rgba(232, 70, 119, .16);
+          animation: profile-rise .55s ease both;
         }
 
-        .profile-panel::before {
+        .profile-hero::before,
+        .profile-hero::after {
           content: "";
           position: absolute;
-          inset: -40% auto auto -50%;
-          width: 48%;
-          height: 190%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .42), transparent);
-          animation: profile-shine 8s ease-in-out infinite;
+          border-radius: 999px;
           pointer-events: none;
+          background: radial-gradient(circle, rgba(255,255,255,.2), transparent 68%);
+          animation: profile-float 8s ease-in-out infinite;
+        }
+
+        .profile-hero::before {
+          width: 280px;
+          height: 280px;
+          top: -110px;
+          right: -90px;
+        }
+
+        .profile-hero::after {
+          width: 190px;
+          height: 190px;
+          left: -62px;
+          bottom: -72px;
+          animation-delay: 1.2s;
+        }
+
+        .hero-content {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 22px;
+          align-items: center;
         }
 
         .avatar-wrap {
           position: relative;
-          width: 154px;
-          height: 154px;
+          width: 118px;
+          height: 118px;
+          flex: 0 0 auto;
         }
 
         .avatar {
@@ -447,20 +353,13 @@ export default function ProfilePage() {
           height: 100%;
           border-radius: 999px;
           overflow: hidden;
-          border: 7px solid #fff;
-          outline: 4px solid #ffe0eb;
-          background: linear-gradient(135deg, #fff1f6, #ffffff);
+          border: 5px solid rgba(255,255,255,.88);
+          background: linear-gradient(135deg, #fff1f6, #fff);
           color: ${F.pink};
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 18px 32px rgba(239, 62, 123, .15);
-        }
-
-        .avatar svg {
-          width: 58px;
-          height: 58px;
-          stroke-width: 1.7;
+          box-shadow: 0 16px 30px rgba(140, 36, 78, .2);
         }
 
         .avatar img {
@@ -469,107 +368,87 @@ export default function ProfilePage() {
           object-fit: cover;
         }
 
+        .avatar svg {
+          width: 46px;
+          height: 46px;
+        }
+
         .avatar-camera {
           position: absolute;
-          right: -4px;
-          bottom: 10px;
-          width: 48px;
-          height: 48px;
+          right: 0;
+          bottom: 2px;
+          width: 40px;
+          height: 40px;
           border-radius: 999px;
-          background: ${F.pink};
-          color: white;
+          background: white;
+          color: ${F.pink};
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border: 4px solid white;
-          box-shadow: 0 12px 24px rgba(239, 62, 123, .28);
+          border: 3px solid rgba(232,70,119,.16);
+          box-shadow: 0 12px 20px rgba(140, 36, 78, .16);
         }
 
-        .profile-name-row {
+        .hero-kicker {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 30px;
+          padding: 5px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,.32);
+          background: rgba(255,255,255,.18);
+          backdrop-filter: blur(8px);
+          color: white;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          margin-bottom: 12px;
+        }
+
+        .hero-title-row {
           display: flex;
           align-items: center;
           gap: 10px;
           flex-wrap: wrap;
         }
 
-        .profile-title {
+        .hero-title {
           margin: 0;
-          color: ${F.ink};
-          font-size: clamp(28px, 6vw, 38px);
-          line-height: 1.13;
+          color: white;
+          font-size: clamp(28px, 5vw, 42px);
+          line-height: 1.08;
           font-weight: 900;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.04em;
         }
 
         .verified-badge {
-          width: 42px;
-          height: 42px;
-          border-radius: 16px;
-          background: ${F.pink};
+          width: 36px;
+          height: 36px;
+          border-radius: 14px;
+          background: rgba(255,255,255,.18);
           color: white;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 12px 24px rgba(239, 62, 123, .22);
+          border: 1px solid rgba(255,255,255,.26);
         }
 
-        .profile-email {
+        .hero-email {
           margin: 8px 0 0;
-          color: ${F.inkSoft};
+          color: rgba(255,255,255,.86);
           font-size: 14px;
-          line-height: 1.5;
+          line-height: 1.55;
           font-weight: 650;
           overflow-wrap: anywhere;
         }
 
-        .owner-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          min-height: 34px;
-          padding: 7px 14px;
-          border-radius: 999px;
-          border: 1px solid #ffd7e5;
-          background: #fff7fa;
-          color: ${F.pinkDeep};
-          font-size: 13px;
-          font-weight: 900;
-          margin-top: 12px;
-        }
-
-        .profile-progress {
-          margin-top: 16px;
-          max-width: 430px;
-        }
-
-        .progress-label {
+        .hero-actions {
+          margin-top: 18px;
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 8px;
-          color: ${F.inkSoft};
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .progress-track {
-          height: 10px;
-          border-radius: 999px;
-          background: #f5e5eb;
-          overflow: hidden;
-        }
-
-        .progress-fill {
-          height: 100%;
-          border-radius: inherit;
-          background: linear-gradient(90deg, ${F.pinkDeep}, #ff5b99);
-          box-shadow: 0 8px 18px rgba(239, 62, 123, .24);
-          transition: width .5s ease;
-        }
-
-        .profile-actions {
-          margin-top: 22px;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         .button-primary,
@@ -578,95 +457,165 @@ export default function ProfilePage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          min-height: 52px;
-          border-radius: 18px;
+          min-height: 44px;
+          border-radius: 14px;
           padding: 10px 18px;
           font-size: 14px;
-          font-weight: 900;
+          font-weight: 850;
           text-decoration: none;
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
 
         .button-primary {
-          width: min(100%, 420px);
-          background: linear-gradient(135deg, ${F.pinkDeep}, #ff4f93);
-          color: white;
-          box-shadow: 0 12px 26px rgba(232, 70, 119, .24);
+          background: white;
+          color: ${F.pink};
+          box-shadow: 0 10px 24px rgba(31,26,28,.12);
         }
 
         .button-secondary {
-          border: 1px solid ${F.line};
-          background: #fff;
-          color: ${F.ink};
+          border: 1px solid rgba(255,255,255,.28);
+          background: rgba(255,255,255,.14);
+          color: white;
         }
 
         .button-primary:hover,
         .button-secondary:hover,
+        .profile-card:hover,
         .quick-card:hover,
         .pet-row:hover,
         .business-link:hover {
           transform: translateY(-2px);
         }
 
+        .hero-meta {
+          position: relative;
+          z-index: 1;
+          margin-top: 22px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .meta-pill {
+          min-height: 76px;
+          border-radius: 18px;
+          padding: 14px;
+          background: rgba(255,255,255,.14);
+          border: 1px solid rgba(255,255,255,.2);
+          backdrop-filter: blur(8px);
+        }
+
+        .meta-pill strong {
+          display: block;
+          color: white;
+          font-size: 23px;
+          line-height: 1;
+          font-weight: 900;
+        }
+
+        .meta-pill span {
+          display: block;
+          color: rgba(255,255,255,.78);
+          font-size: 12px;
+          line-height: 1.45;
+          margin-top: 6px;
+          font-weight: 650;
+        }
+
+        .profile-progress {
+          margin-top: 18px;
+          max-width: 480px;
+        }
+
+        .progress-label {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 8px;
+          color: rgba(255,255,255,.86);
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .progress-track {
+          height: 8px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.22);
+          overflow: hidden;
+        }
+
+        .progress-fill {
+          height: 100%;
+          border-radius: inherit;
+          background: white;
+          transition: width .5s ease;
+        }
+
         .quick-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
-          margin-top: 18px;
-          animation: profile-rise .66s ease .16s both;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+          animation: profile-rise .58s ease .08s both;
+        }
+
+        .quick-card,
+        .profile-card {
+          border: 1px solid ${F.line};
+          background: rgba(255,255,255,.92);
+          box-shadow: 0 14px 34px rgba(31,26,28,.055);
+          transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
 
         .quick-card {
-          min-height: 132px;
-          border: 1px solid #f2d4df;
-          border-radius: 24px;
-          background: linear-gradient(135deg, #fff8fb, #ffffff);
-          padding: 16px;
+          min-height: 136px;
+          border-radius: 20px;
+          padding: 18px;
           color: ${F.ink};
           text-decoration: none;
-          transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
           display: grid;
-          grid-template-columns: auto minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 14px;
-          box-shadow: 0 12px 28px rgba(59, 35, 70, .055);
+          align-content: space-between;
+          gap: 16px;
         }
 
-        .quick-card:hover {
-          border-color: ${F.pink};
-          box-shadow: 0 16px 32px rgba(232, 70, 119, .1);
+        .quick-card:hover,
+        .profile-card:hover {
+          border-color: #edc7d3;
+          box-shadow: 0 18px 40px rgba(31,26,28,.075);
         }
 
         .quick-icon {
-          width: 72px;
-          height: 72px;
-          border-radius: 999px;
+          width: 46px;
+          height: 46px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #ffd3e3, #fff1f7);
+          background: ${F.pinkSoft};
           color: ${F.pink};
         }
 
         .quick-card:nth-child(2) .quick-icon {
-          background: linear-gradient(135deg, #eadbff, #fff7ff);
-          color: #a767ee;
-        }
-
-        .quick-card:nth-child(3) {
-          grid-column: 1 / -1;
+          background: #dbeafe;
+          color: ${F.sky};
         }
 
         .quick-card:nth-child(3) .quick-icon {
-          background: linear-gradient(135deg, #d9f7e9, #f4fffa);
-          color: #39a86f;
+          background: #dcfce7;
+          color: ${F.leaf};
+        }
+
+        .quick-card:nth-child(4) .quick-icon {
+          background: #fef9c3;
+          color: ${F.sun};
         }
 
         .quick-card strong {
           display: block;
-          font-size: 16px;
+          color: ${F.ink};
+          font-size: 15px;
           line-height: 1.35;
-          font-weight: 900;
+          font-weight: 850;
           margin-bottom: 5px;
         }
 
@@ -675,25 +624,25 @@ export default function ProfilePage() {
           color: ${F.muted};
           font-size: 12px;
           line-height: 1.55;
-          font-weight: 650;
+          font-weight: 600;
         }
 
         .profile-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+          grid-template-columns: minmax(0, 1.08fr) minmax(310px, .92fr);
           gap: 18px;
           align-items: start;
-          margin-top: 18px;
         }
 
         .profile-card {
+          border-radius: 22px;
           padding: 20px;
-          animation: profile-rise .62s ease both;
+          animation: profile-rise .58s ease both;
         }
 
         .card-head {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
           gap: 14px;
           margin-bottom: 16px;
@@ -703,32 +652,33 @@ export default function ProfilePage() {
           display: flex;
           align-items: center;
           gap: 10px;
+          min-width: 0;
         }
 
         .card-title-icon {
           width: 38px;
           height: 38px;
           border-radius: 12px;
-          background: #fff1f6;
+          background: ${F.pinkSoft};
           color: ${F.pink};
           display: inline-flex;
           align-items: center;
           justify-content: center;
         }
 
-        .card-head h2,
-        .card-head h3 {
+        .card-head h2 {
           margin: 0;
           color: ${F.ink};
-          font-size: 21px;
-          line-height: 1.35;
-          font-weight: 900;
+          font-size: 20px;
+          line-height: 1.28;
+          font-weight: 850;
+          letter-spacing: -0.02em;
         }
 
         .card-link {
           color: ${F.pink};
           font-size: 13px;
-          font-weight: 900;
+          font-weight: 850;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
@@ -736,9 +686,9 @@ export default function ProfilePage() {
           white-space: nowrap;
         }
 
-        .calendar-area {
+        .calendar-layout {
           display: grid;
-          grid-template-columns: minmax(0, .9fr) minmax(280px, 1fr);
+          grid-template-columns: minmax(0, .95fr) minmax(260px, 1fr);
           gap: 18px;
         }
 
@@ -751,11 +701,11 @@ export default function ProfilePage() {
         }
 
         .icon-button {
-          width: 38px;
-          height: 38px;
+          width: 36px;
+          height: 36px;
           border: 1px solid ${F.line};
           border-radius: 999px;
-          background: #fff;
+          background: white;
           color: ${F.ink};
           display: inline-flex;
           align-items: center;
@@ -764,20 +714,20 @@ export default function ProfilePage() {
         }
 
         .calendar-month {
-          text-align: center;
           color: ${F.ink};
-          font-size: 15px;
-          font-weight: 900;
+          font-size: 14px;
+          font-weight: 850;
+          text-align: center;
         }
 
         .calendar-grid {
           display: grid;
           grid-template-columns: repeat(7, minmax(0, 1fr));
-          gap: 6px;
-          border: 1px solid #f4d8e2;
-          border-radius: 22px;
-          padding: 14px;
-          background: rgba(255, 255, 255, .78);
+          gap: 5px;
+          border: 1px solid ${F.line};
+          border-radius: 18px;
+          padding: 12px;
+          background: #fff;
         }
 
         .weekday,
@@ -791,7 +741,7 @@ export default function ProfilePage() {
         .weekday {
           color: ${F.muted};
           font-size: 11px;
-          font-weight: 900;
+          font-weight: 850;
           min-height: 24px;
         }
 
@@ -802,35 +752,28 @@ export default function ProfilePage() {
         .day-cell {
           position: relative;
           aspect-ratio: 1;
-          border-radius: 12px;
+          border-radius: 10px;
           color: ${F.inkSoft};
           text-decoration: none;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 750;
-          background: rgba(255, 255, 255, .82);
+          background: ${F.cream};
         }
 
         .day-cell.has-event {
-          background: #fff1f6;
+          background: ${F.pinkSoft};
           color: ${F.pinkDeep};
-          box-shadow: inset 0 0 0 1px #f5bfd2;
         }
 
         .day-cell.is-today {
           background: ${F.pink};
           color: white;
-          box-shadow: 0 10px 24px rgba(232, 70, 119, .2);
-        }
-
-        .day-cell.is-past.has-event {
-          background: #f7f3f6;
-          color: ${F.muted};
-          box-shadow: inset 0 0 0 1px #eee3e8;
+          box-shadow: 0 8px 18px rgba(232,70,119,.18);
         }
 
         .event-dots {
           position: absolute;
-          bottom: 6px;
+          bottom: 5px;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
@@ -840,178 +783,40 @@ export default function ProfilePage() {
         .event-dots i {
           width: 4px;
           height: 4px;
-          border-radius: 50%;
+          border-radius: 999px;
           background: currentColor;
         }
 
-        .appointment-list {
-          display: grid;
-          gap: 0;
-        }
-
-        .appointment-item {
-          display: grid;
-          grid-template-columns: 48px minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 12px;
-          border-bottom: 1px solid #f3e6ec;
-          padding: 12px 0;
-        }
-
-        .appointment-item:last-child {
-          border-bottom: 0;
-        }
-
-        .appointment-avatar {
-          width: 48px;
-          height: 48px;
-          border-radius: 999px;
-          overflow: hidden;
-          background: #fff1f6;
-          color: ${F.pink};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .appointment-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .appointment-item strong {
-          display: block;
-          color: ${F.ink};
-          font-size: 14px;
-          line-height: 1.4;
-          font-weight: 900;
-        }
-
-        .appointment-item span {
-          color: ${F.muted};
-          font-size: 12px;
-          font-weight: 700;
-        }
-
-        .status-pill {
-          border-radius: 999px;
-          padding: 7px 10px;
-          background: #fff1f6;
-          color: ${F.pinkDeep};
-          font-size: 11px;
-          font-weight: 900;
-          white-space: nowrap;
-        }
-
-        .status-pill.soon {
-          background: #fff8e7;
-          color: #b77b14;
-        }
-
-        .empty-box {
-          border: 1px dashed ${F.line};
-          border-radius: 18px;
-          background: rgba(255, 255, 255, .68);
-          padding: 18px;
-          color: ${F.inkSoft};
-          font-size: 13px;
-          line-height: 1.7;
-          font-weight: 650;
-        }
-
-        .finance-card {
-          margin-top: 18px;
-          display: grid;
-          grid-template-columns: auto minmax(0, 1fr) auto;
-          gap: 16px;
-          align-items: center;
-          border-color: #cfeee0;
-          background: linear-gradient(135deg, #f4fffa, #ffffff);
-          text-decoration: none;
-          color: inherit;
-        }
-
-        .finance-icon {
-          width: 70px;
-          height: 70px;
-          border-radius: 999px;
-          background: linear-gradient(135deg, #c9f2dc, #effff7);
-          color: ${F.green};
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .finance-card h2 {
-          margin: 0 0 4px;
-          color: ${F.ink};
-          font-size: 20px;
-          font-weight: 900;
-          letter-spacing: -0.02em;
-        }
-
-        .finance-card p {
-          margin: 0;
-          color: ${F.muted};
-          font-size: 13px;
-          line-height: 1.55;
-          font-weight: 650;
-        }
-
-        .finance-balance {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding-left: 18px;
-          border-left: 1px solid #d7eee4;
-        }
-
-        .finance-balance small {
-          display: block;
-          color: ${F.muted};
-          font-size: 11px;
-          font-weight: 800;
-          margin-bottom: 2px;
-        }
-
-        .finance-balance strong {
-          display: block;
-          color: ${F.green};
-          font-size: 28px;
-          font-weight: 900;
-          letter-spacing: -0.03em;
-          white-space: nowrap;
-        }
-
-        .pet-preview,
+        .appointment-list,
+        .pet-list,
         .business-list {
           display: grid;
           gap: 10px;
         }
 
+        .appointment-item,
         .pet-row,
         .business-link {
           display: flex;
           align-items: center;
           gap: 12px;
-          border: 1px solid #f2d4df;
-          border-radius: 18px;
+          border: 1px solid ${F.line};
+          border-radius: 16px;
           padding: 12px;
+          background: white;
           color: ${F.ink};
           text-decoration: none;
-          background: #fff;
-          box-shadow: 0 10px 26px rgba(59, 35, 70, .04);
           transition: transform .16s ease, border-color .16s ease;
         }
 
+        .appointment-avatar,
         .pet-avatar,
         .business-icon {
-          width: 46px;
-          height: 46px;
-          border-radius: 16px;
+          width: 44px;
+          height: 44px;
+          border-radius: 14px;
           overflow: hidden;
-          background: #fff1f6;
+          background: ${F.pinkSoft};
           color: ${F.pink};
           display: flex;
           align-items: center;
@@ -1019,101 +824,150 @@ export default function ProfilePage() {
           flex: 0 0 auto;
         }
 
+        .appointment-avatar img,
         .pet-avatar img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
+        .appointment-item strong,
         .pet-row strong,
         .business-link strong {
           display: block;
-          font-size: 15px;
+          color: ${F.ink};
+          font-size: 14px;
           line-height: 1.35;
-          font-weight: 900;
+          font-weight: 850;
         }
 
+        .appointment-item span,
         .pet-row span,
         .business-link small {
           color: ${F.muted};
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 650;
+          line-height: 1.45;
         }
 
-        .below-grid {
+        .status-pill {
+          margin-left: auto;
+          border-radius: 999px;
+          padding: 6px 9px;
+          background: ${F.pinkSoft};
+          color: ${F.pinkDeep};
+          font-size: 11px;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .finance-card {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 18px;
-          margin-top: 18px;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 14px;
+          align-items: center;
+          text-decoration: none;
+          color: inherit;
+          border-color: #dcefe4;
+          background: linear-gradient(135deg, #f6fff9, #fff);
         }
 
-        @media (max-width: 860px) {
-          .profile-panel,
-          .calendar-area,
+        .finance-card .card-title-icon {
+          background: #dcfce7;
+          color: ${F.leaf};
+        }
+
+        .finance-card strong {
+          display: block;
+          color: ${F.leaf};
+          font-size: 24px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .empty-box {
+          border: 1px dashed ${F.line};
+          border-radius: 16px;
+          background: rgba(255,255,255,.64);
+          padding: 16px;
+          color: ${F.inkSoft};
+          font-size: 13px;
+          line-height: 1.65;
+          font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+          .profile-page {
+            padding-top: 22px;
+          }
+
+          .hero-content,
           .profile-grid,
-          .below-grid {
+          .calendar-layout {
             grid-template-columns: 1fr;
           }
 
-          .profile-panel {
-            justify-items: center;
-            text-align: center;
-          }
-
-          .profile-name-row {
-            justify-content: center;
-          }
-
-          .profile-progress {
-            margin-left: auto;
-            margin-right: auto;
+          .quick-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 560px) {
-          .profile-shell {
-            padding-top: 10px;
+          .profile-page {
+            padding-top: 14px;
           }
 
-          .profile-topbar {
-            margin-bottom: 18px;
+          .profile-hero {
+            border-radius: 24px;
+            padding: 22px;
           }
 
-          .profile-panel,
-          .profile-card {
-            border-radius: 22px;
+          .hero-content {
+            justify-items: center;
+            text-align: center;
           }
 
-          .profile-panel,
-          .profile-card {
-            padding: 16px;
+          .hero-title-row,
+          .hero-actions {
+            justify-content: center;
           }
 
           .avatar-wrap {
-            width: 136px;
-            height: 136px;
+            width: 104px;
+            height: 104px;
           }
 
-          .profile-title {
-            font-size: 30px;
+          .hero-meta {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+          }
+
+          .meta-pill {
+            min-height: 68px;
+            padding: 12px 8px;
+            text-align: center;
+          }
+
+          .meta-pill strong {
+            font-size: 20px;
+          }
+
+          .meta-pill span {
+            font-size: 11px;
           }
 
           .quick-grid {
-            grid-template-columns: 1fr 1fr;
+            gap: 10px;
           }
 
           .quick-card {
             min-height: 122px;
-            grid-template-columns: 1fr auto;
-            align-content: center;
-            gap: 10px;
             padding: 14px;
           }
 
           .quick-icon {
-            width: 58px;
-            height: 58px;
-            grid-column: 1 / -1;
+            width: 42px;
+            height: 42px;
           }
 
           .quick-card strong {
@@ -1124,82 +978,49 @@ export default function ProfilePage() {
             font-size: 11px;
           }
 
-          .quick-card:nth-child(3) {
-            grid-column: 1 / -1;
+          .profile-card {
+            border-radius: 18px;
+            padding: 16px;
           }
 
           .card-head {
-            flex-direction: column;
-            align-items: stretch;
+            align-items: flex-start;
           }
 
           .calendar-grid {
+            padding: 10px;
             gap: 4px;
-            padding: 12px;
-          }
-
-          .day-cell {
-            border-radius: 10px;
-            font-size: 12px;
           }
 
           .appointment-item {
-            grid-template-columns: 44px minmax(0, 1fr);
+            align-items: flex-start;
           }
 
           .status-pill {
-            grid-column: 2;
-            width: fit-content;
+            display: none;
           }
 
           .finance-card {
             grid-template-columns: auto minmax(0, 1fr);
           }
-
-          .finance-balance {
-            grid-column: 1 / -1;
-            border-left: 0;
-            border-top: 1px solid #d7eee4;
-            padding: 14px 0 0;
-            justify-content: space-between;
-          }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .profile-topbar,
-          .profile-page-heading,
           .profile-hero,
-          .profile-card,
           .quick-grid,
-          .heading-paw,
-          .profile-panel::before {
+          .profile-card,
+          .profile-hero::before,
+          .profile-hero::after {
             animation: none !important;
+            transition: none !important;
           }
         }
       `}</style>
 
       <main className="profile-page">
         <div className="profile-shell">
-          <div className="profile-topbar" aria-label="Whiskora profile header">
-            <div className="profile-brand">whisk<span>🐾</span>ra</div>
-            <div className="topbar-actions">
-              <button className="topbar-button has-dot" type="button" aria-label="การแจ้งเตือน">
-                <Icon.Bell />
-              </button>
-              <button className="topbar-button" type="button" aria-label="ข้อความ">
-                <Icon.Chat />
-              </button>
-            </div>
-          </div>
-
-          <div className="profile-page-heading">
-            <span className="heading-paw"><Icon.Paw /></span>
-            <h1>โปรไฟล์ผู้ใช้งาน</h1>
-            <span className="heading-paw" style={{ animationDelay: ".8s" }}><Icon.Paw /></span>
-          </div>
-
           <section className="profile-hero" aria-labelledby="profile-title">
-            <div className="profile-panel">
+            <div className="hero-content">
               <div className="avatar-wrap">
                 <div className="avatar">
                   {avatarUrl ? <img src={avatarUrl} alt="โปรไฟล์ผู้ใช้งาน" /> : <Icon.User />}
@@ -1210,19 +1031,20 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <div className="profile-name-row">
-                  <h2 className="profile-title" id="profile-title">
+                <div className="hero-kicker">
+                  <Icon.Paw />
+                  User Profile
+                </div>
+                <div className="hero-title-row">
+                  <h1 className="hero-title" id="profile-title">
                     {displayName}
-                  </h2>
+                  </h1>
                   <span className="verified-badge" aria-label="ยืนยันแล้ว">
-                    <Icon.CheckBadge />
+                    <Icon.Check />
                   </span>
                 </div>
-                <p className="profile-email">{email}</p>
-                <div className="owner-chip">
-                  <Icon.Paw />
-                  {isPartner ? "เจ้าของสัตว์เลี้ยงและพาร์ทเนอร์" : "เจ้าของสัตว์เลี้ยง"}
-                </div>
+                <p className="hero-email">{email}</p>
+
                 <div className="profile-progress" aria-label={`โปรไฟล์สมบูรณ์ ${profileCompletion}%`}>
                   <div className="progress-label">
                     <span>โปรไฟล์สมบูรณ์</span>
@@ -1232,34 +1054,41 @@ export default function ProfilePage() {
                     <div className="progress-fill" style={{ width: `${profileCompletion}%` }} />
                   </div>
                 </div>
-                <div className="profile-actions">
+
+                <div className="hero-actions">
                   <Link className="button-primary" href="/profile/edit">
                     <Icon.Edit />
                     แก้ไขข้อมูล
                   </Link>
+                  <Link className="button-secondary" href="/pets/create">
+                    <Icon.Paw />
+                    เพิ่มสัตว์เลี้ยง
+                  </Link>
                 </div>
+              </div>
+            </div>
+
+            <div className="hero-meta" aria-label="สรุปบัญชี">
+              <div className="meta-pill">
+                <strong>{pets.length}</strong>
+                <span>สัตว์เลี้ยง</span>
+              </div>
+              <div className="meta-pill">
+                <strong>{appointments.length}</strong>
+                <span>นัดสุขภาพ</span>
+              </div>
+              <div className="meta-pill">
+                <strong>{businessCount}</strong>
+                <span>ธุรกิจ</span>
               </div>
             </div>
           </section>
 
-          <section aria-labelledby="quick-actions-title">
-            <h2 id="quick-actions-title" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-              ทางลัดโปรไฟล์
-            </h2>
-            <div className="quick-grid">
-              <QuickCard href="/profile/pets" icon={<Icon.Paw />} title="ดูสัตว์เลี้ยงทั้งหมด" desc={`${pets.length} โปรไฟล์ในบัญชี`} />
-              {businessCount > 0 ? (
-                <QuickCard
-                  href={myFarms[0]?.id ? `/farm-dashboard/${myFarms[0].id}?from=profile` : myShops[0]?.id ? `/shop-dashboard/${myShops[0].id}?from=profile` : myServices[0]?.id ? `/service-dashboard/${myServices[0].id}?from=profile` : "/partner"}
-                  icon={<Icon.Store />}
-                  title="ดูพาร์ทเนอร์"
-                  desc={`${businessCount} ธุรกิจที่ดูแล`}
-                />
-              ) : (
-                <QuickCard href="/partner" icon={<Icon.Store />} title="ดูพาร์ทเนอร์" desc="ฟาร์ม ร้านค้า และบริการของ Whiskora" />
-              )}
-              <QuickCard href="/pets/vaccines/bulk-add" icon={<Icon.Health />} title="บันทึกสุขภาพ" desc="เพิ่มวัคซีนและนัดหมาย" disabled={pets.length === 0} />
-            </div>
+          <section className="quick-grid" aria-label="ทางลัดโปรไฟล์">
+            <QuickCard href="/profile/pets" icon={<Icon.Paw />} title="สัตว์เลี้ยงทั้งหมด" desc="จัดการโปรไฟล์และ Pet ID" />
+            <QuickCard href="/pets/vaccines/bulk-add" icon={<Icon.Health />} title="สุขภาพและวัคซีน" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
+            <QuickCard href="/profile/finance" icon={<Icon.Wallet />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
+            <QuickCard href="/partner" icon={<Icon.Store />} title="พาร์ทเนอร์" desc={businessCount > 0 ? `${businessCount} ธุรกิจที่ดูแล` : "ฟาร์ม ร้านค้า บริการ"} />
           </section>
 
           <div className="profile-grid">
@@ -1274,7 +1103,7 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              <div className="calendar-area">
+              <div className="calendar-layout">
                 <div>
                   <div className="calendar-toolbar">
                     <button className="icon-button" type="button" onClick={handlePrevMonth} aria-label="เดือนก่อนหน้า">
@@ -1308,10 +1137,9 @@ export default function ProfilePage() {
 
                       const dayAppointments = appointments.filter((item) => item.next_due && item.next_due.split("T")[0] === dateStr);
                       const hasEvent = dayAppointments.length > 0;
-                      const isPast = cellDate < today;
                       const isToday = cellDate.getTime() === today.getTime();
 
-                      const dayClassName = `day-cell ${hasEvent ? "has-event" : ""} ${isPast ? "is-past" : ""} ${isToday ? "is-today" : ""}`;
+                      const dayClassName = `day-cell ${hasEvent ? "has-event" : ""} ${isToday ? "is-today" : ""}`;
                       const dayContent = (
                         <>
                           {day}
@@ -1353,7 +1181,7 @@ export default function ProfilePage() {
                               <strong>{item.vaccine_name || "กำหนดดูแลสุขภาพ"}</strong>
                               <span>{item.petName} · {formatDate(item.dueDate)}</span>
                             </span>
-                            <span className={`status-pill ${diffDays > 7 ? "soon" : ""}`}>{diffDays <= 7 ? "ใกล้ถึง" : "รออยู่"}</span>
+                            <span className="status-pill">{diffDays <= 7 ? "ใกล้ถึง" : "รออยู่"}</span>
                           </div>
                         );
                       })}
@@ -1367,75 +1195,71 @@ export default function ProfilePage() {
               </div>
             </section>
 
-            <section className="profile-card" aria-labelledby="pets-title">
-              <div className="card-head">
-                <div className="card-title">
-                  <span className="card-title-icon"><Icon.Paw /></span>
-                  <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
-                </div>
-                <Link className="card-link" href="/profile/pets">
-                  ทั้งหมด <Icon.ArrowRight />
-                </Link>
-              </div>
-
-              {pets.length > 0 ? (
-                <div className="pet-preview">
-                  {pets.slice(0, 5).map((pet) => (
-                    <Link className="pet-row" href={`/pets/${pet.id}`} key={pet.id}>
-                      <span className="pet-avatar">
-                        {pet.image_url ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} /> : <Icon.Paw />}
-                      </span>
-                      <span style={{ minWidth: 0, flex: 1 }}>
-                        <strong>{pet.name || "ยังไม่มีชื่อ"}</strong>
-                        <span>{[pet.species, pet.breed].filter(Boolean).join(" · ") || "ยังไม่ได้ระบุชนิด"}</span>
-                      </span>
-                      <Icon.ArrowRight />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-box">
-                  ยังไม่มีสัตว์เลี้ยงในบัญชี เริ่มจากการเพิ่มโปรไฟล์สัตว์เลี้ยงเพื่อสร้าง Pet ID, QR Profile และเก็บประวัติสุขภาพ
-                </div>
-              )}
-            </section>
-          </div>
-
-          <Link className="profile-card finance-card" href="/profile/finance">
-            <span className="finance-icon"><Icon.Wallet /></span>
-            <span>
-              <h2>บันทึกรายรับรายจ่าย</h2>
-              <p>จัดการค่าใช้จ่ายของน้อง ๆ อย่างเป็นระบบ</p>
-            </span>
-            <span className="finance-balance">
-              <span>
-                <small>จำนวนสัตว์เลี้ยงในบัญชี</small>
-                <strong>{pets.length}</strong>
-              </span>
-              <Icon.ArrowRight />
-            </span>
-          </Link>
-
-          {isPartner && (
-            <section className="below-grid" aria-label="ธุรกิจและพาร์ทเนอร์">
-              <div className="profile-card">
+            <div style={{ display: "grid", gap: 18 }}>
+              <section className="profile-card" aria-labelledby="pets-title">
                 <div className="card-head">
                   <div className="card-title">
-                    <span className="card-title-icon"><Icon.Farm /></span>
-                    <h2>ธุรกิจที่ดูแล</h2>
+                    <span className="card-title-icon"><Icon.Paw /></span>
+                    <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
                   </div>
+                  <Link className="card-link" href="/profile/pets">
+                    ทั้งหมด <Icon.ArrowRight />
+                  </Link>
                 </div>
-                <div className="business-list">
-                  {myFarms.map((farm) => (
-                    <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<Icon.Farm />} />
-                  ))}
-                  {myShops.map((shop) => (
-                    <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<Icon.Store />} />
-                  ))}
-                  {myServices.map((service) => (
-                    <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<Icon.Health />} />
-                  ))}
+
+                {pets.length > 0 ? (
+                  <div className="pet-list">
+                    {pets.slice(0, 4).map((pet) => (
+                      <Link className="pet-row" href={`/pets/${pet.id}`} key={pet.id}>
+                        <span className="pet-avatar">
+                          {pet.image_url ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} /> : <Icon.Paw />}
+                        </span>
+                        <span style={{ minWidth: 0, flex: 1 }}>
+                          <strong>{pet.name || "ยังไม่มีชื่อ"}</strong>
+                          <span>{[pet.species, pet.breed].filter(Boolean).join(" · ") || "ยังไม่ได้ระบุชนิด"}</span>
+                        </span>
+                        <Icon.ArrowRight />
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-box">
+                    ยังไม่มีสัตว์เลี้ยงในบัญชี เริ่มจากการเพิ่มโปรไฟล์สัตว์เลี้ยงเพื่อสร้าง Pet ID และเก็บประวัติสุขภาพ
+                  </div>
+                )}
+              </section>
+
+              <Link className="profile-card finance-card" href="/profile/finance">
+                <span className="card-title-icon"><Icon.Wallet /></span>
+                <span style={{ minWidth: 0 }}>
+                  <strong>{pets.length}</strong>
+                  <span style={{ display: "block", color: F.muted, fontSize: 12, fontWeight: 650, marginTop: 5 }}>
+                    โปรไฟล์สำหรับบันทึกค่าใช้จ่าย
+                  </span>
+                </span>
+                <Icon.ArrowRight />
+              </Link>
+            </div>
+          </div>
+
+          {isPartner && (
+            <section className="profile-card" aria-labelledby="business-title">
+              <div className="card-head">
+                <div className="card-title">
+                  <span className="card-title-icon"><Icon.Farm /></span>
+                  <h2 id="business-title">ธุรกิจที่ดูแล</h2>
                 </div>
+              </div>
+              <div className="business-list">
+                {myFarms.map((farm) => (
+                  <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<Icon.Farm />} />
+                ))}
+                {myShops.map((shop) => (
+                  <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<Icon.Store />} />
+                ))}
+                {myServices.map((service) => (
+                  <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<Icon.Health />} />
+                ))}
               </div>
             </section>
           )}
@@ -1454,7 +1278,6 @@ function QuickCard({ href, icon, title, desc, disabled = false }: { href: string
           <strong>{title}</strong>
           <span>{desc}</span>
         </div>
-        <Icon.ArrowRight />
       </div>
     );
   }
@@ -1466,7 +1289,6 @@ function QuickCard({ href, icon, title, desc, disabled = false }: { href: string
         <strong>{title}</strong>
         <span>{desc}</span>
       </div>
-      <Icon.ArrowRight />
     </Link>
   );
 }
