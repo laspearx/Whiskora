@@ -137,7 +137,7 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[68px] gap-2">
+        <div className="flex items-center h-[80px] gap-2">
 
           {/* ── Logo (hidden on homepage) ─────────────────────────────── */}
           {!isHome && (
@@ -145,9 +145,9 @@ export default function Navbar() {
               <Image
                 src="/logo.png"
                 alt="Whiskora"
-                width={178}
-                height={54}
-                className="h-16 w-auto object-contain"
+                width={220}
+                height={68}
+                className="h-[72px] w-auto object-contain"
                 priority
               />
             </Link>
@@ -283,9 +283,9 @@ export default function Navbar() {
               <button
                 onClick={() => guarded('/profile')}
                 aria-label="โปรไฟล์"
-                className="w-9 h-9 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+                className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
@@ -296,9 +296,9 @@ export default function Navbar() {
                 onClick={() => setMobileOpen(o => !o)}
                 aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
                 aria-expanded={mobileOpen}
-                className="w-9 h-9 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
                   {mobileOpen
                     ? <path d="M6 18 18 6M6 6l12 12" />
                     : <path d="M4 6h16M4 12h16M4 18h16" />}
