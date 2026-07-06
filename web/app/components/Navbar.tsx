@@ -51,7 +51,6 @@ export default function Navbar() {
   const router   = useRouter();
   const navRef   = useRef<HTMLElement>(null);
 
-  const isHome          = pathname === '/';
   const active          = (h: Href) => pathname === h;
   const exploreActive   = EXPLORE.some(i => pathname === i.href);
 
@@ -139,23 +138,21 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-[64px] gap-2">
 
-          {/* ── Logo (hidden on homepage) ─────────────────────────────── */}
-          {!isHome && (
-            <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]" style={{ overflow: 'visible' }}>
-              <Image
-                src="/logo.png"
-                alt="Whiskora"
-                width={300}
-                height={96}
-                className="w-auto object-contain"
-                style={{ height: '96px', marginTop: '-16px', marginBottom: '-16px', display: 'block' }}
-                priority
-              />
-            </Link>
-          )}
+          {/* ── Logo ─────────────────────────────────────────────────── */}
+          <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]" style={{ overflow: 'visible' }}>
+            <Image
+              src="/logo.png"
+              alt="Whiskora"
+              width={300}
+              height={96}
+              className="w-auto object-contain"
+              style={{ height: '96px', marginTop: '-16px', marginBottom: '-16px', display: 'block' }}
+              priority
+            />
+          </Link>
 
           {/* ── Desktop primary nav ───────────────────────────────────── */}
-          <div className={`hidden md:flex items-center gap-0.5 ${isHome ? 'flex-1' : ''}`}>
+          <div className="hidden md:flex items-center gap-0.5">
 
             {/* หน้าแรก */}
             <Link href="/" className={navLink(active('/'))}>หน้าแรก</Link>
@@ -252,67 +249,40 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile: homepage — auth only, no hamburger ────────────── */}
-          {isHome && (
-            <div className="md:hidden ml-auto">
-              {session ? (
-                <button
-                  onClick={() => guarded('/profile')}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-pink-100 bg-pink-50 text-pink-600 text-sm font-semibold"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  โปรไฟล์
-                </button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="px-4 py-2 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors"
-                >
-                  เข้าสู่ระบบ
-                </Link>
-              )}
-            </div>
-          )}
+          {/* ── Mobile: profile + hamburger ──────────────────────────── */}
+          <div className="md:hidden flex items-center gap-2 ml-auto">
+            {/* Profile shortcut */}
+            <button
+              onClick={() => guarded('/profile')}
+              aria-label="โปรไฟล์"
+              className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </button>
 
-          {/* ── Mobile: non-homepage — hamburger ─────────────────────── */}
-          {!isHome && (
-            <div className="md:hidden flex items-center gap-2 ml-auto">
-              {/* Profile shortcut */}
-              <button
-                onClick={() => guarded('/profile')}
-                aria-label="โปรไฟล์"
-                className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </button>
-
-              {/* Hamburger */}
-              <button
-                onClick={() => setMobileOpen(o => !o)}
-                aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
-                aria-expanded={mobileOpen}
-                className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-                  {mobileOpen
-                    ? <path d="M6 18 18 6M6 6l12 12" />
-                    : <path d="M4 6h16M4 12h16M4 18h16" />}
-                </svg>
-              </button>
-            </div>
-          )}
+            {/* Hamburger */}
+            <button
+              onClick={() => setMobileOpen(o => !o)}
+              aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+              aria-expanded={mobileOpen}
+              className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                {mobileOpen
+                  ? <path d="M6 18 18 6M6 6l12 12" />
+                  : <path d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+          </div>
 
         </div>
       </div>
 
       {/* ── Mobile dropdown menu ────────────────────────────────────── */}
-      {mobileOpen && !isHome && (
+      {mobileOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white">
           <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">
 
