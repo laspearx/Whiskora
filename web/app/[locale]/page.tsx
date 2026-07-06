@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
 
 type IconName =
@@ -19,22 +19,7 @@ type IconName =
   | "care"
   | "search";
 
-type HomeNavItem = {
-  label: string;
-  target: string;
-  type: "section" | "route";
-};
-
 const siteUrl = "https://whiskora.pet";
-
-const homeNavItems: HomeNavItem[] = [
-  { label: "Pet ID", target: "feature-showcase", type: "section" },
-  { label: "Health Records", target: "platform-pillars", type: "section" },
-  { label: "Farms", target: "farm-directory", type: "section" },
-  { label: "Services", target: "pet-lifecycle", type: "section" },
-  { label: "Knowledge", target: "knowledge-preview", type: "section" },
-  { label: "For Business", target: "user-groups", type: "section" },
-];
 
 const trustStatements = [
   {
@@ -559,54 +544,6 @@ function SectionHeader({
 
 export default function Home() {
   const router = useRouter();
-  const [isHomeNavMoreOpen, setIsHomeNavMoreOpen] = useState(false);
-  const [shouldCollapseHomeNav, setShouldCollapseHomeNav] = useState(true);
-  const homeNavRef = useRef<HTMLElement>(null);
-  const homeNavLogoRef = useRef<HTMLImageElement>(null);
-  const homeNavProbeRef = useRef<HTMLDivElement>(null);
-
-  const navigateHomeItem = (item: HomeNavItem) => {
-    setIsHomeNavMoreOpen(false);
-    if (item.type === "route") {
-      router.push(item.target);
-      return;
-    }
-    document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  useEffect(() => {
-    const calculateHomeNav = () => {
-      const nav = homeNavRef.current;
-      const logo = homeNavLogoRef.current;
-      const probe = homeNavProbeRef.current;
-      if (!nav || !logo || !probe) return;
-
-      const navWidth = nav.getBoundingClientRect().width;
-      const logoWidth = logo.getBoundingClientRect().width;
-      const contentWidth = probe.getBoundingClientRect().width;
-      const reservedGap = 22;
-      const shouldCollapse = logoWidth + contentWidth + reservedGap > navWidth;
-      setShouldCollapseHomeNav((current) => (current === shouldCollapse ? current : shouldCollapse));
-      if (!shouldCollapse) setIsHomeNavMoreOpen(false);
-    };
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (homeNavRef.current && !homeNavRef.current.contains(event.target as Node)) {
-        setIsHomeNavMoreOpen(false);
-      }
-    };
-
-    calculateHomeNav();
-    const observer = new ResizeObserver(calculateHomeNav);
-    if (homeNavRef.current) observer.observe(homeNavRef.current);
-    window.addEventListener("resize", calculateHomeNav);
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", calculateHomeNav);
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
 
   useEffect(() => {
     const revealItems = Array.from(document.querySelectorAll<HTMLElement>(".home-page [data-reveal]"));
@@ -734,179 +671,6 @@ export default function Home() {
           .lifecycle-step:nth-child(6) {
             transition-delay: .3s;
           }
-        }
-
-        .home-nav {
-          width: min(100% - 56px, 1360px);
-          min-height: 84px;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-          flex-wrap: nowrap;
-          position: relative;
-          z-index: 8;
-        }
-
-        .home-nav-logo {
-          width: 218px;
-          max-width: 218px;
-          height: auto;
-          display: block;
-          object-fit: contain;
-        }
-
-        .home-nav-content,
-        .home-nav-links,
-        .home-nav-actions {
-          display: flex;
-          align-items: center;
-          flex-wrap: nowrap;
-        }
-
-        .home-nav-content {
-          gap: 16px;
-          min-width: 0;
-        }
-
-        .home-nav-links {
-          gap: 4px;
-        }
-
-        .home-nav-actions {
-          gap: 10px;
-        }
-
-        .nav-section-btn,
-        .nav-link-btn,
-        .nav-primary-btn {
-          min-height: 40px;
-          border-radius: 999px;
-          border: 0;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
-        }
-
-        .nav-section-btn {
-          padding: 0 10px;
-          background: transparent;
-          color: #5f586b;
-          font-size: 13px;
-          font-weight: 500;
-        }
-
-        .nav-link-btn {
-          padding: 0 16px;
-          color: #51495f;
-          background: rgba(255,255,255,.78);
-          border: 1px solid rgba(239,62,123,.16);
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .nav-primary-btn {
-          padding: 0 20px;
-          color: #fff;
-          background: var(--pink);
-          box-shadow: 0 12px 28px rgba(239,62,123,.22);
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .nav-section-btn:hover,
-        .nav-link-btn:hover,
-        .nav-primary-btn:hover {
-          transform: translateY(-1px);
-        }
-
-        .nav-section-btn:hover,
-        .nav-link-btn:hover {
-          color: var(--pink);
-          background: #fff6fa;
-        }
-
-        .home-nav-more {
-          position: relative;
-          flex: 0 0 auto;
-        }
-
-        .home-nav-more-btn {
-          width: 42px;
-          height: 42px;
-          border-radius: 999px;
-          border: 1px solid rgba(239,62,123,.18);
-          background: rgba(255,255,255,.9);
-          color: var(--pink);
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-          box-shadow: 0 12px 26px rgba(239,62,123,.14);
-          transition: transform .18s ease, background .18s ease;
-        }
-
-        .home-nav-more-btn:hover {
-          transform: translateY(-1px);
-          background: #fff6fa;
-        }
-
-        .home-nav-dropdown {
-          position: absolute;
-          right: 0;
-          top: calc(100% + 10px);
-          width: min(280px, calc(100vw - 32px));
-          overflow: hidden;
-          border-radius: 18px;
-          border: 1px solid rgba(239,62,123,.16);
-          background: #fff;
-          box-shadow: 0 20px 46px rgba(59,35,70,.16);
-        }
-
-        .home-nav-dropdown button {
-          width: 100%;
-          min-height: 46px;
-          border: 0;
-          background: transparent;
-          color: #40354e;
-          display: flex;
-          align-items: center;
-          padding: 0 16px;
-          font-size: 14px;
-          font-weight: 600;
-          text-align: left;
-          cursor: pointer;
-        }
-
-        .home-nav-dropdown button:hover {
-          color: var(--pink);
-          background: #fff6fa;
-        }
-
-        .home-nav-dropdown .dropdown-primary {
-          color: var(--pink);
-        }
-
-        .home-nav-probe {
-          position: fixed;
-          left: 0;
-          top: 0;
-          z-index: -1;
-          visibility: hidden;
-          pointer-events: none;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          width: max-content;
-          white-space: nowrap;
-        }
-
-        .home-nav-probe .home-nav-links,
-        .home-nav-probe .home-nav-actions {
-          display: flex;
         }
 
         .section-inner,
@@ -1771,7 +1535,6 @@ export default function Home() {
         }
 
         @media (max-width: 1120px) {
-          .home-nav,
           .section-inner,
           .hero-inner,
           .trust-strip {
@@ -1865,29 +1628,6 @@ export default function Home() {
             .home-page [data-reveal].is-visible {
               transform: translate3d(0, 0, 0);
             }
-          }
-
-          .home-nav {
-            width: min(100% - 24px, 520px);
-            min-height: 64px;
-            padding-top: 4px;
-          }
-
-          .home-nav-logo {
-            width: 204px;
-            max-width: 204px;
-            height: auto;
-          }
-
-          .home-nav-content {
-            display: none;
-          }
-
-          .nav-primary-btn,
-          .nav-link-btn {
-            min-height: 38px;
-            padding: 0 14px;
-            font-size: 12px;
           }
 
           .hero-section {
@@ -2120,12 +1860,6 @@ export default function Home() {
         }
 
         @media (max-width: 420px) {
-          .home-nav-logo {
-            width: 192px;
-            max-width: 54vw;
-            height: auto;
-          }
-
           .hero-section {
             min-height: 770px;
           }
@@ -2159,81 +1893,6 @@ export default function Home() {
       />
 
       <main className="home-page">
-        <header ref={homeNavRef} className="home-nav" aria-label="Whiskora home navigation">
-          <Image
-            ref={homeNavLogoRef}
-            src="/logo.png"
-            alt="Whiskora"
-            width={392}
-            height={154}
-            priority
-            className="home-nav-logo"
-          />
-
-          {!shouldCollapseHomeNav && (
-            <div className="home-nav-content">
-              <nav className="home-nav-links" aria-label="Homepage sections">
-                {homeNavItems.map((item) => (
-                  <button className="nav-section-btn" key={item.label} onClick={() => navigateHomeItem(item)}>
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
-              <div className="home-nav-actions">
-                <button className="nav-link-btn" onClick={() => router.push("/login")}>
-                  เข้าสู่ระบบ
-                </button>
-                <button className="nav-primary-btn" onClick={() => router.push("/register")}>
-                  สร้าง Pet ID ฟรี
-                </button>
-              </div>
-            </div>
-          )}
-
-          {shouldCollapseHomeNav && (
-            <div className="home-nav-more">
-              <button
-                type="button"
-                className="home-nav-more-btn"
-                aria-label="ดูเมนูเพิ่มเติม"
-                aria-expanded={isHomeNavMoreOpen}
-                onClick={() => setIsHomeNavMoreOpen((open) => !open)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              {isHomeNavMoreOpen && (
-                <div className="home-nav-dropdown">
-                  {homeNavItems.map((item) => (
-                    <button key={item.label} onClick={() => navigateHomeItem(item)}>
-                      {item.label}
-                    </button>
-                  ))}
-                  <button onClick={() => router.push("/login")}>เข้าสู่ระบบ</button>
-                  <button className="dropdown-primary" onClick={() => router.push("/register")}>
-                    สร้าง Pet ID ฟรี
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div ref={homeNavProbeRef} aria-hidden="true" className="home-nav-probe">
-            <nav className="home-nav-links">
-              {homeNavItems.map((item) => (
-                <span className="nav-section-btn" key={item.label}>
-                  {item.label}
-                </span>
-              ))}
-            </nav>
-            <div className="home-nav-actions">
-              <span className="nav-link-btn">เข้าสู่ระบบ</span>
-              <span className="nav-primary-btn">สร้าง Pet ID ฟรี</span>
-            </div>
-          </div>
-        </header>
-
         <section className="hero-section" aria-label="Whiskora homepage hero">
           <div className="hero-inner">
             <div className="hero-copy-block">
