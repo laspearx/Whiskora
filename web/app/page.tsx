@@ -1,855 +1,940 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { motion, MotionConfig } from "framer-motion";
 
-// ─── CI Design tokens ────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const F = {
-  ink:      '#1f1a1c',
-  inkSoft:  '#4a3f44',
-  cream:    '#fffafc',
-  paper:    '#fdf0f3',
-  line:     '#f3dde3',
-  muted:    '#8e7e84',
-  pink:     '#e84677',
-  pinkSoft: '#fde2ea',
-  pinkDeep: '#c4325f',
-  sky:      '#5b8dc7',
-  leaf:     '#5a9065',
-  sun:      '#e8a63a',
-  purple:   '#7c5cbf',
+  ink:        '#1f1a1c',
+  inkSoft:    '#4a3f44',
+  muted:      '#8e7e84',
+  pink:       '#e84677',
+  pinkSoft:   '#fde2ea',
+  pinkDeep:   '#c4325f',
+  pinkBorder: '#fbcfe8',
+  teal:       '#0d9488',
+  tealSoft:   '#f0fdfa',
+  tealBorder: '#99f6e4',
+  sky:        '#5b8dc7',
+  skySoft:    '#eff6ff',
+  skyBorder:  '#bfdbfe',
+  leaf:       '#5a9065',
+  leafSoft:   '#dcfce7',
+  sun:        '#e8a63a',
+  sunSoft:    '#fef9c3',
+  purple:     '#7c5cbf',
+  purpleSoft: '#ede9fe',
+  line:       '#f3dde3',
+  lineMid:    '#e5e7eb',
+  paper:      '#fdf0f3',
+  cream:      '#fffafc',
+  bg:         '#fdf6f8',
 };
 
-// ─── SVG Icons ───────────────────────────────────────────────────────────────
-const Icon = {
-  Search: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-  ),
-  Farm: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  ),
-  Shop: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <path d="M16 10a4 4 0 0 1-8 0"/>
-    </svg>
-  ),
-  Clinic: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-    </svg>
-  ),
-  IdCard: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2"/>
-      <circle cx="8" cy="12" r="2"/>
-      <path d="M14 10h4"/><path d="M14 14h4"/>
-    </svg>
-  ),
-  Book: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-    </svg>
-  ),
-  Tool: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-    </svg>
-  ),
-  Community: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  Partner: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  ArrowRight: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-  ),
+// ─── Animation variants ───────────────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 22 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.52, ease: [0.2, 0.8, 0.2, 1] } },
 };
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const vp = { once: true, margin: "-64px" as const };
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+const IdCardIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="5" width="20" height="14" rx="2"/>
+    <circle cx="8" cy="12" r="2"/>
+    <path d="M14 10h4"/><path d="M14 14h4"/>
+  </svg>
+);
+const HeartPulseIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </svg>
+);
+const QrIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/>
+    <path d="M14 14h3v3h-3z"/><path d="M17 17h3v3h-3z"/><path d="M14 20h3"/>
+  </svg>
+);
+const ShieldIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <polyline points="9 12 11 14 15 10"/>
+  </svg>
+);
+const TreeIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+const ShareIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+);
+const ArrowRightIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+  </svg>
+);
+const CheckIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const ClipboardIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-4"/>
+    <rect x="9" y="2" width="6" height="4" rx="1"/>
+    <path d="M9 12h6"/><path d="M9 16h4"/>
+  </svg>
+);
+const PawIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/>
+    <circle cx="4" cy="8" r="2"/><circle cx="5" cy="14" r="2"/>
+    <path d="M9.37 13.5C8.16 12.3 7 11.1 7 9.5c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.6-1.2 2.8-2.4 4.1L11 17"/>
+    <path d="M9 17c0 1.7 0.9 3 2 3s2-1.3 2-3"/>
+  </svg>
+);
+const FarmIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+const StethoscopeIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+    <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+    <circle cx="20" cy="10" r="2"/>
+  </svg>
+);
+const ShopIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <path d="M16 10a4 4 0 0 1-8 0"/>
+  </svg>
+);
+const LockIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+// ─── FAQ data ─────────────────────────────────────────────────────────────────
+const faqs = [
+  {
+    q: "Whiskora คืออะไร?",
+    a: "Whiskora คือแพลตฟอร์ม pet-tech สำหรับสร้าง Pet ID ดิจิทัล บันทึกประวัติสุขภาพและวัคซีน จัดการสายพันธุ์ และแชร์โปรไฟล์สัตว์เลี้ยงผ่าน QR Code ได้อย่างปลอดภัย พร้อมระบบฟาร์มและบรีดเดอร์ที่ตรวจสอบได้",
+  },
+  {
+    q: "Pet ID Card คืออะไร ใช้ทำอะไรได้บ้าง?",
+    a: "Pet ID Card คือบัตรประจำตัวดิจิทัลสำหรับสัตว์เลี้ยงของคุณ ประกอบด้วยชื่อ สายพันธุ์ รูปภาพ และ QR Code ที่ชี้ไปยังโปรไฟล์สาธารณะของน้อง สามารถแชร์บนโซเชียลหรือแสดงให้คลินิก กรูมมิ่ง หรือผู้ดูแลสแกนดูข้อมูลได้ทันที",
+  },
+  {
+    q: "ใช้ Whiskora ฟรีหรือเปล่า?",
+    a: "ฟีเจอร์หลักทั้งหมดฟรีตลอดชีพ — สร้าง Pet ID ดูแลสุขภาพ บันทึกวัคซีน และแชร์โปรไฟล์ QR ไม่ต้องบัตรเครดิต ไม่มีค่าสมัครสมาชิกรายเดือน",
+  },
+  {
+    q: "บรีดเดอร์และฟาร์มสัตว์เลี้ยงใช้ Whiskora ได้อย่างไร?",
+    a: "บรีดเดอร์สามารถสร้างโปรไฟล์ฟาร์มที่ตรวจสอบได้ บันทึกประวัติสุขภาพและวัคซีนของสัตว์ในฟาร์ม สร้างผังสายเลือด (Pedigree) และโอนกรรมสิทธิ์ให้ผู้ซื้อผ่านระบบดิจิทัล ทำให้ผู้ซื้อมั่นใจในความโปร่งใสของข้อมูลก่อนตัดสินใจ",
+  },
+  {
+    q: "ข้อมูลสัตว์เลี้ยงของฉันปลอดภัยแค่ไหน?",
+    a: "คุณควบคุมการมองเห็นข้อมูลได้เต็มที่ — ตั้งได้ 3 ระดับ: สาธารณะ (เห็นได้ทุกคนผ่าน QR), ลิงก์เฉพาะ (เห็นได้เฉพาะผู้ที่มีลิงก์), และส่วนตัว ข้อมูลอ่อนไหวเช่น microchip, ที่อยู่, และหมายเหตุสุขภาพจะไม่ถูกเปิดเผยสาธารณะ",
+  },
+  {
+    q: "Whiskora รองรับสัตว์เลี้ยงประเภทอะไรบ้าง?",
+    a: "รองรับ 14 ประเภท ได้แก่ แมว สุนัข กระต่าย หนูแฮมสเตอร์ นก เต่า งู กิ้งก่า ปลา กระรอก เม่น ชูการ์ไกลเดอร์ แมวน้ำ และสัตว์อื่นๆ",
+  },
+];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const router = useRouter();
-
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <style>{`
-        @keyframes float-anim { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes float-soft { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,-6px,0)} }
-        @keyframes hp-fade-up { from{opacity:0; transform:translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)} }
-        @keyframes hp-pop-in { 0%{opacity:0; transform:translateY(14px) scale(.94)} 70%{opacity:1; transform:translateY(-2px) scale(1.015)} 100%{opacity:1; transform:translateY(0) scale(1)} }
-        @keyframes hp-gradient-pan { 0%{background-position:0% 50%} 100%{background-position:100% 50%} }
-        @keyframes hp-glow-breathe { 0%,100%{box-shadow:0 24px 48px rgba(232,70,119,.18)} 50%{box-shadow:0 30px 62px rgba(232,70,119,.28)} }
-        @keyframes hp-blob-drift-a { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-18px,16px,0) scale(1.06)} }
-        @keyframes hp-blob-drift-b { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(20px,-14px,0) scale(.96)} }
-
-        .float-anim { animation: float-anim 6s ease-in-out infinite; }
-        .hp-hero-inner {
-          background-size: 180% 180% !important;
-          animation: hp-fade-up .7s cubic-bezier(.2,.8,.2,1) both, hp-gradient-pan 14s ease-in-out infinite alternate, hp-glow-breathe 6s ease-in-out infinite;
+        /* ── FAQ accordion ────────────────────────────────── */
+        .hp-faq-item summary {
+          list-style: none; cursor: pointer; user-select: none;
+          display: flex; justify-content: space-between; align-items: center;
+          gap: 16px; padding: 22px 0;
         }
-        .hp-hero-inner > div:nth-child(1) { animation: hp-blob-drift-a 12s ease-in-out infinite; }
-        .hp-hero-inner > div:nth-child(2) { animation: hp-blob-drift-b 14s ease-in-out infinite; }
-        .hp-hero-text > * { animation: hp-fade-up .65s cubic-bezier(.2,.8,.2,1) both; }
-        .hp-hero-text > *:nth-child(1) { animation-delay: .12s; }
-        .hp-hero-text > *:nth-child(2) { animation-delay: .2s; }
-        .hp-hero-text > *:nth-child(3) { animation-delay: .28s; }
-        .hp-hero-text > *:nth-child(4) { animation-delay: .36s; }
-        .hp-hero-mockup > div > div { animation: hp-pop-in .6s cubic-bezier(.2,.8,.2,1) both; }
-        .hp-hero-mockup > div > div:nth-child(1) { animation-delay: .24s; }
-        .hp-hero-mockup > div > div:nth-child(2) { animation-delay: .38s; }
-        .hp-hero-mockup > div > div:nth-child(3) { animation-delay: .52s; }
+        .hp-faq-item summary::-webkit-details-marker { display: none; }
+        .hp-faq-chevron { transition: transform .25s ease; flex-shrink: 0; }
+        .hp-faq-item[open] .hp-faq-chevron { transform: rotate(180deg); }
+        .hp-faq-body { padding: 0 0 22px; }
+        .hp-faq-item { border-bottom: 1px solid ${F.line}; }
+        .hp-faq-item:first-child { border-top: 1px solid ${F.line}; }
 
-        .hp-card { transition: transform .2s, box-shadow .2s; }
-        .hp-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(31,26,28,.08); }
-
-        .hp-btn-pink { transition: background .15s, transform .15s, box-shadow .15s; }
-        .hp-btn-pink:hover { background: #c4325f !important; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(232,70,119,.35) !important; }
-
-        .hp-btn-outline { transition: all .15s; }
-        .hp-btn-outline:hover { background: #fde2ea !important; color: #c4325f !important; }
-
-        .hp-btn-dark { transition: all .15s; }
-        .hp-btn-dark:hover { background: #2e2228 !important; transform: translateY(-1px); }
-
-        .hp-quick-tile { transition: all .2s; }
-        .hp-quick-tile:hover { border-color: #e84677 !important; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(31,26,28,.06); }
-
-        .hp-farm-card { transition: transform .2s, box-shadow .2s; cursor: pointer; }
-        .hp-farm-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(31,26,28,.08); }
-
-        .hp-fav:hover { color: #e84677 !important; }
-        .hp-see-all:hover { color: #c4325f !important; }
-
-        .hp-search-wrap:focus-within { border-color: #e84677 !important; box-shadow: 0 2px 16px rgba(232,70,119,.15) !important; }
-        .hp-search-wrap input { border:none; outline:none; background:transparent; width:100%; font-size:15px; color:#1f1a1c; padding:12px 0; }
-        .hp-search-wrap input::placeholder { color:#8e7e84; }
-
-        .hp-section { padding: 48px 0 0; }
-        .hp-motion-in { animation: hp-fade-up .72s cubic-bezier(.2,.8,.2,1) both; }
-        .hp-quick-tile, .hp-card, .hp-farm-card { animation: hp-pop-in .55s cubic-bezier(.2,.8,.2,1) backwards; }
-        .hp-quick-tile:nth-child(2), .hp-card:nth-child(2), .hp-farm-card:nth-child(2) { animation-delay: .06s; }
-        .hp-quick-tile:nth-child(3), .hp-card:nth-child(3), .hp-farm-card:nth-child(3) { animation-delay: .12s; }
-        .hp-quick-tile:nth-child(4), .hp-card:nth-child(4), .hp-farm-card:nth-child(4) { animation-delay: .18s; }
-        .hp-quick-tile:nth-child(5), .hp-card:nth-child(5), .hp-farm-card:nth-child(5) { animation-delay: .24s; }
-        .hp-quick-tile:nth-child(6), .hp-card:nth-child(6), .hp-farm-card:nth-child(6) { animation-delay: .3s; }
-        .hp-feature-band { animation: hp-fade-up .7s cubic-bezier(.2,.8,.2,1) both; }
-        .hp-feature-band-img { animation: float-soft 5.5s ease-in-out infinite; }
-
-        @supports (animation-timeline: view()) {
-          .hp-section {
-            animation: hp-fade-up linear both;
-            animation-timeline: view();
-            animation-range: entry 0% cover 24%;
-          }
+        /* ── Lifecycle connector line ─────────────────────── */
+        .hp-lifecycle-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 0;
+          position: relative;
+        }
+        .hp-lifecycle-grid::before {
+          content: '';
+          position: absolute;
+          top: 28px;
+          left: calc(10% + 20px);
+          right: calc(10% + 20px);
+          height: 2px;
+          background: ${F.pinkBorder};
+          z-index: 0;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .float-anim, .hp-hero-inner, .hp-hero-inner > div, .hp-hero-text > *, .hp-hero-mockup > div > div,
-          .hp-motion-in, .hp-quick-tile, .hp-card, .hp-farm-card, .hp-feature-band, .hp-feature-band-img, .hp-section {
-            animation: none !important;
-            transition: none !important;
-          }
+        /* ── Buttons ──────────────────────────────────────── */
+        .hp-btn-pink {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: ${F.pink}; color: #fff;
+          padding: 13px 26px; border-radius: 14px;
+          font-weight: 700; font-size: 15px; border: none; cursor: pointer;
+          text-decoration: none; font-family: inherit;
+          box-shadow: 0 4px 16px rgba(232,70,119,.25);
+          transition: background .15s, transform .15s, box-shadow .15s;
+        }
+        .hp-btn-pink:hover {
+          background: ${F.pinkDeep}; transform: translateY(-1px);
+          box-shadow: 0 8px 24px rgba(232,70,119,.35);
+        }
+        .hp-btn-outline {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: #fff; color: ${F.inkSoft};
+          padding: 13px 26px; border-radius: 14px;
+          font-weight: 600; font-size: 15px; border: 1.5px solid ${F.lineMid};
+          cursor: pointer; text-decoration: none; font-family: inherit;
+          transition: border-color .15s, background .15s, color .15s;
+        }
+        .hp-btn-outline:hover {
+          border-color: ${F.pink}; color: ${F.pink}; background: ${F.pinkSoft};
+        }
+        .hp-btn-ghost {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: transparent; color: ${F.pink};
+          padding: 0; border: none; cursor: pointer;
+          font-weight: 700; font-size: 14px; font-family: inherit;
+          text-decoration: none; transition: gap .15s;
+        }
+        .hp-btn-ghost:hover { gap: 10px; }
+
+        /* ── Feature card hover ───────────────────────────── */
+        .hp-feature-card {
+          transition: transform .22s, box-shadow .22s;
+        }
+        .hp-feature-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 16px 36px rgba(31,26,28,.08) !important;
         }
 
+        /* ── Responsive ───────────────────────────────────── */
         @media (max-width: 900px) {
-          .hp-hero-inner { flex-direction: column !important; text-align: center; }
-          .hp-hero-text p { margin-left:auto !important; margin-right:auto !important; }
-          .hp-hero-btns { justify-content: center !important; }
-          .hp-hero-mockup { display: none; }
-          .hp-two-col { grid-template-columns: 1fr !important; }
-          .hp-three-col { grid-template-columns: repeat(2,1fr) !important; }
-          .hp-feature-band { grid-template-columns: 1fr !important; text-align: center; }
-          .hp-feature-band-img { display:none; }
-          .hp-feature-band-btns { justify-content: center !important; }
-          .hp-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .hp-hero-split { flex-direction: column-reverse !important; }
+          .hp-hero-image { max-width: 100% !important; margin: 0 auto !important; }
+          .hp-lifecycle-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .hp-lifecycle-grid::before { display: none; }
+          .hp-lifecycle-step { flex-direction: row !important; text-align: left !important; }
+          .hp-lifecycle-step-dot { margin: 0 !important; }
+          .hp-grid-2 { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 600px) {
-          .hp-three-col { grid-template-columns: 1fr !important; }
-          .hp-quick-grid { grid-template-columns: repeat(3,1fr) !important; }
-          .hp-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
-          .hp-mobile-trim { display: none !important; }
-          .hp-mobile-compact { display: block !important; }
-          .hp-section { padding-top: 28px; }
-          .hp-feature-band { padding: 24px 20px !important; border-radius: 20px !important; }
-          .hp-quick-tile { padding: 14px 8px !important; border-radius: 16px !important; gap: 8px !important; }
-          .hp-quick-tile div { width: 38px !important; height: 38px !important; border-radius: 12px !important; }
-          .hp-quick-tile span { font-size: 12px !important; }
+          .hp-grid-3 { grid-template-columns: 1fr !important; }
+          .hp-grid-2 { grid-template-columns: 1fr !important; }
+          .hp-hero-btns { flex-direction: column !important; align-items: stretch !important; }
+          .hp-hero-btns a, .hp-hero-btns button { width: 100%; justify-content: center; }
+          .hp-feature-split { flex-direction: column !important; }
+          .hp-feature-split-img { display: none; }
         }
       `}</style>
 
-      <div className="hp-home-content" style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
+      {/* ── JSON-LD FAQPage ──────────────────────────────────────────── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqs.map(f => ({
+              "@type": "Question",
+              "name": f.q,
+              "acceptedAnswer": { "@type": "Answer", "text": f.a },
+            })),
+          }),
+        }}
+      />
 
-        {/* ══════════════════════════════════════════════════════ HERO */}
-        <section style={{ padding: '36px 0 0' }}>
+      <div style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
+
+        {/* ══════════════════════════════════════════════════ 1. HERO */}
+        <section style={{ paddingTop: 40 }}>
           <div
-            className="hp-hero-inner"
-            style={{
-              background: `linear-gradient(135deg, ${F.pink} 0%, #f06d98 55%, #f8a5c2 100%)`,
-              borderRadius: 28, padding: '52px 48px', color: '#fff', position: 'relative',
-              overflow: 'hidden', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', gap: 32, minHeight: 340,
-              boxShadow: '0 24px 48px rgba(232,70,119,.18)',
-            }}
+            className="hp-hero-split"
+            style={{ display: 'flex', gap: 40, alignItems: 'center', justifyContent: 'space-between' }}
           >
-            {/* blobs */}
-            <div style={{ position:'absolute', top:-100, right:-60, width:360, height:360, background:'radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-80, left:-40, width:240, height:240, background:'radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%)', pointerEvents:'none' }} />
-
             {/* Text */}
-            <div className="hp-hero-text" style={{ position:'relative', zIndex:2, flex:1, maxWidth:580 }}>
-              <span style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(255,255,255,0.3)', display:'inline-block', marginBottom:20 }}>
-                🐾 WHISKORA PLATFORM
-              </span>
-              <h1 style={{ fontSize:42, fontWeight:900, lineHeight:1.1, letterSpacing:-1.5, margin:'0 0 16px', color:'#fff' }}>
-                ศูนย์กลางทุกชีวิต<br />
-                <span style={{ color:'#fde2ea' }}>สัตว์เลี้ยง ในที่เดียว</span>
-              </h1>
-              <p style={{ fontSize:15, lineHeight:1.6, opacity:.92, margin:'0 0 28px', maxWidth:420 }}>
-                ค้นหาฟาร์มคุณภาพ จองคลินิก ช้อปเพ็ทช็อป และดูแลน้องๆ ครบจบที่เดียว — ฟรีตลอดชีพ
-              </p>
-              <div className="hp-hero-btns" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-                <button
-                  className="hp-btn-dark"
-                  style={{ background:'#fff', color:F.pink, padding:'14px 26px', borderRadius:16, fontWeight:800, fontSize:15, border:'none', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, boxShadow:'0 8px 24px rgba(0,0,0,.12)' }}
-                  onClick={() => router.push('/farm-hub')}
-                >
-                  ค้นหาฟาร์ม <Icon.ArrowRight />
-                </button>
-                <button
-                  className="hp-btn-outline"
-                  style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', color:'#fff', padding:'14px 26px', borderRadius:16, fontWeight:700, fontSize:15, border:'1px solid rgba(255,255,255,0.35)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8 }}
-                  onClick={() => router.push('/about')}
-                >
-                  รู้จัก Whiskora
-                </button>
-              </div>
-            </div>
-
-            {/* Floating badge stack */}
-            <div className="hp-hero-mockup float-anim" style={{ position:'relative', zIndex:2, flexShrink:0 }}>
-              <div style={{ display:'flex', flexDirection:'column', gap:12, width:200 }}>
-                {[
-                  { icon:'🏡', label:'ฟาร์มคุณภาพ',     sub:'1,200+ แห่ง', color:'#fff' },
-                  { icon:'🛒', label:'ตลาดสัตว์เลี้ยง', sub:'5,000+ รายการ', color:'#fff' },
-                  { icon:'🩺', label:'คลินิก & บริการ',  sub:'จองได้ทันที', color:'#fff' },
-                ].map(b => (
-                  <div key={b.label} style={{ background:'rgba(255,255,255,0.18)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:16, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                    <span style={{ fontSize:24 }}>{b.icon}</span>
-                    <div>
-                      <div style={{ fontWeight:700, fontSize:13, color:'#fff' }}>{b.label}</div>
-                      <div style={{ fontSize:11, opacity:.8, color:'#fff' }}>{b.sub}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ SEARCH */}
-        <section style={{ padding:'20px 0 0' }}>
-          <div
-            className="hp-search-wrap"
-            style={{ display:'flex', alignItems:'center', gap:10, background:'#fff', border:`1px solid ${F.line}`, borderRadius:999, padding:'6px 6px 6px 20px', boxShadow:'0 2px 12px rgba(31,26,28,.04)', transition:'border-color .2s, box-shadow .2s' }}
-          >
-            <span style={{ color:F.muted, display:'flex', flexShrink:0 }}><Icon.Search /></span>
-            <input
-              type="text"
-              placeholder="ค้นหาฟาร์ม สายพันธุ์ หรือบริการ..."
-              onKeyDown={(e) => { if (e.key === 'Enter' && e.currentTarget.value.trim()) router.push(`/search?q=${encodeURIComponent(e.currentTarget.value)}`); }}
-            />
-            <button
-              className="hp-btn-pink"
-              style={{ background:F.pink, color:'#fff', padding:'10px 20px', borderRadius:999, fontWeight:600, fontSize:14, border:'none', cursor:'pointer', flexShrink:0, boxShadow:'0 4px 14px rgba(232,70,119,.25)' }}
-              onClick={(e) => {
-                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
-                if (input?.value.trim()) router.push(`/search?q=${encodeURIComponent(input.value)}`);
-              }}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              style={{ flex: '1 1 0', minWidth: 0 }}
             >
-              ค้นหา
-            </button>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ QUICK ACCESS */}
-        <section style={{ padding:'28px 0 0' }}>
-          <div
-            className="hp-quick-grid"
-            style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:12 }}
-          >
-            {[
-              { href:'/farm-hub',      icon:<Icon.Farm />,      bg:F.pinkSoft, color:F.pink,   label:'ฟาร์ม' },
-              { href:'/marketplace',   icon:<Icon.Shop />,      bg:'#dbeafe',  color:F.sky,    label:'ตลาดสัตว์' },
-              { href:'/service-hub',   icon:<Icon.Clinic />,    bg:'#dcfce7',  color:F.leaf,   label:'บริการ' },
-              { href:'/community',     icon:<Icon.Community />, bg:'#fef9c3',  color:F.sun,    label:'คอมมูนิตี้' },
-              { href:'/pet-knowledge', icon:<Icon.Book />,      bg:'#ede9fe',  color:F.purple, label:'ความรู้' },
-              { href:'/pet-tools',     icon:<Icon.Tool />,      bg:'#dcfce7',  color:F.leaf,   label:'Tools' },
-            ].map(t => (
-              <Link
-                key={t.href}
-                href={t.href}
-                className="hp-quick-tile"
-                style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:18, padding:'18px 10px', textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:10, textDecoration:'none' }}
-              >
-                <div style={{ width:44, height:44, borderRadius:14, background:t.bg, display:'grid', placeItems:'center', color:t.color }}>
-                  {t.icon}
-                </div>
-                <span style={{ fontSize:13, fontWeight:600, color:F.ink }}>{t.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="hp-mobile-compact" style={{ display:'none', padding:'28px 0 0' }}>
-          <div style={{ display:'grid', gap:12 }}>
-            {[
-              { title:'หาเพื่อนใหม่จากฟาร์ม', desc:'ดูสัตว์พร้อมย้ายและฟาร์มที่ตรวจสอบแล้ว', href:'/farm-hub', color:F.pink, icon:<Icon.Farm /> },
-              { title:'สร้าง Pet ID ฟรี', desc:'เก็บ QR Profile และประวัติน้องไว้ในที่เดียว', href:'/pet-id-card', color:F.sky, icon:<Icon.IdCard /> },
-              { title:'บริการใกล้ตัว', desc:'คลินิก กรูมมิ่ง ฝากเลี้ยง และบริการสัตว์เลี้ยง', href:'/service-hub', color:F.leaf, icon:<Icon.Clinic /> },
-            ].map(item => (
-              <button
-                key={item.href}
-                className="hp-card"
-                style={{ width:'100%', background:'#fff', border:`1px solid ${F.line}`, borderRadius:18, padding:'16px 18px', display:'grid', gridTemplateColumns:'42px 1fr auto', gap:14, alignItems:'center', textAlign:'left', cursor:'pointer' }}
-                onClick={() => router.push(item.href)}
-              >
-                <span style={{ width:42, height:42, borderRadius:14, background:F.pinkSoft, display:'grid', placeItems:'center', color:item.color }}>
-                  {item.icon}
+              <motion.div variants={fadeUp}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: F.pinkSoft, color: F.pinkDeep,
+                  fontSize: 11, fontWeight: 700, letterSpacing: 1.4,
+                  padding: '5px 14px', borderRadius: 999,
+                  border: `1px solid ${F.pinkBorder}`, marginBottom: 20,
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: F.pink, display: 'inline-block' }} />
+                  PET IDENTITY PLATFORM
                 </span>
-                <span>
-                  <span style={{ display:'block', fontSize:14, fontWeight:800, color:F.ink }}>{item.title}</span>
-                  <span style={{ display:'block', fontSize:12, lineHeight:1.45, color:F.muted, marginTop:3 }}>{item.desc}</span>
-                </span>
-                <span style={{ color:item.color, display:'flex' }}><Icon.ArrowRight /></span>
-              </button>
-            ))}
-          </div>
-          <div style={{ marginTop:14, display:'flex', gap:10 }}>
-            <button
-              className="hp-btn-outline"
-              style={{ flex:1, background:'#fff', color:F.inkSoft, padding:'12px 14px', borderRadius:14, fontWeight:700, fontSize:13, border:`1px solid ${F.line}`, cursor:'pointer' }}
-              onClick={() => router.push('/about')}
-            >
-              อ่านเกี่ยวกับเรา
-            </button>
-            <button
-              className="hp-btn-pink"
-              style={{ flex:1, background:F.pink, color:'#fff', padding:'12px 14px', borderRadius:14, fontWeight:800, fontSize:13, border:'none', cursor:'pointer' }}
-              onClick={() => router.push('/partner')}
-            >
-              สำหรับพาร์ทเนอร์
-            </button>
-          </div>
-        </section>
+              </motion.div>
 
-        {/* ══════════════════════════════════════════════════════ STATS */}
-        <section className="hp-section hp-mobile-trim">
-          <div
-            className="hp-stats-grid"
-            style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}
-          >
-            {[
-              { num:'1,200+', label:'ฟาร์มคุณภาพ', emoji:'🏡' },
-              { num:'5,000+', label:'สัตว์เลี้ยงที่ลงทะเบียน', emoji:'🐾' },
-              { num:'10+',    label:'ประเภทสัตว์',  emoji:'🦜' },
-              { num:'100%',   label:'ฟรีสำหรับผู้เลี้ยง', emoji:'🎉' },
-            ].map(s => (
-              <div key={s.label} style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, padding:'24px 20px', textAlign:'center' }}>
-                <div style={{ fontSize:28 }}>{s.emoji}</div>
-                <div style={{ fontSize:28, fontWeight:900, color:F.pink, letterSpacing:-1, marginTop:8 }}>{s.num}</div>
-                <div style={{ fontSize:12, color:F.muted, marginTop:4 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+              <motion.h1
+                variants={fadeUp}
+                style={{ fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-1.5px', margin: '0 0 18px' }}
+              >
+                เก็บทุกช่วงชีวิต<br />
+                <span style={{ color: F.pink }}>ของน้องไว้ในที่เดียว</span>
+              </motion.h1>
 
-        {/* ══════════════════════════════════════════════════════ FARM SECTION */}
-        <section className="hp-section hp-mobile-trim">
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, gap:16, flexWrap:'wrap' }}>
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.pink, marginBottom:6 }}>FARM HUB</div>
-              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5, margin:'0 0 8px' }}>ฟาร์มสัตว์เลี้ยงมาตรฐาน</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:0, maxWidth:520, lineHeight:1.6 }}>
-                Whiskora คัดเลือกเฉพาะฟาร์มที่ผ่านการตรวจสอบ — ไม่ใช่แค่ลงประกาศ แต่ต้องเป็นฟาร์มที่ดูแลสัตว์อย่างมีมาตรฐาน
-              </p>
-            </div>
-            <button
-              className="hp-btn-pink"
-              style={{ background:F.pink, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.25)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }}
-              onClick={() => router.push('/farm-hub')}
-            >
-              ค้นหาฟาร์มทั้งหมด <Icon.ArrowRight />
-            </button>
-          </div>
+              <motion.p
+                variants={fadeUp}
+                style={{ fontSize: 16, lineHeight: 1.75, color: F.inkSoft, margin: '0 0 28px', maxWidth: 500 }}
+              >
+                Whiskora ช่วยให้คุณสร้าง Pet ID ดิจิทัล บันทึกประวัติสุขภาพ และแชร์โปรไฟล์ QR ได้ทุกที่ — พร้อมระบบฟาร์มและบรีดเดอร์ที่ตรวจสอบได้
+              </motion.p>
 
-          {/* Standard criteria cards */}
-          <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {[
-              {
-                emoji: '📋',
-                title: 'ยืนยันตัวตนและสถานที่',
-                desc: 'ฟาร์มทุกแห่งต้องยืนยันเอกสารและที่อยู่จริง ไม่รับฟาร์มนาม นามแฝง หรือขายแบบไม่มีหลักแหล่ง',
-                tags: ['บัตรประจำตัว', 'พิกัดจริง'],
-                color: F.pink,
-                bg: F.pinkSoft,
-              },
-              {
-                emoji: '💉',
-                title: 'ประวัติสุขภาพและวัคซีน',
-                desc: 'ฟาร์มต้องบันทึกประวัติสุขภาพ วัคซีน และการตรวจโรคของสัตว์แต่ละตัวผ่านระบบ Whiskora',
-                tags: ['วัคซีนครบ', 'ตรวจโรค'],
-                color: F.leaf,
-                bg: '#dcfce7',
-              },
-              {
-                emoji: '🧬',
-                title: 'ข้อมูลสายพันธุ์โปร่งใส',
-                desc: 'ผังสายเลือดสืบค้นได้ถึงรุ่นปู่ย่าตายาย รับรองโดย CFA / TICA หรือสมาคมผู้เพาะพันธุ์ที่ได้รับการรับรอง',
-                tags: ['CFA / TICA', 'Pedigree'],
-                color: F.sky,
-                bg: '#dbeafe',
-              },
-              {
-                emoji: '🏠',
-                title: 'สภาพแวดล้อมที่เหมาะสม',
-                desc: 'พื้นที่เลี้ยงต้องสะอาด อากาศถ่ายเท ไม่แออัด และสัตว์ต้องได้รับการสังสรรค์ตามธรรมชาติของสายพันธุ์',
-                tags: ['พื้นที่เหมาะสม', 'ดูแลดี'],
-                color: F.sun,
-                bg: '#fef9c3',
-              },
-              {
-                emoji: '📞',
-                title: 'ติดตามหลังการซื้อ',
-                desc: 'ฟาร์มที่มีคะแนนสูงต้องมีนโยบายรับผิดชอบหลังการซื้อ มีช่องทางติดต่อที่ชัดเจน และตอบกลับรีวิวจากผู้ซื้อ',
-                tags: ['ติดตามผล', 'รีวิวจริง'],
-                color: F.purple,
-                bg: '#ede9fe',
-              },
-              {
-                emoji: '⭐',
-                title: 'คะแนนจากผู้ใช้จริง',
-                desc: 'เรตติ้งคำนวณจากรีวิวผู้ซื้อจริงเท่านั้น ไม่มีการซื้อรีวิว ฟาร์มที่คะแนนต่ำกว่าเกณฑ์จะถูกระงับชั่วคราว',
-                tags: ['รีวิวจากผู้ซื้อ', 'โปร่งใส'],
-                color: F.sun,
-                bg: '#fef9c3',
-              },
-            ].map(item => (
-              <div key={item.title} className="hp-card" style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:20, padding:24 }}>
-                <div style={{ width:44, height:44, borderRadius:14, background:item.bg, display:'grid', placeItems:'center', fontSize:22, marginBottom:14 }}>
-                  {item.emoji}
-                </div>
-                <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 8px', color:F.ink }}>{item.title}</h3>
-                <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 12px' }}>{item.desc}</p>
-                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                  {item.tags.map(t => (
-                    <span key={t} style={{ padding:'3px 10px', borderRadius:999, fontSize:11, fontWeight:600, background:item.bg, color:item.color }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              <motion.div
+                variants={fadeUp}
+                className="hp-hero-btns"
+                style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}
+              >
+                <Link href="/register" className="hp-btn-pink">
+                  สร้าง Pet ID ฟรี <ArrowRightIcon />
+                </Link>
+                <Link href="/partner" className="hp-btn-outline">
+                  สำหรับฟาร์มและบรีดเดอร์
+                </Link>
+              </motion.div>
 
-        {/* ══════════════════════════════════════════════════════ MARKETPLACE BAND */}
-        <section className="hp-section hp-mobile-trim">
-          <div
-            className="hp-feature-band"
-            style={{ background:`linear-gradient(135deg,#dbeafe 0%,#eff6ff 100%)`, border:'1px solid #bfdbfe', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
-          >
-            <div style={{ position:'absolute', right:-60, top:-60, width:200, height:200, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.sky, marginBottom:8 }}>MARKETPLACE</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>ตลาดสัตว์เลี้ยงออนไลน์</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>
-                ซื้อขายสัตว์เลี้ยงจากผู้ขายที่ผ่านการตรวจสอบ มีระบบรับประกัน พร้อมเอกสารสายพันธุ์ครบถ้วน
-              </p>
-              <div className="hp-feature-band-btns" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                <button
-                  className="hp-btn-pink"
-                  style={{ background:F.sky, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(91,141,199,.3)', display:'inline-flex', alignItems:'center', gap:8 }}
-                  onClick={() => router.push('/marketplace')}
-                >
-                  เข้าสู่ตลาด <Icon.ArrowRight />
-                </button>
-                <button
-                  className="hp-btn-outline"
-                  style={{ background:'#fff', color:F.sky, padding:'12px 22px', borderRadius:14, fontWeight:600, fontSize:14, border:'1px solid #bfdbfe', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8 }}
-                  onClick={() => router.push('/farm-hub')}
-                >
-                  ค้นหาฟาร์ม
-                </button>
-              </div>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🛒</div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ SERVICES BAND */}
-        <section className="hp-section hp-mobile-trim">
-          <div
-            className="hp-feature-band"
-            style={{ background:`linear-gradient(135deg,#dcfce7 0%,#f0fdf4 100%)`, border:'1px solid #bbf7d0', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
-          >
-            <div style={{ position:'absolute', right:-60, top:-60, width:200, height:200, background:'radial-gradient(circle,rgba(90,144,101,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.leaf, marginBottom:8 }}>SERVICE HUB</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>คลินิก & บริการสัตว์เลี้ยง</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>
-                จองนัดคลินิก ฝากเลี้ยง กรูมมิ่ง ฝึก และอื่นๆ อีกมากมาย รีวิวจริงจากผู้ใช้จริง
-              </p>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
-                {['คลินิกสัตว์','กรูมมิ่ง','ฝากเลี้ยง','ฝึกสัตว์'].map(s => (
-                  <span key={s} style={{ padding:'5px 12px', background:'rgba(90,144,101,.1)', borderRadius:999, fontSize:12, fontWeight:600, color:F.leaf, display:'inline-flex', alignItems:'center', gap:4 }}>
-                    <Icon.Check /> {s}
+              <motion.div
+                variants={fadeUp}
+                style={{ display: 'flex', gap: 20, marginTop: 28, flexWrap: 'wrap' }}
+              >
+                {['ฟรีตลอดชีพ', 'ไม่ต้องบัตรเครดิต', 'รองรับ 14 สายพันธุ์'].map(t => (
+                  <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: F.muted }}>
+                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: F.leafSoft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: F.leaf, flexShrink: 0 }}>
+                      <CheckIcon />
+                    </span>
+                    {t}
                   </span>
                 ))}
-              </div>
-              <button
-                className="hp-btn-pink"
-                style={{ background:F.leaf, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(90,144,101,.3)', display:'inline-flex', alignItems:'center', gap:8 }}
-                onClick={() => router.push('/service-hub')}
-              >
-                ดูบริการทั้งหมด <Icon.ArrowRight />
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🩺</div>
-          </div>
-        </section>
+              </motion.div>
+            </motion.div>
 
-        {/* ══════════════════════════════════════════════════════ PET ID CARD BAND */}
-        <section className="hp-section hp-mobile-trim">
-          <div
-            className="hp-feature-band"
-            style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden', boxShadow:'0 16px 40px rgba(232,70,119,.15)' }}
-          >
-            <div style={{ position:'absolute', top:-80, right:-80, width:280, height:280, background:'radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:'rgba(255,255,255,.8)', marginBottom:8 }}>PET ID CARD</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:'#fff' }}>บัตรประจำตัวสัตว์เลี้ยง</h2>
-              <p style={{ fontSize:14, color:'rgba(255,255,255,.9)', margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>
-                สร้างบัตรดิจิทัลสวยงาม พร้อม QR Code ประวัติสุขภาพ สายพันธุ์ และชื่อน้อง แชร์ได้ทุกโซเชียล
-              </p>
-              <button
-                className="hp-btn-outline"
-                style={{ background:'#fff', color:F.pink, padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,.12)', display:'inline-flex', alignItems:'center', gap:8 }}
-                onClick={() => router.push('/pet-id-card')}
-              >
-                สร้างบัตรฟรี 🪪
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>🪪</div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ KNOWLEDGE & TOOLS */}
-        <section className="hp-section hp-mobile-trim">
-          <div className="hp-two-col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-            {/* Knowledge */}
-            <div
-              className="hp-card"
-              style={{ background:`linear-gradient(135deg,#ede9fe 0%,#f5f3ff 100%)`, border:'1px solid #ddd6fe', borderRadius:24, padding:'32px 28px', position:'relative', overflow:'hidden' }}
+            {/* Hero image */}
+            <motion.div
+              className="hp-hero-image"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
+              style={{ flex: '0 0 auto', width: 'min(45%, 500px)', borderRadius: 24, overflow: 'hidden' }}
             >
-              <div style={{ position:'absolute', right:-30, bottom:-30, fontSize:80, opacity:.15 }}>📚</div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.purple, marginBottom:8 }}>PET KNOWLEDGE</div>
-              <h3 style={{ fontSize:20, fontWeight:800, margin:'0 0 8px', color:F.ink }}>ความรู้สัตว์เลี้ยง</h3>
-              <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 20px' }}>
-                บทความโภชนาการ สุขภาพ พฤติกรรม และพันธุกรรม สำหรับแมว หมา และสัตว์ exotic
-              </p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>
-                {['สุขภาพ','โภชนาการ','พฤติกรรม','พันธุกรรม'].map(t => (
-                  <span key={t} style={{ padding:'4px 10px', background:'rgba(124,92,191,.1)', borderRadius:999, fontSize:11, fontWeight:600, color:F.purple }}>{t}</span>
-                ))}
-              </div>
-              <button
-                className="hp-btn-pink"
-                style={{ background:F.purple, color:'#fff', padding:'11px 20px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(124,92,191,.3)', display:'inline-flex', alignItems:'center', gap:8 }}
-                onClick={() => router.push('/pet-knowledge')}
-              >
-                อ่านบทความ <Icon.ArrowRight />
-              </button>
-            </div>
+              <Image
+                src="/home/hero-visual-desktop-v1.png"
+                alt="Whiskora Pet ID และโปรไฟล์สัตว์เลี้ยงดิจิทัล"
+                width={560}
+                height={420}
+                priority
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+            </motion.div>
+          </div>
+        </section>
 
-            {/* Tools */}
-            <div
-              className="hp-card"
-              style={{ background:`linear-gradient(135deg,#dcfce7 0%,#f0fdf4 100%)`, border:'1px solid #bbf7d0', borderRadius:24, padding:'32px 28px', position:'relative', overflow:'hidden' }}
+        {/* ══════════════════════════════════════════════════ 2. PROBLEM / INSIGHT */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ marginBottom: 36 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                ทำไมต้องมี Whiskora?
+              </div>
+              <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+                ปัญหาที่เจ้าของสัตว์เลี้ยง<br />เจอทุกวัน
+              </h2>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              className="hp-grid-3"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}
             >
-              <div style={{ position:'absolute', right:-30, bottom:-30, fontSize:80, opacity:.15 }}>🔧</div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.leaf, marginBottom:8 }}>PET TOOLS</div>
-              <h3 style={{ fontSize:20, fontWeight:800, margin:'0 0 8px', color:F.ink }}>เครื่องมือสำหรับผู้เลี้ยง</h3>
-              <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:'0 0 20px' }}>
-                คำนวณอายุเทียบมนุษย์ วันคลอด แคลอรีประจำวัน และน้ำหนักมาตรฐานตามสายพันธุ์
-              </p>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>
-                {['อายุ','วันคลอด','แคลอรี','น้ำหนัก'].map(t => (
-                  <span key={t} style={{ padding:'4px 10px', background:'rgba(90,144,101,.1)', borderRadius:999, fontSize:11, fontWeight:600, color:F.leaf }}>{t}</span>
-                ))}
-              </div>
-              <button
-                className="hp-btn-pink"
-                style={{ background:F.leaf, color:'#fff', padding:'11px 20px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(90,144,101,.3)', display:'inline-flex', alignItems:'center', gap:8 }}
-                onClick={() => router.push('/pet-tools')}
-              >
-                เปิดใช้งาน <Icon.ArrowRight />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ HOW IT WORKS */}
-        <section className="hp-section hp-mobile-trim">
-          <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 20px' }}>เริ่มต้นง่ายมาก</h2>
-          <div className="hp-three-col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {[
-              { n:'01', title:'สมัครฟรี',            desc:'สร้างบัญชีด้วยอีเมลหรือ Google ภายใน 1 นาที ไม่ต้องบัตรเครดิต', emoji:'🔑' },
-              { n:'02', title:'เพิ่มสัตว์เลี้ยง',    desc:'เพิ่มข้อมูลน้องๆ รูปภาพ วัคซีน และประวัติสุขภาพ', emoji:'🐾' },
-              { n:'03', title:'ค้นหา & เชื่อมต่อ',   desc:'ค้นหาฟาร์ม คลินิก หรือบริการที่ต้องการ พร้อม GPS', emoji:'🗺️' },
-            ].map(s => (
-              <div key={s.n} style={{ background:'#fff', border:`1px solid ${F.line}`, borderRadius:24, padding:28 }}>
-                <div style={{ fontSize:32, marginBottom:14 }}>{s.emoji}</div>
-                <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:F.pink, marginBottom:8 }}>STEP {s.n}</div>
-                <h3 style={{ fontSize:16, fontWeight:700, margin:'0 0 8px', color:F.ink }}>{s.title}</h3>
-                <p style={{ fontSize:13, color:F.inkSoft, lineHeight:1.6, margin:0 }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════ MEMBER FEATURES */}
-        <section className="hp-section hp-mobile-trim">
-          <div style={{ background:`linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%)`, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px', boxShadow:'0 20px 48px rgba(232,70,119,.16)' }}>
-            {/* deco blobs */}
-            <div style={{ position:'absolute', top:-80, right:-60, width:320, height:320, background:'radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-60, left:-40, width:200, height:200, background:'radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%)', pointerEvents:'none' }} />
-
-            {/* header */}
-            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-              <div>
-                <span style={{ background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(255,255,255,0.3)', display:'inline-block', marginBottom:14, color:'#fff' }}>
-                  FREE FOREVER · สมาชิกทั่วไป
-                </span>
-                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>
-                  สมัครฟรี แล้วได้อะไรบ้าง?
-                </h2>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,.85)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>
-                  บัญชี Whiskora ฟรีตลอดชีพ ไม่มีค่าธรรมเนียมรายเดือน ไม่ต้องบัตรเครดิต
-                </p>
-              </div>
-              <button
-                className="hp-btn-outline"
-                style={{ background:'#fff', color:F.pink, padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,.12)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0 }}
-                onClick={() => router.push('/register')}
-              >
-                สมัครเลยฟรี →
-              </button>
-            </div>
-
-            {/* feature grid */}
-            <div className="hp-two-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14 }}>
               {[
                 {
-                  emoji: '🐾',
-                  title: 'เพิ่มสัตว์เลี้ยงได้ไม่จำกัด',
-                  desc: 'บันทึกชื่อ สายพันธุ์ วันเกิด รูปภาพ และข้อมูลพื้นฐานของน้องทุกตัว จัดเก็บไว้อย่างเป็นระเบียบในที่เดียว',
+                  icon: <ClipboardIcon />,
+                  color: F.pink, bg: F.pinkSoft,
+                  title: 'ประวัติสุขภาพกระจายอยู่ทุกที่',
+                  desc: 'กระดาษ โน้ต ไลน์ รูปถ่าย — ไม่มีใครรู้ว่าน้องฉีดวัคซีนอะไรบ้าง เมื่อไหร่ หรือตรวจโรคอะไรไปแล้ว',
                 },
                 {
-                  emoji: '🪪',
-                  title: 'สมุดพกดิจิทัล (Pet ID Card)',
-                  desc: 'สร้างบัตรประจำตัวดิจิทัลให้น้อง พร้อม QR Code สำหรับแชร์ประวัติและโปรไฟล์ได้ทุกที่ทุกเวลา',
+                  icon: <ShieldIcon />,
+                  color: F.sky, bg: F.skySoft,
+                  title: 'บรีดเดอร์ไม่มีหลักฐานที่ตรวจสอบได้',
+                  desc: 'ตัดสินใจยาก ไม่รู้ว่าฟาร์มไหนน่าเชื่อถือ สายพันธุ์จริงหรือเปล่า หรือสัตว์เคยตรวจโรคหรือยัง',
                 },
                 {
-                  emoji: '💉',
-                  title: 'ติดตามสุขภาพและวัคซีน',
-                  desc: 'บันทึกประวัติวัคซีน การตรวจสุขภาพ น้ำหนัก และโน้ตสุขภาพรายวัน พร้อมแจ้งเตือนเมื่อถึงเวลาฉีดวัคซีน',
+                  icon: <ShareIcon />,
+                  color: F.teal, bg: F.tealSoft,
+                  title: 'ทุกที่ขอข้อมูลซ้ำทุกครั้ง',
+                  desc: 'คลินิก กรูมมิ่ง ที่ฝากเลี้ยง — ข้อมูลเดิม คำถามเดิม ต้องตอบซ้ำไม่จบ ทั้งที่มีอยู่ในมือถืออยู่แล้ว',
                 },
-                {
-                  emoji: '💰',
-                  title: 'บันทึกค่าใช้จ่ายในการเลี้ยง',
-                  desc: 'จดบันทึกค่าอาหาร ค่าหมอ ค่ากรูมมิ่ง และค่าใช้จ่ายอื่นๆ ดูสรุปรายเดือนรายปีได้ในหน้า Finance',
-                },
-                {
-                  emoji: '🧬',
-                  title: 'ผังสายเลือด (Pedigree)',
-                  desc: 'สร้างและดูผังสายพันธุ์ของน้องย้อนหลังหลายรุ่น เหมาะสำหรับผู้เพาะพันธุ์และผู้ที่ซื้อสัตว์จากฟาร์ม',
-                },
-                {
-                  emoji: '📂',
-                  title: 'จัดเก็บเอกสารสำคัญ',
-                  desc: 'อัปโหลดและจัดเก็บใบรับรองสายพันธุ์ ผลตรวจโรค ใบวัคซีน และเอกสารสำคัญต่างๆ ในระบบ Cloud',
-                },
-              ].map(f => (
-                <div key={f.title} style={{ background:'rgba(255,255,255,0.14)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', borderRadius:18, padding:'20px 22px', display:'flex', gap:16, alignItems:'flex-start' }}>
-                  <div style={{ fontSize:28, flexShrink:0, marginTop:2 }}>{f.emoji}</div>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{f.title}</div>
-                    <div style={{ fontSize:12, color:'rgba(255,255,255,.8)', lineHeight:1.6 }}>{f.desc}</div>
+              ].map(item => (
+                <motion.div
+                  key={item.title}
+                  variants={fadeUp}
+                  className="hp-feature-card"
+                  style={{ background: '#fff', border: `1px solid ${F.line}`, borderRadius: 20, padding: 28 }}
+                >
+                  <div style={{ width: 46, height: 46, borderRadius: 14, background: item.bg, display: 'grid', placeItems: 'center', color: item.color, marginBottom: 18 }}>
+                    {item.icon}
                   </div>
-                </div>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.4 }}>{item.title}</h3>
+                  <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.75, margin: 0 }}>{item.desc}</p>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════ PARTNER BENEFITS */}
-        <section className="hp-section hp-mobile-trim">
-          <div style={{ background:F.ink, borderRadius:28, overflow:'hidden', position:'relative', padding:'48px 44px' }}>
-            <div style={{ position:'absolute', top:-80, left:-60, width:320, height:320, background:'radial-gradient(circle,rgba(232,70,119,.2) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-60, right:-40, width:240, height:240, background:'radial-gradient(circle,rgba(91,141,199,.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-
-            {/* header */}
-            <div style={{ position:'relative', zIndex:2, marginBottom:36, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+        {/* ══════════════════════════════════════════════════ 3. PRODUCT PILLARS */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ marginBottom: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
               <div>
-                <span style={{ background:'rgba(232,70,119,0.25)', fontSize:10, fontWeight:800, padding:'5px 14px', borderRadius:999, letterSpacing:1.5, border:'1px solid rgba(232,70,119,0.4)', display:'inline-block', marginBottom:14, color:F.pink }}>
-                  GENESIS PROGRAM · เปิดรับพาร์ทเนอร์
-                </span>
-                <h2 style={{ fontSize:28, fontWeight:900, letterSpacing:-0.5, margin:0, color:'#fff', lineHeight:1.2 }}>
-                  พาร์ทเนอร์กับ Whiskora<br />
-                  <span style={{ color:F.pink }}>ได้อะไรบ้าง?</span>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                  สิ่งที่ Whiskora ทำได้
+                </div>
+                <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+                  ศูนย์กลางข้อมูลสัตว์เลี้ยง<br />ที่เชื่อถือได้
                 </h2>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,.7)', margin:'10px 0 0', maxWidth:440, lineHeight:1.6 }}>
-                  ไม่ว่าจะเป็นฟาร์ม ร้านค้า หรือคลินิก — เราช่วยให้ธุรกิจของคุณเติบโตได้เร็วขึ้น
-                </p>
               </div>
-              <button
-                className="hp-btn-pink"
-                style={{ background:F.pink, color:'#fff', padding:'13px 24px', borderRadius:14, fontWeight:800, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.4)', display:'inline-flex', alignItems:'center', gap:8, flexShrink:0, position:'relative', zIndex:2 }}
-                onClick={() => router.push('/partner')}
-              >
-                สมัครเป็นพาร์ทเนอร์ →
-              </button>
-            </div>
+              <Link href="/register" className="hp-btn-ghost">
+                เริ่มใช้งานฟรี <ArrowRightIcon />
+              </Link>
+            </motion.div>
 
-            {/* benefit grid */}
-            <div className="hp-three-col" style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+            <motion.div
+              variants={staggerContainer}
+              className="hp-grid-3"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}
+            >
               {[
                 {
-                  emoji: '👥',
-                  title: 'เข้าถึงฐานลูกค้าหมื่นคน',
-                  desc: 'กลุ่มผู้ใช้ที่รักสัตว์เลี้ยงและพร้อมซื้อ ไม่ต้องเสียเวลาหาลูกค้าเอง เราส่งตรงมาให้',
-                  color: F.pink,
+                  icon: <IdCardIcon />, color: F.pink, bg: F.pinkSoft,
+                  title: 'Pet ID ดิจิทัล',
+                  desc: 'บัตรประจำตัวพร้อม QR Code แชร์ได้ทุกช่องทาง สแกนเพื่อดูข้อมูลน้องได้ทันที',
                 },
                 {
-                  emoji: '📊',
-                  title: 'ระบบจัดการครบวงจร',
-                  desc: 'แดชบอร์ดบริหารฟาร์ม ร้านค้า หรือบริการ จัดการสต็อก คิวจอง และเอกสารในที่เดียว',
-                  color: F.sky,
+                  icon: <HeartPulseIcon />, color: F.sky, bg: F.skySoft,
+                  title: 'สมุดสุขภาพออนไลน์',
+                  desc: 'วัคซีน ผลตรวจ น้ำหนัก และโน้ตสุขภาพ บันทึกครบในที่เดียว ค้นหาได้ทุกเมื่อ',
                 },
                 {
-                  emoji: '🆓',
-                  title: 'ฟรีในช่วง Genesis Program',
-                  desc: 'พาร์ทเนอร์รุ่นแรกไม่เสียค่า commission ค่าลงทะเบียน หรือค่ารายเดือนใดๆ ตลอดช่วงโปรแกรม',
-                  color: F.leaf,
+                  icon: <QrIcon />, color: F.teal, bg: F.tealSoft,
+                  title: 'โปรไฟล์ QR สาธารณะ',
+                  desc: 'ตั้งระดับการเข้าถึง 3 ระดับ — สาธารณะ ลิงก์เฉพาะ หรือส่วนตัว แชร์ได้อย่างปลอดภัย',
                 },
                 {
-                  emoji: '🏅',
-                  title: 'ตราสัญลักษณ์ Verified',
-                  desc: 'ได้รับ badge "ยืนยันแล้ว" บนโปรไฟล์ เพิ่มความน่าเชื่อถือและโอกาสที่ลูกค้าจะเลือกคุณ',
-                  color: F.sun,
+                  icon: <ShieldIcon />, color: F.purple, bg: F.purpleSoft,
+                  title: 'โปรไฟล์ฟาร์มยืนยัน',
+                  desc: 'ฟาร์มที่ผ่านการตรวจสอบเอกสาร บันทึกประวัติสุขภาพ และให้ข้อมูลสายพันธุ์โปร่งใส',
                 },
                 {
-                  emoji: '📣',
-                  title: 'โปรโมทผ่านแพลตฟอร์ม',
-                  desc: 'ฟาร์มและร้านค้าที่มีคะแนนดีจะถูกนำเสนอในหน้า Featured และการค้นหาลำดับต้น',
-                  color: F.purple,
+                  icon: <TreeIcon />, color: F.sun, bg: F.sunSoft,
+                  title: 'ผังสายเลือดดิจิทัล',
+                  desc: 'Pedigree ย้อนหลังหลายรุ่น พร้อมระบบโอนกรรมสิทธิ์ที่บันทึกไว้ในประวัติสัตว์',
                 },
                 {
-                  emoji: '🤝',
-                  title: 'ทีม Support พร้อมช่วยเหลือ',
-                  desc: 'ทีมงาน Whiskora พร้อมช่วยตั้งค่าระบบ ตอบคำถาม และให้คำแนะนำเพื่อให้ธุรกิจของคุณเริ่มได้เร็ว',
-                  color: F.pink,
+                  icon: <ShareIcon />, color: F.leaf, bg: F.leafSoft,
+                  title: 'ข้อมูลพร้อมแชร์กับบริการ',
+                  desc: 'คลินิก กรูมมิ่ง ฝากเลี้ยง — แชร์ข้อมูลผ่าน QR ได้ทันที ไม่ต้องเล่าซ้ำทุกครั้ง',
                 },
-              ].map(b => (
-                <div key={b.title} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:18, padding:'22px 20px' }}>
-                  <div style={{ fontSize:28, marginBottom:12 }}>{b.emoji}</div>
-                  <div style={{ fontWeight:700, fontSize:14, color:'#fff', marginBottom:6 }}>{b.title}</div>
-                  <div style={{ fontSize:12, color:'rgba(255,255,255,.65)', lineHeight:1.65 }}>{b.desc}</div>
-                </div>
+              ].map(item => (
+                <motion.div
+                  key={item.title}
+                  variants={fadeUp}
+                  className="hp-feature-card"
+                  style={{ background: '#fff', border: `1px solid ${F.line}`, borderRadius: 18, padding: 24 }}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: item.bg, display: 'grid', placeItems: 'center', color: item.color, marginBottom: 14 }}>
+                    {item.icon}
+                  </div>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 8px' }}>{item.title}</h3>
+                  <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════ COMMUNITY BAND */}
-        <section className="hp-section hp-mobile-trim">
-          <div
-            className="hp-feature-band"
-            style={{ background:`linear-gradient(135deg,#fef9c3 0%,#fffbeb 100%)`, border:'1px solid #fde68a', borderRadius:24, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', position:'relative', overflow:'hidden' }}
-          >
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, color:F.sun, marginBottom:8 }}>COMMUNITY</div>
-              <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.3, margin:'0 0 8px', color:F.ink }}>ชุมชนคนรักสัตว์</h2>
-              <p style={{ fontSize:14, color:F.inkSoft, margin:'0 0 20px', maxWidth:460, lineHeight:1.6 }}>
-                แชร์ประสบการณ์ ขอคำแนะนำ และพบปะเพื่อนคนรักสัตว์เลี้ยงในชุมชนออนไลน์ของเรา
-              </p>
-              <button
-                className="hp-btn-pink"
-                style={{ background:F.sun, color:'#fff', padding:'12px 22px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,166,58,.3)', display:'inline-flex', alignItems:'center', gap:8 }}
-                onClick={() => router.push('/community')}
+        {/* ══════════════════════════════════════════════════ 4. LIFECYCLE */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ textAlign: 'center', marginBottom: 48 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                ทุกช่วงชีวิต เชื่อมต่อกัน
+              </div>
+              <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: '0 auto', maxWidth: 420 }}>
+                จากวันแรกถึงตลอดชีวิต<br />Whiskora อยู่เคียงข้าง
+              </h2>
+            </motion.div>
+
+            <motion.div variants={staggerContainer} className="hp-lifecycle-grid">
+              {[
+                { n: '01', icon: <PawIcon />, label: 'สร้างโปรไฟล์', sub: 'บันทึกข้อมูลพื้นฐาน รูปภาพ และสายพันธุ์' },
+                { n: '02', icon: <HeartPulseIcon />, label: 'บันทึกสุขภาพ', sub: 'วัคซีน ผลตรวจ น้ำหนัก บันทึกต่อเนื่อง' },
+                { n: '03', icon: <ShareIcon />, label: 'แชร์กับผู้ดูแล', sub: 'QR ให้คลินิกหรือ Co-owner ดูข้อมูลได้' },
+                { n: '04', icon: <ShieldIcon />, label: 'ยืนยันสายพันธุ์', sub: 'Pedigree เชื่อมฟาร์มต้นกำเนิด' },
+                { n: '05', icon: <TreeIcon />, label: 'โอนกรรมสิทธิ์', sub: 'บันทึกประวัติการเปลี่ยนเจ้าของ' },
+              ].map((step, i) => (
+                <motion.div
+                  key={step.n}
+                  variants={fadeUp}
+                  className="hp-lifecycle-step"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12, padding: '0 8px', position: 'relative', zIndex: 1 }}
+                >
+                  <div
+                    className="hp-lifecycle-step-dot"
+                    style={{ width: 56, height: 56, borderRadius: '50%', background: i === 0 ? F.pink : '#fff', border: `2px solid ${i === 0 ? F.pink : F.pinkBorder}`, display: 'grid', placeItems: 'center', color: i === 0 ? '#fff' : F.pink }}
+                  >
+                    {step.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: F.muted, marginBottom: 4 }}>STEP {step.n}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: F.ink, marginBottom: 4 }}>{step.label}</div>
+                    <div style={{ fontSize: 11, color: F.muted, lineHeight: 1.6 }}>{step.sub}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════ 5. USER GROUPS */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ marginBottom: 40 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                สำหรับทุกคนในระบบนิเวศสัตว์เลี้ยง
+              </div>
+              <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+                ไม่ว่าจะเป็นใคร<br />Whiskora มีสำหรับคุณ
+              </h2>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              className="hp-grid-2"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
+            >
+              {[
+                {
+                  icon: <PawIcon />, color: F.pink, bg: F.pinkSoft,
+                  label: 'เจ้าของสัตว์เลี้ยง',
+                  desc: 'สร้าง Pet ID ฟรี บันทึกประวัติสุขภาพ แชร์โปรไฟล์ QR และดูแลน้องได้อย่างมืออาชีพ',
+                  benefits: ['Pet ID + QR Profile ฟรี', 'สมุดสุขภาพครบ', 'เชิญ Co-owner ร่วมดูแล'],
+                  cta: 'เริ่มใช้งานฟรี', href: '/register',
+                },
+                {
+                  icon: <FarmIcon />, color: F.purple, bg: F.purpleSoft,
+                  label: 'ฟาร์มและบรีดเดอร์',
+                  desc: 'สร้างโปรไฟล์ฟาร์มที่ตรวจสอบได้ จัดการลูกสัตว์ทั้งฟาร์ม และเชื่อมผังสายเลือดได้ทันที',
+                  benefits: ['โปรไฟล์ฟาร์มยืนยัน', 'จัดการ Pedigree', 'บันทึกสุขภาพทั้งฟาร์ม'],
+                  cta: 'เปิดฟาร์ม', href: '/partner',
+                },
+                {
+                  icon: <StethoscopeIcon />, color: F.teal, bg: F.tealSoft,
+                  label: 'คลินิกและบริการ',
+                  desc: 'ดูข้อมูลสัตว์เลี้ยงที่แม่นยำผ่าน QR ลดคำถามซ้ำ และบันทึกประวัติการรักษาได้ทันที',
+                  benefits: ['สแกน QR ดูข้อมูลได้เลย', 'ลดงานเอกสาร', 'ข้อมูลอัปเดตสม่ำเสมอ'],
+                  cta: 'ลงทะเบียนพาร์ทเนอร์', href: '/partner',
+                },
+                {
+                  icon: <ShopIcon />, color: F.sky, bg: F.skySoft,
+                  label: 'ร้านค้าสัตว์เลี้ยง',
+                  desc: 'เชื่อมต่อธุรกิจกับผู้เลี้ยงสัตว์ที่มีข้อมูลครบถ้วน เพิ่มความน่าเชื่อถือและฐานลูกค้า',
+                  benefits: ['โปรโมทบนแพลตฟอร์ม', 'เข้าถึงกลุ่มเป้าหมาย', 'ฟรีในช่วง Genesis Program'],
+                  cta: 'เข้าร่วมโปรแกรม', href: '/partner',
+                },
+              ].map(g => (
+                <motion.div
+                  key={g.label}
+                  variants={fadeUp}
+                  className="hp-feature-card"
+                  style={{ background: '#fff', border: `1px solid ${F.line}`, borderRadius: 22, padding: 28 }}
+                >
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 15, background: g.bg, display: 'grid', placeItems: 'center', color: g.color, flexShrink: 0 }}>
+                      {g.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: F.ink, marginBottom: 6 }}>{g.label}</div>
+                      <p style={{ fontSize: 13, color: F.inkSoft, lineHeight: 1.65, margin: 0 }}>{g.desc}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                    {g.benefits.map(b => (
+                      <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: F.inkSoft }}>
+                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: g.bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: g.color, flexShrink: 0 }}>
+                          <CheckIcon />
+                        </span>
+                        {b}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href={g.href} className="hp-btn-ghost" style={{ color: g.color }}>
+                    {g.cta} <ArrowRightIcon />
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════ 6. FEATURE SHOWCASE */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ marginBottom: 44 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                ฟีเจอร์หลัก
+              </div>
+              <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+                ดูว่า Whiskora<br />ทำอะไรได้บ้าง
+              </h2>
+            </motion.div>
+
+            {/* Feature 1: Pet ID Card */}
+            <motion.div
+              variants={fadeUp}
+              className="hp-feature-split"
+              style={{ display: 'flex', gap: 48, alignItems: 'center', marginBottom: 56 }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: F.pinkSoft, color: F.pinkDeep, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, padding: '4px 12px', borderRadius: 999, marginBottom: 16 }}>
+                  <IdCardIcon /> Pet ID Card
+                </div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, margin: '0 0 14px' }}>
+                  บัตรประจำตัวดิจิทัล<br />พร้อม QR Code
+                </h3>
+                <p style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.8, margin: '0 0 24px' }}>
+                  สร้างบัตร ID สวยงามสำหรับน้องแต่ละตัว พร้อม QR Code ที่ชี้ไปยังโปรไฟล์สาธารณะ แชร์บนโซเชียลหรือพิมพ์ติดกรง ผู้ดูแลสแกนเพื่อดูข้อมูลได้ทันที
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+                  {['เลือกธีมบัตรได้หลายแบบ', 'QR Code เชื่อมโปรไฟล์จริง', 'ดาวน์โหลดและแชร์ได้เลย'].map(b => (
+                    <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: F.inkSoft }}>
+                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: F.pinkSoft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: F.pink, flexShrink: 0 }}>
+                        <CheckIcon />
+                      </span>
+                      {b}
+                    </div>
+                  ))}
+                </div>
+                <Link href="/pet-id-card" className="hp-btn-pink">
+                  ดูตัวอย่างบัตร <ArrowRightIcon />
+                </Link>
+              </div>
+              <div className="hp-feature-split-img" style={{ flex: '0 0 auto', width: 'min(42%, 340px)' }}>
+                <Image
+                  src="/id-card/pet-id-card-bg-premium-pink-v1.png"
+                  alt="ตัวอย่าง Pet ID Card จาก Whiskora"
+                  width={340}
+                  height={220}
+                  style={{ width: '100%', height: 'auto', borderRadius: 18 }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Feature 2: QR Public Profile */}
+            <motion.div
+              variants={fadeUp}
+              className="hp-feature-split"
+              style={{ display: 'flex', gap: 48, alignItems: 'center', flexDirection: 'row-reverse', marginBottom: 56 }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: F.tealSoft, color: F.teal, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, padding: '4px 12px', borderRadius: 999, marginBottom: 16 }}>
+                  <QrIcon /> QR Public Profile
+                </div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, margin: '0 0 14px' }}>
+                  โปรไฟล์สาธารณะ<br />ที่คุณควบคุมได้
+                </h3>
+                <p style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.8, margin: '0 0 24px' }}>
+                  แสดงข้อมูลน้องต่อสาธารณะได้อย่างปลอดภัย ตั้งระดับการเข้าถึงได้ 3 ระดับ ข้อมูลอ่อนไหวจะไม่ถูกเปิดเผยโดยอัตโนมัติ
+                </p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 28 }}>
+                  {['สาธารณะ', 'ลิงก์เฉพาะ', 'ส่วนตัว'].map((level, i) => (
+                    <span key={level} style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: i === 0 ? F.tealSoft : '#fff', color: i === 0 ? F.teal : F.muted, border: `1px solid ${i === 0 ? F.tealBorder : F.lineMid}` }}>
+                      {level}
+                    </span>
+                  ))}
+                </div>
+                <Link href="/register" className="hp-btn-outline" style={{ borderColor: F.tealBorder, color: F.teal }}>
+                  ทดลองใช้งาน <ArrowRightIcon />
+                </Link>
+              </div>
+              <div
+                className="hp-feature-split-img"
+                style={{ flex: '0 0 auto', width: 'min(42%, 340px)', background: F.tealSoft, borderRadius: 20, padding: 32, display: 'flex', flexDirection: 'column', gap: 12, border: `1px solid ${F.tealBorder}` }}
               >
-                เข้าร่วมชุมชน <Icon.ArrowRight />
-              </button>
-            </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:96 }}>👥</div>
-          </div>
+                {[
+                  { label: 'ชื่อ', value: 'มีมี่', visible: true },
+                  { label: 'สายพันธุ์', value: 'Scottish Fold', visible: true },
+                  { label: 'วัคซีนครั้งล่าสุด', value: '12 มิ.ย. 2568', visible: true },
+                  { label: 'microchip', value: '●●●●●●●●', visible: false },
+                  { label: 'ที่อยู่เจ้าของ', value: '●●●●●●', visible: false },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#fff', borderRadius: 10, fontSize: 12 }}>
+                    <span style={{ color: F.muted, fontWeight: 600 }}>{row.label}</span>
+                    <span style={{ fontWeight: 700, color: row.visible ? F.ink : F.lineMid, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {!row.visible && <LockIcon />}
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Feature 3: Health Records */}
+            <motion.div
+              variants={fadeUp}
+              className="hp-feature-split"
+              style={{ display: 'flex', gap: 48, alignItems: 'center' }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: F.skySoft, color: F.sky, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, padding: '4px 12px', borderRadius: 999, marginBottom: 16 }}>
+                  <HeartPulseIcon /> สมุดสุขภาพดิจิทัล
+                </div>
+                <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, margin: '0 0 14px' }}>
+                  ประวัติสุขภาพครบ<br />ในที่เดียว
+                </h3>
+                <p style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.8, margin: '0 0 24px' }}>
+                  บันทึกวัคซีน ผลตรวจเลือด น้ำหนัก การรักษา และโน้ตสำคัญ พร้อมดูประวัติย้อนหลังทุกครั้งที่ต้องการ ไม่ต้องพึ่งความจำ
+                </p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+                  {['วัคซีน', 'ผลตรวจ', 'น้ำหนัก', 'กิจกรรม', 'เอกสาร'].map(tag => (
+                    <span key={tag} style={{ padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: F.skySoft, color: F.sky, border: `1px solid ${F.skyBorder}` }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <Link href="/register" className="hp-btn-outline" style={{ borderColor: F.skyBorder, color: F.sky }}>
+                  เริ่มบันทึกสุขภาพ <ArrowRightIcon />
+                </Link>
+              </div>
+              <div
+                className="hp-feature-split-img"
+                style={{ flex: '0 0 auto', width: 'min(42%, 340px)', background: F.skySoft, borderRadius: 20, padding: 28, border: `1px solid ${F.skyBorder}` }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 700, color: F.sky, marginBottom: 14, letterSpacing: 1 }}>VACCINE HISTORY</div>
+                {[
+                  { name: 'FVRCP (Feline 3)', date: '12 มิ.ย. 68', next: '12 มิ.ย. 69', status: 'ปัจจุบัน' },
+                  { name: 'Rabies', date: '1 มี.ค. 68', next: '1 มี.ค. 69', status: 'ปัจจุบัน' },
+                  { name: 'FeLV', date: '15 ม.ค. 68', next: '15 ม.ค. 69', status: 'ปัจจุบัน' },
+                ].map(v => (
+                  <div key={v.name} style={{ background: '#fff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: F.ink }}>{v.name}</div>
+                      <div style={{ fontSize: 10, color: F.muted, marginTop: 2 }}>ฉีดล่าสุด: {v.date}</div>
+                    </div>
+                    <span style={{ padding: '3px 8px', background: F.leafSoft, color: F.leaf, borderRadius: 999, fontSize: 10, fontWeight: 700 }}>{v.status}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════ PARTNER CTA */}
-        <section style={{ padding:'48px 0 0' }}>
-          <div
-            className="hp-feature-band"
-            style={{ background:F.ink, color:'#fff', borderRadius:24, padding:'40px 44px', display:'grid', gridTemplateColumns:'1fr auto', gap:24, alignItems:'center', position:'relative', overflow:'hidden' }}
-          >
-            <div style={{ position:'absolute', right:-80, bottom:-80, width:280, height:280, background:'radial-gradient(circle,rgba(232,70,119,.25) 0%,transparent 70%)', pointerEvents:'none' }} />
-            <div>
-              <div style={{ fontSize:11, color:F.pink, letterSpacing:2, marginBottom:10, fontWeight:700 }}>PARTNER WITH US</div>
-              <h2 style={{ fontSize:26, fontWeight:800, letterSpacing:-0.3, margin:'0 0 6px' }}>ร่วมเป็นพาร์ทเนอร์กับ Whiskora</h2>
-              <p style={{ fontSize:13, color:'#bdb0a2', margin:'0 0 24px' }}>เปิดฟาร์ม ร้านค้า หรือคลินิกของคุณ — เข้าถึงลูกค้าหมื่นคน ฟรีในช่วง Genesis Program</p>
-              <div className="hp-feature-band-btns" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                <button
-                  className="hp-btn-pink"
-                  style={{ background:F.pink, color:'#fff', padding:'13px 24px', borderRadius:14, fontWeight:700, fontSize:14, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(232,70,119,.35)', position:'relative', zIndex:2, display:'inline-flex', alignItems:'center', gap:8 }}
-                  onClick={() => router.push('/partner')}
+        {/* ══════════════════════════════════════════════════ 7. TRUST */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div
+              variants={fadeUp}
+              style={{ background: F.ink, borderRadius: 26, padding: 'clamp(32px, 5vw, 52px)', position: 'relative', overflow: 'hidden' }}
+            >
+              {/* Background decorations */}
+              <div style={{ position: 'absolute', top: -80, right: -60, width: 280, height: 280, background: 'radial-gradient(circle,rgba(232,70,119,.18) 0%,transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: -60, left: -40, width: 200, height: 200, background: 'radial-gradient(circle,rgba(13,148,136,.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
+
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <motion.div variants={fadeUp}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 10 }}>
+                    ความน่าเชื่อถือคือพื้นฐาน
+                  </div>
+                  <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 28px)', fontWeight: 800, letterSpacing: -0.5, color: '#fff', margin: '0 0 36px' }}>
+                    ข้อมูลที่ถูกต้อง โปร่งใส<br />
+                    <span style={{ color: F.pinkSoft }}>ตรวจสอบได้ทุกขั้นตอน</span>
+                  </h2>
+                </motion.div>
+
+                <motion.div
+                  variants={staggerContainer}
+                  className="hp-grid-2"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}
                 >
-                  สมัครเลยฟรี <Icon.ArrowRight />
-                </button>
-                <button
-                  className="hp-btn-outline"
-                  style={{ background:'transparent', color:'#e5e7eb', padding:'13px 24px', borderRadius:14, fontWeight:600, fontSize:14, border:'1px solid rgba(255,255,255,.2)', cursor:'pointer', position:'relative', zIndex:2 }}
-                  onClick={() => router.push('/about')}
-                >
-                  เรียนรู้เพิ่มเติม
-                </button>
+                  {[
+                    {
+                      icon: <LockIcon />, color: F.pink,
+                      title: 'ข้อมูลสาธารณะถูกควบคุมโดยเจ้าของ',
+                      desc: 'เจ้าของตั้งระดับการมองเห็นได้เอง ข้อมูลอ่อนไหวไม่เผยแพร่โดยอัตโนมัติ',
+                    },
+                    {
+                      icon: <ShieldIcon />, color: F.teal,
+                      title: 'ฟาร์มที่ยืนยันแล้วผ่านการตรวจสอบเอกสาร',
+                      desc: 'ฟาร์มทุกแห่งต้องยืนยันตัวตนและสถานที่จริง ไม่รับฟาร์มนิรนาม',
+                    },
+                    {
+                      icon: <ClipboardIcon />, color: F.sky,
+                      title: 'บันทึกสุขภาพจากฟาร์ม ไม่ใช่แค่คำบอกเล่า',
+                      desc: 'ประวัติสุขภาพและวัคซีนบันทึกในระบบตั้งแต่อยู่ที่ฟาร์ม ผู้ซื้อเห็นได้ทันที',
+                    },
+                    {
+                      icon: <ShareIcon />, color: F.purple,
+                      title: 'พร้อมเชื่อมต่อกับคลินิกและบริการ',
+                      desc: 'โครงสร้างพื้นฐานสำหรับการผสานข้อมูลสัตว์เลี้ยงกับผู้ให้บริการในอนาคต',
+                    },
+                  ].map(t => (
+                    <motion.div
+                      key={t.title}
+                      variants={fadeUp}
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px 22px', display: 'flex', gap: 14, alignItems: 'flex-start' }}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.08)', display: 'grid', placeItems: 'center', color: t.color, flexShrink: 0 }}>
+                        {t.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{t.title}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.65 }}>{t.desc}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                <motion.div variants={fadeUp} style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <Image src="/verified.png" alt="Whiskora Verified" width={48} height={48} style={{ opacity: 0.9 }} />
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', margin: 0, maxWidth: 380, lineHeight: 1.7 }}>
+                    ฟาร์มที่ผ่านการตรวจสอบจาก Whiskora จะได้รับตราสัญลักษณ์ Verified แสดงบนโปรไฟล์
+                  </p>
+                </motion.div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════ 8. FAQ */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
+            <motion.div variants={fadeUp} style={{ marginBottom: 36 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
+                FAQ
+              </div>
+              <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+                คำถามที่พบบ่อย
+              </h2>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              {faqs.map((faq) => (
+                <details key={faq.q} className="hp-faq-item">
+                  <summary>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: F.ink, lineHeight: 1.5 }}>{faq.q}</span>
+                    <span className="hp-faq-chevron" style={{ color: F.muted, display: 'flex', flexShrink: 0 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </span>
+                  </summary>
+                  <p className="hp-faq-body" style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
+                </details>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════ 9. FINAL CTA */}
+        <section style={{ paddingTop: 72 }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={fadeUp}>
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${F.pink} 0%, #f06d98 55%, #f8a5c2 100%)`,
+                borderRadius: 26, padding: 'clamp(40px, 6vw, 64px)',
+                textAlign: 'center', position: 'relative', overflow: 'hidden',
+                boxShadow: '0 20px 48px rgba(232,70,119,.18)',
+              }}
+            >
+              <div style={{ position: 'absolute', top: -80, right: -60, width: 280, height: 280, background: 'radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: -60, left: -40, width: 200, height: 200, background: 'radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
+
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 1.4, padding: '5px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.3)', marginBottom: 20 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+                  FREE FOREVER
+                </span>
+
+                <h2 style={{ fontSize: 'clamp(24px, 4.5vw, 38px)', fontWeight: 900, letterSpacing: -1, color: '#fff', margin: '0 0 16px', lineHeight: 1.15 }}>
+                  เริ่มต้นฟรีวันนี้<br />
+                  <span style={{ color: 'rgba(255,255,255,.85)', fontSize: '0.75em', fontWeight: 700 }}>ไม่ต้องบัตรเครดิต ไม่มีค่าสมัคร</span>
+                </h2>
+                <p style={{ fontSize: 15, color: 'rgba(255,255,255,.85)', margin: '0 0 32px', maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
+                  สร้าง Pet ID ฟรี เพิ่มสัตว์เลี้ยงได้ไม่จำกัด บันทึกประวัติสุขภาพ และแชร์โปรไฟล์ QR ได้ทันที
+                </p>
+
+                <div className="hp-hero-btns" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link
+                    href="/register"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: F.pink, padding: '14px 28px', borderRadius: 14, fontWeight: 800, fontSize: 15, textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,0,0,.12)', fontFamily: 'inherit', transition: 'transform .15s, box-shadow .15s' }}
+                  >
+                    สร้าง Pet ID ฟรี <ArrowRightIcon />
+                  </Link>
+                  <Link
+                    href="/partner"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: 'none', border: '1.5px solid rgba(255,255,255,0.4)', fontFamily: 'inherit' }}
+                  >
+                    สำหรับฟาร์มและบรีดเดอร์
+                  </Link>
+                </div>
+
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', marginTop: 24, marginBottom: 0 }}>
+                  มีบัญชีแล้ว?{' '}
+                  <Link href="/login" style={{ color: 'rgba(255,255,255,.85)', fontWeight: 700, textDecoration: 'underline' }}>
+                    เข้าสู่ระบบ
+                  </Link>
+                </p>
               </div>
             </div>
-            <div className="hp-feature-band-img float-anim" style={{ fontSize:80, position:'relative', zIndex:2 }}>🤝</div>
-          </div>
+          </motion.div>
         </section>
 
       </div>
-    </>
+    </MotionConfig>
   );
 }
