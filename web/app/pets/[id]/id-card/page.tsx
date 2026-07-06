@@ -414,9 +414,11 @@ export default function PetIdCardPage() {
         .idc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
         .idc-sub { font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
 
-        .idc-display { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100%; gap: 20px; position: relative; overflow-x: hidden; }
-        .idc-rendered { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; border-radius: 24px; box-shadow: ${selectedTheme.shadow}; }
-        .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; min-height: 500px; }
+        .idc-display { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100%; gap: 20px; }
+        .idc-stage { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; aspect-ratio: 2/3; position: relative; border-radius: 24px; overflow: hidden; background: #f3edf0; transition: box-shadow .35s ease; }
+        .idc-stage img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 24px; animation: idc-fadein .4s ease; }
+        @keyframes idc-fadein { from { opacity: 0; } to { opacity: 1; } }
+        .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(253,242,245,0.6); }
         .idc-spinner { width: 36px; height: 36px; border: 4px solid ${F.pinkBorder}; border-top-color: ${F.pink}; border-radius: 50%; animation: idcspin 0.8s linear infinite; }
         @keyframes idcspin { to { transform: rotate(360deg); } }
         .idc-actions { display: flex; gap: 12px; width: min(100%, 400px); max-width: 100%; box-sizing: border-box; }
@@ -573,11 +575,12 @@ export default function PetIdCardPage() {
           </div>
 
           <div className="idc-display">
-            {(isGeneratingImage || !cardImageUrl) && (
-              <div className="idc-loading"><div className="idc-spinner" /></div>
-            )}
-
-            {cardImageUrl && <img src={cardImageUrl} alt="Pet ID Card" className="idc-rendered" />}
+            <div className="idc-stage" style={{ boxShadow: selectedTheme.shadow }}>
+              {(isGeneratingImage || !cardImageUrl) && (
+                <div className="idc-loading"><div className="idc-spinner" /></div>
+              )}
+              {cardImageUrl && <img src={cardImageUrl} alt="Pet ID Card" />}
+            </div>
 
             <section className="idc-theme-panel" aria-label="Pet ID card theme">
               <div className="idc-theme-head">
