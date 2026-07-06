@@ -137,7 +137,7 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[60px] gap-2">
+        <div className="flex items-center h-[68px] gap-2">
 
           {/* ── Logo (hidden on homepage) ─────────────────────────────── */}
           {!isHome && (
@@ -147,7 +147,7 @@ export default function Navbar() {
                 alt="Whiskora"
                 width={178}
                 height={54}
-                className="h-12 w-auto object-contain"
+                className="h-16 w-auto object-contain"
                 priority
               />
             </Link>
