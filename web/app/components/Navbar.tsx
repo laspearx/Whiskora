@@ -145,9 +145,9 @@ export default function Navbar() {
               <Image
                 src="/logo.png"
                 alt="Whiskora"
-                width={136}
-                height={40}
-                className="h-9 w-auto object-contain"
+                width={178}
+                height={54}
+                className="h-12 w-auto object-contain"
                 priority
               />
             </Link>
