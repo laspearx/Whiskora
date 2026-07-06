@@ -246,8 +246,6 @@ export default function Home() {
 
         /* ── Responsive ───────────────────────────────────── */
         @media (max-width: 900px) {
-          .hp-hero-split { flex-direction: column-reverse !important; }
-          .hp-hero-image { max-width: 100% !important; margin: 0 auto !important; }
           .hp-lifecycle-grid {
             grid-template-columns: 1fr !important;
           }
@@ -262,7 +260,7 @@ export default function Home() {
           .hp-hero-btns { flex-direction: column !important; align-items: stretch !important; }
           .hp-hero-btns a, .hp-hero-btns button { width: 100%; justify-content: center; }
           .hp-feature-split { flex-direction: column !important; }
-          .hp-feature-split-img { display: none; }
+          .hp-feature-split-img { display: none !important; }
         }
       `}</style>
 
@@ -284,97 +282,8 @@ export default function Home() {
 
       <div style={{ color: F.ink, fontFamily: 'var(--font-ui)', paddingBottom: 80 }}>
 
-        {/* ══════════════════════════════════════════════════ 1. HERO */}
-        <section style={{ paddingTop: 40 }}>
-          <div
-            className="hp-hero-split"
-            style={{ display: 'flex', gap: 40, alignItems: 'center', justifyContent: 'space-between' }}
-          >
-            {/* Text */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={staggerContainer}
-              style={{ flex: '1 1 0', minWidth: 0 }}
-            >
-              <motion.div variants={fadeUp}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: F.pinkSoft, color: F.pinkDeep,
-                  fontSize: 11, fontWeight: 700, letterSpacing: 1.4,
-                  padding: '5px 14px', borderRadius: 999,
-                  border: `1px solid ${F.pinkBorder}`, marginBottom: 20,
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: F.pink, display: 'inline-block' }} />
-                  PET IDENTITY PLATFORM
-                </span>
-              </motion.div>
-
-              <motion.h1
-                variants={fadeUp}
-                style={{ fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-1.5px', margin: '0 0 18px' }}
-              >
-                เก็บทุกช่วงชีวิต<br />
-                <span style={{ color: F.pink }}>ของน้องไว้ในที่เดียว</span>
-              </motion.h1>
-
-              <motion.p
-                variants={fadeUp}
-                style={{ fontSize: 16, lineHeight: 1.75, color: F.inkSoft, margin: '0 0 28px', maxWidth: 500 }}
-              >
-                Whiskora ช่วยให้คุณสร้าง Pet ID ดิจิทัล บันทึกประวัติสุขภาพ และแชร์โปรไฟล์ QR ได้ทุกที่ — พร้อมระบบฟาร์มและบรีดเดอร์ที่ตรวจสอบได้
-              </motion.p>
-
-              <motion.div
-                variants={fadeUp}
-                className="hp-hero-btns"
-                style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}
-              >
-                <Link href="/register" className="hp-btn-pink">
-                  สร้าง Pet ID ฟรี <ArrowRightIcon />
-                </Link>
-                <Link href="/partner" className="hp-btn-outline">
-                  สำหรับฟาร์มและบรีดเดอร์
-                </Link>
-              </motion.div>
-
-              <motion.div
-                variants={fadeUp}
-                style={{ display: 'flex', gap: 20, marginTop: 28, flexWrap: 'wrap' }}
-              >
-                {['ฟรีตลอดชีพ', 'ไม่ต้องบัตรเครดิต', 'รองรับ 14 สายพันธุ์'].map(t => (
-                  <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: F.muted }}>
-                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: F.leafSoft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: F.leaf, flexShrink: 0 }}>
-                      <CheckIcon />
-                    </span>
-                    {t}
-                  </span>
-                ))}
-              </motion.div>
-            </motion.div>
-
-            {/* Hero image */}
-            <motion.div
-              className="hp-hero-image"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
-              style={{ flex: '0 0 auto', width: 'min(45%, 500px)', borderRadius: 24, overflow: 'hidden' }}
-            >
-              <Image
-                src="/home/hero-visual-desktop-v1.png"
-                alt="Whiskora Pet ID และโปรไฟล์สัตว์เลี้ยงดิจิทัล"
-                width={560}
-                height={420}
-                priority
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            </motion.div>
-          </div>
-        </section>
-
         {/* ══════════════════════════════════════════════════ 2. PROBLEM / INSIGHT */}
-        <section style={{ paddingTop: 72 }}>
+        <section style={{ paddingTop: 40 }}>
           <motion.div initial="hidden" whileInView="visible" viewport={vp} variants={staggerContainer}>
             <motion.div variants={fadeUp} style={{ marginBottom: 36 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: F.pink, marginBottom: 8 }}>
