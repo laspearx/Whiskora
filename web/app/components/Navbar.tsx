@@ -3,344 +3,363 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { useTranslations, useLocale } from '@/i18n/context';
+import { useLocale } from '@/i18n/context';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [visibleDesktopCount, setVisibleDesktopCount] = useState(10);
-  const [session, setSession] = useState<Session | null>(null);
-  const t = useTranslations('nav');
-  const locale = useLocale();
-  const pathname = usePathname();
-  const router = useRouter();
-  type RouterPath = Parameters<typeof router.push>[0];
-  type DesktopNavItem = {
-    key: string;
-    label: string;
-    href?: RouterPath;
-    protectedHref?: RouterPath;
-  };
-  const navRef = useRef<HTMLElement>(null);
-  const desktopNavRef = useRef<HTMLDivElement>(null);
-  const desktopMeasureRef = useRef<HTMLDivElement>(null);
+// ─── Nav config ───────────────────────────────────────────────────────────────
+type Href = string;
 
+const PRIMARY: { key: string; label: string; href: Href }[] = [
+  { key: 'home',      label: 'หน้าแรก',   href: '/' },
+  { key: 'petid',     label: 'Pet ID',     href: '/pet-id-card' },
+  { key: 'knowledge', label: 'ความรู้',    href: '/pet-knowledge' },
+  { key: 'partner',   label: 'พาร์ทเนอร์', href: '/partner' },
+];
+
+const EXPLORE: { key: string; label: string; sub: string; href: Href }[] = [
+  { key: 'farm',        label: 'ฟาร์มสัตว์เลี้ยง',   sub: 'ค้นหาฟาร์มที่ตรวจสอบแล้ว',      href: '/farm-hub' },
+  { key: 'marketplace', label: 'ตลาดสัตว์เลี้ยง',    sub: 'ซื้อขายจากผู้ขายที่ยืนยัน',      href: '/marketplace' },
+  { key: 'services',    label: 'คลินิกและบริการ',     sub: 'จองคลินิก กรูมมิ่ง ฝากเลี้ยง',   href: '/service-hub' },
+  { key: 'community',   label: 'ชุมชนคนรักสัตว์',    sub: 'แชร์ประสบการณ์ ขอคำแนะนำ',       href: '/community' },
+  { key: 'tools',       label: 'เครื่องมือ',          sub: 'คำนวณอายุ แคลอรี วันคลอด',        href: '/pet-tools' },
+  { key: 'about',       label: 'เกี่ยวกับ Whiskora',  sub: 'พันธกิจ ทีมงาน และวิสัยทัศน์',    href: '/about' },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const ChevronDown = ({ open }: { open: boolean }) => (
+  <svg
+    width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+    style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    aria-hidden
+  >
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function Navbar() {
+  const [session,     setSession]     = useState<Session | null>(null);
+  const [scrolled,    setScrolled]    = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
+  const [userOpen,    setUserOpen]    = useState(false);
+
+  const locale   = useLocale();
+  const pathname = usePathname();
+  const router   = useRouter();
+  const navRef   = useRef<HTMLElement>(null);
+
+  const isHome          = pathname === '/';
+  const active          = (h: Href) => pathname === h;
+  const exploreActive   = EXPLORE.some(i => pathname === i.href);
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
 
+  // ── Scroll ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setIsMoreOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handler = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const isActive = (path: string) => pathname === path;
+  // ── Close dropdowns on outside click ─────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+        setExploreOpen(false);
+        setUserOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-  const handleProtectedAction = (path: RouterPath) => {
-    if (!session) {
-      router.push('/login');
-    } else {
-      router.push(path);
-    }
-    setIsOpen(false);
-    setIsMoreOpen(false);
+  // ── Close mobile on route change ──────────────────────────────────────────
+  useEffect(() => {
+    setMobileOpen(false);
+    setExploreOpen(false);
+    setUserOpen(false);
+  }, [pathname]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const go = (href: Href) => {
+    router.push(href as any);
+    setMobileOpen(false);
+    setUserOpen(false);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setIsMoreOpen(false);
-    router.push('/login');
-  };
+  const guarded = (href: Href) => go(session ? href : '/login');
 
   const switchLocale = (next: 'th' | 'en') => {
     router.replace(pathname, { locale: next });
-    setIsOpen(false);
-    setIsMoreOpen(false);
+    setMobileOpen(false);
   };
 
-  const desktopNavItems: DesktopNavItem[] = [
-    { key: 'home', label: t('home'), href: '/' },
-    { key: 'profile', label: t('profile'), protectedHref: '/profile' },
-    { key: 'marketplace', label: t('petShop'), href: '/marketplace' },
-    { key: 'services', label: t('services'), href: '/service-hub' },
-    { key: 'community', label: t('community'), href: '/community' },
-    { key: 'farm', label: t('petMarket'), href: '/farm-hub' },
-    { key: 'partner', label: t('partner'), href: '/partner' },
-    { key: 'knowledge', label: t('knowledge'), href: '/pet-knowledge' },
-    { key: 'tools', label: t('tools'), href: '/pet-tools' },
-    { key: 'about', label: t('about'), href: '/about' },
-  ];
-
-  useEffect(() => {
-    const calculateVisibleItems = () => {
-      const container = desktopNavRef.current;
-      const measure = desktopMeasureRef.current;
-      if (!container || !measure) return;
-
-      const containerWidth = container.getBoundingClientRect().width;
-      const itemNodes = Array.from(measure.querySelectorAll<HTMLElement>('[data-nav-probe-item]'));
-      const languageNode = measure.querySelector<HTMLElement>('[data-nav-probe-language]');
-      const authNode = measure.querySelector<HTMLElement>('[data-nav-probe-auth]');
-      const moreNode = measure.querySelector<HTMLElement>('[data-nav-probe-more]');
-      if (!languageNode || !authNode || !moreNode || itemNodes.length === 0) return;
-
-      const gap = 16;
-      const itemWidths = itemNodes.map((node) => Math.ceil(node.getBoundingClientRect().width));
-      const languageWidth = Math.ceil(languageNode.getBoundingClientRect().width);
-      const authWidth = Math.ceil(authNode.getBoundingClientRect().width);
-      const moreWidth = Math.ceil(moreNode.getBoundingClientRect().width);
-      const fullElements = itemWidths.length + 2;
-      const fullWidth = itemWidths.reduce((sum, width) => sum + width, 0) + languageWidth + authWidth + gap * Math.max(0, fullElements - 1);
-
-      if (fullWidth <= containerWidth) {
-        setVisibleDesktopCount((prev) => (prev === itemWidths.length ? prev : itemWidths.length));
-        setIsMoreOpen(false);
-        return;
-      }
-
-      let nextVisibleCount = itemWidths.length;
-      while (nextVisibleCount > 0) {
-        const visibleWidth = itemWidths.slice(0, nextVisibleCount).reduce((sum, width) => sum + width, 0);
-        const elements = nextVisibleCount + 3;
-        const requiredWidth = visibleWidth + moreWidth + languageWidth + authWidth + gap * Math.max(0, elements - 1);
-        if (requiredWidth <= containerWidth) break;
-        nextVisibleCount -= 1;
-      }
-
-      setVisibleDesktopCount((prev) => (prev === nextVisibleCount ? prev : nextVisibleCount));
-    };
-
-    calculateVisibleItems();
-    const observer = new ResizeObserver(calculateVisibleItems);
-    if (desktopNavRef.current) observer.observe(desktopNavRef.current);
-    window.addEventListener('resize', calculateVisibleItems);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', calculateVisibleItems);
-    };
-  }, [locale, session]);
-
-  const linkClass = (path: string) =>
-    `whitespace-nowrap hover:text-pink-500 transition ${isActive(path) ? 'text-pink-500 font-bold underline underline-offset-8 decoration-2' : ''}`;
-
-  const dropClass = (path: string) =>
-    `px-4 py-2.5 text-sm font-medium transition ${isActive(path) ? 'text-pink-500 bg-pink-50 font-bold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'}`;
-
-  const renderDesktopNavItem = (item: DesktopNavItem) => {
-    if (item.protectedHref) {
-      return (
-        <button
-          key={item.key}
-          onClick={() => handleProtectedAction(item.protectedHref as RouterPath)}
-          className={`whitespace-nowrap hover:text-pink-500 transition ${isActive(item.protectedHref) ? 'text-pink-500 font-bold' : ''}`}
-        >
-          {item.label}
-        </button>
-      );
-    }
-
-    return (
-      <Link key={item.key} href={item.href as RouterPath} className={linkClass(item.href as string)}>
-        {item.label}
-      </Link>
-    );
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setUserOpen(false);
+    router.push('/login');
   };
 
-  const renderOverflowNavItem = (item: DesktopNavItem) => {
-    if (item.protectedHref) {
-      return (
-        <button
-          key={item.key}
-          onClick={() => handleProtectedAction(item.protectedHref as RouterPath)}
-          className={`w-full text-left ${dropClass(item.protectedHref)}`}
-        >
-          {item.label}
-        </button>
-      );
-    }
+  // ── Shared class helpers ──────────────────────────────────────────────────
+  const navLink = (isActive: boolean) =>
+    `text-sm font-medium whitespace-nowrap px-3 py-1.5 rounded-xl transition-colors ${
+      isActive
+        ? 'text-pink-500 bg-pink-50'
+        : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'
+    }`;
 
-    return (
-      <Link
-        key={item.key}
-        href={item.href as RouterPath}
-        onClick={() => setIsMoreOpen(false)}
-        className={`block ${dropClass(item.href as string)}`}
-      >
-        {item.label}
-      </Link>
-    );
-  };
+  const langBtn = (on: boolean) =>
+    `px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+      on ? 'bg-white text-pink-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+    }`;
 
-  const visibleDesktopItems = desktopNavItems.slice(0, visibleDesktopCount);
-  const overflowDesktopItems = desktopNavItems.slice(visibleDesktopCount);
+  const dropItem = (isActive: boolean) =>
+    `block w-full text-left px-4 py-2.5 text-sm transition-colors ${
+      isActive ? 'text-pink-500 bg-pink-50 font-semibold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'
+    }`;
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <nav ref={navRef} className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="flex justify-between items-center h-16">
+    <nav
+      ref={navRef}
+      className={`bg-white sticky top-0 z-50 transition-all duration-200 ${
+        scrolled ? 'shadow-sm border-b border-gray-100' : 'border-b border-gray-50'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-[60px] gap-2">
 
-          <Link href="/" className="flex items-center shrink-0 transition-transform hover:scale-105 py-2">
-            <Image src="/logo.png" alt="Whiskora Logo" width={160} height={48} className="h-22 md:h-30 w-auto object-contain" />
-          </Link>
+          {/* ── Logo (hidden on homepage) ─────────────────────────────── */}
+          {!isHome && (
+            <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]">
+              <Image
+                src="/logo.png"
+                alt="Whiskora"
+                width={136}
+                height={40}
+                className="h-9 w-auto object-contain"
+                priority
+              />
+            </Link>
+          )}
 
-          {/* Desktop nav */}
-          <div ref={desktopNavRef} className="hidden md:flex min-w-0 flex-1 justify-end gap-4 items-center font-medium text-gray-600 text-sm">
-            {visibleDesktopItems.map(renderDesktopNavItem)}
+          {/* ── Desktop primary nav ───────────────────────────────────── */}
+          <div className={`hidden md:flex items-center gap-0.5 ${isHome ? 'flex-1' : ''}`}>
 
-            {overflowDesktopItems.length > 0 && (
+            {/* หน้าแรก */}
+            <Link href="/" className={navLink(active('/'))}>หน้าแรก</Link>
+
+            {/* สำรวจ dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setExploreOpen(o => !o); setUserOpen(false); }}
+                className={`${navLink(exploreActive)} flex items-center gap-1`}
+              >
+                สำรวจ
+                <ChevronDown open={exploreOpen} />
+              </button>
+
+              {exploreOpen && (
+                <div className="absolute top-full left-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
+                    {EXPLORE.map(item => (
+                      <Link
+                        key={item.key}
+                        href={item.href as any}
+                        onClick={() => setExploreOpen(false)}
+                        className={`block px-4 py-2.5 transition-colors group ${
+                          active(item.href) ? 'bg-pink-50' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className={`text-sm font-semibold leading-tight ${active(item.href) ? 'text-pink-500' : 'text-gray-700 group-hover:text-pink-500'}`}>
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5 leading-tight">{item.sub}</div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pet ID */}
+            <Link href="/pet-id-card" className={navLink(active('/pet-id-card'))}>Pet ID</Link>
+
+            {/* ความรู้ */}
+            <Link href="/pet-knowledge" className={navLink(active('/pet-knowledge'))}>ความรู้</Link>
+
+            {/* พาร์ทเนอร์ */}
+            <Link href="/partner" className={navLink(active('/partner'))}>พาร์ทเนอร์</Link>
+          </div>
+
+          {/* ── Desktop right side ────────────────────────────────────── */}
+          <div className="hidden md:flex items-center gap-2.5 ml-auto">
+
+            {/* Language switcher */}
+            <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-0.5">
+              <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
+              <button onClick={() => switchLocale('en')} className={langBtn(locale === 'en')}>EN</button>
+            </div>
+
+            {/* Auth */}
+            {session ? (
               <div className="relative">
                 <button
-                  type="button"
-                  aria-label="More navigation"
-                  aria-expanded={isMoreOpen}
-                  onClick={() => setIsMoreOpen((open) => !open)}
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-pink-100 bg-white text-pink-500 shadow-sm transition hover:bg-pink-50"
+                  onClick={() => { setUserOpen(o => !o); setExploreOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-pink-100 bg-pink-50 text-pink-600 text-sm font-semibold hover:bg-pink-100 transition-colors"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
+                  โปรไฟล์
+                  <ChevronDown open={userOpen} />
                 </button>
 
-                {isMoreOpen && (
-                  <div className="absolute right-0 top-11 w-56 overflow-hidden rounded-2xl border border-pink-100 bg-white py-2 shadow-2xl">
-                    {overflowDesktopItems.map(renderOverflowNavItem)}
+                {userOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-48 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
+                      <button onClick={() => go('/profile')} className={dropItem(active('/profile'))}>
+                        โปรไฟล์ของฉัน
+                      </button>
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={logout} className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium">
+                          ออกจากระบบ
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-1.5 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors shadow-sm shadow-pink-200"
+              >
+                เข้าสู่ระบบ
+              </Link>
             )}
+          </div>
 
-            {/* Language switcher */}
-            <div className="flex items-center gap-1 ml-1 bg-gray-50 rounded-xl border border-gray-200 px-1 py-1">
+          {/* ── Mobile: homepage — auth only, no hamburger ────────────── */}
+          {isHome && (
+            <div className="md:hidden ml-auto">
+              {session ? (
+                <button
+                  onClick={() => guarded('/profile')}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-pink-100 bg-pink-50 text-pink-600 text-sm font-semibold"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  โปรไฟล์
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-4 py-2 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors"
+                >
+                  เข้าสู่ระบบ
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* ── Mobile: non-homepage — hamburger ─────────────────────── */}
+          {!isHome && (
+            <div className="md:hidden flex items-center gap-2 ml-auto">
+              {/* Profile shortcut */}
               <button
-                onClick={() => switchLocale('th')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${locale === 'th' ? 'bg-white text-pink-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                onClick={() => guarded('/profile')}
+                aria-label="โปรไฟล์"
+                className="w-9 h-9 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
               >
-                TH
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
               </button>
+
+              {/* Hamburger */}
               <button
-                onClick={() => switchLocale('en')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${locale === 'en' ? 'bg-white text-pink-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                onClick={() => setMobileOpen(o => !o)}
+                aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+                aria-expanded={mobileOpen}
+                className="w-9 h-9 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                EN
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                  {mobileOpen
+                    ? <path d="M6 18 18 6M6 6l12 12" />
+                    : <path d="M4 6h16M4 12h16M4 18h16" />}
+                </svg>
               </button>
             </div>
+          )}
 
-            {session ? (
-              <button onClick={handleLogout} className="ml-1 text-red-400 hover:text-red-600 font-bold transition">{t('logout')}</button>
-            ) : (
-              <Link href="/login" className="ml-1 text-pink-500 font-bold transition">{t('login')}</Link>
-            )}
-          </div>
+        </div>
+      </div>
 
-          <div
-            ref={desktopMeasureRef}
-            aria-hidden="true"
-            className="pointer-events-none invisible fixed left-0 top-0 -z-10 hidden w-max md:flex items-center gap-4 whitespace-nowrap font-medium text-gray-600 text-sm"
-          >
-            {desktopNavItems.map((item) => (
-              <span key={item.key} data-nav-probe-item>
-                {item.label}
-              </span>
-            ))}
-            <span data-nav-probe-more className="grid h-9 w-9 place-items-center rounded-xl border px-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </span>
-            <span data-nav-probe-language className="flex items-center gap-1 rounded-xl border px-1 py-1">
-              <span className="px-2.5 py-1 text-xs font-bold">TH</span>
-              <span className="px-2.5 py-1 text-xs font-bold">EN</span>
-            </span>
-            <span data-nav-probe-auth className="ml-1 font-bold">
-              {session ? t('logout') : t('login')}
-            </span>
-          </div>
+      {/* ── Mobile dropdown menu ────────────────────────────────────── */}
+      {mobileOpen && !isHome && (
+        <div className="md:hidden border-t border-gray-100 bg-white">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">
 
-          {/* Mobile header buttons */}
-          <div className="md:hidden flex items-center gap-2">
-            <Link href="/" className="flex items-center justify-center w-10 h-10 bg-gray-50 text-gray-500 rounded-xl hover:bg-gray-100 transition shadow-sm border border-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </Link>
-            <button
-              onClick={() => handleProtectedAction('/profile')}
-              className="flex items-center justify-center w-10 h-10 bg-pink-50 text-pink-500 rounded-xl hover:bg-pink-100 transition shadow-sm border border-pink-100"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-800 rounded-xl focus:outline-none transition-colors border border-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
+            {/* Main links */}
+            <button onClick={() => go('/')} className={dropItem(active('/'))}>หน้าแรก</button>
+            <button onClick={() => go('/pet-id-card')} className={dropItem(active('/pet-id-card'))}>Pet ID Card</button>
+            <button onClick={() => go('/pet-knowledge')} className={dropItem(active('/pet-knowledge'))}>ความรู้สัตว์เลี้ยง</button>
+            <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>พาร์ทเนอร์</button>
+
+            {/* Explore group */}
+            <div className="border-t border-gray-100 mt-1.5 pt-1.5">
+              <div className="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">สำรวจ</div>
+              {EXPLORE.map(item => (
+                <button
+                  key={item.key}
+                  onClick={() => go(item.href)}
+                  className={dropItem(active(item.href))}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Language + Auth */}
+            <div className="border-t border-gray-100 mt-1.5 pt-2 pb-1 px-1 flex items-center justify-between">
+              <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-0.5">
+                <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
+                <button onClick={() => switchLocale('en')} className={langBtn(locale === 'en')}>EN</button>
+              </div>
+              {session ? (
+                <button onClick={logout} className="text-sm font-bold text-red-500 hover:text-red-600 px-3 py-1.5">
+                  ออกจากระบบ
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-4 py-1.5 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors"
+                >
+                  เข้าสู่ระบบ
+                </Link>
+              )}
+            </div>
+
           </div>
         </div>
+      )}
 
-        {/* Mobile dropdown */}
-        {isOpen && (
-          <div className="md:hidden absolute top-14 right-4 w-52 bg-white rounded-2xl shadow-xl border border-pink-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex flex-col py-2">
-              <Link href="/" onClick={() => setIsOpen(false)} className={dropClass('/')}>{t('home')}</Link>
-              <button onClick={() => handleProtectedAction('/profile')} className={`text-left ${dropClass('/profile')}`}>{t('profile')}</button>
-              <Link href="/marketplace" onClick={() => setIsOpen(false)} className={dropClass('/marketplace')}>{t('petShop')}</Link>
-              <Link href="/service-hub" onClick={() => setIsOpen(false)} className={dropClass('/service-hub')}>{t('services')}</Link>
-              <Link href="/community" onClick={() => setIsOpen(false)} className={dropClass('/community')}>{t('community')}</Link>
-              <Link href="/farm-hub" onClick={() => setIsOpen(false)} className={dropClass('/farm-hub')}>{t('petMarket')}</Link>
-              <Link href="/partner" onClick={() => setIsOpen(false)} className={dropClass('/partner')}>{t('partner')}</Link>
-              <Link href="/pet-knowledge" onClick={() => setIsOpen(false)} className={dropClass('/pet-knowledge')}>{t('knowledgeFull')}</Link>
-              <Link href="/pet-tools" onClick={() => setIsOpen(false)} className={dropClass('/pet-tools')}>{t('tools')}</Link>
-              <Link href="/about" onClick={() => setIsOpen(false)} className={dropClass('/about')}>{t('about')}</Link>
-
-              {/* Language switcher (mobile) */}
-              <div className="border-t border-gray-100 mt-1 pt-1 px-4 pb-1">
-                <div className="flex gap-2 py-2">
-                  <button
-                    onClick={() => switchLocale('th')}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition border ${locale === 'th' ? 'bg-pink-50 text-pink-500 border-pink-200' : 'text-gray-400 border-gray-100 hover:border-gray-200'}`}
-                  >
-                    🇹🇭 TH
-                  </button>
-                  <button
-                    onClick={() => switchLocale('en')}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition border ${locale === 'en' ? 'bg-pink-50 text-pink-500 border-pink-200' : 'text-gray-400 border-gray-100 hover:border-gray-200'}`}
-                  >
-                    🇬🇧 EN
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100">
-                {session ? (
-                  <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition">{t('logout')}</button>
-                ) : (
-                  <Link href="/login" onClick={() => setIsOpen(false)} className="w-full block px-4 py-2.5 text-sm font-bold text-pink-500 hover:bg-pink-50 transition">{t('login')}</Link>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
     </nav>
   );
 }
