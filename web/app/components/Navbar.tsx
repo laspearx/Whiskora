@@ -137,17 +137,18 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[96px] gap-2">
+        <div className="flex items-center h-[64px] gap-2">
 
           {/* ── Logo (hidden on homepage) ─────────────────────────────── */}
           {!isHome && (
-            <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]">
+            <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]" style={{ overflow: 'visible' }}>
               <Image
                 src="/logo.png"
                 alt="Whiskora"
-                width={280}
-                height={88}
-                className="h-[88px] w-auto object-contain"
+                width={300}
+                height={96}
+                className="w-auto object-contain"
+                style={{ height: '96px', marginTop: '-16px', marginBottom: '-16px', display: 'block' }}
                 priority
               />
             </Link>
