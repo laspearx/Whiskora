@@ -594,21 +594,15 @@ export default function ProfilePage() {
         }
 
         .quick-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: white;
-          box-shadow: 0 2px 8px rgba(31,26,28,.08);
-          overflow: hidden;
           flex: 0 0 auto;
         }
 
         .quick-icon img {
-          width: 32px;
-          height: 32px;
+          width: 48px;
+          height: 48px;
           object-fit: contain;
         }
 
@@ -658,27 +652,21 @@ export default function ProfilePage() {
         }
 
         .card-title-icon {
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          background: white;
-          box-shadow: 0 2px 8px rgba(31,26,28,.08);
           display: inline-flex;
           align-items: center;
           justify-content: center;
           flex: 0 0 auto;
-          overflow: hidden;
         }
 
         .card-title-icon img {
-          width: 26px;
-          height: 26px;
+          width: 36px;
+          height: 36px;
           object-fit: contain;
         }
 
         .card-title-icon svg {
-          width: 15px;
-          height: 15px;
+          width: 18px;
+          height: 18px;
           color: ${F.pink};
         }
 
@@ -851,13 +839,12 @@ export default function ProfilePage() {
         }
 
         .business-icon {
-          background: white;
-          box-shadow: 0 2px 8px rgba(31,26,28,.08);
+          background: transparent;
         }
 
         .business-icon img {
-          width: 28px;
-          height: 28px;
+          width: 36px;
+          height: 36px;
           object-fit: contain;
         }
 
@@ -916,7 +903,7 @@ export default function ProfilePage() {
         }
 
         .finance-card .card-title-icon {
-          background: white;
+          background: transparent;
         }
 
         .finance-card strong {
@@ -1102,7 +1089,7 @@ export default function ProfilePage() {
                     แก้ไขข้อมูล
                   </Link>
                   <Link className="button-secondary" href="/pets/create">
-                    <Icon.Paw />
+                    <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
                     เพิ่มสัตว์เลี้ยง
                   </Link>
                 </div>
