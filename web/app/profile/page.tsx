@@ -1095,7 +1095,7 @@ export default function ProfilePage() {
                     {displayName}
                   </h1>
                   <span className="verified-badge" aria-label="ยืนยันแล้ว">
-                    <Icon.Check />
+                    <img src="/icons/icon-verified.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />
                   </span>
                 </div>
                 <p className="hero-email">{email}</p>
