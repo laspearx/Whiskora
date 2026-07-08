@@ -136,6 +136,17 @@ const monthNames = [
 
 const weekDays = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
 
+function getAppointmentIcon(vaccineName: string | null): string {
+  if (!vaccineName) return "/icons/icon-calendar.png";
+  const v = vaccineName.toLowerCase();
+  if (v.includes("วัคซีน") || v.includes("ฉีด") || v.includes("vaccine") || v.includes("inject")) return "/icons/icon-vaccine.png";
+  if (v.includes("ตรวจ") || v.includes("สุขภาพ") || v.includes("health") || v.includes("checkup")) return "/icons/icon-health.png";
+  if (v.includes("ตัดขน") || v.includes("อาบน้ำ") || v.includes("groom") || v.includes("bath")) return "/icons/icon-grooming.png";
+  if (v.includes("อาหาร") || v.includes("feed") || v.includes("นม")) return "/icons/icon-feeding.png";
+  if (v.includes("น้ำหนัก") || v.includes("weight")) return "/icons/icon-weight.png";
+  return "/icons/icon-calendar.png";
+}
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("th-TH", {
     day: "numeric",
@@ -683,16 +694,10 @@ export default function ProfilePage() {
           color: ${F.pink};
           font-size: 12px;
           font-weight: 500;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
+          text-decoration: underline;
+          text-decoration-thickness: 1px;
+          text-underline-offset: 3px;
           white-space: nowrap;
-        }
-
-        .card-link svg {
-          width: 14px;
-          height: 14px;
         }
 
         .calendar-layout {
@@ -805,7 +810,7 @@ export default function ProfilePage() {
         .pet-list,
         .business-list {
           display: grid;
-          gap: 6px;
+          gap: 8px;
         }
 
         .appointment-item,
@@ -813,22 +818,22 @@ export default function ProfilePage() {
         .business-link {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           border: 1px solid ${F.line};
-          border-radius: 12px;
-          padding: 9px 10px;
+          border-radius: 14px;
+          padding: 12px 14px;
           background: white;
           color: ${F.ink};
           text-decoration: none;
           transition: transform .16s ease, border-color .16s ease;
+          min-height: 60px;
         }
 
         .appointment-avatar,
-        .pet-avatar,
-        .business-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
+        .pet-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
           overflow: hidden;
           background: ${F.pinkSoft};
           color: ${F.pink};
@@ -838,20 +843,42 @@ export default function ProfilePage() {
           flex: 0 0 auto;
         }
 
+        .appointment-avatar img,
+        .pet-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .appt-type-icon {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .appt-type-icon img {
+          width: 30px;
+          height: 30px;
+          object-fit: contain;
+        }
+
         .business-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
           background: transparent;
         }
 
         .business-icon img {
-          width: 72px;
-          height: 72px;
+          width: 52px;
+          height: 52px;
           object-fit: contain;
-        }
-
-        .appointment-avatar svg,
-        .pet-avatar svg {
-          width: 18px;
-          height: 18px;
         }
 
         .appointment-avatar img,
@@ -866,7 +893,7 @@ export default function ProfilePage() {
         .business-link strong {
           display: block;
           color: ${F.ink};
-          font-size: 14px;
+          font-size: 15px;
           line-height: 1.4;
           font-weight: 600;
         }
@@ -875,7 +902,7 @@ export default function ProfilePage() {
         .pet-row span,
         .business-link small {
           color: ${F.muted};
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 400;
           line-height: 1.5;
         }
@@ -1127,7 +1154,7 @@ export default function ProfilePage() {
                   <h2 id="calendar-title">ปฏิทินวันนัด</h2>
                 </div>
                 <Link className="card-link" href="/pets/vaccines/all">
-                  ดูทั้งหมด <Icon.ArrowRight />
+                  ดูทั้งหมด
                 </Link>
               </div>
 
@@ -1203,9 +1230,11 @@ export default function ProfilePage() {
                         return (
                           <div className="appointment-item" key={`${item.pet_id}-${item.next_due}-${index}`}>
                             <span className="appointment-avatar">
-                              {pet?.image_url ? <img src={pet.image_url} alt={item.petName} /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                              <span className="appt-type-icon">
+                                <img src={getAppointmentIcon(item.vaccine_name)} alt="" />
+                              </span>
                             </span>
-                            <span style={{ minWidth: 0 }}>
+                            <span style={{ minWidth: 0, flex: 1 }}>
                               <strong>{item.vaccine_name || "กำหนดดูแลสุขภาพ"}</strong>
                               <span>{item.petName} · {formatDate(item.dueDate)}</span>
                             </span>
@@ -1231,7 +1260,7 @@ export default function ProfilePage() {
                     <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
                   </div>
                   <Link className="card-link" href="/profile/pets">
-                    ทั้งหมด <Icon.ArrowRight />
+                    ทั้งหมด
                   </Link>
                 </div>
 
@@ -1246,7 +1275,6 @@ export default function ProfilePage() {
                           <strong>{pet.name || "ยังไม่มีชื่อ"}</strong>
                           <span>{[pet.species, pet.breed].filter(Boolean).join(" · ") || "ยังไม่ได้ระบุชนิด"}</span>
                         </span>
-                        <Icon.ArrowRight />
                       </Link>
                     ))}
                   </div>
@@ -1261,11 +1289,10 @@ export default function ProfilePage() {
                 <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
                 <span style={{ minWidth: 0 }}>
                   <strong>{pets.length}</strong>
-                  <span style={{ display: "block", color: F.muted, fontSize: 12, fontWeight: 650, marginTop: 5 }}>
+                  <span style={{ display: "block", color: F.muted, fontSize: 13, fontWeight: 400, marginTop: 5 }}>
                     โปรไฟล์สำหรับบันทึกค่าใช้จ่าย
                   </span>
                 </span>
-                <Icon.ArrowRight />
               </Link>
             </div>
           </div>
@@ -1329,7 +1356,6 @@ function BusinessLink({ href, label, type, icon }: BusinessLinkProps) {
         <small>{type}</small>
         <strong>{label}</strong>
       </span>
-      <Icon.ArrowRight />
     </Link>
   );
 }
