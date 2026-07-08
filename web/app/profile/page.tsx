@@ -440,20 +440,9 @@ export default function ProfilePage() {
         }
 
         .verified-badge {
-          width: 26px;
-          height: 26px;
-          border-radius: 8px;
-          background: rgba(255,255,255,.18);
-          color: white;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255,255,255,.26);
-        }
-
-        .verified-badge svg {
-          width: 14px;
-          height: 14px;
         }
 
         .hero-email {
@@ -574,23 +563,23 @@ export default function ProfilePage() {
 
         .quick-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
           animation: profile-rise .58s ease .08s both;
         }
 
         .quick-card,
         .profile-card {
-          border: 1px solid ${F.line};
+          border: 1px solid #f8edf1;
           background: rgba(255,255,255,.92);
-          box-shadow: 0 4px 14px rgba(31,26,28,.045);
+          box-shadow: 0 4px 14px rgba(31,26,28,.03);
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
 
         .quick-card {
-          min-height: 106px;
-          border-radius: 14px;
-          padding: 13px;
+          min-height: 130px;
+          border-radius: 16px;
+          padding: 18px 16px;
           color: ${F.ink};
           text-decoration: none;
           display: grid;
@@ -620,16 +609,16 @@ export default function ProfilePage() {
         .quick-card strong {
           display: block;
           color: ${F.ink};
-          font-size: 14px;
+          font-size: 16px;
           line-height: 1.4;
-          font-weight: 600;
+          font-weight: 650;
           margin-bottom: 3px;
         }
 
         .quick-card span {
           display: block;
           color: ${F.muted};
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1.5;
           font-weight: 400;
         }
@@ -963,9 +952,6 @@ export default function ProfilePage() {
             grid-template-columns: 1fr;
           }
 
-          .quick-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
         }
 
         @media (max-width: 560px) {
@@ -1012,25 +998,20 @@ export default function ProfilePage() {
           }
 
           .quick-grid {
-            gap: 7px;
+            gap: 8px;
           }
 
           .quick-card {
-            min-height: 96px;
-            padding: 11px;
-          }
-
-          .quick-icon {
-            width: 30px;
-            height: 30px;
+            min-height: 120px;
+            padding: 16px 14px;
           }
 
           .quick-card strong {
-            font-size: 12px;
+            font-size: 15px;
           }
 
           .quick-card span {
-            font-size: 10px;
+            font-size: 12px;
           }
 
           .profile-card {
@@ -1095,7 +1076,7 @@ export default function ProfilePage() {
                     {displayName}
                   </h1>
                   <span className="verified-badge" aria-label="ยืนยันแล้ว">
-                    <img src="/icons/icon-verified.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />
+                    <img src="/icons/icon-verified.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                   </span>
                 </div>
                 <p className="hero-email">{email}</p>
@@ -1140,10 +1121,8 @@ export default function ProfilePage() {
           </section>
 
           <section className="quick-grid" aria-label="ทางลัดโปรไฟล์">
-            <QuickCard href="/profile/pets" icon={<img src="/icons/icon-pets.png" alt="" />} title="สัตว์เลี้ยงทั้งหมด" desc="จัดการโปรไฟล์และ Pet ID" />
-            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="สุขภาพและวัคซีน" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
             <QuickCard href="/profile/finance" icon={<img src="/icons/icon-wallet.png" alt="" />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
-            <QuickCard href="/partner" icon={<img src="/icons/icon-partner.png" alt="" />} title="พาร์ทเนอร์" desc={businessCount > 0 ? `${businessCount} ธุรกิจที่ดูแล` : "ฟาร์ม ร้านค้า บริการ"} />
+            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="เพิ่มวัคซีนแบบกลุ่ม" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
           </section>
 
           <div className="profile-grid">
@@ -1285,15 +1264,6 @@ export default function ProfilePage() {
                 )}
               </section>
 
-              <Link className="profile-card finance-card" href="/profile/finance">
-                <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
-                <span style={{ minWidth: 0 }}>
-                  <strong>{pets.length}</strong>
-                  <span style={{ display: "block", color: F.muted, fontSize: 13, fontWeight: 400, marginTop: 5 }}>
-                    โปรไฟล์สำหรับบันทึกค่าใช้จ่าย
-                  </span>
-                </span>
-              </Link>
             </div>
           </div>
 
