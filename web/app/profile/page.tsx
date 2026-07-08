@@ -422,7 +422,7 @@ export default function ProfilePage() {
         .hero-title {
           margin: 0;
           color: white;
-          font-size: clamp(18px, 3.5vw, 26px);
+          font-size: clamp(20px, 3.5vw, 28px);
           line-height: 1.2;
           font-weight: 700;
           letter-spacing: -0.01em;
@@ -448,7 +448,7 @@ export default function ProfilePage() {
         .hero-email {
           margin: 5px 0 0;
           color: rgba(255,255,255,.78);
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1.5;
           font-weight: 400;
           overflow-wrap: anywhere;
@@ -517,7 +517,7 @@ export default function ProfilePage() {
         .meta-pill strong {
           display: block;
           color: white;
-          font-size: 17px;
+          font-size: 18px;
           line-height: 1;
           font-weight: 700;
         }
@@ -525,7 +525,7 @@ export default function ProfilePage() {
         .meta-pill span {
           display: block;
           color: rgba(255,255,255,.72);
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1.4;
           margin-top: 4px;
           font-weight: 400;
@@ -594,40 +594,28 @@ export default function ProfilePage() {
         }
 
         .quick-icon {
-          width: 34px;
-          height: 34px;
+          width: 40px;
+          height: 40px;
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: ${F.pinkSoft};
-          color: ${F.pink};
+          background: white;
+          box-shadow: 0 2px 8px rgba(31,26,28,.08);
+          overflow: hidden;
+          flex: 0 0 auto;
         }
 
-        .quick-icon svg {
-          width: 16px;
-          height: 16px;
-        }
-
-        .quick-card:nth-child(2) .quick-icon {
-          background: #dbeafe;
-          color: ${F.sky};
-        }
-
-        .quick-card:nth-child(3) .quick-icon {
-          background: #dcfce7;
-          color: ${F.leaf};
-        }
-
-        .quick-card:nth-child(4) .quick-icon {
-          background: #fef9c3;
-          color: ${F.sun};
+        .quick-icon img {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
         }
 
         .quick-card strong {
           display: block;
           color: ${F.ink};
-          font-size: 13px;
+          font-size: 14px;
           line-height: 1.4;
           font-weight: 600;
           margin-bottom: 3px;
@@ -636,7 +624,7 @@ export default function ProfilePage() {
         .quick-card span {
           display: block;
           color: ${F.muted};
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1.5;
           font-weight: 400;
         }
@@ -670,26 +658,34 @@ export default function ProfilePage() {
         }
 
         .card-title-icon {
-          width: 30px;
-          height: 30px;
+          width: 34px;
+          height: 34px;
           border-radius: 8px;
-          background: ${F.pinkSoft};
-          color: ${F.pink};
+          background: white;
+          box-shadow: 0 2px 8px rgba(31,26,28,.08);
           display: inline-flex;
           align-items: center;
           justify-content: center;
           flex: 0 0 auto;
+          overflow: hidden;
+        }
+
+        .card-title-icon img {
+          width: 26px;
+          height: 26px;
+          object-fit: contain;
         }
 
         .card-title-icon svg {
           width: 15px;
           height: 15px;
+          color: ${F.pink};
         }
 
         .card-head h2 {
           margin: 0;
           color: ${F.ink};
-          font-size: 14px;
+          font-size: 16px;
           line-height: 1.35;
           font-weight: 650;
           letter-spacing: 0;
@@ -745,7 +741,7 @@ export default function ProfilePage() {
 
         .calendar-month {
           color: ${F.ink};
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 600;
           text-align: center;
         }
@@ -842,9 +838,9 @@ export default function ProfilePage() {
         .appointment-avatar,
         .pet-avatar,
         .business-icon {
-          width: 34px;
-          height: 34px;
-          border-radius: 9px;
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
           overflow: hidden;
           background: ${F.pinkSoft};
           color: ${F.pink};
@@ -854,11 +850,21 @@ export default function ProfilePage() {
           flex: 0 0 auto;
         }
 
+        .business-icon {
+          background: white;
+          box-shadow: 0 2px 8px rgba(31,26,28,.08);
+        }
+
+        .business-icon img {
+          width: 28px;
+          height: 28px;
+          object-fit: contain;
+        }
+
         .appointment-avatar svg,
-        .pet-avatar svg,
-        .business-icon svg {
-          width: 16px;
-          height: 16px;
+        .pet-avatar svg {
+          width: 18px;
+          height: 18px;
         }
 
         .appointment-avatar img,
@@ -873,7 +879,7 @@ export default function ProfilePage() {
         .business-link strong {
           display: block;
           color: ${F.ink};
-          font-size: 13px;
+          font-size: 14px;
           line-height: 1.4;
           font-weight: 600;
         }
@@ -882,7 +888,7 @@ export default function ProfilePage() {
         .pet-row span,
         .business-link small {
           color: ${F.muted};
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 400;
           line-height: 1.5;
         }
@@ -910,8 +916,7 @@ export default function ProfilePage() {
         }
 
         .finance-card .card-title-icon {
-          background: #dcfce7;
-          color: ${F.leaf};
+          background: white;
         }
 
         .finance-card strong {
@@ -1121,17 +1126,17 @@ export default function ProfilePage() {
           </section>
 
           <section className="quick-grid" aria-label="ทางลัดโปรไฟล์">
-            <QuickCard href="/profile/pets" icon={<Icon.Paw />} title="สัตว์เลี้ยงทั้งหมด" desc="จัดการโปรไฟล์และ Pet ID" />
-            <QuickCard href="/pets/vaccines/bulk-add" icon={<Icon.Health />} title="สุขภาพและวัคซีน" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
-            <QuickCard href="/profile/finance" icon={<Icon.Wallet />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
-            <QuickCard href="/partner" icon={<Icon.Store />} title="พาร์ทเนอร์" desc={businessCount > 0 ? `${businessCount} ธุรกิจที่ดูแล` : "ฟาร์ม ร้านค้า บริการ"} />
+            <QuickCard href="/profile/pets" icon={<img src="/icons/icon-pets.png" alt="" />} title="สัตว์เลี้ยงทั้งหมด" desc="จัดการโปรไฟล์และ Pet ID" />
+            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="สุขภาพและวัคซีน" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
+            <QuickCard href="/profile/finance" icon={<img src="/icons/icon-wallet.png" alt="" />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
+            <QuickCard href="/partner" icon={<img src="/icons/icon-partner.png" alt="" />} title="พาร์ทเนอร์" desc={businessCount > 0 ? `${businessCount} ธุรกิจที่ดูแล` : "ฟาร์ม ร้านค้า บริการ"} />
           </section>
 
           <div className="profile-grid">
             <section className="profile-card" aria-labelledby="calendar-title">
               <div className="card-head">
                 <div className="card-title">
-                  <span className="card-title-icon"><Icon.Calendar /></span>
+                  <span className="card-title-icon"><img src="/icons/icon-calendar.png" alt="" /></span>
                   <h2 id="calendar-title">ปฏิทินวันนัด</h2>
                 </div>
                 <Link className="card-link" href="/pets/vaccines/all">
@@ -1235,7 +1240,7 @@ export default function ProfilePage() {
               <section className="profile-card" aria-labelledby="pets-title">
                 <div className="card-head">
                   <div className="card-title">
-                    <span className="card-title-icon"><Icon.Paw /></span>
+                    <span className="card-title-icon"><img src="/icons/icon-my-pets.png" alt="" /></span>
                     <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
                   </div>
                   <Link className="card-link" href="/profile/pets">
@@ -1266,7 +1271,7 @@ export default function ProfilePage() {
               </section>
 
               <Link className="profile-card finance-card" href="/profile/finance">
-                <span className="card-title-icon"><Icon.Wallet /></span>
+                <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
                 <span style={{ minWidth: 0 }}>
                   <strong>{pets.length}</strong>
                   <span style={{ display: "block", color: F.muted, fontSize: 12, fontWeight: 650, marginTop: 5 }}>
@@ -1282,19 +1287,19 @@ export default function ProfilePage() {
             <section className="profile-card" aria-labelledby="business-title">
               <div className="card-head">
                 <div className="card-title">
-                  <span className="card-title-icon"><Icon.Farm /></span>
+                  <span className="card-title-icon"><img src="/icons/icon-farm.png" alt="" /></span>
                   <h2 id="business-title">ธุรกิจที่ดูแล</h2>
                 </div>
               </div>
               <div className="business-list">
                 {myFarms.map((farm) => (
-                  <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<Icon.Farm />} />
+                  <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<img src="/icons/icon-farm.png" alt="" />} />
                 ))}
                 {myShops.map((shop) => (
-                  <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<Icon.Store />} />
+                  <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<img src="/icons/icon-shop.png" alt="" />} />
                 ))}
                 {myServices.map((service) => (
-                  <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<Icon.Health />} />
+                  <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<img src="/icons/icon-service.png" alt="" />} />
                 ))}
               </div>
             </section>
