@@ -293,17 +293,17 @@ export default function ProfilePage() {
 
         .profile-shell {
           display: grid;
-          gap: 18px;
+          gap: 12px;
         }
 
         .profile-hero {
           position: relative;
           overflow: hidden;
-          border-radius: 28px;
-          padding: 30px;
+          border-radius: 20px;
+          padding: 20px;
           color: white;
           background: linear-gradient(135deg, ${F.pink} 0%, #f06d98 58%, #f8a5c2 100%);
-          box-shadow: 0 24px 48px rgba(232, 70, 119, .16);
+          box-shadow: 0 12px 28px rgba(232, 70, 119, .14);
           animation: profile-rise .55s ease both;
         }
 
@@ -337,14 +337,14 @@ export default function ProfilePage() {
           z-index: 1;
           display: grid;
           grid-template-columns: auto minmax(0, 1fr);
-          gap: 22px;
+          gap: 16px;
           align-items: center;
         }
 
         .avatar-wrap {
           position: relative;
-          width: 118px;
-          height: 118px;
+          width: 80px;
+          height: 80px;
           flex: 0 0 auto;
         }
 
@@ -353,13 +353,13 @@ export default function ProfilePage() {
           height: 100%;
           border-radius: 999px;
           overflow: hidden;
-          border: 5px solid rgba(255,255,255,.88);
+          border: 3px solid rgba(255,255,255,.88);
           background: linear-gradient(135deg, #fff1f6, #fff);
           color: ${F.pink};
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 16px 30px rgba(140, 36, 78, .2);
+          box-shadow: 0 8px 18px rgba(140, 36, 78, .18);
         }
 
         .avatar img {
@@ -369,42 +369,47 @@ export default function ProfilePage() {
         }
 
         .avatar svg {
-          width: 46px;
-          height: 46px;
+          width: 32px;
+          height: 32px;
         }
 
         .avatar-camera {
           position: absolute;
-          right: 0;
-          bottom: 2px;
-          width: 40px;
-          height: 40px;
+          right: -2px;
+          bottom: -2px;
+          width: 28px;
+          height: 28px;
           border-radius: 999px;
           background: white;
           color: ${F.pink};
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border: 3px solid rgba(232,70,119,.16);
-          box-shadow: 0 12px 20px rgba(140, 36, 78, .16);
+          border: 2px solid rgba(232,70,119,.14);
+          box-shadow: 0 4px 10px rgba(140, 36, 78, .14);
+        }
+
+        .avatar-camera svg {
+          width: 13px;
+          height: 13px;
         }
 
         .hero-kicker {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          min-height: 30px;
-          padding: 5px 12px;
+          gap: 6px;
+          min-height: 24px;
+          padding: 3px 10px;
           border-radius: 999px;
           border: 1px solid rgba(255,255,255,.32);
           background: rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
           color: white;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
           letter-spacing: .05em;
           text-transform: uppercase;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
         }
 
         .hero-title-row {
@@ -417,16 +422,16 @@ export default function ProfilePage() {
         .hero-title {
           margin: 0;
           color: white;
-          font-size: clamp(22px, 4vw, 32px);
+          font-size: clamp(18px, 3.5vw, 26px);
           line-height: 1.2;
           font-weight: 700;
           letter-spacing: -0.01em;
         }
 
         .verified-badge {
-          width: 36px;
-          height: 36px;
-          border-radius: 14px;
+          width: 26px;
+          height: 26px;
+          border-radius: 8px;
           background: rgba(255,255,255,.18);
           color: white;
           display: inline-flex;
@@ -435,19 +440,24 @@ export default function ProfilePage() {
           border: 1px solid rgba(255,255,255,.26);
         }
 
+        .verified-badge svg {
+          width: 14px;
+          height: 14px;
+        }
+
         .hero-email {
-          margin: 8px 0 0;
-          color: rgba(255,255,255,.82);
-          font-size: 14px;
-          line-height: 1.55;
+          margin: 5px 0 0;
+          color: rgba(255,255,255,.78);
+          font-size: 12px;
+          line-height: 1.5;
           font-weight: 400;
           overflow-wrap: anywhere;
         }
 
         .hero-actions {
-          margin-top: 18px;
+          margin-top: 12px;
           display: flex;
-          gap: 10px;
+          gap: 8px;
           flex-wrap: wrap;
         }
 
@@ -456,11 +466,11 @@ export default function ProfilePage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          min-height: 44px;
-          border-radius: 14px;
-          padding: 10px 18px;
-          font-size: 14px;
+          gap: 6px;
+          min-height: 36px;
+          border-radius: 10px;
+          padding: 7px 14px;
+          font-size: 13px;
           font-weight: 600;
           text-decoration: none;
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
@@ -490,40 +500,39 @@ export default function ProfilePage() {
         .hero-meta {
           position: relative;
           z-index: 1;
-          margin-top: 22px;
+          margin-top: 14px;
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
+          gap: 8px;
         }
 
         .meta-pill {
-          min-height: 76px;
-          border-radius: 18px;
-          padding: 14px;
+          border-radius: 12px;
+          padding: 10px 12px;
           background: rgba(255,255,255,.14);
-          border: 1px solid rgba(255,255,255,.2);
+          border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
         }
 
         .meta-pill strong {
           display: block;
           color: white;
-          font-size: 20px;
+          font-size: 17px;
           line-height: 1;
           font-weight: 700;
         }
 
         .meta-pill span {
           display: block;
-          color: rgba(255,255,255,.78);
-          font-size: 12px;
-          line-height: 1.45;
-          margin-top: 6px;
+          color: rgba(255,255,255,.72);
+          font-size: 11px;
+          line-height: 1.4;
+          margin-top: 4px;
           font-weight: 400;
         }
 
         .profile-progress {
-          margin-top: 18px;
+          margin-top: 12px;
           max-width: 480px;
         }
 
@@ -532,14 +541,14 @@ export default function ProfilePage() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 8px;
-          color: rgba(255,255,255,.86);
-          font-size: 12px;
+          margin-bottom: 6px;
+          color: rgba(255,255,255,.82);
+          font-size: 11px;
           font-weight: 500;
         }
 
         .progress-track {
-          height: 8px;
+          height: 5px;
           border-radius: 999px;
           background: rgba(255,255,255,.22);
           overflow: hidden;
@@ -555,7 +564,7 @@ export default function ProfilePage() {
         .quick-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
+          gap: 8px;
           animation: profile-rise .58s ease .08s both;
         }
 
@@ -563,36 +572,41 @@ export default function ProfilePage() {
         .profile-card {
           border: 1px solid ${F.line};
           background: rgba(255,255,255,.92);
-          box-shadow: 0 14px 34px rgba(31,26,28,.055);
+          box-shadow: 0 4px 14px rgba(31,26,28,.045);
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
 
         .quick-card {
-          min-height: 136px;
-          border-radius: 20px;
-          padding: 18px;
+          min-height: 106px;
+          border-radius: 14px;
+          padding: 13px;
           color: ${F.ink};
           text-decoration: none;
           display: grid;
           align-content: space-between;
-          gap: 16px;
+          gap: 10px;
         }
 
         .quick-card:hover,
         .profile-card:hover {
           border-color: #edc7d3;
-          box-shadow: 0 18px 40px rgba(31,26,28,.075);
+          box-shadow: 0 8px 22px rgba(31,26,28,.07);
         }
 
         .quick-icon {
-          width: 46px;
-          height: 46px;
-          border-radius: 14px;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: ${F.pinkSoft};
           color: ${F.pink};
+        }
+
+        .quick-icon svg {
+          width: 16px;
+          height: 16px;
         }
 
         .quick-card:nth-child(2) .quick-icon {
@@ -613,30 +627,30 @@ export default function ProfilePage() {
         .quick-card strong {
           display: block;
           color: ${F.ink};
-          font-size: 14px;
+          font-size: 13px;
           line-height: 1.4;
-          font-weight: 650;
-          margin-bottom: 5px;
+          font-weight: 600;
+          margin-bottom: 3px;
         }
 
         .quick-card span {
           display: block;
           color: ${F.muted};
-          font-size: 12px;
-          line-height: 1.55;
+          font-size: 11px;
+          line-height: 1.5;
           font-weight: 400;
         }
 
         .profile-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.08fr) minmax(310px, .92fr);
-          gap: 18px;
+          grid-template-columns: minmax(0, 1.08fr) minmax(290px, .92fr);
+          gap: 12px;
           align-items: start;
         }
 
         .profile-card {
-          border-radius: 22px;
-          padding: 20px;
+          border-radius: 16px;
+          padding: 14px;
           animation: profile-rise .58s ease both;
         }
 
@@ -644,32 +658,38 @@ export default function ProfilePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 14px;
-          margin-bottom: 16px;
+          gap: 10px;
+          margin-bottom: 10px;
         }
 
         .card-title {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           min-width: 0;
         }
 
         .card-title-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 12px;
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
           background: ${F.pinkSoft};
           color: ${F.pink};
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          flex: 0 0 auto;
+        }
+
+        .card-title-icon svg {
+          width: 15px;
+          height: 15px;
         }
 
         .card-head h2 {
           margin: 0;
           color: ${F.ink};
-          font-size: 17px;
+          font-size: 14px;
           line-height: 1.35;
           font-weight: 650;
           letter-spacing: 0;
@@ -677,19 +697,24 @@ export default function ProfilePage() {
 
         .card-link {
           color: ${F.pink};
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 500;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
           white-space: nowrap;
+        }
+
+        .card-link svg {
+          width: 14px;
+          height: 14px;
         }
 
         .calendar-layout {
           display: grid;
-          grid-template-columns: minmax(0, .95fr) minmax(260px, 1fr);
-          gap: 18px;
+          grid-template-columns: minmax(0, .95fr) minmax(230px, 1fr);
+          gap: 12px;
         }
 
         .calendar-toolbar {
@@ -697,12 +722,12 @@ export default function ProfilePage() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
         }
 
         .icon-button {
-          width: 36px;
-          height: 36px;
+          width: 28px;
+          height: 28px;
           border: 1px solid ${F.line};
           border-radius: 999px;
           background: white;
@@ -713,9 +738,14 @@ export default function ProfilePage() {
           cursor: pointer;
         }
 
+        .icon-button svg {
+          width: 14px;
+          height: 14px;
+        }
+
         .calendar-month {
           color: ${F.ink};
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           text-align: center;
         }
@@ -723,10 +753,10 @@ export default function ProfilePage() {
         .calendar-grid {
           display: grid;
           grid-template-columns: repeat(7, minmax(0, 1fr));
-          gap: 5px;
+          gap: 3px;
           border: 1px solid ${F.line};
-          border-radius: 18px;
-          padding: 12px;
+          border-radius: 12px;
+          padding: 8px;
           background: #fff;
         }
 
@@ -740,9 +770,9 @@ export default function ProfilePage() {
 
         .weekday {
           color: ${F.muted};
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 500;
-          min-height: 24px;
+          min-height: 20px;
         }
 
         .weekday:first-child {
@@ -791,7 +821,7 @@ export default function ProfilePage() {
         .pet-list,
         .business-list {
           display: grid;
-          gap: 10px;
+          gap: 6px;
         }
 
         .appointment-item,
@@ -799,10 +829,10 @@ export default function ProfilePage() {
         .business-link {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           border: 1px solid ${F.line};
-          border-radius: 16px;
-          padding: 12px;
+          border-radius: 12px;
+          padding: 9px 10px;
           background: white;
           color: ${F.ink};
           text-decoration: none;
@@ -812,9 +842,9 @@ export default function ProfilePage() {
         .appointment-avatar,
         .pet-avatar,
         .business-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 14px;
+          width: 34px;
+          height: 34px;
+          border-radius: 9px;
           overflow: hidden;
           background: ${F.pinkSoft};
           color: ${F.pink};
@@ -822,6 +852,13 @@ export default function ProfilePage() {
           align-items: center;
           justify-content: center;
           flex: 0 0 auto;
+        }
+
+        .appointment-avatar svg,
+        .pet-avatar svg,
+        .business-icon svg {
+          width: 16px;
+          height: 16px;
         }
 
         .appointment-avatar img,
@@ -836,8 +873,8 @@ export default function ProfilePage() {
         .business-link strong {
           display: block;
           color: ${F.ink};
-          font-size: 14px;
-          line-height: 1.45;
+          font-size: 13px;
+          line-height: 1.4;
           font-weight: 600;
         }
 
@@ -845,18 +882,18 @@ export default function ProfilePage() {
         .pet-row span,
         .business-link small {
           color: ${F.muted};
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 400;
-          line-height: 1.55;
+          line-height: 1.5;
         }
 
         .status-pill {
           margin-left: auto;
           border-radius: 999px;
-          padding: 6px 9px;
+          padding: 3px 8px;
           background: ${F.pinkSoft};
           color: ${F.pinkDeep};
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 500;
           white-space: nowrap;
         }
@@ -864,7 +901,7 @@ export default function ProfilePage() {
         .finance-card {
           display: grid;
           grid-template-columns: auto minmax(0, 1fr) auto;
-          gap: 14px;
+          gap: 10px;
           align-items: center;
           text-decoration: none;
           color: inherit;
@@ -880,25 +917,25 @@ export default function ProfilePage() {
         .finance-card strong {
           display: block;
           color: ${F.leaf};
-          font-size: 22px;
+          font-size: 18px;
           font-weight: 700;
           line-height: 1;
         }
 
         .empty-box {
           border: 1px dashed ${F.line};
-          border-radius: 16px;
+          border-radius: 10px;
           background: rgba(255,255,255,.64);
-          padding: 16px;
+          padding: 12px;
           color: ${F.muted};
-          font-size: 13px;
-          line-height: 1.7;
+          font-size: 12px;
+          line-height: 1.65;
           font-weight: 400;
         }
 
         @media (max-width: 900px) {
           .profile-page {
-            padding-top: 22px;
+            padding-top: 16px;
           }
 
           .hero-content,
@@ -914,12 +951,12 @@ export default function ProfilePage() {
 
         @media (max-width: 560px) {
           .profile-page {
-            padding-top: 14px;
+            padding-top: 10px;
           }
 
           .profile-hero {
-            border-radius: 24px;
-            padding: 22px;
+            border-radius: 16px;
+            padding: 16px;
           }
 
           .hero-content {
@@ -933,54 +970,53 @@ export default function ProfilePage() {
           }
 
           .avatar-wrap {
-            width: 104px;
-            height: 104px;
+            width: 70px;
+            height: 70px;
           }
 
           .hero-meta {
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
+            gap: 6px;
           }
 
           .meta-pill {
-            min-height: 68px;
-            padding: 12px 8px;
+            padding: 8px;
             text-align: center;
           }
 
           .meta-pill strong {
-            font-size: 18px;
+            font-size: 15px;
           }
 
           .meta-pill span {
-            font-size: 11px;
+            font-size: 10px;
           }
 
           .quick-grid {
-            gap: 10px;
+            gap: 7px;
           }
 
           .quick-card {
-            min-height: 122px;
-            padding: 14px;
+            min-height: 96px;
+            padding: 11px;
           }
 
           .quick-icon {
-            width: 42px;
-            height: 42px;
+            width: 30px;
+            height: 30px;
           }
 
           .quick-card strong {
-            font-size: 13px;
+            font-size: 12px;
           }
 
           .quick-card span {
-            font-size: 11px;
+            font-size: 10px;
           }
 
           .profile-card {
-            border-radius: 18px;
-            padding: 16px;
+            border-radius: 14px;
+            padding: 12px;
           }
 
           .card-head {
@@ -988,8 +1024,8 @@ export default function ProfilePage() {
           }
 
           .calendar-grid {
-            padding: 10px;
-            gap: 4px;
+            padding: 7px;
+            gap: 3px;
           }
 
           .appointment-item {
