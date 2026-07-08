@@ -140,7 +140,7 @@ export default function PetIdCardLandingPage() {
 
           {/* Hero */}
           <div className="pic-hero">
-            <div className="pic-hero-icon"><Icon.Paw /></div>
+            <div className="pic-hero-icon"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
             <div className="pic-hero-title">
               บัตรประจำตัว<span>สัตว์เลี้ยง</span>คืออะไร?
             </div>
@@ -228,7 +228,7 @@ export default function PetIdCardLandingPage() {
               onClick={handleCreate}
               disabled={!selected}
             >
-              <Icon.Paw />
+              <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
               {selected ? 'สร้าง Pet ID Card' : 'เลือกสัตว์เลี้ยงก่อน'}
             </button>
           </div>

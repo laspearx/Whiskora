@@ -400,7 +400,7 @@ function FarmDashboardContent() {
 
           {/* ── KPI with gender breakdown ── */}
           <section>
-            <div className="fd-section-head"><h2 className="fd-section-title"><Icon.Paw /> จำนวนสัตว์เลี้ยงทั้งหมด</h2></div>
+            <div className="fd-section-head"><h2 className="fd-section-title"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> จำนวนสัตว์เลี้ยงทั้งหมด</h2></div>
             <div className="fd-kpi-grid">
               <div className="fd-kpi">
                 <div className="fd-kpi-top"><div className="fd-kpi-emoji" style={{ background: '#F3E8FF' }}>🐱</div><div className="fd-kpi-label">พ่อแม่พันธุ์</div></div>

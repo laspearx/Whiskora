@@ -50,7 +50,7 @@ const Icon = {
 
 // ─── TABS ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'overview', label: 'ภาพรวม', icon: <Icon.Paw /> },
+  { id: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
   { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
   { id: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
   { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
@@ -513,7 +513,7 @@ export default function PetDetailPage() {
                       <div className="ped-card-img">
                         {node.image_url
                           ? <img src={node.image_url} alt={node.name || ''} />
-                          : (node.isMissing ? <Icon.Paw /> : (isSireSide ? <Icon.Male /> : <Icon.Female />))}
+                          : (node.isMissing ? <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '60%', height: '60%', objectFit: 'contain' }} /> : (isSireSide ? <Icon.Male /> : <Icon.Female />))}
                       </div>
                       <div className="ped-card-info">
                         <div className="ped-card-name">{node.isMissing ? 'ไม่มีข้อมูล' : (node.name || 'ไม่ระบุ')}</div>
@@ -869,7 +869,7 @@ export default function PetDetailPage() {
               <div className="verified-badge"><Icon.Verified /> Verified by Whiskora</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
               <div className="breed-tags">
-                {pet.breed && <span className="breed-tag"><Icon.Paw /> {pet.breed}</span>}
+                {pet.breed && <span className="breed-tag"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {pet.breed}</span>}
                 {pet.color && <span className="breed-tag breed-tag-white">{pet.color}</span>}
                 {pet.pattern && <span className="breed-tag breed-tag-white">{pet.pattern}</span>}
               </div>
@@ -881,7 +881,7 @@ export default function PetDetailPage() {
               </div>
               <div className="pet-id-card">
                 <div className="pet-id-left">
-                  <div className="pet-id-label"><Icon.Paw /> PET ID</div>
+                  <div className="pet-id-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> PET ID</div>
                   <div className="pet-id-number">{pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`}</div>
                   <div className="pet-id-reg">สมัครเมื่อ {formatDate(pet.created_at || pet.birth_date)}</div>
                   <div className="pet-id-actions">
@@ -922,7 +922,7 @@ export default function PetDetailPage() {
                 </div>
 
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, color: F.pink }}><Icon.Paw /></div>ข้อมูลพื้นฐาน</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>ข้อมูลพื้นฐาน</div></div>
                   <div className="card-body">
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
                       {[

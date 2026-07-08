@@ -205,7 +205,7 @@ export default function BulkAddVaccinePage() {
               <div className="bv-card">
                 <div className="bv-members-head">
                   <div>
-                    <div className="bv-card-title" style={{ marginBottom: 4 }}><span className="bv-card-icon"><Icon.Paw /></span> เลือกสมาชิก</div>
+                    <div className="bv-card-title" style={{ marginBottom: 4 }}><span className="bv-card-icon"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span> เลือกสมาชิก</div>
                     <p style={{ fontSize: 11, fontWeight: 600, color: F.muted, marginLeft: 2 }}>เลือกเด็กๆ ที่ไปรับบริการด้วยกัน *</p>
                   </div>
                   {pets.length > 0 && (

@@ -1257,7 +1257,7 @@ export default function PetIdCardPreviewPage() {
                     {detailRows.map((row) => (
                       <div className={`sample-row${row.strong ? " is-primary" : ""}`} key={row.labelEn}>
                         <div className="sample-icon">
-                          <Icon.Paw size={13} />
+                          <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} />
                         </div>
                         <div className="sample-label">
                           <span className="sample-line sample-line-th">
@@ -1279,7 +1279,7 @@ export default function PetIdCardPreviewPage() {
                     <div className="sample-petid">
                       <div className="sample-petid-left">
                         <div className="sample-petid-label">
-                          <Icon.Paw size={11} />
+                          <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 11, height: 11, objectFit: 'contain' }} />
                           <span className="sample-petid-label-text">
                             <span className="sample-petid-label-th">เลขประจำตัวสัตว์เลี้ยง</span>
                             <span className="sample-petid-label-en">Pet ID</span>

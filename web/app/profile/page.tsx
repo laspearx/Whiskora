@@ -601,8 +601,8 @@ export default function ProfilePage() {
         }
 
         .quick-icon img {
-          width: 48px;
-          height: 48px;
+          width: 96px;
+          height: 96px;
           object-fit: contain;
         }
 
@@ -659,8 +659,8 @@ export default function ProfilePage() {
         }
 
         .card-title-icon img {
-          width: 36px;
-          height: 36px;
+          width: 72px;
+          height: 72px;
           object-fit: contain;
         }
 
@@ -843,8 +843,8 @@ export default function ProfilePage() {
         }
 
         .business-icon img {
-          width: 36px;
-          height: 36px;
+          width: 72px;
+          height: 72px;
           object-fit: contain;
         }
 
@@ -1060,7 +1060,7 @@ export default function ProfilePage() {
 
               <div>
                 <div className="hero-kicker">
-                  <Icon.Paw />
+                  <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />
                   User Profile
                 </div>
                 <div className="hero-title-row">
@@ -1203,7 +1203,7 @@ export default function ProfilePage() {
                         return (
                           <div className="appointment-item" key={`${item.pet_id}-${item.next_due}-${index}`}>
                             <span className="appointment-avatar">
-                              {pet?.image_url ? <img src={pet.image_url} alt={item.petName} /> : <Icon.Paw />}
+                              {pet?.image_url ? <img src={pet.image_url} alt={item.petName} /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
                             </span>
                             <span style={{ minWidth: 0 }}>
                               <strong>{item.vaccine_name || "กำหนดดูแลสุขภาพ"}</strong>
@@ -1240,7 +1240,7 @@ export default function ProfilePage() {
                     {pets.slice(0, 4).map((pet) => (
                       <Link className="pet-row" href={`/pets/${pet.id}`} key={pet.id}>
                         <span className="pet-avatar">
-                          {pet.image_url ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} /> : <Icon.Paw />}
+                          {pet.image_url ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
                         </span>
                         <span style={{ minWidth: 0, flex: 1 }}>
                           <strong>{pet.name || "ยังไม่มีชื่อ"}</strong>

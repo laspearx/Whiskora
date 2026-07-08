@@ -264,7 +264,7 @@ export default function PublicFarmProfile() {
                   {farmLocation && <span className="fp-meta-item"><Icon.Pin /> {farmLocation}</span>}
                   <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
                   <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
-                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><Icon.Paw /> โฮมบรีด</>}
+                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> โฮมบรีด</>}
                   </span>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export default function PublicFarmProfile() {
                 )}
               </div>
               <div className="fp-quality">
-                <div className="fp-quality-icon">{isVerified ? <Icon.Shield /> : <Icon.Paw />}</div>
+                <div className="fp-quality-icon">{isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />}</div>
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
                   <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
@@ -295,7 +295,7 @@ export default function PublicFarmProfile() {
             <div className="fp-stats-card">
               <div className="fp-stats-grid">
                 <div className="fp-stat">
-                  <div className="fp-stat-label"><Icon.Paw /> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
                   <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
                   <div className="fp-stat-unit">ตัว</div>
                 </div>
@@ -327,7 +327,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><Icon.Paw /> ข้อมูลฟาร์ม</div>
+                <div className="fp-section-title"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
               </div>
               <div className="fp-info-grid">
                 <div className="fp-info-row">
