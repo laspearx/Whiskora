@@ -250,8 +250,8 @@ export default function ProfilePage() {
             color: ${F.muted};
             font-family: var(--font-ui), inherit;
             font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
+            font-weight: 500;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
           }
         `}</style>
@@ -401,8 +401,8 @@ export default function ProfilePage() {
           backdrop-filter: blur(8px);
           color: white;
           font-size: 11px;
-          font-weight: 900;
-          letter-spacing: .08em;
+          font-weight: 600;
+          letter-spacing: .05em;
           text-transform: uppercase;
           margin-bottom: 12px;
         }
@@ -417,10 +417,10 @@ export default function ProfilePage() {
         .hero-title {
           margin: 0;
           color: white;
-          font-size: clamp(28px, 5vw, 42px);
-          line-height: 1.08;
-          font-weight: 900;
-          letter-spacing: -0.04em;
+          font-size: clamp(22px, 4vw, 32px);
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: -0.01em;
         }
 
         .verified-badge {
@@ -437,10 +437,10 @@ export default function ProfilePage() {
 
         .hero-email {
           margin: 8px 0 0;
-          color: rgba(255,255,255,.86);
+          color: rgba(255,255,255,.82);
           font-size: 14px;
           line-height: 1.55;
-          font-weight: 650;
+          font-weight: 400;
           overflow-wrap: anywhere;
         }
 
@@ -461,7 +461,7 @@ export default function ProfilePage() {
           border-radius: 14px;
           padding: 10px 18px;
           font-size: 14px;
-          font-weight: 850;
+          font-weight: 600;
           text-decoration: none;
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
@@ -508,9 +508,9 @@ export default function ProfilePage() {
         .meta-pill strong {
           display: block;
           color: white;
-          font-size: 23px;
+          font-size: 20px;
           line-height: 1;
-          font-weight: 900;
+          font-weight: 700;
         }
 
         .meta-pill span {
@@ -519,7 +519,7 @@ export default function ProfilePage() {
           font-size: 12px;
           line-height: 1.45;
           margin-top: 6px;
-          font-weight: 650;
+          font-weight: 400;
         }
 
         .profile-progress {
@@ -535,7 +535,7 @@ export default function ProfilePage() {
           margin-bottom: 8px;
           color: rgba(255,255,255,.86);
           font-size: 12px;
-          font-weight: 800;
+          font-weight: 500;
         }
 
         .progress-track {
@@ -613,9 +613,9 @@ export default function ProfilePage() {
         .quick-card strong {
           display: block;
           color: ${F.ink};
-          font-size: 15px;
-          line-height: 1.35;
-          font-weight: 850;
+          font-size: 14px;
+          line-height: 1.4;
+          font-weight: 650;
           margin-bottom: 5px;
         }
 
@@ -624,7 +624,7 @@ export default function ProfilePage() {
           color: ${F.muted};
           font-size: 12px;
           line-height: 1.55;
-          font-weight: 600;
+          font-weight: 400;
         }
 
         .profile-grid {
@@ -669,16 +669,16 @@ export default function ProfilePage() {
         .card-head h2 {
           margin: 0;
           color: ${F.ink};
-          font-size: 20px;
-          line-height: 1.28;
-          font-weight: 850;
-          letter-spacing: -0.02em;
+          font-size: 17px;
+          line-height: 1.35;
+          font-weight: 650;
+          letter-spacing: 0;
         }
 
         .card-link {
           color: ${F.pink};
           font-size: 13px;
-          font-weight: 850;
+          font-weight: 500;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
@@ -716,7 +716,7 @@ export default function ProfilePage() {
         .calendar-month {
           color: ${F.ink};
           font-size: 14px;
-          font-weight: 850;
+          font-weight: 600;
           text-align: center;
         }
 
@@ -741,7 +741,7 @@ export default function ProfilePage() {
         .weekday {
           color: ${F.muted};
           font-size: 11px;
-          font-weight: 850;
+          font-weight: 500;
           min-height: 24px;
         }
 
@@ -756,7 +756,7 @@ export default function ProfilePage() {
           color: ${F.inkSoft};
           text-decoration: none;
           font-size: 12px;
-          font-weight: 750;
+          font-weight: 400;
           background: ${F.cream};
         }
 
@@ -837,8 +837,8 @@ export default function ProfilePage() {
           display: block;
           color: ${F.ink};
           font-size: 14px;
-          line-height: 1.35;
-          font-weight: 850;
+          line-height: 1.45;
+          font-weight: 600;
         }
 
         .appointment-item span,
@@ -846,8 +846,8 @@ export default function ProfilePage() {
         .business-link small {
           color: ${F.muted};
           font-size: 12px;
-          font-weight: 650;
-          line-height: 1.45;
+          font-weight: 400;
+          line-height: 1.55;
         }
 
         .status-pill {
@@ -857,7 +857,7 @@ export default function ProfilePage() {
           background: ${F.pinkSoft};
           color: ${F.pinkDeep};
           font-size: 11px;
-          font-weight: 850;
+          font-weight: 500;
           white-space: nowrap;
         }
 
@@ -880,8 +880,8 @@ export default function ProfilePage() {
         .finance-card strong {
           display: block;
           color: ${F.leaf};
-          font-size: 24px;
-          font-weight: 900;
+          font-size: 22px;
+          font-weight: 700;
           line-height: 1;
         }
 
@@ -890,10 +890,10 @@ export default function ProfilePage() {
           border-radius: 16px;
           background: rgba(255,255,255,.64);
           padding: 16px;
-          color: ${F.inkSoft};
+          color: ${F.muted};
           font-size: 13px;
-          line-height: 1.65;
-          font-weight: 600;
+          line-height: 1.7;
+          font-weight: 400;
         }
 
         @media (max-width: 900px) {
@@ -949,7 +949,7 @@ export default function ProfilePage() {
           }
 
           .meta-pill strong {
-            font-size: 20px;
+            font-size: 18px;
           }
 
           .meta-pill span {
@@ -971,7 +971,7 @@ export default function ProfilePage() {
           }
 
           .quick-card strong {
-            font-size: 14px;
+            font-size: 13px;
           }
 
           .quick-card span {
