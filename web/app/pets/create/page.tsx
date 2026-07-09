@@ -384,7 +384,7 @@ function CreatePetContent() {
               )}
 
               {isCat && (
-                <div className="cp-grid3">
+                <div className="cp-grid3" style={{ marginTop: 16 }}>
                   <div className="cp-field" style={{ marginBottom: 0 }}>
                     <label className="cp-label">ลักษณะหู</label>
                     <select className="cp-select" value={ear} onChange={(e) => setEar(e.target.value)}>
