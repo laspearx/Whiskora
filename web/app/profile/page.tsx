@@ -982,12 +982,14 @@ export default function ProfilePage() {
         }
 
         .calendar-toolbar {
-          display: flex;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
           align-items: center;
-          justify-content: space-between;
-          gap: 8px;
           margin-bottom: 8px;
-          position: relative;
+        }
+
+        .calendar-toolbar > button:last-child {
+          justify-self: end;
         }
 
         .icon-button {
@@ -1009,17 +1011,14 @@ export default function ProfilePage() {
         }
 
         .calendar-month {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 6px;
           color: ${F.ink};
           font-size: 14px;
           font-weight: 600;
           white-space: nowrap;
-          pointer-events: none;
         }
 
         .calendar-grid {
