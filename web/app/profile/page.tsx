@@ -649,8 +649,7 @@ export default function ProfilePage() {
           font-size: 11px;
           font-weight: 600;
           text-align: center;
-          padding: 6px 8px 8px;
-          background: rgba(0,0,0,.08);
+          padding: 6px 8px 10px;
         }
 
         .profile-progress {
@@ -713,10 +712,12 @@ export default function ProfilePage() {
 
         .meta-pill-icon {
           position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 64px;
+          height: 64px;
+          object-fit: contain;
           opacity: .62;
         }
 
