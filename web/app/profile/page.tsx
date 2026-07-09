@@ -393,7 +393,7 @@ export default function ProfilePage() {
 
         .profile-page {
           min-height: 100vh;
-          padding: 32px 0 84px;
+          padding: 32px 0 0;
           color: ${F.ink};
           font-family: var(--font-ui), inherit;
         }
@@ -617,39 +617,42 @@ export default function ProfilePage() {
 
         .meta-pill {
           border-radius: 12px;
-          overflow: hidden;
           background: rgba(255,255,255,.14);
           border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 14px;
         }
 
-        .meta-pill-icon-area {
-          position: relative;
-          min-height: 72px;
+        .meta-pill-icon {
+          width: 48px;
+          height: 48px;
+          object-fit: contain;
+          flex: 0 0 auto;
+        }
+
+        .meta-pill-texts {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
         }
 
         .meta-pill-num {
-          position: relative;
-          z-index: 2;
           color: white;
-          font-size: 28px;
+          font-size: 24px;
           line-height: 1;
           font-weight: 800;
-          text-shadow: 0 2px 8px rgba(0,0,0,.28);
         }
 
         .meta-pill-label {
-          color: rgba(255,255,255,.9);
+          color: rgba(255,255,255,.78);
           font-size: 11px;
-          font-weight: 600;
-          text-align: center;
-          padding: 6px 8px 10px;
+          font-weight: 500;
+          line-height: 1.3;
         }
 
         .profile-progress {
@@ -1434,7 +1437,7 @@ export default function ProfilePage() {
             font-size: 15px;
           }
 
-          .meta-pill span {
+          .meta-pill-label {
             font-size: 10px;
           }
 
@@ -1555,18 +1558,18 @@ export default function ProfilePage() {
 
             <div className="hero-meta" aria-label="สรุปบัญชี">
               <div className="meta-pill">
-                <span className="meta-pill-icon-area">
-                  <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
+                <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
+                <span className="meta-pill-texts">
                   <strong className="meta-pill-num">{pets.length}</strong>
+                  <span className="meta-pill-label">สัตว์เลี้ยง</span>
                 </span>
-                <span className="meta-pill-label">สัตว์เลี้ยง</span>
               </div>
               <div className="meta-pill">
-                <span className="meta-pill-icon-area">
-                  <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
+                <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
+                <span className="meta-pill-texts">
                   <strong className="meta-pill-num">{businessCount}</strong>
+                  <span className="meta-pill-label">ธุรกิจ</span>
                 </span>
-                <span className="meta-pill-label">ธุรกิจ</span>
               </div>
             </div>
           </section>
