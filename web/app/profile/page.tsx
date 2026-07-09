@@ -623,36 +623,29 @@ export default function ProfilePage() {
           display: flex;
           flex-direction: row;
           align-items: center;
-          gap: 12px;
-          padding: 10px 14px;
+          gap: 8px;
+          padding: 8px 12px;
         }
 
         .meta-pill-icon {
-          width: 48px;
-          height: 48px;
+          width: 32px;
+          height: 32px;
           object-fit: contain;
           flex: 0 0 auto;
         }
 
-        .meta-pill-texts {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          min-width: 0;
-        }
-
         .meta-pill-num {
           color: white;
-          font-size: 24px;
+          font-size: 20px;
           line-height: 1;
           font-weight: 800;
         }
 
         .meta-pill-label {
-          color: rgba(255,255,255,.78);
-          font-size: 11px;
+          color: rgba(255,255,255,.82);
+          font-size: 13px;
           font-weight: 500;
-          line-height: 1.3;
+          line-height: 1;
         }
 
         .profile-progress {
@@ -711,17 +704,6 @@ export default function ProfilePage() {
           height: 11px;
           object-fit: contain;
           opacity: .75;
-        }
-
-        .meta-pill-icon {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 64px;
-          height: 64px;
-          object-fit: contain;
-          opacity: .62;
         }
 
         .quick-scroll-wrap {
@@ -1429,16 +1411,21 @@ export default function ProfilePage() {
           }
 
           .meta-pill {
-            padding: 8px;
-            text-align: center;
+            padding: 7px 10px;
+            gap: 6px;
           }
 
-          .meta-pill strong {
-            font-size: 15px;
+          .meta-pill-icon {
+            width: 26px;
+            height: 26px;
+          }
+
+          .meta-pill-num {
+            font-size: 17px;
           }
 
           .meta-pill-label {
-            font-size: 10px;
+            font-size: 12px;
           }
 
           .quick-grid {
@@ -1559,17 +1546,13 @@ export default function ProfilePage() {
             <div className="hero-meta" aria-label="สรุปบัญชี">
               <div className="meta-pill">
                 <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
-                <span className="meta-pill-texts">
-                  <strong className="meta-pill-num">{pets.length}</strong>
-                  <span className="meta-pill-label">สัตว์เลี้ยง</span>
-                </span>
+                <strong className="meta-pill-num">{pets.length}</strong>
+                <span className="meta-pill-label">สัตว์เลี้ยง</span>
               </div>
               <div className="meta-pill">
                 <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
-                <span className="meta-pill-texts">
-                  <strong className="meta-pill-num">{businessCount}</strong>
-                  <span className="meta-pill-label">ธุรกิจ</span>
-                </span>
+                <strong className="meta-pill-num">{businessCount}</strong>
+                <span className="meta-pill-label">ธุรกิจ</span>
               </div>
             </div>
           </section>

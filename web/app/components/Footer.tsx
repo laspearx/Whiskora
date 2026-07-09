@@ -48,7 +48,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full max-w-7xl mx-auto px-5 md:px-6 mt-10 md:mt-16 pt-8 md:pt-12 pb-24 md:pb-10" style={{ borderTop: `1px solid ${F.line}` }}>
+    <footer className="w-full max-w-7xl mx-auto px-5 md:px-6 mt-0 md:mt-10 pt-8 md:pt-12 pb-24 md:pb-10" style={{ borderTop: `1px solid ${F.line}` }}>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-10">
 

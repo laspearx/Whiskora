@@ -334,14 +334,14 @@ export default function Navbar() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      <div className="flex items-stretch h-16">
+      <div className="flex items-stretch h-20">
 
         {/* หน้าแรก */}
         <TabBtn
           label="หน้าแรก"
           active={pathname === '/'}
           onClick={() => go('/')}
-          icon={<img src="/icons/icon-tab-home.png" alt="" width={36} height={36} style={{ objectFit: 'contain' }} />}
+          icon={<img src="/icons/icon-tab-home.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         {/* สัตว์เลี้ยง */}
@@ -349,7 +349,7 @@ export default function Navbar() {
           label="สัตว์เลี้ยง"
           active={pathname.startsWith('/pets') || pathname === '/profile/pets'}
           onClick={() => guarded('/profile/pets')}
-          icon={<img src="/icons/icon-tab-pets.png" alt="" width={36} height={36} style={{ objectFit: 'contain' }} />}
+          icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         {/* + สร้าง (center raised) */}
@@ -358,20 +358,20 @@ export default function Navbar() {
             onClick={() => guarded('/pets/create')}
             aria-label="เพิ่มสัตว์เลี้ยง"
             style={{
-              width: 62,
-              height: 62,
+              width: 78,
+              height: 78,
               borderRadius: '999px',
               background: 'rgba(253,226,234,0.9)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 6px 20px rgba(232,70,119,0.22)',
-              marginTop: -18,
+              marginTop: -24,
               border: '3px solid white',
               flexShrink: 0,
             }}
           >
-            <img src="/icons/icon-tab-add.png" alt="" width={40} height={40} style={{ objectFit: 'contain' }} />
+            <img src="/icons/icon-tab-add.png" alt="" width={60} height={60} style={{ objectFit: 'contain' }} />
           </button>
         </div>
 
@@ -380,7 +380,7 @@ export default function Navbar() {
           label="สำรวจ"
           active={exploreActive}
           onClick={() => go('/farm-hub')}
-          icon={<img src="/icons/icon-tab-explore.png" alt="" width={36} height={36} style={{ objectFit: 'contain' }} />}
+          icon={<img src="/icons/icon-tab-explore.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         {/* โปรไฟล์ */}
@@ -388,7 +388,7 @@ export default function Navbar() {
           label="โปรไฟล์"
           active={pathname === '/profile'}
           onClick={() => guarded('/profile')}
-          icon={<img src="/icons/icon-tab-profile.png" alt="" width={36} height={36} style={{ objectFit: 'contain' }} />}
+          icon={<img src="/icons/icon-tab-profile.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
       </div>
@@ -413,9 +413,9 @@ function TabBtn({
       style={{ color: active ? '#e84677' : '#b0a0a8' }}
     >
       <span style={{
-        width: 44,
-        height: 36,
-        borderRadius: 12,
+        width: 72,
+        height: 60,
+        borderRadius: 16,
         background: active ? 'rgba(232,70,119,0.09)' : 'transparent',
         display: 'flex',
         alignItems: 'center',
