@@ -616,36 +616,41 @@ export default function ProfilePage() {
         }
 
         .meta-pill {
-          position: relative;
-          overflow: hidden;
           border-radius: 12px;
-          padding: 14px 8px;
+          overflow: hidden;
           background: rgba(255,255,255,.14);
           border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
           display: flex;
           flex-direction: column;
+        }
+
+        .meta-pill-icon-area {
+          position: relative;
+          min-height: 72px;
+          display: flex;
           align-items: center;
           justify-content: center;
-          gap: 4px;
+          overflow: hidden;
         }
 
-        .meta-pill strong {
+        .meta-pill-num {
           position: relative;
-          z-index: 1;
+          z-index: 2;
           color: white;
-          font-size: 26px;
+          font-size: 28px;
           line-height: 1;
-          font-weight: 700;
+          font-weight: 800;
+          text-shadow: 0 2px 8px rgba(0,0,0,.28);
         }
 
-        .meta-pill span {
-          position: relative;
-          z-index: 1;
-          color: rgba(255,255,255,.78);
+        .meta-pill-label {
+          color: rgba(255,255,255,.9);
           font-size: 11px;
-          line-height: 1.3;
-          font-weight: 400;
+          font-weight: 600;
+          text-align: center;
+          padding: 6px 8px 8px;
+          background: rgba(0,0,0,.08);
         }
 
         .profile-progress {
@@ -708,14 +713,11 @@ export default function ProfilePage() {
 
         .meta-pill-icon {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 60px;
-          height: 60px;
-          object-fit: contain;
-          opacity: .18;
-          pointer-events: none;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: .62;
         }
 
         .quick-scroll-wrap {
@@ -1552,14 +1554,18 @@ export default function ProfilePage() {
 
             <div className="hero-meta" aria-label="สรุปบัญชี">
               <div className="meta-pill">
-                <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
-                <strong>{pets.length}</strong>
-                <span>สัตว์เลี้ยง</span>
+                <span className="meta-pill-icon-area">
+                  <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
+                  <strong className="meta-pill-num">{pets.length}</strong>
+                </span>
+                <span className="meta-pill-label">สัตว์เลี้ยง</span>
               </div>
               <div className="meta-pill">
-                <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
-                <strong>{businessCount}</strong>
-                <span>ธุรกิจ</span>
+                <span className="meta-pill-icon-area">
+                  <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
+                  <strong className="meta-pill-num">{businessCount}</strong>
+                </span>
+                <span className="meta-pill-label">ธุรกิจ</span>
               </div>
             </div>
           </section>
@@ -1602,7 +1608,7 @@ export default function ProfilePage() {
                       <Icon.ChevronLeft />
                     </button>
                     <div className="calendar-month">
-                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 26, height: 26, objectFit: "contain", opacity: 0.72, flexShrink: 0 }} />
+                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.72, flexShrink: 0 }} />
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
                     </div>
                     <button className="icon-button" type="button" onClick={handleNextMonth} aria-label="เดือนถัดไป">
