@@ -223,12 +223,12 @@ function CreatePetContent() {
         .cp-field:last-child { margin-bottom: 0; }
         .cp-label { display: block; font-size: 12px; font-weight: 500; color: ${F.muted}; margin-bottom: 6px; margin-left: 1px; }
         .cp-label .opt { font-weight: 400; }
-        .cp-input, .cp-select { width: 100%; padding: 11px 14px; background: white; border: 1px solid ${F.line}; border-radius: 12px; font-size: 14px; font-weight: 400; color: ${F.ink}; outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit; }
+        .cp-input, .cp-select { width: 100%; height: 46px; padding: 0 14px; background: white; border: 1px solid ${F.line}; border-radius: 12px; font-size: 14px; font-weight: 400; color: ${F.ink}; outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit; }
         .cp-input::placeholder { color: ${F.muted}; }
         .cp-input:focus, .cp-select:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .cp-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238e7e84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; cursor: pointer; }
-        .cp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .cp-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .cp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+        .cp-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; }
 
         /* ── species picker ── */
         .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -388,29 +388,31 @@ function CreatePetContent() {
                 <input className="cp-input" style={{ marginTop: -6, marginBottom: 16 }} value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="ระบุสีด้วยตนเอง..." />
               )}
 
-              <div className="cp-grid3">
-                <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">ลักษณะหู</label>
-                  <select className="cp-select" value={ear} onChange={(e) => setEar(e.target.value)}>
-                    <option value="">-</option>
-                    {EAR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+              {isCat && (
+                <div className="cp-grid3">
+                  <div className="cp-field" style={{ marginBottom: 0 }}>
+                    <label className="cp-label">ลักษณะหู</label>
+                    <select className="cp-select" value={ear} onChange={(e) => setEar(e.target.value)}>
+                      <option value="">-</option>
+                      {EAR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="cp-field" style={{ marginBottom: 0 }}>
+                    <label className="cp-label">ลักษณะขา</label>
+                    <select className="cp-select" value={leg} onChange={(e) => setLeg(e.target.value)}>
+                      <option value="">-</option>
+                      {LEG_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="cp-field" style={{ marginBottom: 0 }}>
+                    <label className="cp-label">ลักษณะขน</label>
+                    <select className="cp-select" value={coat} onChange={(e) => setCoat(e.target.value)}>
+                      <option value="">-</option>
+                      {COAT_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">ลักษณะขา</label>
-                  <select className="cp-select" value={leg} onChange={(e) => setLeg(e.target.value)}>
-                    <option value="">-</option>
-                    {LEG_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div className="cp-field" style={{ marginBottom: 0 }}>
-                  <label className="cp-label">ลักษณะขน</label>
-                  <select className="cp-select" value={coat} onChange={(e) => setCoat(e.target.value)}>
-                    <option value="">-</option>
-                    {COAT_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              </div>
+              )}
 
               <div className="cp-grid2" style={{ marginTop: 16 }}>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
