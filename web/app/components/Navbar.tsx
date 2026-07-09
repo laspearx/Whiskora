@@ -341,13 +341,7 @@ export default function Navbar() {
           label="หน้าแรก"
           active={pathname === '/'}
           onClick={() => go('/')}
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5 9.5V21h14V9.5" />
-              <path d="M9 21v-7h6v7" />
-            </svg>
-          }
+          icon={<img src="/icons/icon-tab-home.png" alt="" width={28} height={28} style={{ objectFit: 'contain' }} />}
         />
 
         {/* สัตว์เลี้ยง */}
@@ -355,14 +349,7 @@ export default function Navbar() {
           label="สัตว์เลี้ยง"
           active={pathname.startsWith('/pets')}
           onClick={() => guarded('/pets')}
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
-              <circle cx="7.5" cy="9" r="2" />
-              <circle cx="12" cy="6.8" r="2" />
-              <circle cx="16.5" cy="9" r="2" />
-              <path d="M6.5 16.4c0-2.5 2.4-4.6 5.5-4.6s5.5 2.1 5.5 4.6c0 1.6-1 2.8-2.6 2.8-1.1 0-1.7-.5-2.9-.5s-1.8.5-2.9.5c-1.6 0-2.6-1.2-2.6-2.8Z" />
-            </svg>
-          }
+          icon={<img src="/icons/icon-tab-pets.png" alt="" width={28} height={28} style={{ objectFit: 'contain' }} />}
         />
 
         {/* + สร้าง (center raised) */}
@@ -371,23 +358,20 @@ export default function Navbar() {
             onClick={() => guarded('/pets/create')}
             aria-label="เพิ่มสัตว์เลี้ยง"
             style={{
-              width: 52,
-              height: 52,
+              width: 56,
+              height: 56,
               borderRadius: '999px',
-              background: 'linear-gradient(135deg, #e84677 0%, #f06d98 100%)',
-              color: 'white',
+              background: 'rgba(253,226,234,0.9)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 6px 20px rgba(232,70,119,0.38)',
-              marginTop: -14,
+              boxShadow: '0 6px 20px rgba(232,70,119,0.22)',
+              marginTop: -16,
               border: '3px solid white',
               flexShrink: 0,
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="22" height="22" aria-hidden>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <img src="/icons/icon-tab-add.png" alt="" width={32} height={32} style={{ objectFit: 'contain' }} />
           </button>
         </div>
 
@@ -396,12 +380,7 @@ export default function Navbar() {
           label="สำรวจ"
           active={exploreActive}
           onClick={() => go('/farm-hub')}
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
-            </svg>
-          }
+          icon={<img src="/icons/icon-tab-explore.png" alt="" width={28} height={28} style={{ objectFit: 'contain' }} />}
         />
 
         {/* โปรไฟล์ */}
@@ -409,12 +388,7 @@ export default function Navbar() {
           label="โปรไฟล์"
           active={pathname === '/profile'}
           onClick={() => guarded('/profile')}
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          }
+          icon={<img src="/icons/icon-tab-profile.png" alt="" width={28} height={28} style={{ objectFit: 'contain' }} />}
         />
 
       </div>
@@ -435,18 +409,19 @@ function TabBtn({
     <button
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-      style={{ color: active ? '#e84677' : '#9ca3af' }}
+      className="flex-1 flex flex-col items-center justify-center gap-0.5"
+      style={{ color: active ? '#e84677' : '#b0a0a8' }}
     >
       <span style={{
-        width: 36,
-        height: 28,
-        borderRadius: 10,
-        background: active ? 'rgba(232,70,119,0.10)' : 'transparent',
+        width: 40,
+        height: 32,
+        borderRadius: 12,
+        background: active ? 'rgba(232,70,119,0.09)' : 'transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background .15s',
+        opacity: active ? 1 : 0.45,
+        transition: 'opacity .15s, background .15s',
       }}>
         {icon}
       </span>
