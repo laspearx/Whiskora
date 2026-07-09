@@ -611,13 +611,15 @@ export default function ProfilePage() {
           z-index: 1;
           margin-top: 14px;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 8px;
         }
 
         .meta-pill {
+          position: relative;
+          overflow: hidden;
           border-radius: 12px;
-          padding: 12px 8px;
+          padding: 14px 8px;
           background: rgba(255,255,255,.14);
           border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
@@ -625,18 +627,22 @@ export default function ProfilePage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 3px;
+          gap: 4px;
         }
 
         .meta-pill strong {
+          position: relative;
+          z-index: 1;
           color: white;
-          font-size: 22px;
+          font-size: 26px;
           line-height: 1;
           font-weight: 700;
         }
 
         .meta-pill span {
-          color: rgba(255,255,255,.72);
+          position: relative;
+          z-index: 1;
+          color: rgba(255,255,255,.78);
           font-size: 11px;
           line-height: 1.3;
           font-weight: 400;
@@ -701,10 +707,15 @@ export default function ProfilePage() {
         }
 
         .meta-pill-icon {
-          width: 28px;
-          height: 28px;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 60px;
+          height: 60px;
           object-fit: contain;
-          opacity: .88;
+          opacity: .18;
+          pointer-events: none;
         }
 
         .quick-scroll-wrap {
@@ -1407,7 +1418,7 @@ export default function ProfilePage() {
           }
 
           .hero-meta {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 6px;
           }
 
@@ -1546,11 +1557,6 @@ export default function ProfilePage() {
                 <span>สัตว์เลี้ยง</span>
               </div>
               <div className="meta-pill">
-                <img className="meta-pill-icon" src="/icons/icon-vaccine.png" alt="" />
-                <strong>{appointments.length}</strong>
-                <span>นัดสุขภาพ</span>
-              </div>
-              <div className="meta-pill">
                 <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
                 <strong>{businessCount}</strong>
                 <span>ธุรกิจ</span>
@@ -1596,7 +1602,7 @@ export default function ProfilePage() {
                       <Icon.ChevronLeft />
                     </button>
                     <div className="calendar-month">
-                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.72, flexShrink: 0 }} />
+                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 26, height: 26, objectFit: "contain", opacity: 0.72, flexShrink: 0 }} />
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
                     </div>
                     <button className="icon-button" type="button" onClick={handleNextMonth} aria-label="เดือนถัดไป">
