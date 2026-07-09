@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, Suspense } from "react
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
-import { OTHER_SPECIES, speciesTh } from "@/lib/species";
+import { OTHER_SPECIES, speciesTh, speciesIcon } from "@/lib/species";
 import { PET_GENDER, type PetGender } from "@/lib/constants";
 
 const F = {
@@ -234,7 +234,6 @@ function CreatePetContent() {
         .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .cp-species-btn { padding: 14px 8px; border-radius: 14px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
         .cp-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .cp-species-btn .emoji { font-size: 22px; }
         .cp-species-btn .lbl { font-size: 12px; font-weight: 500; color: ${F.muted}; }
         .cp-species-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 600; }
 
@@ -242,7 +241,6 @@ function CreatePetContent() {
         .cp-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 10px; }
         .cp-other-btn { padding: 10px 4px; border-radius: 11px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
         .cp-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .cp-other-btn .emoji { font-size: 18px; }
         .cp-other-btn .lbl { font-size: 9px; font-weight: 400; color: ${F.muted}; text-align: center; line-height: 1.2; }
         .cp-other-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 500; }
 
@@ -293,7 +291,7 @@ function CreatePetContent() {
             <div className="cp-photo-wrap">
               <div className="cp-photo">
                 <div className="cp-photo-circle" onClick={() => originalImageSrc ? setImageSrc(originalImageSrc) : fileInputRef.current?.click()}>
-                  {avatarUrl ? <img src={avatarUrl} alt="รูปสัตว์เลี้ยง" /> : (species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾')}
+                  {avatarUrl ? <img src={avatarUrl} alt="รูปสัตว์เลี้ยง" /> : <img src={speciesIcon(species || 'other')} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />}
                 </div>
                 <button type="button" className="cp-photo-btn" onClick={() => fileInputRef.current?.click()}><Icon.Camera /></button>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={onFileChange} onClick={(e) => (e.currentTarget.value = "")} style={{ display: 'none' }} />
@@ -313,12 +311,12 @@ function CreatePetContent() {
               <div className="cp-field">
                 <label className="cp-label">ประเภท</label>
                 <div className="cp-species">
-                  {[{ id: 'cat', emoji: '🐱', lbl: 'แมว' }, { id: 'dog', emoji: '🐶', lbl: 'หมา' }, { id: 'other', emoji: '🐾', lbl: 'อื่นๆ' }].map((t) => {
+                  {[{ id: 'cat', icon: speciesIcon('cat'), lbl: 'แมว' }, { id: 'dog', icon: speciesIcon('dog'), lbl: 'หมา' }, { id: 'other', icon: speciesIcon('other'), lbl: 'อื่นๆ' }].map((t) => {
                     const active = t.id === 'other' ? (pickOther || (species !== 'cat' && species !== 'dog')) : species === t.id;
                     return (
                       <button key={t.id} type="button" className={`cp-species-btn ${active ? 'active' : ''}`}
                         onClick={() => t.id === 'other' ? (setPickOther(true), setSpecies(''), setBreed(''), setColor(''), setPattern(''), setEar(''), setLeg(''), setCoat(''), setEyeColor('')) : pickSpecies(t.id)}>
-                        <span className="emoji">{t.emoji}</span>
+                        <img src={t.icon} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
                         <span className="lbl">{t.lbl}</span>
                       </button>
                     );
@@ -330,7 +328,7 @@ function CreatePetContent() {
                     {OTHER_SPECIES.map((o) => (
                       <button key={o.id} type="button" className={`cp-other-btn ${species === o.id ? 'active' : ''}`}
                         onClick={() => { setSpecies(o.id); setPickOther(false); setBreed(''); setColor(''); setPattern(''); setEar(''); setLeg(''); setCoat(''); setEyeColor(''); }}>
-                        <span className="emoji">{o.emoji}</span>
+                        <img src={o.icon} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
                         <span className="lbl">{o.th}</span>
                       </button>
                     ))}

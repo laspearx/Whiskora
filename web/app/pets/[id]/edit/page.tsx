@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { speciesToId } from "@/lib/species";
+import { speciesToId, speciesIcon } from "@/lib/species";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
@@ -41,12 +41,12 @@ const PET_DATA = {
     breeds: ["พันธุ์ทาง / พันธุ์ผสม (Mixed Breed)", "คอร์กี้ (Corgi)", "ชิบะ อินุ (Shiba Inu)", "ชิวาวา (Chihuahua)", "ชิสุ (Shih Tzu)", "ซามอยด์ (Samoyed)", "ไซบีเรียน ฮัสกี้ (Siberian Husky)", "แจ็ครัสเซลล์ เทอร์เรีย (Jack Russell)", "ไทยบางแก้ว (Thai Bangkaew)", "ไทยหลังอาน (Thai Ridgeback)", "บีเกิ้ล (Beagle)", "ปอมเมอเรเนียน (Pomeranian)", "พุดเดิ้ลทอย (Toy Poodle)", "เฟรนช์ บูลด็อก (French Bulldog)", "ยอร์กเชียร์ เทอร์เรีย (Yorkshire Terrier)", "ลาบราดอร์ รีทรีฟเวอร์ (Labrador)", "โกลเด้น รีทรีฟเวอร์ (Golden Retriever)", "อเมริกัน บูลลี่ (American Bully)", "อลาสกัน มาลามิวท์ (Alaskan Malamute)", "อื่นๆ"]
   },
   other_pets: [
-    { id: "rabbit", label: "กระต่าย", emoji: "🐰" }, { id: "hamster", label: "หนูแฮมสเตอร์", emoji: "🐹" },
-    { id: "bird", label: "นก", emoji: "🦜" }, { id: "squirrel", label: "กระรอก", emoji: "🐿️" },
-    { id: "hedgehog", label: "เม่นแคระ", emoji: "🦔" }, { id: "fish", label: "ปลา", emoji: "🐟" },
-    { id: "turtle", label: "เต่า", emoji: "🐢" }, { id: "frog", label: "กบ", emoji: "🐸" },
-    { id: "lizard", label: "กิ้งก่า", emoji: "🦎" }, { id: "snake", label: "งู", emoji: "🐍" },
-    { id: "raccoon", label: "แร็กคูน", emoji: "🦝" }, { id: "other", label: "สัตว์แปลกอื่นๆ", emoji: "🐾" },
+    { id: "rabbit", label: "กระต่าย" }, { id: "hamster", label: "หนูแฮมสเตอร์" },
+    { id: "bird", label: "นก" }, { id: "squirrel", label: "กระรอก" },
+    { id: "hedgehog", label: "เม่นแคระ" }, { id: "fish", label: "ปลา" },
+    { id: "turtle", label: "เต่า" }, { id: "frog", label: "กบ" },
+    { id: "lizard", label: "กิ้งก่า" }, { id: "snake", label: "งู" },
+    { id: "raccoon", label: "แร็กคูน" }, { id: "other", label: "สัตว์แปลกอื่นๆ" },
   ]
 };
 
@@ -322,9 +322,9 @@ export default function EditPetPage() {
               <label className="premium-label">ประเภท</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: "cat", label: "แมว", icon: '🐱' },
-                  { id: "dog", label: "หมา", icon: '🐶' },
-                  { id: "other", label: "อื่นๆ", icon: '🐾' }
+                  { id: "cat", label: "แมว" },
+                  { id: "dog", label: "หมา" },
+                  { id: "other", label: "อื่นๆ" }
                 ].map((type) => (
                   <button
                     key={type.id} type="button" onClick={() => handleSpeciesChange(type.id as any)}
@@ -332,7 +332,7 @@ export default function EditPetPage() {
                       species === type.id ? 'bg-teal-200 text-teal border-teal-500 shadow-md' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
                     }`}
                   >
-                    <span className="scale-110">{type.icon}</span>
+                    <img src={speciesIcon(type.id)} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
                     <span className="text-[11px] font-bold">{type.label}</span>
                   </button>
                 ))}
@@ -349,7 +349,7 @@ export default function EditPetPage() {
                       className={`p-2 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all
                         ${otherPetText === o.id ? 'border-teal-500 bg-teal-50' : 'border-gray-100 bg-gray-50/50'}`}
                     >
-                      <span className="text-xl">{o.emoji}</span>
+                      <img src={speciesIcon(o.id)} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
                       <span className={`text-[9px] font-bold ${otherPetText === o.id ? 'text-pink-600' : 'text-gray-500'}`}>{o.label}</span>
                     </button>
                   ))}
