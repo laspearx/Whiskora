@@ -232,14 +232,14 @@ function CreatePetContent() {
 
         /* ── species picker ── */
         .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .cp-species-btn { padding: 14px 8px; border-radius: 14px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
+        .cp-species-btn { padding: 16px 8px; border-radius: 14px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; transition: all .15s; font-family: inherit; min-height: 110px; }
         .cp-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
         .cp-species-btn .lbl { font-size: 12px; font-weight: 500; color: ${F.muted}; }
         .cp-species-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 600; }
 
         /* ── other pets grid ── */
         .cp-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 10px; }
-        .cp-other-btn { padding: 10px 4px; border-radius: 11px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
+        .cp-other-btn { padding: 12px 4px; border-radius: 11px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: all .15s; font-family: inherit; min-height: 88px; }
         .cp-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
         .cp-other-btn .lbl { font-size: 9px; font-weight: 400; color: ${F.muted}; text-align: center; line-height: 1.2; }
         .cp-other-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 500; }
@@ -316,7 +316,7 @@ function CreatePetContent() {
                     return (
                       <button key={t.id} type="button" className={`cp-species-btn ${active ? 'active' : ''}`}
                         onClick={() => t.id === 'other' ? (setPickOther(true), setSpecies(''), setBreed(''), setColor(''), setPattern(''), setEar(''), setLeg(''), setCoat(''), setEyeColor('')) : pickSpecies(t.id)}>
-                        <img src={t.icon} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                        <img src={t.icon} alt="" style={{ width: 72, height: 72, objectFit: 'contain' }} />
                         <span className="lbl">{t.lbl}</span>
                       </button>
                     );
@@ -328,7 +328,7 @@ function CreatePetContent() {
                     {OTHER_SPECIES.map((o) => (
                       <button key={o.id} type="button" className={`cp-other-btn ${species === o.id ? 'active' : ''}`}
                         onClick={() => { setSpecies(o.id); setPickOther(false); setBreed(''); setColor(''); setPattern(''); setEar(''); setLeg(''); setCoat(''); setEyeColor(''); }}>
-                        <img src={o.icon} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+                        <img src={o.icon} alt="" style={{ width: 56, height: 56, objectFit: 'contain' }} />
                         <span className="lbl">{o.th}</span>
                       </button>
                     ))}
