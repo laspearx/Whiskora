@@ -102,8 +102,8 @@ export default function MyPetsPage() {
         .page-header-text h1 {
           margin: 0;
           font-size: 22px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
+          font-weight: 600;
+          letter-spacing: -0.01em;
           color: ${F.ink};
           line-height: 1.2;
         }
@@ -142,10 +142,6 @@ export default function MyPetsPage() {
         }
 
         .section-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 9px;
-          background: ${F.pinkSoft};
           display: flex;
           align-items: center;
           justify-content: center;
@@ -153,15 +149,15 @@ export default function MyPetsPage() {
         }
 
         .section-icon img {
-          width: 20px;
-          height: 20px;
+          width: 28px;
+          height: 28px;
           object-fit: contain;
         }
 
         .section-head h2 {
           margin: 0;
           font-size: 15px;
-          font-weight: 700;
+          font-weight: 600;
           color: ${F.ink};
           white-space: nowrap;
           overflow: hidden;
@@ -181,7 +177,7 @@ export default function MyPetsPage() {
 
         .add-btn {
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 500;
           color: ${F.pink};
           text-decoration: none;
           border: 1px solid ${F.line};
@@ -264,7 +260,7 @@ export default function MyPetsPage() {
 
         .pet-name {
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 500;
           color: ${F.ink};
           white-space: nowrap;
           overflow: hidden;
