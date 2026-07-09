@@ -112,6 +112,14 @@ type VaccineAppointment = {
   pet_id: string | null;
 };
 
+type CalendarEvent = {
+  type: "appointment" | "birthday";
+  icon: string;
+  label: string;
+  petName?: string;
+  dateStr: string;
+};
+
 type BusinessLinkProps = {
   href: string;
   label: string;
@@ -140,10 +148,6 @@ function getAppointmentIcon(vaccineName: string | null): string {
   if (!vaccineName) return "/icons/icon-calendar.png";
   const v = vaccineName.toLowerCase();
   if (v.includes("วัคซีน") || v.includes("ฉีด") || v.includes("vaccine") || v.includes("inject")) return "/icons/icon-vaccine.png";
-  if (v.includes("ตรวจ") || v.includes("สุขภาพ") || v.includes("health") || v.includes("checkup")) return "/icons/icon-health.png";
-  if (v.includes("ตัดขน") || v.includes("อาบน้ำ") || v.includes("groom") || v.includes("bath")) return "/icons/icon-grooming.png";
-  if (v.includes("อาหาร") || v.includes("feed") || v.includes("นม")) return "/icons/icon-feeding.png";
-  if (v.includes("น้ำหนัก") || v.includes("weight")) return "/icons/icon-weight.png";
   return "/icons/icon-calendar.png";
 }
 
@@ -245,6 +249,55 @@ export default function ProfilePage() {
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
       .slice(0, 4);
   }, [appointments, pets]);
+
+  const calendarEventsByDate = useMemo(() => {
+    const map: Record<string, CalendarEvent[]> = {};
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    appointments.forEach((item) => {
+      if (!item.next_due) return;
+      const dateStr = item.next_due.split("T")[0];
+      const parts = dateStr.split("-");
+      if (parseInt(parts[0], 10) === year && parseInt(parts[1], 10) - 1 === month) {
+        if (!map[dateStr]) map[dateStr] = [];
+        map[dateStr].push({
+          type: "appointment",
+          icon: getAppointmentIcon(item.vaccine_name),
+          label: item.vaccine_name || "กำหนดดูแลสุขภาพ",
+          petName: pets.find((p) => p.id === item.pet_id)?.name,
+          dateStr,
+        });
+      }
+    });
+
+    pets.forEach((pet) => {
+      const bd: string | null = pet.birth_date || pet.birthdate || null;
+      if (!bd) return;
+      const bdParts = bd.split("-");
+      const bdMonth = parseInt(bdParts[1], 10) - 1;
+      const bdDay = parseInt(bdParts[2], 10);
+      if (bdMonth === month) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(bdDay).padStart(2, "0")}`;
+        if (!map[dateStr]) map[dateStr] = [];
+        map[dateStr].push({
+          type: "birthday",
+          icon: "/icons/icon-my-pets.png",
+          label: `วันเกิด ${pet.name || "สัตว์เลี้ยง"}`,
+          petName: pet.name,
+          dateStr,
+        });
+      }
+    });
+
+    return map;
+  }, [appointments, pets, currentDate]);
+
+  const monthEvents = useMemo(() => {
+    return Object.values(calendarEventsByDate)
+      .flat()
+      .sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+  }, [calendarEventsByDate]);
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -577,14 +630,14 @@ export default function ProfilePage() {
         }
 
         .quick-card {
-          min-height: 130px;
-          border-radius: 16px;
-          padding: 18px 16px;
+          min-height: 76px;
+          border-radius: 14px;
+          padding: 14px 16px;
           color: ${F.ink};
           text-decoration: none;
-          display: grid;
-          align-content: space-between;
-          gap: 10px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
         }
 
         .quick-card:hover,
@@ -601,8 +654,8 @@ export default function ProfilePage() {
         }
 
         .quick-icon img {
-          width: 96px;
-          height: 96px;
+          width: 44px;
+          height: 44px;
           object-fit: contain;
         }
 
@@ -760,12 +813,28 @@ export default function ProfilePage() {
         .day-cell {
           position: relative;
           aspect-ratio: 1;
-          border-radius: 10px;
+          border-radius: 8px;
           color: ${F.inkSoft};
           text-decoration: none;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 400;
           background: ${F.cream};
+          flex-direction: column;
+          gap: 1px;
+          padding: 3px 2px;
+        }
+
+        .day-num {
+          font-size: 11px;
+          font-weight: inherit;
+          line-height: 1;
+        }
+
+        .day-event-icon {
+          width: 13px;
+          height: 13px;
+          object-fit: contain;
+          opacity: .9;
         }
 
         .day-cell.has-event {
@@ -779,20 +848,67 @@ export default function ProfilePage() {
           box-shadow: 0 8px 18px rgba(232,70,119,.18);
         }
 
-        .event-dots {
-          position: absolute;
-          bottom: 5px;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          gap: 2px;
+        .month-summary {
+          margin-top: 10px;
+          display: grid;
+          gap: 5px;
         }
 
-        .event-dots i {
-          width: 4px;
-          height: 4px;
-          border-radius: 999px;
-          background: currentColor;
+        .month-summary-title {
+          font-size: 10px;
+          font-weight: 600;
+          color: ${F.muted};
+          text-transform: uppercase;
+          letter-spacing: .06em;
+          margin-bottom: 2px;
+        }
+
+        .month-event-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 7px 10px;
+          border-radius: 10px;
+          background: ${F.pinkSoft};
+          border: 1px solid ${F.line};
+        }
+
+        .month-event-icon-sm {
+          width: 20px;
+          height: 20px;
+          object-fit: contain;
+          flex: 0 0 auto;
+        }
+
+        .month-event-text {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .month-event-text strong {
+          display: block;
+          font-size: 12px;
+          font-weight: 600;
+          color: ${F.ink};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .month-event-text span {
+          display: block;
+          font-size: 11px;
+          color: ${F.muted};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .month-event-day {
+          font-size: 13px;
+          font-weight: 700;
+          color: ${F.pink};
+          flex: 0 0 auto;
         }
 
         .appointment-list,
@@ -1002,16 +1118,8 @@ export default function ProfilePage() {
           }
 
           .quick-card {
-            min-height: 120px;
-            padding: 16px 14px;
-          }
-
-          .quick-card strong {
-            font-size: 15px;
-          }
-
-          .quick-card span {
-            font-size: 12px;
+            min-height: 68px;
+            padding: 12px 14px;
           }
 
           .profile-card {
@@ -1169,26 +1277,23 @@ export default function ProfilePage() {
                       const cellDate = new Date(dateStr);
                       cellDate.setHours(0, 0, 0, 0);
 
-                      const dayAppointments = appointments.filter((item) => item.next_due && item.next_due.split("T")[0] === dateStr);
-                      const hasEvent = dayAppointments.length > 0;
+                      const cellEvents = calendarEventsByDate[dateStr] || [];
+                      const hasEvent = cellEvents.length > 0;
                       const isToday = cellDate.getTime() === today.getTime();
+                      const primaryEvent = cellEvents[0];
 
                       const dayClassName = `day-cell ${hasEvent ? "has-event" : ""} ${isToday ? "is-today" : ""}`;
                       const dayContent = (
                         <>
-                          {day}
-                          {hasEvent && (
-                            <span className="event-dots" aria-hidden="true">
-                              {dayAppointments.slice(0, 3).map((_, dotIndex) => (
-                                <i key={dotIndex} />
-                              ))}
-                            </span>
+                          <span className="day-num">{day}</span>
+                          {primaryEvent && !isToday && (
+                            <img className="day-event-icon" src={primaryEvent.icon} alt="" aria-hidden="true" />
                           )}
                         </>
                       );
 
                       return hasEvent ? (
-                        <Link className={dayClassName} href={`/pets/vaccines/all?date=${dateStr}`} key={day} aria-label={`${day} ${monthNames[currentDate.getMonth()]} มีนัด ${dayAppointments.length} รายการ`}>
+                        <Link className={dayClassName} href={`/pets/vaccines/all?date=${dateStr}`} key={day} aria-label={`${day} ${monthNames[currentDate.getMonth()]} มีกิจกรรม ${cellEvents.length} รายการ`}>
                           {dayContent}
                         </Link>
                       ) : (
@@ -1198,6 +1303,25 @@ export default function ProfilePage() {
                       );
                     })}
                   </div>
+
+                  {monthEvents.length > 0 && (
+                    <div className="month-summary">
+                      <div className="month-summary-title">กิจกรรมเดือนนี้</div>
+                      {monthEvents.map((evt, i) => {
+                        const dayNum = parseInt(evt.dateStr.split("-")[2], 10);
+                        return (
+                          <div key={i} className="month-event-row">
+                            <img className="month-event-icon-sm" src={evt.icon} alt="" />
+                            <span className="month-event-text">
+                              <strong>{evt.label}</strong>
+                              {evt.petName && <span>{evt.petName}</span>}
+                            </span>
+                            <span className="month-event-day">{dayNum}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>
