@@ -363,7 +363,7 @@ export default function MyPetsPage() {
                 <h2>สัตว์เลี้ยงส่วนตัว</h2>
                 <span className="section-count">{personalPets.length}</span>
               </div>
-              <Link href="/pets/create" className="add-btn">+ เพิ่ม</Link>
+              <Link href="/pets/create?redirect=/profile/pets" className="add-btn">+ เพิ่ม</Link>
             </div>
             <div className="pet-list">
               {personalPets.length === 0 ? (

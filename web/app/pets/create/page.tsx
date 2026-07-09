@@ -439,7 +439,7 @@ function CreatePetContent() {
         {/* Save bar */}
         <div className="cp-savebar">
           <div className="cp-savebar-inner">
-            <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push('/profile')}>ยกเลิก</button>
+            <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push(fromRedirect && fromRedirect.startsWith('/') ? fromRedirect : '/profile')}>ยกเลิก</button>
             <button type="button" className="cp-btn cp-btn-save" onClick={handleSave} disabled={saving}>
               <Icon.Save /> {saving ? "กำลังบันทึก..." : "เพิ่มสัตว์เลี้ยง"}
             </button>
