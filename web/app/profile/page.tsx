@@ -817,24 +817,28 @@ export default function ProfilePage() {
           color: ${F.inkSoft};
           text-decoration: none;
           font-size: 11px;
-          font-weight: 400;
+          font-weight: 500;
           background: ${F.cream};
-          flex-direction: column;
-          gap: 1px;
-          padding: 3px 2px;
+          overflow: hidden;
         }
 
         .day-num {
+          position: relative;
+          z-index: 2;
           font-size: 11px;
-          font-weight: inherit;
+          font-weight: 600;
           line-height: 1;
+          text-shadow: 0 1px 3px rgba(255,255,255,.85);
         }
 
         .day-event-icon {
-          width: 13px;
-          height: 13px;
-          object-fit: contain;
-          opacity: .9;
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          z-index: 1;
+          opacity: .72;
         }
 
         .day-cell.has-event {
@@ -1230,7 +1234,7 @@ export default function ProfilePage() {
 
           <section className="quick-grid" aria-label="ทางลัดโปรไฟล์">
             <QuickCard href="/profile/finance" icon={<img src="/icons/icon-wallet.png" alt="" />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
-            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="เพิ่มวัคซีนแบบกลุ่ม" desc="เพิ่มประวัติแบบเร็ว" disabled={pets.length === 0} />
+            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="เพิ่มวัคซีน" desc="เพื่อประวัติแบบกลุ่ม" disabled={pets.length === 0} />
           </section>
 
           <div className="profile-grid">
