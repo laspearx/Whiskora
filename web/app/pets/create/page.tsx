@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, Suspense } from "react
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
-import { SPECIES_LIST, speciesTh, speciesIcon } from "@/lib/species";
+import { SPECIES_LIST, OTHER_SPECIES, speciesTh, speciesIcon } from "@/lib/species";
 import { PET_GENDER, type PetGender } from "@/lib/constants";
 
 const F = {
@@ -64,6 +64,7 @@ function CreatePetContent() {
 
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [pickOther, setPickOther] = useState(false);
 
   // ฟอร์ม
   const [name, setName] = useState("");
@@ -229,8 +230,9 @@ function CreatePetContent() {
         .cp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
         .cp-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; }
 
-        /* ── species picker (unified grid) ── */
-        .cp-species { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        /* ── species picker ── */
+        .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .cp-other-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
         .cp-species-btn { aspect-ratio: 1; border-radius: 14px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: all .15s; font-family: inherit; padding: 8px 4px; }
         .cp-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
         .cp-species-btn .lbl { font-size: 10px; font-weight: 500; color: ${F.muted}; text-align: center; line-height: 1.3; }
@@ -303,14 +305,30 @@ function CreatePetContent() {
               <div className="cp-field">
                 <label className="cp-label">ประเภท</label>
                 <div className="cp-species">
-                  {SPECIES_LIST.map((s) => (
-                    <button key={s.id} type="button" className={`cp-species-btn ${species === s.id ? 'active' : ''}`}
-                      onClick={() => pickSpecies(s.id)}>
+                  {[SPECIES_LIST[0], SPECIES_LIST[1]].map((s) => (
+                    <button key={s.id} type="button" className={`cp-species-btn ${species === s.id && !pickOther ? 'active' : ''}`}
+                      onClick={() => { setPickOther(false); pickSpecies(s.id); }}>
                       <img src={s.icon} alt="" style={{ width: '60%', height: '60%', objectFit: 'contain' }} />
                       <span className="lbl">{s.th}</span>
                     </button>
                   ))}
+                  <button type="button" className={`cp-species-btn ${pickOther ? 'active' : ''}`}
+                    onClick={() => { setPickOther(true); if (species === 'cat' || species === 'dog') pickSpecies(OTHER_SPECIES[0].id); }}>
+                    <img src="/icons/icon-species-other.png" alt="" style={{ width: '60%', height: '60%', objectFit: 'contain' }} />
+                    <span className="lbl">อื่นๆ</span>
+                  </button>
                 </div>
+                {pickOther && (
+                  <div className="cp-other-grid">
+                    {OTHER_SPECIES.map((s) => (
+                      <button key={s.id} type="button" className={`cp-species-btn ${species === s.id ? 'active' : ''}`}
+                        onClick={() => pickSpecies(s.id)}>
+                        <img src={s.icon} alt="" style={{ width: '60%', height: '60%', objectFit: 'contain' }} />
+                        <span className="lbl">{s.th}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="cp-grid2">
