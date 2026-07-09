@@ -120,11 +120,20 @@ type CalendarEvent = {
   dateStr: string;
 };
 
+type PetActivity = {
+  id: string;
+  pet_id: string;
+  activity_type: string | null;
+  title: string;
+  activity_date: string;
+};
+
 type BusinessLinkProps = {
   href: string;
   label: string;
   type: string;
   icon: ReactNode;
+  verified?: boolean;
 };
 
 const monthNames = [
@@ -161,6 +170,17 @@ function formatDate(date: Date) {
   }).format(date);
 }
 
+function formatMemberSince(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return `${shortMonthNames[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function formatActivityDate(dateStr: string): string {
+  if (!dateStr) return "";
+  return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(new Date(dateStr));
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -170,6 +190,7 @@ export default function ProfilePage() {
   const [myShops, setMyShops] = useState<any[]>([]);
   const [myServices, setMyServices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<VaccineAppointment[]>([]);
+  const [activities, setActivities] = useState<PetActivity[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
@@ -211,6 +232,15 @@ export default function ProfilePage() {
             .not("next_due", "is", null);
 
           if (vaccineData) setAppointments(vaccineData as VaccineAppointment[]);
+
+          const { data: activityData } = await supabase
+            .from("pet_activities")
+            .select("id, pet_id, activity_type, title, activity_date")
+            .in("pet_id", petIds)
+            .order("activity_date", { ascending: false })
+            .limit(5);
+
+          if (activityData) setActivities(activityData as PetActivity[]);
         }
       } catch (error) {
         console.error("Fetch profile error:", error);
@@ -567,12 +597,13 @@ export default function ProfilePage() {
           background: rgba(255,255,255,.14);
           border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
+          text-align: center;
         }
 
         .meta-pill strong {
           display: block;
           color: white;
-          font-size: 18px;
+          font-size: 22px;
           line-height: 1;
           font-weight: 700;
         }
@@ -580,7 +611,7 @@ export default function ProfilePage() {
         .meta-pill span {
           display: block;
           color: rgba(255,255,255,.72);
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.4;
           margin-top: 4px;
           font-weight: 400;
@@ -614,6 +645,191 @@ export default function ProfilePage() {
           border-radius: inherit;
           background: white;
           transition: width .5s ease;
+        }
+
+        .hero-info-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 7px;
+          margin-bottom: 1px;
+        }
+
+        .hero-info-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 9px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.16);
+          border: 1px solid rgba(255,255,255,.24);
+          color: rgba(255,255,255,.88);
+          font-size: 11px;
+          font-weight: 500;
+        }
+
+        .hero-info-chip img {
+          width: 11px;
+          height: 11px;
+          object-fit: contain;
+          opacity: .75;
+        }
+
+        .meta-pill-icon {
+          width: 22px;
+          height: 22px;
+          object-fit: contain;
+          opacity: .82;
+          margin-bottom: 2px;
+        }
+
+        .quick-scroll-wrap {
+          overflow: hidden;
+          animation: profile-rise .58s ease .08s both;
+        }
+
+        .quick-scroll {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+
+        .quick-scroll::-webkit-scrollbar { display: none; }
+
+        .quick-chip {
+          flex: 0 0 auto;
+          width: 86px;
+          border-radius: 14px;
+          padding: 12px 8px 10px;
+          border: 1px solid #f8edf1;
+          background: rgba(255,255,255,.92);
+          box-shadow: 0 4px 14px rgba(31,26,28,.03);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 7px;
+          text-decoration: none;
+          color: ${F.ink};
+          scroll-snap-align: start;
+          transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        }
+
+        .quick-chip:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 22px rgba(31,26,28,.07);
+          border-color: #edc7d3;
+        }
+
+        .quick-chip[aria-disabled="true"] {
+          opacity: .5;
+          pointer-events: none;
+        }
+
+        .quick-chip img {
+          width: 36px;
+          height: 36px;
+          object-fit: contain;
+        }
+
+        .quick-chip-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: ${F.ink};
+          text-align: center;
+          line-height: 1.4;
+        }
+
+        .activity-list {
+          border: 1px solid ${F.line};
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .activity-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          background: white;
+          border-bottom: 1px solid ${F.line};
+        }
+
+        .activity-row:last-child {
+          border-bottom: none;
+        }
+
+        .activity-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+          background: ${F.pink};
+          flex: 0 0 auto;
+        }
+
+        .activity-row strong {
+          display: block;
+          font-size: 13px;
+          font-weight: 600;
+          color: ${F.ink};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .activity-row > span:nth-child(2) > span {
+          display: block;
+          font-size: 11px;
+          color: ${F.muted};
+        }
+
+        .activity-type-badge {
+          flex: 0 0 auto;
+          border-radius: 999px;
+          padding: 2px 8px;
+          background: ${F.pinkSoft};
+          color: ${F.pinkDeep};
+          font-size: 10px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .business-badge-row {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-top: 3px;
+          flex-wrap: wrap;
+        }
+
+        .business-type-badge {
+          border-radius: 999px;
+          padding: 2px 8px;
+          background: ${F.pinkSoft};
+          color: ${F.pinkDeep};
+          font-size: 10px;
+          font-weight: 500;
+        }
+
+        .business-verified-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          border-radius: 999px;
+          padding: 2px 8px;
+          background: #e0f2fe;
+          color: #0369a1;
+          font-size: 10px;
+          font-weight: 500;
+        }
+
+        .business-verified-badge img {
+          width: 11px;
+          height: 11px;
+          object-fit: contain;
         }
 
         .quick-grid {
@@ -1266,6 +1482,18 @@ export default function ProfilePage() {
                 </div>
                 <p className="hero-email">{email}</p>
 
+                <div className="hero-info-row">
+                  {user?.created_at && (
+                    <span className="hero-info-chip">
+                      <img src="/icons/icon-calendar.png" alt="" />
+                      สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}
+                    </span>
+                  )}
+                  <span className="hero-info-chip">
+                    ID: {profile?.username ? `@${profile.username}` : `WH-${user?.id?.slice(0, 8).toUpperCase() || "????????"}`}
+                  </span>
+                </div>
+
                 <div className="profile-progress" aria-label={`โปรไฟล์สมบูรณ์ ${profileCompletion}%`}>
                   <div className="progress-label">
                     <span>โปรไฟล์สมบูรณ์</span>
@@ -1291,23 +1519,48 @@ export default function ProfilePage() {
 
             <div className="hero-meta" aria-label="สรุปบัญชี">
               <div className="meta-pill">
+                <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
                 <strong>{pets.length}</strong>
                 <span>สัตว์เลี้ยง</span>
               </div>
               <div className="meta-pill">
+                <img className="meta-pill-icon" src="/icons/icon-vaccine.png" alt="" />
                 <strong>{appointments.length}</strong>
                 <span>นัดสุขภาพ</span>
               </div>
               <div className="meta-pill">
+                <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
                 <strong>{businessCount}</strong>
                 <span>ธุรกิจ</span>
               </div>
             </div>
           </section>
 
-          <section className="quick-grid" aria-label="ทางลัดโปรไฟล์">
-            <QuickCard href="/profile/finance" icon={<img src="/icons/icon-wallet.png" alt="" />} title="รายรับรายจ่าย" desc="บันทึกค่าใช้จ่าย" />
-            <QuickCard href="/pets/vaccines/bulk-add" icon={<img src="/icons/icon-vaccine.png" alt="" />} title="เพิ่มวัคซีน" desc="เพื่อประวัติแบบกลุ่ม" disabled={pets.length === 0} />
+          <section className="quick-scroll-wrap" aria-label="ทางลัดโปรไฟล์">
+            <div className="quick-scroll">
+              <Link className="quick-chip" href="/profile/finance">
+                <img src="/icons/icon-wallet.png" alt="" />
+                <span className="quick-chip-label">รายรับรายจ่าย</span>
+              </Link>
+              <Link className="quick-chip" href="/pets/vaccines/bulk-add"
+                aria-disabled={pets.length === 0 ? "true" : undefined}
+                style={pets.length === 0 ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
+                <img src="/icons/icon-vaccine.png" alt="" />
+                <span className="quick-chip-label">เพิ่มวัคซีน</span>
+              </Link>
+              <Link className="quick-chip" href="/pets">
+                <img src="/icons/icon-pets.png" alt="" />
+                <span className="quick-chip-label">Pet ID</span>
+              </Link>
+              <Link className="quick-chip" href="/pets">
+                <img src="/icons/icon-my-pets.png" alt="" />
+                <span className="quick-chip-label">ประวัติสุขภาพ</span>
+              </Link>
+              <Link className="quick-chip" href="/profile/edit">
+                <img src="/icons/icon-partner.png" alt="" />
+                <span className="quick-chip-label">แก้ไขโปรไฟล์</span>
+              </Link>
+            </div>
           </section>
 
           <div className="profile-grid">
@@ -1470,6 +1723,33 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {activities.length > 0 && (
+            <section className="profile-card" aria-labelledby="activity-title">
+              <div className="card-head">
+                <div className="card-title">
+                  <span className="card-title-icon"><img src="/icons/icon-calendar.png" alt="" /></span>
+                  <h2 id="activity-title">กิจกรรมล่าสุด</h2>
+                </div>
+                <Link className="card-link" href="/pets">ดูทั้งหมด</Link>
+              </div>
+              <div className="activity-list">
+                {activities.map((act) => {
+                  const pet = pets.find((p) => p.id === act.pet_id);
+                  return (
+                    <div className="activity-row" key={act.id}>
+                      <span className="activity-dot" aria-hidden="true" />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <strong>{act.title}</strong>
+                        <span>{pet?.name || "สัตว์เลี้ยง"} · {formatActivityDate(act.activity_date)}</span>
+                      </span>
+                      {act.activity_type && <span className="activity-type-badge">{act.activity_type}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {isPartner && (
             <section className="profile-card" aria-labelledby="business-title">
               <div className="card-head">
@@ -1480,13 +1760,13 @@ export default function ProfilePage() {
               </div>
               <div className="business-list">
                 {myFarms.map((farm) => (
-                  <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<img src="/icons/icon-farm.png" alt="" />} />
+                  <BusinessLink key={farm.id} href={`/farm-dashboard/${farm.id}?from=profile`} label={farm.farm_name} type="ฟาร์ม" icon={<img src="/icons/icon-farm.png" alt="" />} verified={farm.is_verified} />
                 ))}
                 {myShops.map((shop) => (
-                  <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<img src="/icons/icon-shop.png" alt="" />} />
+                  <BusinessLink key={shop.id} href={`/shop-dashboard/${shop.id}?from=profile`} label={shop.shop_name} type="ร้านค้า" icon={<img src="/icons/icon-shop.png" alt="" />} verified={shop.is_verified} />
                 ))}
                 {myServices.map((service) => (
-                  <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<img src="/icons/icon-service.png" alt="" />} />
+                  <BusinessLink key={service.id} href={`/service-dashboard/${service.id}?from=profile`} label={service.service_name} type="บริการ" icon={<img src="/icons/icon-service.png" alt="" />} verified={service.is_verified} />
                 ))}
               </div>
             </section>
@@ -1497,37 +1777,22 @@ export default function ProfilePage() {
   );
 }
 
-function QuickCard({ href, icon, title, desc, disabled = false }: { href: string; icon: ReactNode; title: string; desc: string; disabled?: boolean }) {
-  if (disabled) {
-    return (
-      <div className="quick-card" aria-disabled="true" style={{ opacity: 0.58 }}>
-        <div className="quick-icon">{icon}</div>
-        <div>
-          <strong>{title}</strong>
-          <span>{desc}</span>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <Link className="quick-card" href={href}>
-      <div className="quick-icon">{icon}</div>
-      <div>
-        <strong>{title}</strong>
-        <span>{desc}</span>
-      </div>
-    </Link>
-  );
-}
-
-function BusinessLink({ href, label, type, icon }: BusinessLinkProps) {
+function BusinessLink({ href, label, type, icon, verified }: BusinessLinkProps) {
   return (
     <Link className="business-link" href={href}>
       <span className="business-icon">{icon}</span>
       <span style={{ minWidth: 0, flex: 1 }}>
-        <small>{type}</small>
         <strong>{label}</strong>
+        <span className="business-badge-row">
+          <span className="business-type-badge">{type}</span>
+          {verified && (
+            <span className="business-verified-badge">
+              <img src="/icons/icon-verified.png" alt="" />
+              ยืนยันแล้ว
+            </span>
+          )}
+        </span>
       </span>
     </Link>
   );
