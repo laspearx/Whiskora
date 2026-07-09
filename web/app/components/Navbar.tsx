@@ -347,7 +347,7 @@ export default function Navbar() {
         {/* สัตว์เลี้ยง */}
         <TabBtn
           label="สัตว์เลี้ยง"
-          active={pathname.startsWith('/pets') || pathname === '/profile/pets'}
+          active={(pathname.startsWith('/pets') && !pathname.includes('/create')) || pathname === '/profile/pets'}
           onClick={() => guarded('/profile/pets')}
           icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
@@ -355,7 +355,7 @@ export default function Navbar() {
         {/* เพิ่มสัตว์เลี้ยง */}
         <TabBtn
           label="เพิ่มสัตว์เลี้ยง"
-          active={pathname === '/pets/create'}
+          active={pathname.includes('/pets/create')}
           onClick={() => guarded('/pets/create')}
           icon={<img src="/icons/icon-tab-add.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
