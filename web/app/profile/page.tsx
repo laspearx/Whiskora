@@ -1504,16 +1504,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="hero-actions">
-                  <Link className="button-primary" href="/profile/edit">
-                    <Icon.Edit />
-                    แก้ไขข้อมูล
-                  </Link>
-                  <Link className="button-secondary" href="/pets/create">
-                    <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    เพิ่มสัตว์เลี้ยง
-                  </Link>
-                </div>
               </div>
             </div>
 
@@ -1548,13 +1538,9 @@ export default function ProfilePage() {
                 <img src="/icons/icon-vaccine.png" alt="" />
                 <span className="quick-chip-label">เพิ่มวัคซีน</span>
               </Link>
-              <Link className="quick-chip" href="/pets">
-                <img src="/icons/icon-pets.png" alt="" />
-                <span className="quick-chip-label">Pet ID</span>
-              </Link>
-              <Link className="quick-chip" href="/pets">
+              <Link className="quick-chip" href="/pets/create">
                 <img src="/icons/icon-my-pets.png" alt="" />
-                <span className="quick-chip-label">ประวัติสุขภาพ</span>
+                <span className="quick-chip-label">เพิ่มสัตว์เลี้ยง</span>
               </Link>
               <Link className="quick-chip" href="/profile/edit">
                 <img src="/icons/icon-partner.png" alt="" />
@@ -1567,7 +1553,6 @@ export default function ProfilePage() {
             <section className="profile-card" aria-labelledby="calendar-title">
               <div className="card-head">
                 <div className="card-title">
-                  <span className="card-title-icon"><img src="/icons/icon-calendar.png" alt="" /></span>
                   <h2 id="calendar-title">ปฏิทินวันนัด</h2>
                 </div>
               </div>
@@ -1579,6 +1564,7 @@ export default function ProfilePage() {
                       <Icon.ChevronLeft />
                     </button>
                     <div className="calendar-month">
+                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", verticalAlign: "middle", marginRight: 5, opacity: 0.72 }} />
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
                     </div>
                     <button className="icon-button" type="button" onClick={handleNextMonth} aria-label="เดือนถัดไป">
@@ -1648,7 +1634,6 @@ export default function ProfilePage() {
                             <img className="month-event-icon-sm" src={evt.icon} alt="" />
                             <span className="month-event-text">
                               <strong>{evt.label}</strong>
-                              {evt.petName && <span>{evt.petName}</span>}
                             </span>
                           </div>
                         );
@@ -1692,7 +1677,6 @@ export default function ProfilePage() {
               <section className="profile-card" aria-labelledby="pets-title">
                 <div className="card-head">
                   <div className="card-title">
-                    <span className="card-title-icon"><img src="/icons/icon-my-pets.png" alt="" /></span>
                     <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
                   </div>
                   <Link className="card-link" href="/profile/pets">
@@ -1754,7 +1738,6 @@ export default function ProfilePage() {
             <section className="profile-card" aria-labelledby="business-title">
               <div className="card-head">
                 <div className="card-title">
-                  <span className="card-title-icon"><img src="/icons/icon-farm.png" alt="" /></span>
                   <h2 id="business-title">ธุรกิจที่ดูแล</h2>
                 </div>
               </div>
