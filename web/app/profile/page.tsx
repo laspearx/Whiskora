@@ -593,15 +593,18 @@ export default function ProfilePage() {
 
         .meta-pill {
           border-radius: 12px;
-          padding: 10px 12px;
+          padding: 12px 8px;
           background: rgba(255,255,255,.14);
           border: 1px solid rgba(255,255,255,.18);
           backdrop-filter: blur(8px);
-          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
         }
 
         .meta-pill strong {
-          display: block;
           color: white;
           font-size: 22px;
           line-height: 1;
@@ -609,11 +612,9 @@ export default function ProfilePage() {
         }
 
         .meta-pill span {
-          display: block;
           color: rgba(255,255,255,.72);
           font-size: 11px;
-          line-height: 1.4;
-          margin-top: 4px;
+          line-height: 1.3;
           font-weight: 400;
         }
 
@@ -676,45 +677,35 @@ export default function ProfilePage() {
         }
 
         .meta-pill-icon {
-          width: 22px;
-          height: 22px;
+          width: 28px;
+          height: 28px;
           object-fit: contain;
-          opacity: .82;
-          margin-bottom: 2px;
+          opacity: .88;
         }
 
         .quick-scroll-wrap {
-          overflow: hidden;
           animation: profile-rise .58s ease .08s both;
         }
 
         .quick-scroll {
-          display: flex;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
           gap: 10px;
-          overflow-x: auto;
-          padding-bottom: 2px;
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
         }
 
-        .quick-scroll::-webkit-scrollbar { display: none; }
-
         .quick-chip {
-          flex: 0 0 auto;
-          width: 86px;
           border-radius: 14px;
-          padding: 12px 8px 10px;
+          padding: 14px 8px 12px;
           border: 1px solid #f8edf1;
           background: rgba(255,255,255,.92);
           box-shadow: 0 4px 14px rgba(31,26,28,.03);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 7px;
+          justify-content: center;
+          gap: 8px;
           text-decoration: none;
           color: ${F.ink};
-          scroll-snap-align: start;
           transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
         }
 
@@ -903,7 +894,7 @@ export default function ProfilePage() {
 
         .profile-card {
           border-radius: 16px;
-          padding: 14px;
+          padding: 18px;
           animation: profile-rise .58s ease both;
         }
 
@@ -1088,8 +1079,8 @@ export default function ProfilePage() {
         .month-event-row {
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 7px 10px;
+          gap: 10px;
+          padding: 9px 12px;
           border-radius: 10px;
           background: ${F.pinkSoft};
           border: 1px solid ${F.line};
@@ -1125,8 +1116,8 @@ export default function ProfilePage() {
         }
 
         .month-event-icon-sm {
-          width: 20px;
-          height: 20px;
+          width: 30px;
+          height: 30px;
           object-fit: contain;
           flex: 0 0 auto;
         }
@@ -1417,7 +1408,7 @@ export default function ProfilePage() {
 
           .profile-card {
             border-radius: 14px;
-            padding: 12px;
+            padding: 14px;
           }
 
           .card-head {
