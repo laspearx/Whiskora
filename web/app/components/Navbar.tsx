@@ -352,28 +352,13 @@ export default function Navbar() {
           icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
-        {/* + สร้าง (center raised) */}
-        <div className="flex-1 flex items-center justify-center">
-          <button
-            onClick={() => guarded('/pets/create')}
-            aria-label="เพิ่มสัตว์เลี้ยง"
-            style={{
-              width: 78,
-              height: 78,
-              borderRadius: '999px',
-              background: 'rgba(253,226,234,0.9)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 20px rgba(232,70,119,0.22)',
-              marginTop: -24,
-              border: '3px solid white',
-              flexShrink: 0,
-            }}
-          >
-            <img src="/icons/icon-tab-add.png" alt="" width={60} height={60} style={{ objectFit: 'contain' }} />
-          </button>
-        </div>
+        {/* เพิ่มสัตว์เลี้ยง */}
+        <TabBtn
+          label="เพิ่มสัตว์เลี้ยง"
+          active={pathname === '/pets/create'}
+          onClick={() => guarded('/pets/create')}
+          icon={<img src="/icons/icon-tab-add.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
+        />
 
         {/* สำรวจ */}
         <TabBtn
