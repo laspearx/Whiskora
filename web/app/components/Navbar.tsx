@@ -129,6 +129,7 @@ export default function Navbar() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
+    <>
     <nav
       ref={navRef}
       className={`bg-white sticky top-0 z-50 transition-all duration-200 ${
@@ -249,21 +250,8 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile: profile + hamburger ──────────────────────────── */}
+          {/* ── Mobile: hamburger only ───────────────────────────────── */}
           <div className="md:hidden flex items-center gap-2 ml-auto">
-            {/* Profile shortcut */}
-            <button
-              onClick={() => guarded('/profile')}
-              aria-label="โปรไฟล์"
-              className="w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </button>
-
-            {/* Hamburger */}
             <button
               onClick={() => setMobileOpen(o => !o)}
               aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
@@ -332,5 +320,139 @@ export default function Navbar() {
       )}
 
     </nav>
+
+    {/* ── Floating Bottom Tab Bar (mobile only) ─────────────────── */}
+    <nav
+      aria-label="เมนูหลัก"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+      style={{
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(232,70,119,0.10)',
+        boxShadow: '0 -4px 24px rgba(31,26,28,0.08)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div className="flex items-stretch h-16">
+
+        {/* หน้าแรก */}
+        <TabBtn
+          label="หน้าแรก"
+          active={pathname === '/'}
+          onClick={() => go('/')}
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 9.5V21h14V9.5" />
+              <path d="M9 21v-7h6v7" />
+            </svg>
+          }
+        />
+
+        {/* สัตว์เลี้ยง */}
+        <TabBtn
+          label="สัตว์เลี้ยง"
+          active={pathname.startsWith('/pets')}
+          onClick={() => guarded('/pets')}
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
+              <circle cx="7.5" cy="9" r="2" />
+              <circle cx="12" cy="6.8" r="2" />
+              <circle cx="16.5" cy="9" r="2" />
+              <path d="M6.5 16.4c0-2.5 2.4-4.6 5.5-4.6s5.5 2.1 5.5 4.6c0 1.6-1 2.8-2.6 2.8-1.1 0-1.7-.5-2.9-.5s-1.8.5-2.9.5c-1.6 0-2.6-1.2-2.6-2.8Z" />
+            </svg>
+          }
+        />
+
+        {/* + สร้าง (center raised) */}
+        <div className="flex-1 flex items-center justify-center">
+          <button
+            onClick={() => guarded('/pets/create')}
+            aria-label="เพิ่มสัตว์เลี้ยง"
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: '999px',
+              background: 'linear-gradient(135deg, #e84677 0%, #f06d98 100%)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 6px 20px rgba(232,70,119,0.38)',
+              marginTop: -14,
+              border: '3px solid white',
+              flexShrink: 0,
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="22" height="22" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
+
+        {/* สำรวจ */}
+        <TabBtn
+          label="สำรวจ"
+          active={exploreActive}
+          onClick={() => go('/farm-hub')}
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
+            </svg>
+          }
+        />
+
+        {/* โปรไฟล์ */}
+        <TabBtn
+          label="โปรไฟล์"
+          active={pathname === '/profile'}
+          onClick={() => guarded('/profile')}
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22" aria-hidden>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          }
+        />
+
+      </div>
+    </nav>
+  </>
+  );
+}
+
+function TabBtn({
+  label, active, onClick, icon,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+      style={{ color: active ? '#e84677' : '#9ca3af' }}
+    >
+      <span style={{
+        width: 36,
+        height: 28,
+        borderRadius: 10,
+        background: active ? 'rgba(232,70,119,0.10)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'background .15s',
+      }}>
+        {icon}
+      </span>
+      <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, lineHeight: 1.2 }}>
+        {label}
+      </span>
+    </button>
   );
 }

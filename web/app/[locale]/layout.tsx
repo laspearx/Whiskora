@@ -34,7 +34,7 @@ export default async function LocaleLayout({
       <BrowserChecker />
       <ScrollToTop />
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 md:px-6 min-h-screen">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 min-h-screen pb-20 md:pb-0">
         {children}
       </main>
       <Footer />
