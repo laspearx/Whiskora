@@ -7,12 +7,10 @@ import Cropper from "react-easy-crop";
 import { OTHER_SPECIES, speciesTh } from "@/lib/species";
 import { PET_GENDER, type PetGender } from "@/lib/constants";
 
-// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
-  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
-  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
-  teal: '#0D9488', tealSoft: '#F0FDFA',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
+  pink: '#e84677', pinkDeep: '#c4325f', pinkSoft: '#fde2ea',
+  line: '#f3dde3', lineMid: '#ead6de', paper: '#fdf0f3', cream: '#fffafc',
 };
 
 // ─── สายพันธุ์ตามชนิดสัตว์ ───
@@ -194,74 +192,84 @@ function CreatePetContent() {
   return (
     <>
       <style>{`
+        @keyframes cp-rise { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
         * { box-sizing: border-box; }
         .cp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .cp-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 120px; }
-        /* header */
-        .cp-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-        .cp-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
-        .cp-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
-        .cp-title { font-family: inherit; font-size: 24px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
-        .cp-sub { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
-        /* photo */
-        .cp-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 22px; }
+        .cp-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 120px; animation: cp-rise .4s ease both; }
+
+        /* ── header ── */
+        .cp-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+        .cp-back { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: white; color: ${F.ink}; cursor: pointer; border: 1px solid ${F.line}; transition: all .15s; flex-shrink: 0; }
+        .cp-back:hover { background: ${F.paper}; transform: translateX(-1px); }
+        .cp-title { font-family: inherit; font-size: 22px; font-weight: 600; color: ${F.ink}; line-height: 1.2; letter-spacing: -0.01em; }
+        .cp-sub { font-size: 13px; font-weight: 400; color: ${F.muted}; margin-top: 2px; }
+
+        /* ── photo ── */
+        .cp-photo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
         .cp-photo { position: relative; }
-        .cp-photo-circle { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; background: ${F.pinkSoft}; border: 3px solid white; box-shadow: 0 4px 16px rgba(232,70,119,0.15); display: flex; align-items: center; justify-content: center; font-size: 44px; cursor: pointer; transition: all .18s; }
-        .cp-photo-circle:hover { box-shadow: 0 6px 22px rgba(232,70,119,0.25); }
+        .cp-photo-circle { width: 110px; height: 110px; border-radius: 50%; overflow: hidden; background: ${F.pinkSoft}; border: 3px solid white; box-shadow: 0 4px 16px rgba(232,70,119,0.12); display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; transition: box-shadow .18s; }
+        .cp-photo-circle:hover { box-shadow: 0 6px 22px rgba(232,70,119,0.2); }
         .cp-photo-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .cp-photo-btn { position: absolute; bottom: 2px; right: 2px; width: 38px; height: 38px; border-radius: 50%; background: ${F.pink}; color: white; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; }
-        .cp-photo-btn:hover { background: #D63F6A; }
-        .cp-photo-btn:active { transform: scale(0.9); }
-        .cp-photo-hint { margin-top: 10px; font-size: 11px; font-weight: 700; color: ${F.muted}; letter-spacing: 0.04em; }
-        /* card */
-        .cp-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; margin-bottom: 16px; }
-        .cp-card-title { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .cp-card-title::before { content: ''; width: 4px; height: 16px; background: ${F.pink}; border-radius: 2px; }
-        /* fields */
-        .cp-field { margin-bottom: 16px; }
+        .cp-photo-btn { position: absolute; bottom: 2px; right: 2px; width: 34px; height: 34px; border-radius: 50%; background: ${F.pink}; color: white; border: 2px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
+        .cp-photo-btn:hover { background: ${F.pinkDeep}; }
+        .cp-photo-hint { margin-top: 10px; font-size: 12px; font-weight: 400; color: ${F.muted}; }
+
+        /* ── card ── */
+        .cp-card { background: rgba(255,255,255,.94); border: 1px solid ${F.line}; border-radius: 18px; padding: 20px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(31,26,28,.03); }
+        .cp-card-title { font-family: inherit; font-size: 14px; font-weight: 600; color: ${F.ink}; margin-bottom: 16px; }
+
+        /* ── fields ── */
+        .cp-field { margin-bottom: 14px; }
         .cp-field:last-child { margin-bottom: 0; }
-        .cp-label { display: block; font-size: 12px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; margin-left: 2px; }
-        .cp-label .opt { color: ${F.muted}; font-weight: 500; }
-        .cp-input, .cp-select { width: 100%; padding: 11px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
+        .cp-label { display: block; font-size: 12px; font-weight: 500; color: ${F.muted}; margin-bottom: 6px; margin-left: 1px; }
+        .cp-label .opt { font-weight: 400; }
+        .cp-input, .cp-select { width: 100%; padding: 11px 14px; background: white; border: 1px solid ${F.line}; border-radius: 12px; font-size: 14px; font-weight: 400; color: ${F.ink}; outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit; }
+        .cp-input::placeholder { color: ${F.muted}; }
         .cp-input:focus, .cp-select:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
-        .cp-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; cursor: pointer; }
-        .cp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .cp-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-        /* species picker */
-        .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .cp-species-btn { padding: 14px 8px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
-        .cp-species-btn.active { border-color: ${F.teal}; background: ${F.tealSoft}; }
-        .cp-species-btn .emoji { font-size: 24px; }
-        .cp-species-btn .lbl { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
-        .cp-species-btn.active .lbl { color: ${F.teal}; }
-        /* other pets grid */
-        .cp-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
-        .cp-other-btn { padding: 10px 4px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
-        .cp-other-btn.active { border-color: ${F.teal}; background: ${F.tealSoft}; }
-        .cp-other-btn .emoji { font-size: 20px; }
-        .cp-other-btn .lbl { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.2; }
-        .cp-other-btn.active .lbl { color: ${F.teal}; }
-        /* gender toggle */
+        .cp-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238e7e84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; cursor: pointer; }
+        .cp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .cp-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+        /* ── species picker ── */
+        .cp-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .cp-species-btn { padding: 14px 8px; border-radius: 14px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
+        .cp-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .cp-species-btn .emoji { font-size: 22px; }
+        .cp-species-btn .lbl { font-size: 12px; font-weight: 500; color: ${F.muted}; }
+        .cp-species-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 600; }
+
+        /* ── other pets grid ── */
+        .cp-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 10px; }
+        .cp-other-btn { padding: 10px 4px; border-radius: 11px; border: 1px solid ${F.line}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
+        .cp-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .cp-other-btn .emoji { font-size: 18px; }
+        .cp-other-btn .lbl { font-size: 9px; font-weight: 400; color: ${F.muted}; text-align: center; line-height: 1.2; }
+        .cp-other-btn.active .lbl { color: ${F.pinkDeep}; font-weight: 500; }
+
+        /* ── gender toggle ── */
         .cp-gender { display: flex; gap: 8px; }
-        .cp-gender-btn { flex: 1; padding: 11px 6px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; text-align: center; }
-        .cp-gender-btn.male.active { border-color: #2563EB; background: #EFF6FF; color: #2563EB; }
-        .cp-gender-btn.female.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pink}; }
-        /* save bar */
-        .cp-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .cp-savebar-inner { max-width: 680px; margin: 0 auto; display: flex; gap: 12px; }
-        .cp-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; text-decoration: none; }
-        .cp-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
-        .cp-btn-cancel:hover { background: ${F.line}; }
-        .cp-btn-save { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
-        .cp-btn-save:hover { background: #D63F6A; }
+        .cp-gender-btn { flex: 1; padding: 11px 6px; border-radius: 12px; border: 1px solid ${F.line}; background: white; cursor: pointer; font-size: 13px; font-weight: 400; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; text-align: center; }
+        .cp-gender-btn.male.active { border-color: #93c5fd; background: #eff6ff; color: #2563eb; font-weight: 500; }
+        .cp-gender-btn.female.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-weight: 500; }
+
+        /* ── save bar ── */
+        .cp-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); border-top: 1px solid ${F.line}; padding: 12px 20px; }
+        .cp-savebar-inner { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
+        .cp-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 14px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: inherit; text-decoration: none; }
+        .cp-btn-cancel { flex: 0 0 auto; padding: 13px 20px; background: white; color: ${F.muted}; border: 1px solid ${F.line}; }
+        .cp-btn-cancel:hover { background: ${F.paper}; color: ${F.ink}; }
+        .cp-btn-save { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.25); font-weight: 600; }
+        .cp-btn-save:hover { background: ${F.pinkDeep}; }
         .cp-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        /* crop modal */
-        .cp-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 16px; }
-        .cp-modal-card { background: white; width: 100%; max-width: 380px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+
+        /* ── crop modal ── */
+        .cp-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(31,26,28,0.55); backdrop-filter: blur(6px); padding: 16px; }
+        .cp-modal-card { background: white; width: 100%; max-width: 380px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(31,26,28,0.25); }
         .cp-crop-area { position: relative; width: 100%; height: 320px; background: #111; }
-        .cp-modal-body { padding: 20px; }
-        .cp-zoom { width: 100%; accent-color: ${F.pink}; margin-bottom: 16px; }
+        .cp-modal-body { padding: 18px; }
+        .cp-zoom { width: 100%; accent-color: ${F.pink}; margin-bottom: 14px; }
         .cp-modal-btns { display: flex; gap: 10px; }
+
         @media (max-width: 480px) {
           .cp-grid2 { grid-template-columns: 1fr; }
           .cp-grid3 { grid-template-columns: 1fr 1fr; }
