@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -193,6 +193,8 @@ export default function ProfilePage() {
   const [activities, setActivities] = useState<PetActivity[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -333,6 +335,26 @@ export default function ProfilePage() {
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    try {
+      const filePath = `${user.id}/profile.jpg`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const freshUrl = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from("profiles").upsert({ id: user.id, avatar_url: freshUrl, updated_at: new Date() });
+      setProfile((prev: any) => ({ ...prev, avatar_url: freshUrl }));
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   if (loading) {
     return (
@@ -483,6 +505,8 @@ export default function ProfilePage() {
           justify-content: center;
           border: 2px solid rgba(232,70,119,.14);
           box-shadow: 0 4px 10px rgba(140, 36, 78, .14);
+          cursor: pointer;
+          padding: 0;
         }
 
         .avatar-camera svg {
@@ -984,10 +1008,13 @@ export default function ProfilePage() {
         }
 
         .calendar-month {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
           color: ${F.ink};
           font-size: 14px;
           font-weight: 600;
-          text-align: center;
         }
 
         .calendar-grid {
@@ -1453,9 +1480,23 @@ export default function ProfilePage() {
                 <div className="avatar">
                   {avatarUrl ? <img src={avatarUrl} alt="โปรไฟล์ผู้ใช้งาน" /> : <Icon.User />}
                 </div>
-                <Link className="avatar-camera" href="/profile/edit" aria-label="เปลี่ยนรูปโปรไฟล์">
+                <button
+                  className="avatar-camera"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="เปลี่ยนรูปโปรไฟล์"
+                  disabled={uploading}
+                  style={uploading ? { opacity: 0.5 } : undefined}
+                >
                   <Icon.Camera />
-                </Link>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarFileChange}
+                />
               </div>
 
               <div>
@@ -1555,7 +1596,7 @@ export default function ProfilePage() {
                       <Icon.ChevronLeft />
                     </button>
                     <div className="calendar-month">
-                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", verticalAlign: "middle", marginRight: 5, opacity: 0.72 }} />
+                      <img src="/icons/icon-calendar.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.72, flexShrink: 0 }} />
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
                     </div>
                     <button className="icon-button" type="button" onClick={handleNextMonth} aria-label="เดือนถัดไป">
