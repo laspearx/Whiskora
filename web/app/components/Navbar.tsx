@@ -334,7 +334,7 @@ export default function Navbar() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      <div className="flex items-stretch h-20">
+      <div className="flex items-stretch h-[68px]">
 
         {/* หน้าแรก */}
         <TabBtn
@@ -414,8 +414,8 @@ function TabBtn({
     >
       <span style={{
         width: 72,
-        height: 60,
-        borderRadius: 16,
+        height: 48,
+        borderRadius: 14,
         background: active ? 'rgba(232,70,119,0.09)' : 'transparent',
         display: 'flex',
         alignItems: 'center',

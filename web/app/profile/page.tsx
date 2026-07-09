@@ -623,13 +623,14 @@ export default function ProfilePage() {
           display: flex;
           flex-direction: row;
           align-items: center;
+          justify-content: center;
           gap: 8px;
           padding: 8px 12px;
         }
 
         .meta-pill-icon {
-          width: 32px;
-          height: 32px;
+          width: 40px;
+          height: 40px;
           object-fit: contain;
           flex: 0 0 auto;
         }
@@ -986,6 +987,7 @@ export default function ProfilePage() {
           justify-content: space-between;
           gap: 8px;
           margin-bottom: 8px;
+          position: relative;
         }
 
         .icon-button {
@@ -1007,13 +1009,17 @@ export default function ProfilePage() {
         }
 
         .calendar-month {
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           align-items: center;
-          justify-content: center;
           gap: 6px;
           color: ${F.ink};
           font-size: 14px;
           font-weight: 600;
+          white-space: nowrap;
+          pointer-events: none;
         }
 
         .calendar-grid {
@@ -1416,8 +1422,8 @@ export default function ProfilePage() {
           }
 
           .meta-pill-icon {
-            width: 26px;
-            height: 26px;
+            width: 34px;
+            height: 34px;
           }
 
           .meta-pill-num {
