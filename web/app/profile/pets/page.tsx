@@ -6,226 +6,432 @@ import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
-  ink: '#111827',      // Gray-900
-  inkSoft: '#4B5563',  // Gray-600
-  muted: '#9CA3AF',    // Gray-400
-  pink: '#E84677',     // Brand Primary
-  pinkSoft: '#FDF2F5', 
-  line: '#E5E7EB',     // Gray-200
-  paper: '#FFFFFF',
+  ink: "#1f1a1c",
+  inkSoft: "#4a3f44",
+  cream: "#fffafc",
+  paper: "#fdf0f3",
+  line: "#f3dde3",
+  muted: "#8e7e84",
+  pink: "#e84677",
+  pinkSoft: "#fde2ea",
+  pinkDeep: "#c4325f",
+  sky: "#5b8dc7",
+  leaf: "#5a9065",
+  sun: "#e8a63a",
 };
 
-// ─── Elegant Minimal Icons ──────────────────────────────────────────────────
-const Icon = {
-  ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Home: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Building: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/></svg>,
-  ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-  Male: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
-  Female: () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
-};
-
-export default function MyPetsSummaryPage() {
+export default function MyPetsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [personalPets, setPersonalPets] = useState<any[]>([]);
-  const [farmPets, setFarmPets] = useState<Record<string, { name: string, pets: any[] }>>({});
+  const [farmPets, setFarmPets] = useState<Record<string, { name: string; pets: any[] }>>({});
 
   useEffect(() => {
-    const fetchAllPets = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return router.push("/login");
-        const uid = session.user.id;
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return router.push("/login");
+      const uid = session.user.id;
 
-        const { data: farms } = await supabase.from("farms").select("id, farm_name").eq("user_id", uid);
-        const { data: pets } = await supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+      const [{ data: farms }, { data: pets }] = await Promise.all([
+        supabase.from("farms").select("id, farm_name").eq("user_id", uid),
+        supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+      ]);
 
-        if (pets) {
-          const personal: any[] = [];
-          const groupedFarms: Record<string, { name: string, pets: any[] }> = {};
-          farms?.forEach(f => { groupedFarms[f.id] = { name: f.farm_name, pets: [] }; });
+      const personal: any[] = [];
+      const grouped: Record<string, { name: string; pets: any[] }> = {};
+      farms?.forEach(f => { grouped[f.id] = { name: f.farm_name, pets: [] }; });
 
-          pets.forEach(pet => {
-            if (!pet.farm_id || pet.farm_id === "PERSONAL") {
-              personal.push(pet);
-            } else if (groupedFarms[pet.farm_id]) {
-              groupedFarms[pet.farm_id].pets.push(pet);
-            } else {
-              personal.push(pet);
-            }
-          });
-          setPersonalPets(personal);
-          setFarmPets(groupedFarms);
-        }
-      } catch (error: any) {
-        console.error("Error fetching pets:", error);
-      } finally {
-        setLoading(false);
-      }
+      pets?.forEach(pet => {
+        if (!pet.farm_id || pet.farm_id === "PERSONAL") personal.push(pet);
+        else if (grouped[pet.farm_id]) grouped[pet.farm_id].pets.push(pet);
+        else personal.push(pet);
+      });
+
+      setPersonalPets(personal);
+      setFarmPets(grouped);
+      setLoading(false);
     };
-    fetchAllPets();
+    load();
   }, [router]);
 
-  if (loading) return (
-    <div className="min-h-[50vh] flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">
-      Loading Pet Gallery...
-    </div>
-  );
+  const totalPets = personalPets.length + Object.values(farmPets).reduce((s, f) => s + f.pets.length, 0);
 
   return (
     <>
       <style>{`
-        .premium-card {
-          background: #ffffff;
-          border: 1px solid ${F.line};
-          border-radius: 1.25rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-          transition: all 0.2s ease-in-out;
+        @keyframes page-rise {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .premium-card:hover {
-          border-color: #D1D5DB;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+
+        .pets-page {
+          max-width: 680px;
+          margin: 0 auto;
+          padding: 24px 0 80px;
+          animation: page-rise .45s ease both;
+          color: ${F.ink};
+        }
+
+        /* ── Page header ── */
+        .page-header {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 20px;
+          padding: 0 2px;
+        }
+
+        .back-btn {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          border: 1px solid ${F.line};
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform .15s ease, background .15s ease;
+          flex: 0 0 auto;
+          color: ${F.ink};
+        }
+
+        .back-btn:hover { transform: translateY(-1px); background: ${F.paper}; }
+
+        .page-header-text h1 {
+          margin: 0;
+          font-size: 22px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: ${F.ink};
+          line-height: 1.2;
+        }
+
+        .page-header-text p {
+          margin: 3px 0 0;
+          font-size: 13px;
+          color: ${F.muted};
+          font-weight: 400;
+        }
+
+        /* ── Cards ── */
+        .pet-section {
+          border: 1px solid ${F.line};
+          background: rgba(255,255,255,.94);
+          border-radius: 18px;
+          padding: 18px;
+          margin-bottom: 12px;
+          box-shadow: 0 4px 14px rgba(31,26,28,.03);
+          animation: page-rise .45s ease both;
+        }
+
+        .section-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+
+        .section-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .section-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 9px;
+          background: ${F.pinkSoft};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+        }
+
+        .section-icon img {
+          width: 20px;
+          height: 20px;
+          object-fit: contain;
+        }
+
+        .section-head h2 {
+          margin: 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: ${F.ink};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .section-count {
+          border-radius: 999px;
+          background: ${F.paper};
+          border: 1px solid ${F.line};
+          color: ${F.muted};
+          font-size: 11px;
+          font-weight: 600;
+          padding: 1px 8px;
+          flex: 0 0 auto;
+        }
+
+        .add-btn {
+          font-size: 12px;
+          font-weight: 700;
+          color: ${F.pink};
+          text-decoration: none;
+          border: 1px solid ${F.line};
+          border-radius: 8px;
+          padding: 5px 11px;
+          background: white;
+          white-space: nowrap;
+          flex: 0 0 auto;
+          transition: background .15s, border-color .15s;
+        }
+
+        .add-btn:hover {
+          background: ${F.pinkSoft};
+          border-color: ${F.pink};
+        }
+
+        /* ── Pet list ── */
+        .pet-list {
+          display: grid;
+          gap: 8px;
+        }
+
+        .pet-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border: 1px solid ${F.line};
+          border-radius: 14px;
+          padding: 10px 14px;
+          background: white;
+          color: ${F.ink};
+          text-decoration: none;
+          transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+          min-height: 62px;
+        }
+
+        .pet-row:hover {
+          transform: translateY(-2px);
+          border-color: ${F.pink};
+          box-shadow: 0 4px 14px rgba(232,70,119,.08);
+        }
+
+        .pet-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 13px;
+          overflow: hidden;
+          background: ${F.pinkSoft};
+          border: 1px solid ${F.line};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+        }
+
+        .pet-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .pet-avatar-placeholder {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+          opacity: .45;
+        }
+
+        .pet-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .pet-name-row {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 3px;
+        }
+
+        .pet-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: ${F.ink};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .gender-badge {
+          border-radius: 999px;
+          padding: 2px 8px;
+          font-size: 10px;
+          font-weight: 600;
+          flex: 0 0 auto;
+          white-space: nowrap;
+        }
+
+        .gender-male {
+          background: #e0f0ff;
+          color: #2563eb;
+        }
+
+        .gender-female {
+          background: ${F.pinkSoft};
+          color: ${F.pinkDeep};
+        }
+
+        .pet-breed {
+          font-size: 12px;
+          color: ${F.muted};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .pet-chevron {
+          color: ${F.line};
+          flex: 0 0 auto;
+          transition: color .15s;
+        }
+
+        .pet-row:hover .pet-chevron {
+          color: ${F.pink};
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+          padding: 32px 16px;
+          text-align: center;
+          border: 1.5px dashed ${F.line};
+          border-radius: 14px;
+          color: ${F.muted};
+          font-size: 13px;
+          font-weight: 500;
+          background: ${F.cream};
+        }
+
+        /* ── Loading ── */
+        .loading-wrap {
+          min-height: 50vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: ${F.muted};
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: .06em;
+        }
+
+        @media (max-width: 560px) {
+          .pets-page { padding: 16px 0 80px; }
+          .pet-section { border-radius: 14px; padding: 14px; }
+          .pet-avatar { width: 42px; height: 42px; border-radius: 11px; }
         }
       `}</style>
 
-      <div className="max-w-4xl mx-auto px-4 pt-8 md:pt-12 pb-24 animate-in fade-in duration-500 space-y-6" style={{ color: F.ink }}>
-        
-        {/* 📋 Page Header */}
-        <div className="px-1 mb-2 flex items-center gap-3">
-          <button
-            onClick={() => router.push('/profile')}
-            aria-label="ย้อนกลับ"
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-gray-700 shrink-0 transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-95"
-            style={{ border: '1px solid #E5E7EB', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-          >
-            <Icon.ArrowLeft />
-          </button>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-1">My Pets</h1>
-            <p className="text-sm font-medium" style={{ color: F.muted }}>จัดการสมาชิกในบ้านและฟาร์มทั้งหมดของคุณ</p>
-          </div>
-        </div>
+      {loading ? (
+        <div className="loading-wrap">กำลังโหลด...</div>
+      ) : (
+        <div className="pets-page">
 
-        {/* 🏠 Section: Personal Pets */}
-        <section className="premium-card p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
-              <span className="text-gray-400"><Icon.Home /></span> สัตว์เลี้ยงส่วนตัว
-              <span className="text-xs font-medium text-gray-400 ml-1">({personalPets.length})</span>
-            </h3>
-            <Link 
-              href="/pets/create" 
-              className="text-sm font-semibold hover:text-pink-600 transition-colors"
-              style={{ color: F.inkSoft }}
-            >
-              + เพิ่มสมาชิก
-            </Link>
-          </div>
-          
-          <div className="space-y-3">
-            {personalPets.length === 0 ? (
-              <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
-                ยังไม่มีข้อมูลสัตว์เลี้ยง
-              </div>
-            ) : (
-              personalPets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
-            )}
-          </div>
-        </section>
-
-        {/* 🏡 Sections: Farm Pets */}
-        {Object.entries(farmPets).map(([farmId, farm]) => (
-          <section key={farmId} className="premium-card p-6">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base min-w-0">
-                <span className="text-gray-400 shrink-0"><Icon.Building /></span> 
-                <span className="truncate">{farm.name}</span>
-                <span className="text-xs font-medium text-gray-400 ml-1 shrink-0">({farm.pets.length})</span>
-              </h3>
-              <Link 
-                href={`/farm-dashboard/${farmId}/pets/create`} 
-                className="text-sm font-semibold hover:text-blue-600 transition-colors shrink-0"
-                style={{ color: F.inkSoft }}
-              >
-                + เพิ่มสมาชิก
-              </Link>
+          {/* Header */}
+          <div className="page-header">
+            <button className="back-btn" onClick={() => router.push('/profile')} aria-label="ย้อนกลับ">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </button>
+            <div className="page-header-text">
+              <h1>สัตว์เลี้ยงของฉัน</h1>
+              <p>ทั้งหมด {totalPets} ตัว</p>
             </div>
-            
-            <div className="space-y-3">
-              {farm.pets.length === 0 ? (
-                <div className="p-8 text-center text-sm font-medium border border-dashed rounded-xl bg-gray-50" style={{ borderColor: F.line, color: F.muted }}>
-                  ยังไม่มีสมาชิกในฟาร์มนี้
+          </div>
+
+          {/* Personal pets */}
+          <div className="pet-section">
+            <div className="section-head">
+              <div className="section-title">
+                <div className="section-icon">
+                  <img src="/icons/icon-my-pets.png" alt="" />
                 </div>
+                <h2>สัตว์เลี้ยงส่วนตัว</h2>
+                <span className="section-count">{personalPets.length}</span>
+              </div>
+              <Link href="/pets/create" className="add-btn">+ เพิ่ม</Link>
+            </div>
+            <div className="pet-list">
+              {personalPets.length === 0 ? (
+                <div className="empty-state">ยังไม่มีสัตว์เลี้ยง</div>
               ) : (
-                farm.pets.map(pet => <PetBusinessLink key={pet.id} pet={pet} />)
+                personalPets.map(pet => <PetRow key={pet.id} pet={pet} />)
               )}
             </div>
-          </section>
-        ))}
+          </div>
 
-      </div>
+          {/* Farm pets */}
+          {Object.entries(farmPets).map(([farmId, farm]) => (
+            <div key={farmId} className="pet-section">
+              <div className="section-head">
+                <div className="section-title">
+                  <div className="section-icon">
+                    <img src="/icons/icon-farm.png" alt="" />
+                  </div>
+                  <h2>{farm.name}</h2>
+                  <span className="section-count">{farm.pets.length}</span>
+                </div>
+                <Link href={`/farm-dashboard/${farmId}/pets/create`} className="add-btn">+ เพิ่ม</Link>
+              </div>
+              <div className="pet-list">
+                {farm.pets.length === 0 ? (
+                  <div className="empty-state">ยังไม่มีสมาชิกในฟาร์มนี้</div>
+                ) : (
+                  farm.pets.map(pet => <PetRow key={pet.id} pet={pet} />)
+                )}
+              </div>
+            </div>
+          ))}
+
+        </div>
+      )}
     </>
   );
 }
 
-// ─── Refined Helper Component (เลียนแบบ BusinessLink เด๊ะๆ) ───────────────────────
-function PetBusinessLink({ pet }: { pet: any }) {
-  const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
-
-  const formatBreed = (rawBreed?: string | null) => {
-    if (!rawBreed) return { th: "ไม่ระบุสายพันธุ์", en: null };
-    const parts = rawBreed.split('(');
-    if (parts.length > 1) {
-      return { th: parts[0].trim(), en: `(${parts[1].trim()}` };
-    }
-    return { th: rawBreed, en: null };
-  };
-  const breedParts = formatBreed(pet.breed || speciesTh(pet.species) || null);
+function PetRow({ pet }: { pet: any }) {
+  const isMale = pet.gender === "male" || pet.gender === "ตัวผู้";
+  const breed = pet.breed || speciesTh(pet.species) || "ไม่ระบุสายพันธุ์";
 
   return (
-    <Link 
-      href={`/pets/${pet.id}`} 
-      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200 transition-all group"
-    >
-      {/* รูปภาพ */}
-      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center">
+    <Link href={`/pets/${pet.id}`} className="pet-row">
+      <div className="pet-avatar">
         {pet.image_url ? (
-          <img src={pet.image_url} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={pet.image_url} alt={pet.name} />
         ) : (
-          <div className="text-gray-300 text-lg">🐾</div>
+          <img src="/icons/icon-my-pets.png" alt="" className="pet-avatar-placeholder" />
         )}
       </div>
-
-      {/* ข้อมูล */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div className="flex items-center gap-2 mb-1">
-          {/* Badge เพศ */}
-          <span className={`text-[10px] font-medium border px-2 py-0.5 rounded-md bg-white shrink-0 flex items-center gap-1 ${
-            isMale ? 'text-blue-500 border-blue-200' : 'text-pink-500 border-pink-200'
-          }`}>
-            <span className="shrink-0">{isMale ? <Icon.Male /> : <Icon.Female />}</span>
-            {isMale ? 'Male' : 'Female'}
+      <div className="pet-info">
+        <div className="pet-name-row">
+          <span className="pet-name">{pet.name}</span>
+          <span className={`gender-badge ${isMale ? "gender-male" : "gender-female"}`}>
+            {isMale ? "ตัวผู้" : "ตัวเมีย"}
           </span>
-          {/* ชื่อสัตว์เลี้ยง */}
-          <p className="font-semibold text-sm text-gray-900 truncate">{pet.name}</p>
         </div>
-        
-        {/* 🌟 ชื่อสายพันธุ์แยกบรรทัดไทย-อังกฤษ */}
-        <div className="flex flex-col">
-          <span className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">{breedParts.th}</span>
-          {breedParts.en && (
-            <span className="text-[10px] text-gray-400 truncate mt-[1px]">{breedParts.en}</span>
-          )}
-        </div>
+        <div className="pet-breed">{breed}</div>
       </div>
-
-      {/* ลูกศรขวา */}
-      <span className="text-gray-300 group-hover:text-gray-900 transition-colors shrink-0">
-        <Icon.ChevronRight />
-      </span>
+      <svg className="pet-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m9 18 6-6-6-6"/>
+      </svg>
     </Link>
   );
 }
