@@ -142,6 +142,8 @@ const monthNames = [
   "ธันวาคม",
 ];
 
+const shortMonthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
 const weekDays = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
 
 function getAppointmentIcon(vaccineName: string | null): string {
@@ -712,8 +714,8 @@ export default function ProfilePage() {
         }
 
         .card-title-icon img {
-          width: 72px;
-          height: 72px;
+          width: 28px;
+          height: 28px;
           object-fit: contain;
         }
 
@@ -877,6 +879,35 @@ export default function ProfilePage() {
           border: 1px solid ${F.line};
         }
 
+        .month-event-date-badge {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 0 0 32px;
+          gap: 1px;
+        }
+
+        .month-event-day-num {
+          font-size: 16px;
+          font-weight: 700;
+          color: ${F.pink};
+          line-height: 1;
+        }
+
+        .month-event-month-label {
+          font-size: 9px;
+          font-weight: 500;
+          color: ${F.muted};
+          letter-spacing: .02em;
+        }
+
+        .month-event-divider {
+          width: 1px;
+          height: 28px;
+          background: ${F.line};
+          flex: 0 0 auto;
+        }
+
         .month-event-icon-sm {
           width: 20px;
           height: 20px;
@@ -908,11 +939,53 @@ export default function ProfilePage() {
           text-overflow: ellipsis;
         }
 
-        .month-event-day {
-          font-size: 13px;
-          font-weight: 700;
-          color: ${F.pink};
-          flex: 0 0 auto;
+        .pet-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .pet-thumb {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          text-decoration: none;
+          color: ${F.ink};
+          transition: transform .16s ease;
+        }
+
+        .pet-thumb:hover {
+          transform: translateY(-2px);
+        }
+
+        .pet-thumb-avatar {
+          width: 100%;
+          aspect-ratio: 1;
+          border-radius: 12px;
+          overflow: hidden;
+          background: ${F.pinkSoft};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid ${F.line};
+        }
+
+        .pet-thumb-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .pet-thumb-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${F.ink};
+          text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
         }
 
         .appointment-list,
@@ -1244,9 +1317,6 @@ export default function ProfilePage() {
                   <span className="card-title-icon"><img src="/icons/icon-calendar.png" alt="" /></span>
                   <h2 id="calendar-title">ปฏิทินวันนัด</h2>
                 </div>
-                <Link className="card-link" href="/pets/vaccines/all">
-                  ดูทั้งหมด
-                </Link>
               </div>
 
               <div className="calendar-layout">
@@ -1312,15 +1382,21 @@ export default function ProfilePage() {
                     <div className="month-summary">
                       <div className="month-summary-title">กิจกรรมเดือนนี้</div>
                       {monthEvents.map((evt, i) => {
-                        const dayNum = parseInt(evt.dateStr.split("-")[2], 10);
+                        const parts = evt.dateStr.split("-");
+                        const dayNum = parseInt(parts[2], 10);
+                        const shortMonth = shortMonthNames[parseInt(parts[1], 10) - 1];
                         return (
                           <div key={i} className="month-event-row">
+                            <span className="month-event-date-badge">
+                              <span className="month-event-day-num">{dayNum}</span>
+                              <span className="month-event-month-label">{shortMonth}</span>
+                            </span>
+                            <span className="month-event-divider" aria-hidden="true" />
                             <img className="month-event-icon-sm" src={evt.icon} alt="" />
                             <span className="month-event-text">
                               <strong>{evt.label}</strong>
                               {evt.petName && <span>{evt.petName}</span>}
                             </span>
-                            <span className="month-event-day">{dayNum}</span>
                           </div>
                         );
                       })}
@@ -1367,21 +1443,20 @@ export default function ProfilePage() {
                     <h2 id="pets-title">สัตว์เลี้ยงของฉัน</h2>
                   </div>
                   <Link className="card-link" href="/profile/pets">
-                    ทั้งหมด
+                    ดูทั้งหมด
                   </Link>
                 </div>
 
                 {pets.length > 0 ? (
-                  <div className="pet-list">
-                    {pets.slice(0, 4).map((pet) => (
-                      <Link className="pet-row" href={`/pets/${pet.id}`} key={pet.id}>
-                        <span className="pet-avatar">
-                          {pet.image_url ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />}
+                  <div className="pet-grid">
+                    {pets.slice(0, 6).map((pet) => (
+                      <Link className="pet-thumb" href={`/pets/${pet.id}`} key={pet.id}>
+                        <span className="pet-thumb-avatar">
+                          {pet.image_url
+                            ? <img src={pet.image_url} alt={pet.name || "สัตว์เลี้ยง"} />
+                            : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />}
                         </span>
-                        <span style={{ minWidth: 0, flex: 1 }}>
-                          <strong>{pet.name || "ยังไม่มีชื่อ"}</strong>
-                          <span>{[pet.species, pet.breed].filter(Boolean).join(" · ") || "ยังไม่ได้ระบุชนิด"}</span>
-                        </span>
+                        <span className="pet-thumb-name">{pet.name || "ยังไม่มีชื่อ"}</span>
                       </Link>
                     ))}
                   </div>
