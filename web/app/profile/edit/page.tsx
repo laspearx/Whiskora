@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Cropper from "react-easy-crop";
 
 const F = {
@@ -187,6 +188,34 @@ export default function EditProfilePage() {
                 </div>
                 <p className="pe-photo-hint">แตะเพื่อเปลี่ยนรูปโปรไฟล์</p>
               </div>
+
+              {/* Connected accounts shortcut */}
+              <Link
+                href="/profile/connections"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 20px', background: 'white', border: `1px solid ${F.lineMid}`,
+                  borderRadius: 20, marginBottom: 16, textDecoration: 'none', transition: 'background .15s',
+                }}
+                onMouseOver={e => (e.currentTarget.style.background = F.line)}
+                onMouseOut={e => (e.currentTarget.style.background = 'white')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 12, background: F.pinkSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: F.ink, margin: 0 }}>บัญชีที่เชื่อมต่อ</p>
+                    <p style={{ fontSize: 12, fontWeight: 500, color: F.muted, margin: 0, marginTop: 1 }}>Google, LINE และช่องทางอื่น ๆ</p>
+                  </div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={F.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </Link>
 
               <div className="pe-card">
                 <div className="pe-field">
