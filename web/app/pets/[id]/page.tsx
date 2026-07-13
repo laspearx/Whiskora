@@ -1190,7 +1190,7 @@ export default function PetDetailPage() {
 
           {/* ─── Share Footer ─── */}
           <div className="share-footer" style={{ marginTop: '24px' }}>
-            <div className="share-footer-left"><div className="share-paw">🐾</div>
+            <div className="share-footer-left"><div className="share-paw"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '75%', height: '75%', objectFit: 'contain' }} /></div>
               <div><div className="share-title">แชร์โปรไฟล์ {pet.name}</div><div className="share-subtitle">ให้เพื่อนหรือครอบครัวดูได้ง่าย ๆ</div></div>
             </div>
             <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว ✓' : 'คัดลอก'}</button></div>

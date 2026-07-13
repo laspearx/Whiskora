@@ -102,14 +102,8 @@ const ClipboardIcon = () => (
     <path d="M9 12h6"/><path d="M9 16h4"/>
   </svg>
 );
-const PawIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/>
-    <circle cx="4" cy="8" r="2"/><circle cx="5" cy="14" r="2"/>
-    <path d="M9.37 13.5C8.16 12.3 7 11.1 7 9.5c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.6-1.2 2.8-2.4 4.1L11 17"/>
-    <path d="M9 17c0 1.7 0.9 3 2 3s2-1.3 2-3"/>
-  </svg>
-);
+const PawIconDark = () => <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '70%', height: '70%', objectFit: 'contain' }} />;
+const PawIconLight = () => <img src="/paw.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
 const FarmIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -421,7 +415,7 @@ export default function Home() {
 
             <motion.div variants={staggerContainer} className="hp-lifecycle-grid">
               {[
-                { n: '01', icon: <PawIcon />, label: 'สร้างโปรไฟล์', sub: 'บันทึกข้อมูลพื้นฐาน รูปภาพ และสายพันธุ์' },
+                { n: '01', icon: <PawIconDark />, label: 'สร้างโปรไฟล์', sub: 'บันทึกข้อมูลพื้นฐาน รูปภาพ และสายพันธุ์' },
                 { n: '02', icon: <HeartPulseIcon />, label: 'บันทึกสุขภาพ', sub: 'วัคซีน ผลตรวจ น้ำหนัก บันทึกต่อเนื่อง' },
                 { n: '03', icon: <ShareIcon />, label: 'แชร์กับผู้ดูแล', sub: 'QR ให้คลินิกหรือ Co-owner ดูข้อมูลได้' },
                 { n: '04', icon: <ShieldIcon />, label: 'ยืนยันสายพันธุ์', sub: 'Pedigree เชื่อมฟาร์มต้นกำเนิด' },
@@ -469,7 +463,7 @@ export default function Home() {
             >
               {[
                 {
-                  icon: <PawIcon />, color: F.pink, bg: F.pinkSoft,
+                  icon: <PawIconLight />, color: F.pink, bg: 'transparent',
                   label: 'เจ้าของสัตว์เลี้ยง',
                   desc: 'สร้าง Pet ID ฟรี บันทึกประวัติสุขภาพ แชร์โปรไฟล์ QR และดูแลน้องได้อย่างมืออาชีพ',
                   benefits: ['Pet ID + QR Profile ฟรี', 'สมุดสุขภาพครบ', 'เชิญ Co-owner ร่วมดูแล'],
