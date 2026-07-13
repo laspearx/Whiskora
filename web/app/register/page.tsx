@@ -131,7 +131,7 @@ function RegisterContent() {
               </button>
 
               <button
-                onClick={() => handleSocialSignup('custom:line-login')}
+                onClick={() => { window.location.href = `/api/auth/line?next=${encodeURIComponent(safeRedirect)}` }}
                 className="w-full flex items-center justify-center gap-3 py-4 bg-[#06C755] hover:bg-[#05b34d] rounded-2xl transition-all active:scale-[0.98] font-bold text-white text-sm shadow-sm shadow-green-100"
               >
                 <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -207,7 +207,13 @@ export default function ConnectionsPage() {
                         ) : (
                           <button
                             className="cn-btn cn-btn-link"
-                            onClick={() => handleLink(id)}
+                            onClick={() => {
+                              if (id === 'custom:line-login') {
+                                window.location.href = '/api/auth/line?next=/profile/connections'
+                              } else {
+                                handleLink(id)
+                              }
+                            }}
                             disabled={!!actionLoading}
                           >
                             {busy ? '...' : 'เชื่อมต่อ'}
