@@ -42,9 +42,12 @@ export default function ConnectionsPage() {
   const [error, setError] = useState("");
   const [unlinked, setUnlinked] = useState<string | null>(null);
 
+  const [userMeta, setUserMeta] = React.useState<Record<string, any>>({});
+
   const refreshIdentities = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIdentities(user?.identities ?? []);
+    setUserMeta(user?.user_metadata ?? {});
   };
 
   const [currentUserId, setCurrentUserId] = React.useState('');
@@ -101,10 +104,29 @@ export default function ConnectionsPage() {
   const handleUnlink = async (provider: string) => {
     setError("");
     setUnlinked(null);
+
+    // LINE — ลบออกจาก user_metadata
+    if (provider === 'custom:line-login') {
+      const linkedCount = PROVIDERS.filter(p => isLinked(p.id)).length;
+      if (linkedCount <= 1 && !hasEmailAuth) {
+        setError('ไม่สามารถยกเลิกได้ เนื่องจากเป็นช่องทางเข้าสู่ระบบเพียงช่องทางเดียว');
+        return;
+      }
+      setActionLoading(provider);
+      const { error } = await supabase.auth.updateUser({
+        data: { line_id: null, line_display_name: null },
+      });
+      if (error) setError(error.message);
+      else { await refreshIdentities(); setUnlinked('LINE'); }
+      setActionLoading(null);
+      return;
+    }
+
+    // Google / others — ใช้ unlinkIdentity ปกติ
     const identity = identities.find(i => i.provider === provider);
     if (!identity) return;
     const socialCount = identities.filter(i => i.provider !== 'email').length;
-    if (socialCount <= 1 && !identities.some(i => i.provider === 'email')) {
+    if (socialCount <= 1 && !hasEmailAuth) {
       setError('ไม่สามารถยกเลิกได้ เนื่องจากเป็นช่องทางเข้าสู่ระบบเพียงช่องทางเดียว');
       return;
     }
@@ -119,8 +141,12 @@ export default function ConnectionsPage() {
     setActionLoading(null);
   };
 
-  const isLinked = (provider: string) => identities.some(i => i.provider === provider);
+  const isLinked = (provider: string) => {
+    if (provider === 'custom:line-login') return !!userMeta.line_id;
+    return identities.some(i => i.provider === provider);
+  };
   const getIdentityEmail = (provider: string) => {
+    if (provider === 'custom:line-login') return userMeta.line_display_name as string | undefined;
     const id = identities.find(i => i.provider === provider);
     return id?.identity_data?.email as string | undefined;
   };
