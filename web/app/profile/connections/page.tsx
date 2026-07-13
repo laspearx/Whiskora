@@ -47,10 +47,23 @@ export default function ConnectionsPage() {
     setIdentities(user?.identities ?? []);
   };
 
+  const [currentUserId, setCurrentUserId] = React.useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linked = params.get('linked');
+    const linkErr = params.get('link_error');
+    if (linked) setUnlinked(''); // clear, show success below
+    if (linkErr) setError(decodeURIComponent(linkErr));
+    if (linked === 'line') setUnlinked('__line_linked__');
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent('/profile/connections')}`); return; }
+      setCurrentUserId(session.user.id);
       await refreshIdentities();
       setLoading(false);
     };
@@ -209,12 +222,12 @@ export default function ConnectionsPage() {
                             className="cn-btn cn-btn-link"
                             onClick={() => {
                               if (id === 'custom:line-login') {
-                                window.location.href = '/api/auth/line?next=/profile/connections'
+                                window.location.href = `/api/auth/line?next=/profile/connections&mode=link&uid=${encodeURIComponent(currentUserId)}`
                               } else {
                                 handleLink(id)
                               }
                             }}
-                            disabled={!!actionLoading}
+                            disabled={!!actionLoading || !currentUserId}
                           >
                             {busy ? '...' : 'เชื่อมต่อ'}
                           </button>
@@ -226,7 +239,8 @@ export default function ConnectionsPage() {
               </div>
 
               {error && <div className="cn-alert cn-alert-err">{error}</div>}
-              {unlinked && <div className="cn-alert cn-alert-ok">ยกเลิกการเชื่อมต่อ {unlinked} สำเร็จ</div>}
+              {unlinked === '__line_linked__' && <div className="cn-alert cn-alert-ok">เชื่อมต่อ LINE สำเร็จแล้ว</div>}
+              {unlinked && unlinked !== '__line_linked__' && <div className="cn-alert cn-alert-ok">ยกเลิกการเชื่อมต่อ {unlinked} สำเร็จ</div>}
 
               <div className="cn-note">
                 หากมีช่องทางเชื่อมต่อเพียงช่องเดียว จะไม่สามารถยกเลิกได้ เพื่อป้องกันการสูญหายของบัญชี

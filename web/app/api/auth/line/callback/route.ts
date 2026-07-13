@@ -29,9 +29,13 @@ export async function GET(request: Request) {
   // ── verify state ──────────────────────────────────────────────────────────
   const savedState  = cookieStore.get('line_state')?.value
   const nextPath    = cookieStore.get('line_next')?.value || '/profile'
+  const mode        = cookieStore.get('line_mode')?.value || 'login'
+  const linkUid     = cookieStore.get('line_uid')?.value  || ''
   cookieStore.delete('line_state')
   cookieStore.delete('line_next')
   cookieStore.delete('line_origin')
+  cookieStore.delete('line_mode')
+  cookieStore.delete('line_uid')
 
   if (!savedState || savedState !== stateBack) return fail('state_mismatch')
 
@@ -74,10 +78,32 @@ export async function GET(request: Request) {
     }
     const userEmail = email ?? `line_${lineProfile.userId}@line.whiskora.internal`
 
-    // ── 4. find or create Supabase user ─────────────────────────────────────
     const admin = makeAdmin()
     const { data: { users } } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
 
+    // ── 4a. LINK MODE — เชื่อม LINE เข้ากับ account ที่ล็อกอินอยู่ ────────────
+    if (mode === 'link' && linkUid) {
+      const alreadyOwned = users.find(
+        u => u.user_metadata?.line_id === lineProfile.userId && u.id !== linkUid,
+      )
+      if (alreadyOwned) {
+        return NextResponse.redirect(
+          `${siteUrl}/th/profile/connections?link_error=${encodeURIComponent('LINE บัญชีนี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว')}`,
+        )
+      }
+
+      await admin.auth.admin.updateUserById(linkUid, {
+        user_metadata: {
+          ...users.find(u => u.id === linkUid)?.user_metadata,
+          line_id:           lineProfile.userId,
+          line_display_name: lineProfile.displayName,
+        },
+      })
+
+      return NextResponse.redirect(`${siteUrl}/th/profile/connections?linked=line`)
+    }
+
+    // ── 4b. LOGIN MODE — หา / สร้าง user แล้วสร้าง session ─────────────────
     let target = users.find(
       u => u.user_metadata?.line_id === lineProfile.userId || u.email === userEmail,
     )
@@ -102,16 +128,13 @@ export async function GET(request: Request) {
         avatar_url: lineProfile.pictureUrl,
         updated_at: new Date(),
       })
-    } else {
-      // update line_id if missing
-      if (!target.user_metadata?.line_id) {
-        await admin.auth.admin.updateUserById(target.id, {
-          user_metadata: { ...target.user_metadata, line_id: lineProfile.userId },
-        })
-      }
+    } else if (!target.user_metadata?.line_id) {
+      await admin.auth.admin.updateUserById(target.id, {
+        user_metadata: { ...target.user_metadata, line_id: lineProfile.userId },
+      })
     }
 
-    // ── 5. generate one-time magic link → redirect user through it ───────────
+    // ── 5. generate magic link → establish session ───────────────────────────
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type:  'magiclink',
       email: target.email!,
