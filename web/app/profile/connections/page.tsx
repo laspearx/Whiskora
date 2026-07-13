@@ -178,7 +178,7 @@ export default function ConnectionsPage() {
                   const busy = actionLoading === id;
                   return (
                     <div key={id} className="cn-row">
-                      <div className="cn-icon-wrap" style={{ background: linked ? (id === 'line' ? F.green : '#F8F9FA') : F.line }}>
+                      <div className="cn-icon-wrap" style={{ background: linked ? (id === 'line-login' ? F.green : '#F8F9FA') : F.line }}>
                         <Icon />
                       </div>
                       <div className="cn-info">
