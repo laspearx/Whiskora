@@ -82,9 +82,9 @@ function LoginContent() {
             onClick={() => { window.location.href = `/api/auth/line?next=${encodeURIComponent(safeRedirect)}` }}
             className="w-full flex items-center justify-center gap-3 bg-[#06C755] hover:bg-[#05b34d] py-4 rounded-2xl transition-all active:scale-[0.98] text-sm font-bold text-white shadow-sm shadow-green-100"
           >
-            <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M40 20.5C40 13.044 32.837 7 24 7S8 13.044 8 20.5c0 6.71 5.948 12.327 13.981 13.396.545.117 1.287.359 1.474.825.169.424.11 1.089.054 1.518l-.238 1.426c-.073.424-.334 1.659 1.454.904C26.726 37.576 40 29.977 40 20.5z" fill="white"/>
-              <path d="M34.5 23.5h-4v-6h-1v7h5v-1zM22.5 17.5h-1v7h1v-7zM29.667 17.5h-1.084L26.5 21.29V17.5h-1v7h1v-3.79l2.083 3.79h1.084L27.333 21l2.334-3.5zM21.5 17.5h-4v7h4v-1h-3v-2h3v-1h-3v-2h3v-1z" fill="#06C755"/>
+            <svg className="w-5 h-5" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M36 19.5C36 13.149 29.732 8 22 8S8 13.149 8 19.5c0 5.87 5.21 10.783 12.244 11.72.477.103 1.126.314 1.29.722.148.37.097.952.047 1.328l-.208 1.248c-.064.37-.291 1.452 1.273.791C24.84 34.002 36 27.231 36 19.5z" fill="white"/>
+              <path d="M30.5 22h-3.6v-5.4h-.9V23H30.5v-1zM19.5 16.6h-.9V23h.9v-6.4zM25.7 16.6h-.95L22.5 20.3v-3.7h-.9V23h.9v-3.4L24.75 23h.95l-2-3.5 2-2.9zM18.8 16.6h-3.8V23h3.8v-.9H16v-1.9h2.8v-.9H16v-1.8h2.8v-.9z" fill="white"/>
             </svg>
             ดำเนินการต่อด้วย LINE
           </button>
