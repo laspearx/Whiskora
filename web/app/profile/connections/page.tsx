@@ -129,7 +129,7 @@ export default function ConnectionsPage() {
         .cn-title { font-size: 24px; font-weight: 700; color: ${F.ink}; letter-spacing: -0.4px; }
         .cn-sub { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .cn-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; overflow: hidden; }
-        .cn-row { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-bottom: 1px solid ${F.line}; }
+        .cn-row { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid ${F.line}; flex-wrap: wrap; }
         .cn-row:last-child { border-bottom: none; }
         .cn-icon-wrap { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .cn-info { flex: 1; min-width: 0; }

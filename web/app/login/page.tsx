@@ -11,11 +11,15 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailLogin, setShowEmailLogin] = useState(false); // เปิดฟอร์มอีเมลสำหรับผู้ใช้เดิม
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // หน้าที่จะเด้งกลับหลัง login (ถ้าไม่มี → ไปโปรไฟล์)
   const redirectTo = searchParams.get("redirect") || "/profile";
+  useEffect(() => {
+    const err = searchParams.get("auth_error");
+    if (err) setAuthError(decodeURIComponent(err));
+  }, [searchParams]);
   // กันไม่ให้ redirect ออกไปนอกเว็บ (เปิดเฉพาะ path ภายใน)
   const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
 
@@ -85,6 +89,12 @@ function LoginContent() {
             ดำเนินการต่อด้วย LINE
           </button>
         </div>
+
+        {authError && (
+          <div className="mt-4 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-xs font-semibold text-red-600 break-words">
+            {authError}
+          </div>
+        )}
 
         {/* ทางเข้าด้วยอีเมล (สำหรับผู้ใช้เดิม) */}
         {!showEmailLogin ? (

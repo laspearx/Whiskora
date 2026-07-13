@@ -5,13 +5,18 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const oauthError = searchParams.get('error')
+  const oauthErrorDesc = searchParams.get('error_description')
 
-  // อ่านหน้าปลายทางที่ต้องเด้งกลับ (ส่งมาจาก login/register ผ่าน ?next=)
   const nextParam = searchParams.get('next') || '/profile'
-  // กัน open-redirect: รับเฉพาะ path ภายในเว็บเท่านั้น
   const rawNext = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/profile'
-  // Prepend default locale so middleware doesn't double-redirect
   const next = rawNext.startsWith('/th/') || rawNext.startsWith('/en/') ? rawNext : `/th${rawNext}`
+
+  // LINE (or any OAuth provider) returned an error — redirect to login with message
+  if (oauthError) {
+    const msg = oauthErrorDesc || oauthError
+    return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent(msg)}`)
+  }
 
   if (code) {
     const cookieStore = await cookies()
@@ -31,9 +36,12 @@ export async function GET(request: Request) {
       }
     )
 
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent(error.message)}`)
+    }
     return NextResponse.redirect(`${origin}${next}`)
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  return NextResponse.redirect(`${origin}/th/login?auth_error=missing_code`)
 }
