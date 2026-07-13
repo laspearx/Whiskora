@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { speciesTh } from "@/lib/species";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -116,16 +117,10 @@ export default function FarmPetsPage() {
         .fpl-breed-th { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fpl-breed-en { font-size: 11px; font-weight: 500; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fpl-price { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.pink}; white-space: nowrap; flex-shrink: 0; }
-        .fpl-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .fpl-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: fplspin 1s linear infinite; }
-        @keyframes fplspin { to { transform: rotate(360deg); } }
       `}</style>
 
       {loading ? (
-        <div className="fpl-loading">
-          <div className="fpl-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลดสมาชิกในฟาร์ม...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="fpl-page">
           <div className="fpl-body">

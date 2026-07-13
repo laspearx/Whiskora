@@ -118,9 +118,6 @@ function ServiceDashboardContent() {
         .svd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.blueSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         .svd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .svd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
-        .svd-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .svd-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.blueBorder}; border-top-color: ${F.blue}; animation: svdspin 1s linear infinite; }
-        @keyframes svdspin { to { transform: rotate(360deg); } }
         @media (max-width: 720px) { .svd-stats { grid-template-columns: 1fr 1fr; } .svd-cols { grid-template-columns: 1fr; } }
       `}</style>
 

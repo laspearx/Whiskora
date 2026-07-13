@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -118,16 +119,10 @@ export default function RecordBirthPage() {
         .rb-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .rb-btn:hover { background: #D63F6A; }
         .rb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .rb-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .rb-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: rbspin 1s linear infinite; }
-        @keyframes rbspin { to { transform: rotate(360deg); } }
       `}</style>
 
       {isFetching ? (
-        <div className="rb-loading">
-          <div className="rb-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังเตรียมข้อมูลครอก...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="rb-page">
           <div className="rb-body">

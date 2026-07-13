@@ -97,9 +97,6 @@ function AppointmentsList() {
         .ap-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .ap-title { font-family: inherit; font-size: 23px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.4px; }
         .ap-date { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: ${F.pink}; margin-top: 3px; }
-        .ap-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .ap-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: apspin 1s linear infinite; }
-        @keyframes apspin { to { transform: rotate(360deg); } }
         .ap-loading-text { font-size: 13px; font-weight: 700; color: ${F.muted}; }
         /* empty */
         .ap-empty { background: white; border: 1px solid ${F.line}; border-radius: 24px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }

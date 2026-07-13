@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import PageLoader from '@/app/components/PageLoader';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -141,18 +142,11 @@ export default function BulkAddVaccinePage() {
         .bv-btn-save { flex: 1; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .bv-btn-save:hover { background: #D63F6A; }
         .bv-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        /* loading */
-        .bv-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .bv-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: bvspin 1s linear infinite; }
-        @keyframes bvspin { to { transform: rotate(360deg); } }
         @media (max-width: 480px) { .bv-grid2 { grid-template-columns: 1fr; } }
       `}</style>
 
       {isLoading ? (
-        <div className="bv-loading">
-          <div className="bv-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังดึงข้อมูล...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="bv-page">
           <div className="bv-body">

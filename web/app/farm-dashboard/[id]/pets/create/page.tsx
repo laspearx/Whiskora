@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { PET_GENDER, PET_STATUS, type PetGender, type PetStatus } from "@/lib/constants";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -183,9 +184,6 @@ export default function CreateFarmPetPage() {
         .fpc-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .fpc-btn:hover { background: #D63F6A; }
         .fpc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .fpc-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .fpc-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: fpcspin 1s linear infinite; }
-        @keyframes fpcspin { to { transform: rotate(360deg); } }
         @media (max-width: 480px) {
           .fpc-grid-gender { grid-template-columns: 1fr; }
           .fpc-grid2 { grid-template-columns: 1fr; }
@@ -202,10 +200,7 @@ export default function CreateFarmPetPage() {
       `}</style>
 
       {loading || !farm ? (
-        <div className="fpc-loading">
-          <div className="fpc-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลดข้อมูล...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="fpc-page">
           <div className="fpc-body">

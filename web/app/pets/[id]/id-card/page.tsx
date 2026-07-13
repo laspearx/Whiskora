@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import * as htmlToImage from 'html-to-image';
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -385,7 +386,7 @@ export default function PetIdCardPage() {
   };
   const fmtThaiDate = (date: Date) => date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">Loading ID Card...</div>;
+  if (loading) return <PageLoader />;
   if (!pet) return null;
 
   const petCode = pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`;
@@ -419,8 +420,6 @@ export default function PetIdCardPage() {
         .idc-stage img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 24px; animation: idc-fadein .4s ease; }
         @keyframes idc-fadein { from { opacity: 0; } to { opacity: 1; } }
         .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(253,242,245,0.6); }
-        .idc-spinner { width: 36px; height: 36px; border: 4px solid ${F.pinkBorder}; border-top-color: ${F.pink}; border-radius: 50%; animation: idcspin 0.8s linear infinite; }
-        @keyframes idcspin { to { transform: rotate(360deg); } }
         .idc-actions { display: flex; gap: 12px; width: min(100%, 400px); max-width: 100%; box-sizing: border-box; }
         .idc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all .18s ease; font-family: inherit; }
         .idc-btn-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }

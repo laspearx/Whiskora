@@ -66,9 +66,6 @@ function SearchResults() {
         .sr-empty-emoji { font-size: 48px; opacity: 0.6; margin-bottom: 12px; }
         .sr-empty-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; margin-bottom: 4px; }
         .sr-empty-text { font-size: 14px; font-weight: 500; color: ${F.muted}; }
-        .sr-loading { min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .sr-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: srspin 1s linear infinite; }
-        @keyframes srspin { to { transform: rotate(360deg); } }
       `}</style>
 
       <div className="sr-page">

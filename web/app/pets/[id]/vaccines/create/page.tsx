@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
@@ -138,17 +139,11 @@ export default function CreateVaccinePage() {
         .vc-btn-save { flex: 1; background: ${F.teal}; color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
         .vc-btn-save:hover { background: #0B7E74; }
         .vc-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        .vc-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .vc-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: vcspin 1s linear infinite; }
-        @keyframes vcspin { to { transform: rotate(360deg); } }
         @media (max-width: 480px) { .vc-grid2 { grid-template-columns: 1fr; } }
       `}</style>
 
       {isLoading ? (
-        <div className="vc-loading">
-          <div className="vc-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังดึงข้อมูล...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="vc-page">
           <div className="vc-body">

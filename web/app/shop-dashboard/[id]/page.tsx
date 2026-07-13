@@ -115,9 +115,6 @@ function ShopDashboardContent() {
         .sd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.tealSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         .sd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .sd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
-        .sd-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .sd-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.tealBorder}; border-top-color: ${F.teal}; animation: sdspin 1s linear infinite; }
-        @keyframes sdspin { to { transform: rotate(360deg); } }
         @media (max-width: 720px) { .sd-stats { grid-template-columns: 1fr 1fr; } .sd-cols { grid-template-columns: 1fr; } }
       `}</style>
 

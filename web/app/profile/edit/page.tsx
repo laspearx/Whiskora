@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -148,9 +149,6 @@ export default function EditProfilePage() {
         .pe-btn-save { flex: 1; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .pe-btn-save:hover { background: #D63F6A; }
         .pe-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pe-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .pe-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: pespin 1s linear infinite; }
-        @keyframes pespin { to { transform: rotate(360deg); } }
         /* crop modal */
         .pe-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 16px; }
         .pe-modal-card { background: white; width: 100%; max-width: 380px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -161,10 +159,7 @@ export default function EditProfilePage() {
       `}</style>
 
       {loading ? (
-        <div className="pe-loading">
-          <div className="pe-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="pe-page">
           <div className="pe-body">

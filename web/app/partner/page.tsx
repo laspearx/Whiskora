@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -87,17 +88,11 @@ export default function PartnerHubPage() {
         .ph-item-arrow { color: ${F.muted}; flex-shrink: 0; display: flex; }
         .ph-add-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; text-decoration: none; padding: 6px 0; }
         .ph-register-btn { display: block; width: 100%; text-align: center; padding: 14px; border-radius: 13px; font-size: 14px; font-weight: 700; color: white; text-decoration: none; transition: all .15s; }
-        .ph-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .ph-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: phspin 1s linear infinite; }
-        @keyframes phspin { to { transform: rotate(360deg); } }
         @media (max-width: 820px) { .ph-grid { grid-template-columns: 1fr; } .ph-hero h1 { font-size: 30px; } }
       `}</style>
 
       {loading ? (
-        <div className="ph-loading">
-          <div className="ph-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลด...</p>
-        </div>
+        <PageLoader />
       ) : !session ? (
         /* ── Guest landing view ── */
         <div className="ph-page">

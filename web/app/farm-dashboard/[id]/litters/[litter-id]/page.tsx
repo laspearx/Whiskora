@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -105,16 +106,10 @@ export default function LitterDetailPage() {
         .ld-baby-gender.m { background: #EFF6FF; color: ${F.blue}; }
         .ld-baby-gender.f { background: ${F.pinkSoft}; color: ${F.pink}; }
         .ld-baby-status { font-size: 9px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ld-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .ld-spinner { padding: 9px 14px; border-radius: 12px; border: 3px solid ${F.pinkBorder}; border-top-color: ${F.pink}; animation: ldspin 1s linear infinite; }
-        @keyframes ldspin { to { transform: rotate(360deg); } }
       `}</style>
 
       {isLoading || !litter ? (
-        <div className="ld-loading">
-          <div className="ld-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังโหลดข้อมูลครอก...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="ld-page">
           <div className="ld-body">
