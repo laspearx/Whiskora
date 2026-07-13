@@ -62,7 +62,7 @@ function LoginContent() {
     <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-[400px] bg-white p-8 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">Whiskora</h1>
+          <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">เข้าสู่ระบบ</h1>
           <p className="text-gray-400 text-sm font-medium">{t('subtitle')}</p>
         </div>
 
