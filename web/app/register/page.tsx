@@ -5,39 +5,39 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// ─── Password strength rules ──────────────────────────────────────────────────
 const RULES = [
-  { id: 'len',   label: 'อย่างน้อย 8 ตัวอักษร',          test: (p: string) => p.length >= 8 },
-  { id: 'upper', label: 'มีตัวพิมพ์ใหญ่ (A–Z)',            test: (p: string) => /[A-Z]/.test(p) },
-  { id: 'lower', label: 'มีตัวพิมพ์เล็ก (a–z)',            test: (p: string) => /[a-z]/.test(p) },
-  { id: 'num',   label: 'มีตัวเลข (0–9)',                  test: (p: string) => /[0-9]/.test(p) },
-  { id: 'sym',   label: 'มีสัญลักษณ์ (!@#$%^&*...)',        test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  { id: 'len',   label: 'อย่างน้อย 8 ตัวอักษร',       test: (p: string) => p.length >= 8 },
+  { id: 'upper', label: 'มีตัวพิมพ์ใหญ่ (A–Z)',         test: (p: string) => /[A-Z]/.test(p) },
+  { id: 'lower', label: 'มีตัวพิมพ์เล็ก (a–z)',         test: (p: string) => /[a-z]/.test(p) },
+  { id: 'num',   label: 'มีตัวเลข (0–9)',               test: (p: string) => /[0-9]/.test(p) },
+  { id: 'sym',   label: 'มีสัญลักษณ์ (!@#$%...)',        test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
-function strength(p: string): number {
-  return RULES.filter(r => r.test(p)).length;
-}
-
+function strength(p: string) { return RULES.filter(r => r.test(p)).length; }
 const STRENGTH_LABEL = ['', 'อ่อนมาก', 'อ่อน', 'พอใช้', 'ดี', 'แข็งแรงมาก'];
 const STRENGTH_COLOR = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+
+const LineSvg = ({ color = 'white' }: { color?: string }) => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path fill={color} d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+  </svg>
+);
 
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const redirectTo = searchParams.get("redirect") || "/profile";
   const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
 
-  const [tab, setTab] = useState<'social' | 'email'>('social');
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [confirm, setConfirm]     = useState("");
-  const [showPw, setShowPw]       = useState(false);
-  const [showCf, setShowCf]       = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [pwFocus, setPwFocus]     = useState(false);
-  const [error, setError]         = useState("");
-  const [success, setSuccess]     = useState(false);
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm]   = useState("");
+  const [showPw, setShowPw]     = useState(false);
+  const [showCf, setShowCf]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [pwFocus, setPwFocus]   = useState(false);
+  const [error, setError]       = useState("");
+  const [success, setSuccess]   = useState(false);
 
   const score = strength(password);
   const allPass = RULES.every(r => r.test(password));
@@ -55,9 +55,9 @@ function RegisterContent() {
     return () => subscription.unsubscribe();
   }, [router, safeRedirect]);
 
-  const handleSocialSignup = async (provider: 'google' | 'custom:line-login') => {
+  const handleGoogleSignup = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider as any,
+      provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
     });
     if (error) setError(error.message);
@@ -91,210 +91,175 @@ function RegisterContent() {
     </svg>
   );
 
+  if (success) {
+    return (
+      <div className="min-h-[90vh] flex flex-col justify-center items-center px-4 py-8">
+        <div className="w-full max-w-[420px] bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 p-10 text-center animate-in fade-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-gray-800 mb-2">สมัครสำเร็จ!</h2>
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+            ระบบส่งลิงก์ยืนยันไปที่ <strong className="text-gray-700">{email}</strong> แล้ว<br />
+            กรุณาตรวจสอบอีเมลและกดยืนยันก่อนเข้าสู่ระบบ
+          </p>
+          <Link
+            href={`/login?redirect=${encodeURIComponent(safeRedirect)}`}
+            className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-2xl transition-all text-sm"
+          >
+            ไปหน้าเข้าสู่ระบบ →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[90vh] flex flex-col justify-center items-center px-4 py-8">
       <div className="w-full max-w-[420px] bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500 overflow-hidden">
 
-        {/* Header */}
         <div className="text-center pt-8 pb-6 px-8">
           <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">สร้างบัญชีใหม่</h1>
           <p className="text-gray-400 text-sm font-medium">เริ่มต้นดูแลสัตว์เลี้ยงของคุณด้วย Whiskora</p>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex mx-8 mb-6 bg-gray-50 rounded-2xl p-1 gap-1">
+        <div className="px-8 pb-8 space-y-3">
+
+          {/* Google */}
           <button
-            onClick={() => setTab('social')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'social' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
+            onClick={handleGoogleSignup}
+            className="w-full flex items-center justify-center gap-3 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] font-bold text-gray-700 text-sm shadow-sm"
           >
-            Social Login
+            <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+            สมัครด้วย Google
           </button>
+
+          {/* LINE */}
           <button
-            onClick={() => setTab('email')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'email' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
+            onClick={() => { window.location.href = `/api/auth/line?next=${encodeURIComponent(safeRedirect)}` }}
+            className="w-full flex items-center justify-center gap-3 py-4 bg-[#06C755] hover:bg-[#05b34d] rounded-2xl transition-all active:scale-[0.98] font-bold text-white text-sm shadow-sm shadow-green-100"
           >
-            อีเมล & รหัสผ่าน
+            <LineSvg color="white" />
+            สมัครด้วย LINE
           </button>
-        </div>
 
-        <div className="px-8 pb-8">
+          {/* Divider */}
+          <div className="relative flex items-center justify-center py-1">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+            <span className="relative px-4 bg-white text-[11px] font-bold text-gray-300 uppercase tracking-widest">หรือสมัครด้วยอีเมล</span>
+          </div>
 
-          {/* ── Social tab ── */}
-          {tab === 'social' && (
-            <div className="space-y-3 animate-in fade-in duration-200">
-              <button
-                onClick={() => handleSocialSignup('google')}
-                className="w-full flex items-center justify-center gap-3 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] font-bold text-gray-700 text-sm shadow-sm"
-              >
-                <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-                สมัครด้วย Google
-              </button>
+          {/* Email form */}
+          <form onSubmit={handleEmailRegister} className="space-y-4">
 
-              <button
-                onClick={() => { window.location.href = `/api/auth/line?next=${encodeURIComponent(safeRedirect)}` }}
-                className="w-full flex items-center justify-center gap-3 py-4 bg-[#06C755] hover:bg-[#05b34d] rounded-2xl transition-all active:scale-[0.98] font-bold text-white text-sm shadow-sm shadow-green-100"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M36 19.5C36 13.149 29.732 8 22 8S8 13.149 8 19.5c0 5.87 5.21 10.783 12.244 11.72.477.103 1.126.314 1.29.722.148.37.097.952.047 1.328l-.208 1.248c-.064.37-.291 1.452 1.273.791C24.84 34.002 36 27.231 36 19.5z" fill="white"/>
-                  <path d="M30.5 22h-3.6v-5.4h-.9V23H30.5v-1zM19.5 16.6h-.9V23h.9v-6.4zM25.7 16.6h-.95L22.5 20.3v-3.7h-.9V23h.9v-3.4L24.75 23h.95l-2-3.5 2-2.9zM18.8 16.6h-3.8V23h3.8v-.9H16v-1.9h2.8v-.9H16v-1.8h2.8v-.9z" fill="white"/>
-                </svg>
-                สมัครด้วย LINE
-              </button>
-
-              <p className="text-xs text-gray-400 text-center leading-relaxed pt-2">
-                การสมัครถือว่าคุณยอมรับ{" "}
-                <Link href="/privacy" className="text-pink-400 hover:underline">นโยบายความเป็นส่วนตัว</Link>
-              </p>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">อีเมล</label>
+              <input
+                type="email"
+                placeholder="example@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm"
+                required
+                autoComplete="email"
+              />
             </div>
-          )}
 
-          {/* ── Email tab ── */}
-          {tab === 'email' && !success && (
-            <form onSubmit={handleEmailRegister} className="space-y-4 animate-in fade-in duration-200">
-
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">อีเมล</label>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">รหัสผ่าน</label>
+              <div className="relative">
                 <input
-                  type="email"
-                  placeholder="example@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm"
+                  type={showPw ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onFocus={() => setPwFocus(true)}
+                  onBlur={() => setPwFocus(false)}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm pr-12"
                   required
-                  autoComplete="email"
+                  autoComplete="new-password"
                 />
+                <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors">
+                  {showPw ? eyeOff : eyeOpen}
+                </button>
               </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">รหัสผ่าน</label>
-                <div className="relative">
-                  <input
-                    type={showPw ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onFocus={() => setPwFocus(true)}
-                    onBlur={() => setPwFocus(false)}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-pink-300 focus:bg-white transition-all text-sm pr-12"
-                    required
-                    autoComplete="new-password"
-                  />
-                  <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors">
-                    {showPw ? eyeOff : eyeOpen}
-                  </button>
-                </div>
-
-                {/* Strength bar */}
-                {password.length > 0 && (
-                  <div className="mt-2 space-y-1.5">
-                    <div className="flex gap-1">
-                      {[1,2,3,4,5].map(i => (
-                        <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-300" style={{ background: i <= score ? STRENGTH_COLOR[score] : '#e5e7eb' }} />
-                      ))}
-                    </div>
-                    <p className="text-xs font-bold" style={{ color: STRENGTH_COLOR[score] || '#9ca3af' }}>
-                      {STRENGTH_LABEL[score]}
-                    </p>
+              {password.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-300" style={{ background: i <= score ? STRENGTH_COLOR[score] : '#e5e7eb' }} />
+                    ))}
                   </div>
-                )}
-
-                {/* Rules checklist */}
-                {(pwFocus || password.length > 0) && (
-                  <div className="mt-3 space-y-1.5 bg-gray-50 rounded-2xl p-3">
-                    {RULES.map(r => {
-                      const pass = r.test(password);
-                      return (
-                        <div key={r.id} className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${pass ? 'bg-green-500' : 'bg-gray-200'}`}>
-                            {pass && (
-                              <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                                <polyline points="2 6 5 9 10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            )}
-                          </div>
-                          <span className={`text-xs font-medium transition-colors ${pass ? 'text-green-600' : 'text-gray-400'}`}>{r.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Confirm password */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">ยืนยันรหัสผ่าน</label>
-                <div className="relative">
-                  <input
-                    type={showCf ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={confirm}
-                    onChange={e => setConfirm(e.target.value)}
-                    className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 border outline-none transition-all text-sm pr-12 ${
-                      confirm.length > 0
-                        ? passwordsMatch ? 'border-green-300 focus:border-green-400' : 'border-red-300 focus:border-red-400'
-                        : 'border-gray-100 focus:border-pink-300 focus:bg-white'
-                    }`}
-                    required
-                    autoComplete="new-password"
-                  />
-                  <button type="button" onClick={() => setShowCf(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors">
-                    {showCf ? eyeOff : eyeOpen}
-                  </button>
-                </div>
-                {confirm.length > 0 && !passwordsMatch && (
-                  <p className="text-xs text-red-500 font-medium mt-1.5 ml-1">รหัสผ่านไม่ตรงกัน</p>
-                )}
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
-                  {error}
+                  <p className="text-xs font-bold" style={{ color: STRENGTH_COLOR[score] || '#9ca3af' }}>{STRENGTH_LABEL[score]}</p>
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading || !allPass || !passwordsMatch}
-                className="w-full bg-pink-500 hover:bg-pink-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-pink-100 active:scale-[0.98] mt-2 disabled:shadow-none"
-              >
-                {loading ? "กำลังสมัคร..." : "สร้างบัญชี"}
-              </button>
-
-              <p className="text-xs text-gray-400 text-center leading-relaxed">
-                การสมัครถือว่าคุณยอมรับ{" "}
-                <Link href="/privacy" className="text-pink-400 hover:underline">นโยบายความเป็นส่วนตัว</Link>
-              </p>
-            </form>
-          )}
-
-          {/* ── Success state ── */}
-          {tab === 'email' && success && (
-            <div className="text-center py-4 animate-in fade-in zoom-in duration-300">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <h2 className="text-xl font-black text-gray-800 mb-2">สมัครสำเร็จ!</h2>
-              <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                ระบบส่งลิงก์ยืนยันไปที่ <strong className="text-gray-700">{email}</strong> แล้ว<br />
-                กรุณาตรวจสอบอีเมลและกดยืนยันก่อนเข้าสู่ระบบ
-              </p>
-              <Link
-                href={`/login?redirect=${encodeURIComponent(safeRedirect)}`}
-                className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-2xl transition-all text-sm"
-              >
-                ไปหน้าเข้าสู่ระบบ →
-              </Link>
+              {(pwFocus || password.length > 0) && (
+                <div className="mt-3 space-y-1.5 bg-gray-50 rounded-2xl p-3">
+                  {RULES.map(r => {
+                    const pass = r.test(password);
+                    return (
+                      <div key={r.id} className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${pass ? 'bg-green-500' : 'bg-gray-200'}`}>
+                          {pass && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><polyline points="2 6 5 9 10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                        <span className={`text-xs font-medium transition-colors ${pass ? 'text-green-600' : 'text-gray-400'}`}>{r.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
 
+            <div>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">ยืนยันรหัสผ่าน</label>
+              <div className="relative">
+                <input
+                  type={showCf ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  className={`w-full px-4 py-3.5 rounded-2xl bg-gray-50 border outline-none transition-all text-sm pr-12 ${
+                    confirm.length > 0
+                      ? passwordsMatch ? 'border-green-300 focus:border-green-400' : 'border-red-300 focus:border-red-400'
+                      : 'border-gray-100 focus:border-pink-300 focus:bg-white'
+                  }`}
+                  required
+                  autoComplete="new-password"
+                />
+                <button type="button" onClick={() => setShowCf(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors">
+                  {showCf ? eyeOff : eyeOpen}
+                </button>
+              </div>
+              {confirm.length > 0 && !passwordsMatch && (
+                <p className="text-xs text-red-500 font-medium mt-1.5 ml-1">รหัสผ่านไม่ตรงกัน</p>
+              )}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || !allPass || !passwordsMatch}
+              className="w-full bg-pink-500 hover:bg-pink-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-pink-100 active:scale-[0.98] disabled:shadow-none"
+            >
+              {loading ? "กำลังสมัคร..." : "สร้างบัญชี"}
+            </button>
+
+            <p className="text-xs text-gray-400 text-center leading-relaxed">
+              การสมัครถือว่าคุณยอมรับ{" "}
+              <Link href="/privacy" className="text-pink-400 hover:underline">นโยบายความเป็นส่วนตัว</Link>
+            </p>
+          </form>
         </div>
 
-        {/* Footer */}
         <div className="text-center border-t border-gray-50 py-5 px-8">
           <p className="text-gray-400 text-sm font-medium">
             มีบัญชีอยู่แล้ว?{" "}
