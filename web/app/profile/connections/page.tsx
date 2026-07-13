@@ -29,9 +29,9 @@ const LineIcon = () => (
   </svg>
 );
 
-const PROVIDERS: { id: 'google' | 'line'; name: string; Icon: () => React.ReactElement; bg: string; color: string; iconBg: string }[] = [
-  { id: 'google', name: 'Google', Icon: GoogleIcon, bg: F.paper, color: F.inkSoft, iconBg: '#F8F9FA' },
-  { id: 'line',   name: 'LINE',   Icon: LineIcon,   bg: F.green,  color: '#fff',       iconBg: F.greenDark },
+const PROVIDERS: { id: 'google' | 'line-login'; name: string; Icon: () => React.ReactElement; bg: string; color: string; iconBg: string }[] = [
+  { id: 'google',     name: 'Google', Icon: GoogleIcon, bg: F.paper, color: F.inkSoft, iconBg: '#F8F9FA' },
+  { id: 'line-login', name: 'LINE',   Icon: LineIcon,   bg: F.green,  color: '#fff',   iconBg: F.greenDark },
 ];
 
 export default function ConnectionsPage() {
@@ -62,7 +62,7 @@ export default function ConnectionsPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  const handleLink = async (provider: 'google' | 'line') => {
+  const handleLink = async (provider: 'google' | 'line-login') => {
     setError("");
     setUnlinked(null);
     setActionLoading(provider);
