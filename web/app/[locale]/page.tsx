@@ -363,18 +363,10 @@ const homeJsonLd = {
 };
 
 function PawIcon({ color = "#ef3e7b" }: { color?: string }) {
-  return (
-    <svg width="25" height="25" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="5.4" cy="10.2" r="2.1" fill={color} />
-      <circle cx="9.4" cy="6.4" r="2.15" fill={color} />
-      <circle cx="14.6" cy="6.4" r="2.15" fill={color} />
-      <circle cx="18.6" cy="10.2" r="2.1" fill={color} />
-      <path
-        d="M7.2 17.5c0-3.1 2.5-5.3 4.8-5.3s4.8 2.2 4.8 5.3c0 2-1.7 2.8-3.2 2.1-.9-.4-2.3-.4-3.2 0-1.5.7-3.2-.1-3.2-2.1Z"
-        fill={color}
-      />
-    </svg>
-  );
+  if (color === "#fff") {
+    return <img src="/icons/icon-paw-circle-white.png" aria-hidden="true" alt="" width={25} height={25} style={{ objectFit: 'contain', flexShrink: 0 }} />;
+  }
+  return <img src="/paw.png" aria-hidden="true" alt="" width={25} height={25} style={{ objectFit: 'contain', flexShrink: 0 }} />;
 }
 
 function LineIcon({ name, color = "#ef3e7b" }: { name: IconName; color?: string }) {
