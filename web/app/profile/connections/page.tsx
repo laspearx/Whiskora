@@ -67,7 +67,7 @@ export default function ConnectionsPage() {
     setUnlinked(null);
     setActionLoading(provider);
     const { error } = await supabase.auth.linkIdentity({
-      provider,
+      provider: provider as any,
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/profile/connections')}`,
       },

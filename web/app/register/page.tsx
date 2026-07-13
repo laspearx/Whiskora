@@ -57,7 +57,7 @@ function RegisterContent() {
 
   const handleSocialSignup = async (provider: 'google' | 'line') => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: provider as any,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
     });
     if (error) setError(error.message);
