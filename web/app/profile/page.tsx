@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import PageLoader from "@/app/components/PageLoader";
 
 const F = {
   ink: "#1f1a1c",
@@ -356,27 +357,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="profile-loading">
-        <style>{`
-          .profile-loading {
-            min-height: 62vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: ${F.muted};
-            font-family: var(--font-ui), inherit;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-          }
-        `}</style>
-        Loading Profile
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   return (
     <>

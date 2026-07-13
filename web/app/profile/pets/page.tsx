@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PageLoader from "@/app/components/PageLoader";
 
 const F = {
   ink: "#1f1a1c",
@@ -56,6 +57,8 @@ export default function MyPetsPage() {
   }, [router]);
 
   const totalPets = personalPets.length + Object.values(farmPets).reduce((s, f) => s + f.pets.length, 0);
+
+  if (loading) return <PageLoader />;
 
   return (
     <>
@@ -316,18 +319,6 @@ export default function MyPetsPage() {
           background: ${F.cream};
         }
 
-        /* ── Loading ── */
-        .loading-wrap {
-          min-height: 50vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: ${F.muted};
-          font-size: 13px;
-          font-weight: 600;
-          letter-spacing: .06em;
-        }
-
         @media (max-width: 560px) {
           .pets-page { padding: 16px 0 80px; }
           .pet-section { border-radius: 14px; padding: 14px; }
@@ -335,10 +326,7 @@ export default function MyPetsPage() {
         }
       `}</style>
 
-      {loading ? (
-        <div className="loading-wrap">กำลังโหลด...</div>
-      ) : (
-        <div className="pets-page">
+      <div className="pets-page">
 
           {/* Header */}
           <div className="page-header">
@@ -398,7 +386,6 @@ export default function MyPetsPage() {
           ))}
 
         </div>
-      )}
     </>
   );
 }

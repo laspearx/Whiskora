@@ -270,7 +270,7 @@ export default function PublicPetProfilePage() {
   // ─── Pedigree renderer (read-only: การ์ดไม่ลิงก์ออกไปไหน) ───
   const renderPedigree = () => {
     if (pedigreeGens.length === 0) {
-      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>กำลังโหลดผังสายเลือด...</div>;
+      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>Loading...</div>;
     }
     const totalGens = pedigreeGens.length;
     const ROLE_NAMES = ['ตัวเอง (Current)', 'พ่อแม่ (Parents)', 'ปู่ย่าตายาย (Grandparents)', 'ทวด (Great-Grandparents)', 'เทียด (Great-Great)'];

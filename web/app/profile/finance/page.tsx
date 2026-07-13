@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import PageLoader from "@/app/components/PageLoader";
 
 // ─── Minimal Icons ─────────────────────────────────────────────────────────
 const Icon = {
@@ -130,7 +131,7 @@ export default function UniversalPetFinancePage() {
 
   const taxDeductible = yearTransactions.filter(t => t.farm_id !== 'PERSONAL' && t.transaction_type === 'expense' && t.receipt_url).reduce((sum, t) => sum + Number(t.amount), 0);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm font-semibold tracking-widest text-gray-400 animate-pulse uppercase">Loading Financial Dashboard...</div>;
+  if (loading) return <PageLoader />;
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-8 pb-24 animate-in fade-in duration-700 font-sans text-gray-900">

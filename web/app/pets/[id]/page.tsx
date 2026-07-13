@@ -472,7 +472,7 @@ export default function PetDetailPage() {
   // ─── Pedigree node renderer ───
   const renderPedigree = () => {
     if (pedigreeGens.length === 0) {
-      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>กำลังโหลดผังสายเลือด...</div>;
+      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>Loading...</div>;
     }
 
     const totalGens = pedigreeGens.length;

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import PageLoader from '@/app/components/PageLoader';
 
 interface Pet {
   id: number;
@@ -150,7 +151,7 @@ export default function EditLitterPage() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-pink-500 font-bold animate-pulse">กำลังโหลดข้อมูล... ⏳</div>;
+  if (isLoading) return <PageLoader />;
 
   return (
     <div className="max-w-xl mx-auto pt-4 pb-8 md:pt-8 md:pb-12 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
