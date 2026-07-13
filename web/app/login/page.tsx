@@ -47,7 +47,7 @@ function LoginContent() {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'line-login') => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'custom:line-login') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider as any,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
@@ -75,7 +75,7 @@ function LoginContent() {
           </button>
 
           <button
-            onClick={() => handleSocialLogin('line-login')}
+            onClick={() => handleSocialLogin('custom:line-login')}
             className="w-full flex items-center justify-center gap-3 bg-[#06C755] hover:bg-[#05b34d] py-4 rounded-2xl transition-all active:scale-[0.98] text-sm font-bold text-white shadow-sm shadow-green-100"
           >
             <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">

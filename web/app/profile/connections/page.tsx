@@ -29,9 +29,9 @@ const LineIcon = () => (
   </svg>
 );
 
-const PROVIDERS: { id: 'google' | 'line-login'; name: string; Icon: () => React.ReactElement; bg: string; color: string; iconBg: string }[] = [
+const PROVIDERS: { id: 'google' | 'custom:line-login'; name: string; Icon: () => React.ReactElement; bg: string; color: string; iconBg: string }[] = [
   { id: 'google',     name: 'Google', Icon: GoogleIcon, bg: F.paper, color: F.inkSoft, iconBg: '#F8F9FA' },
-  { id: 'line-login', name: 'LINE',   Icon: LineIcon,   bg: F.green,  color: '#fff',   iconBg: F.greenDark },
+  { id: 'custom:line-login', name: 'LINE',   Icon: LineIcon,   bg: F.green,  color: '#fff',   iconBg: F.greenDark },
 ];
 
 export default function ConnectionsPage() {
@@ -62,7 +62,7 @@ export default function ConnectionsPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  const handleLink = async (provider: 'google' | 'line-login') => {
+  const handleLink = async (provider: 'google' | 'custom:line-login') => {
     setError("");
     setUnlinked(null);
     setActionLoading(provider);
@@ -178,7 +178,7 @@ export default function ConnectionsPage() {
                   const busy = actionLoading === id;
                   return (
                     <div key={id} className="cn-row">
-                      <div className="cn-icon-wrap" style={{ background: linked ? (id === 'line-login' ? F.green : '#F8F9FA') : F.line }}>
+                      <div className="cn-icon-wrap" style={{ background: linked ? (id === 'custom:line-login' ? F.green : '#F8F9FA') : F.line }}>
                         <Icon />
                       </div>
                       <div className="cn-info">
