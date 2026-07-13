@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { UserIdentity } from "@supabase/supabase-js";
+import PageLoader from "@/app/components/PageLoader";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -186,9 +187,6 @@ export default function ConnectionsPage() {
         .cn-alert-err { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
         .cn-alert-ok  { background: #F0FDF4; color: #16a34a; border: 1px solid #BBF7D0; }
         .cn-note { margin-top: 20px; padding: 14px 16px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; font-size: 12px; font-weight: 500; color: #92400E; line-height: 1.6; }
-        .cn-loading { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
-        .cn-spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #FBCFE8; border-top-color: ${F.pink}; animation: cnspin 1s linear infinite; }
-        @keyframes cnspin { to { transform: rotate(360deg); } }
       `}</style>
 
       <div className="cn-page">
@@ -206,7 +204,7 @@ export default function ConnectionsPage() {
           </div>
 
           {loading ? (
-            <div className="cn-loading"><div className="cn-spinner" /></div>
+            <PageLoader />
           ) : (
             <>
               <div className="cn-card">
