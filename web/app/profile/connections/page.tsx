@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -29,7 +29,7 @@ const LineIcon = () => (
   </svg>
 );
 
-const PROVIDERS: { id: 'google' | 'line'; name: string; Icon: () => JSX.Element; bg: string; color: string; iconBg: string }[] = [
+const PROVIDERS: { id: 'google' | 'line'; name: string; Icon: () => React.ReactElement; bg: string; color: string; iconBg: string }[] = [
   { id: 'google', name: 'Google', Icon: GoogleIcon, bg: F.paper, color: F.inkSoft, iconBg: '#F8F9FA' },
   { id: 'line',   name: 'LINE',   Icon: LineIcon,   bg: F.green,  color: '#fff',       iconBg: F.greenDark },
 ];
