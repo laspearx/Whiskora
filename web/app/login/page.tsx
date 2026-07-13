@@ -47,7 +47,7 @@ function LoginContent() {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'line') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
@@ -74,13 +74,16 @@ function LoginContent() {
             ดำเนินการต่อด้วย Google
           </button>
 
-          {/*<button
-            onClick={() => handleSocialLogin('facebook')}
-            className="w-full flex items-center justify-center gap-3 bg-[#1877F2] py-4 rounded-2xl hover:opacity-90 transition-all active:scale-[0.98] text-sm font-bold text-white shadow-lg shadow-blue-100"
+          <button
+            onClick={() => handleSocialLogin('line')}
+            className="w-full flex items-center justify-center gap-3 bg-[#06C755] hover:bg-[#05b34d] py-4 rounded-2xl transition-all active:scale-[0.98] text-sm font-bold text-white shadow-sm shadow-green-100"
           >
-            <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            ดำเนินการต่อด้วย Facebook
-          </button>*/}
+            <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M40 20.5C40 13.044 32.837 7 24 7S8 13.044 8 20.5c0 6.71 5.948 12.327 13.981 13.396.545.117 1.287.359 1.474.825.169.424.11 1.089.054 1.518l-.238 1.426c-.073.424-.334 1.659 1.454.904C26.726 37.576 40 29.977 40 20.5z" fill="white"/>
+              <path d="M34.5 23.5h-4v-6h-1v7h5v-1zM22.5 17.5h-1v7h1v-7zM29.667 17.5h-1.084L26.5 21.29V17.5h-1v7h1v-3.79l2.083 3.79h1.084L27.333 21l2.334-3.5zM21.5 17.5h-4v7h4v-1h-3v-2h3v-1h-3v-2h3v-1z" fill="#06C755"/>
+            </svg>
+            ดำเนินการต่อด้วย LINE
+          </button>
         </div>
 
         {/* ทางเข้าด้วยอีเมล (สำหรับผู้ใช้เดิม) */}

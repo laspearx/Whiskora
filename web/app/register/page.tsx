@@ -55,9 +55,9 @@ function RegisterContent() {
     return () => subscription.unsubscribe();
   }, [router, safeRedirect]);
 
-  const handleGoogle = async () => {
+  const handleSocialSignup = async (provider: 'google' | 'line') => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
     });
     if (error) setError(error.message);
@@ -123,12 +123,24 @@ function RegisterContent() {
           {tab === 'social' && (
             <div className="space-y-3 animate-in fade-in duration-200">
               <button
-                onClick={handleGoogle}
+                onClick={() => handleSocialSignup('google')}
                 className="w-full flex items-center justify-center gap-3 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] font-bold text-gray-700 text-sm shadow-sm"
               >
                 <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
                 สมัครด้วย Google
               </button>
+
+              <button
+                onClick={() => handleSocialSignup('line')}
+                className="w-full flex items-center justify-center gap-3 py-4 bg-[#06C755] hover:bg-[#05b34d] rounded-2xl transition-all active:scale-[0.98] font-bold text-white text-sm shadow-sm shadow-green-100"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M40 20.5C40 13.044 32.837 7 24 7S8 13.044 8 20.5c0 6.71 5.948 12.327 13.981 13.396.545.117 1.287.359 1.474.825.169.424.11 1.089.054 1.518l-.238 1.426c-.073.424-.334 1.659 1.454.904C26.726 37.576 40 29.977 40 20.5z" fill="white"/>
+                  <path d="M34.5 23.5h-4v-6h-1v7h5v-1zM22.5 17.5h-1v7h1v-7zM29.667 17.5h-1.084L26.5 21.29V17.5h-1v7h1v-3.79l2.083 3.79h1.084L27.333 21l2.334-3.5zM21.5 17.5h-4v7h4v-1h-3v-2h3v-1h-3v-2h3v-1z" fill="#06C755"/>
+                </svg>
+                สมัครด้วย LINE
+              </button>
+
               <p className="text-xs text-gray-400 text-center leading-relaxed pt-2">
                 การสมัครถือว่าคุณยอมรับ{" "}
                 <Link href="/privacy" className="text-pink-400 hover:underline">นโยบายความเป็นส่วนตัว</Link>
