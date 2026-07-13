@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { SPECIES_LIST, OTHER_SPECIES, speciesTh, speciesIcon } from "@/lib/species";
 import { PET_GENDER, type PetGender } from "@/lib/constants";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -475,7 +476,7 @@ function CreatePetContent() {
 
 export default function CreatePetPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #FBCFE8', borderTopColor: '#E84677', animation: 'spin 1s linear infinite' }} /></div>}>
+    <Suspense fallback={<PageLoader />}>
       <CreatePetContent />
     </Suspense>
   );

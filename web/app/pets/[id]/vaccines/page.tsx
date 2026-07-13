@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PageLoader from '@/app/components/PageLoader';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -112,10 +113,7 @@ function VaccineTimeline() {
       `}</style>
 
       {isLoading ? (
-        <div className="vh-loading">
-          <div className="vh-spinner" />
-          <p style={{ fontSize: 13, fontWeight: 700, color: F.muted }}>กำลังจัดเตรียมข้อมูล...</p>
-        </div>
+        <PageLoader />
       ) : (
         <div className="vh-page">
           <div className="vh-body">
@@ -183,7 +181,7 @@ function VaccineTimeline() {
 
 export default function VaccinesHistoryPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #99F6E4', borderTopColor: '#0D9488', animation: 'vhspin 1s linear infinite' }} /></div>}>
+    <Suspense fallback={<PageLoader />}>
       <VaccineTimeline />
     </Suspense>
   );

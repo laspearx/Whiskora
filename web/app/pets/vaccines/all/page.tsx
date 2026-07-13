@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PageLoader from '@/app/components/PageLoader';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -135,10 +136,7 @@ function AppointmentsList() {
           </div>
 
           {loading ? (
-            <div className="ap-loading">
-              <div className="ap-spinner" />
-              <p className="ap-loading-text">กำลังโหลดข้อมูลนัดหมาย...</p>
-            </div>
+            <PageLoader />
           ) : groupedAppointments.length === 0 ? (
             <div className="ap-empty">
               <span className="ap-empty-emoji">📭</span>
@@ -179,7 +177,7 @@ function AppointmentsList() {
 
 export default function AllAppointmentsPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #FBCFE8', borderTopColor: '#E84677', animation: 'apspin 1s linear infinite' }} /></div>}>
+    <Suspense fallback={<PageLoader />}>
       <AppointmentsList />
     </Suspense>
   );

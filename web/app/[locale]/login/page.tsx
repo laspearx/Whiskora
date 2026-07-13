@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useTranslations } from '@/i18n/context';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useSearchParams } from "next/navigation";
+import PageLoader from '@/app/components/PageLoader';
 
 function LoginContent() {
   const [email, setEmail] = useState("");
@@ -144,7 +145,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" /></div>}>
+    <Suspense fallback={<PageLoader />}>
       <LoginContent />
     </Suspense>
   );

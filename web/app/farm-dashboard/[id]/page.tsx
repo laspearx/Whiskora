@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { speciesTh } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PageLoader from '@/app/components/PageLoader';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -183,14 +184,7 @@ function FarmDashboardContent() {
   const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const monthLabel = now.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" />
-        <p className="text-xs font-semibold text-gray-400 tracking-widest">LOADING FARM DATA...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <PageLoader />;
   if (!farm) return null;
 
   return (
@@ -612,7 +606,7 @@ function FarmDashboardContent() {
 
 export default function FarmDashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" /></div>}>
+    <Suspense fallback={<PageLoader />}>
       <FarmDashboardContent />
     </Suspense>
   );

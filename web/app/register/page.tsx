@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import PageLoader from '@/app/components/PageLoader';
 
 const RULES = [
   { id: 'len',   label: 'อย่างน้อย 8 ตัวอักษร',       test: (p: string) => p.length >= 8 },
@@ -282,11 +283,7 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-[90vh] flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<PageLoader />}>
       <RegisterContent />
     </Suspense>
   );
