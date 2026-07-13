@@ -15,7 +15,10 @@ export async function GET(request: Request) {
   const code      = searchParams.get('code')
   const stateBack = searchParams.get('state')
   const lineErr   = searchParams.get('error')
-  const siteUrl   = process.env.NEXT_PUBLIC_SITE_URL || 'https://whiskora.vercel.app'
+
+  // ── resolve origin from cookie (saved when user clicked the LINE button) ──
+  const cookieStore = await cookies()
+  const siteUrl = cookieStore.get('line_origin')?.value || 'https://whiskora.vercel.app'
 
   const fail = (msg: string) =>
     NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
@@ -24,11 +27,11 @@ export async function GET(request: Request) {
   if (!code)   return fail('missing_code')
 
   // ── verify state ──────────────────────────────────────────────────────────
-  const cookieStore = await cookies()
   const savedState  = cookieStore.get('line_state')?.value
   const nextPath    = cookieStore.get('line_next')?.value || '/profile'
   cookieStore.delete('line_state')
   cookieStore.delete('line_next')
+  cookieStore.delete('line_origin')
 
   if (!savedState || savedState !== stateBack) return fail('state_mismatch')
 
