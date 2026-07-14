@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { speciesTh } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -14,11 +14,10 @@ const F = {
   line: '#f3dde3', lineMid: '#E5E7EB', paper: '#fdf0f3', bg: '#fffafc',
 };
 
-const CHART_COLORS = ['#7C3AED', '#E84677', '#0D9488', '#F59E0B', '#2563EB', '#EC4899', '#10B981', '#6366F1'];
-
 const Icon = {
   ArrowLeft: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Filter: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+  Search: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   Male: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
   Female: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
   ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
@@ -27,12 +26,14 @@ const Icon = {
   Paw: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
   Wallet: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>,
   TrendingUp: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
-  Layers: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
   Activity: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
   Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   Farm: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10 12 3l9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>,
   Heart: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
-  Scissors: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+  Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Eye: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Alert: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  Layers: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
 };
 
 function FarmDashboardContent() {
@@ -50,7 +51,10 @@ function FarmDashboardContent() {
 
   const [filterStatus, setFilterStatus] = useState("");
   const [filterGender, setFilterGender] = useState("");
-  const [filterBreed, setFilterBreed] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const directoryRef = useRef<HTMLElement>(null);
+  const breedingRef = useRef<HTMLElement>(null);
 
   const handleBackToParent = () => {
     if (fromPage === 'partner') router.push('/partner');
@@ -92,52 +96,39 @@ function FarmDashboardContent() {
   const isFemaleFn = (g: string) => g === 'female' || g === 'ตัวเมีย';
 
   const breeders = allPets.filter(p => p.status === "พ่อพันธุ์ / แม่พันธุ์");
-  const readyMove = allPets.filter(p => p.status === "พร้อมย้ายบ้าน" || p.status === "เด็ก");
-  const neutered = allPets.filter(p => p.status === "ทำหมัน / ปลดระวาง");
-  const genderCount = (arr: any[]) => ({ m: arr.filter(p => isMaleFn(p.gender)).length, f: arr.filter(p => isFemaleFn(p.gender)).length });
-  const breedersG = genderCount(breeders);
-  const readyG = genderCount(readyMove);
-  const neuteredG = genderCount(neutered);
-
-  const income = transactions.filter(t => t.transaction_type === "income").reduce((a, b) => a + Number(b.amount), 0);
-  const expense = transactions.filter(t => t.transaction_type === "expense").reduce((a, b) => a + Number(b.amount), 0);
-  const netProfit = income - expense;
+  const babies = allPets.filter(p => p.status === "เด็ก");
+  const readyOnly = allPets.filter(p => p.status === "พร้อมย้ายบ้าน");
 
   const now = new Date();
+  const thisMonthIncome = transactions.filter(t => {
+    if (t.transaction_type !== "income" || !t.transaction_date) return false;
+    const d = new Date(t.transaction_date);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).reduce((a, b) => a + Number(b.amount), 0);
+
   const thisMonthExpenses = transactions.filter(t => {
     if (t.transaction_type !== "expense" || !t.transaction_date) return false;
     const d = new Date(t.transaction_date);
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
   const monthExpenseTotal = thisMonthExpenses.reduce((a, b) => a + Number(b.amount), 0);
+  const thisMonthNet = thisMonthIncome - monthExpenseTotal;
 
-  const categoryMap: Record<string, number> = {};
-  transactions.filter(t => t.transaction_type === "expense").forEach(t => {
-    const cat = t.category || "อื่นๆ";
-    categoryMap[cat] = (categoryMap[cat] || 0) + Number(t.amount);
-  });
-  const categoryList = Object.entries(categoryMap)
-    .map(([name, amount], i) => ({ name, amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
-    .sort((a, b) => b.amount - a.amount);
-  const categoryTotal = categoryList.reduce((a, b) => a + b.amount, 0);
-
-  let acc = 0;
-  const conicSegments = categoryList.map(c => {
-    const start = categoryTotal > 0 ? (acc / categoryTotal) * 100 : 0;
-    acc += c.amount;
-    const end = categoryTotal > 0 ? (acc / categoryTotal) * 100 : 0;
-    return `${c.color} ${start}% ${end}%`;
-  }).join(', ');
+  const income = transactions.filter(t => t.transaction_type === "income").reduce((a, b) => a + Number(b.amount), 0);
+  const expense = transactions.filter(t => t.transaction_type === "expense").reduce((a, b) => a + Number(b.amount), 0);
+  const netProfit = income - expense;
 
   const activeLitters = allLitters.filter(l => l.status === "รอคลอด");
   const bornLitters = allLitters.filter(l => l.status === "คลอดแล้ว");
 
   const filteredPets = allPets.filter(pet => {
-    return (!filterStatus || pet.status === filterStatus) &&
-           (!filterGender || (filterGender === 'male' ? isMaleFn(pet.gender) : isFemaleFn(pet.gender))) &&
-           (!filterBreed || (pet.breed && pet.breed.includes(filterBreed)));
+    const matchStatus = !filterStatus || pet.status === filterStatus;
+    const matchGender = !filterGender || (filterGender === 'male' ? isMaleFn(pet.gender) : isFemaleFn(pet.gender));
+    const matchSearch = !searchQuery ||
+      (pet.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (pet.breed || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchStatus && matchGender && matchSearch;
   });
-  const uniqueBreeds = Array.from(new Set(allPets.map(p => p.breed ? p.breed.split('(')[0].trim() : "ไม่ระบุ").filter(b => b !== "ไม่ระบุ")));
 
   const recentActivity = [
     ...transactions.map(t => ({
@@ -164,12 +155,42 @@ function FarmDashboardContent() {
     if (today <= start) return 0;
     return Math.round(((today - start) / (end - start)) * 100);
   };
-  const calculateDaysLeft = (expectedDate: string) => {
-    const diffDays = Math.ceil((new Date(expectedDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? `${diffDays} วัน` : "ครบกำหนด!";
-  };
+
   const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const monthLabel = now.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+
+  const farmCompletion = Math.min(100,
+    20 +
+    (farm?.image_url ? 20 : 0) +
+    (farm?.bio ? 20 : 0) +
+    (farm?.species ? 15 : 0) +
+    (farm?.is_verified ? 25 : 0)
+  );
+
+  const urgentTasks: Array<{ icon: string; message: string; action: string; href?: string; urgency: 'high' | 'medium' | 'low' }> = [];
+  activeLitters.forEach(l => {
+    if (!l.mating_date || !l.expected_birth_date) return;
+    const prog = calculatePregnancyProgress(l.mating_date, l.expected_birth_date);
+    const dLeft = Math.ceil((new Date(l.expected_birth_date).getTime() - Date.now()) / 86400000);
+    if (prog >= 100) {
+      urgentTasks.push({ icon: '/icons/icon-farm.png', message: `ครอก ${l.litter_code || 'N/A'} — ครบกำหนดคลอดแล้ว`, action: 'บันทึกคลอด', href: `/farm-dashboard/${farmId}/litters/${l.id}/birth?from=${fromPage}`, urgency: 'high' });
+    } else if (dLeft <= 3 && dLeft >= 0) {
+      urgentTasks.push({ icon: '/icons/icon-farm.png', message: `ครอก ${l.litter_code || 'N/A'} — คาดคลอดใน ${dLeft} วัน`, action: 'ดูรายละเอียด', href: `/farm-dashboard/${farmId}/litters/${l.id}?from=${fromPage}`, urgency: 'medium' });
+    }
+  });
+  const petsNoPhoto = allPets.filter(p => !p.image_url);
+  if (petsNoPhoto.length > 0) {
+    urgentTasks.push({ icon: '/icons/icon-my-pets.png', message: `สัตว์ ${petsNoPhoto.length} ตัวยังไม่มีรูปภาพ`, action: 'จัดการ', href: undefined, urgency: 'low' });
+  }
+
+  const handleKpiClick = (status: string) => {
+    setFilterStatus(status);
+    setSearchQuery("");
+    setTimeout(() => directoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
+  const handleLittersKpiClick = () => {
+    breedingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (loading) return <PageLoader />;
   if (!farm) return null;
@@ -207,10 +228,18 @@ function FarmDashboardContent() {
         .fd-hero::before { width: 280px; height: 280px; top: -110px; right: -90px; }
         .fd-hero::after { width: 190px; height: 190px; left: -62px; bottom: -72px; animation-delay: 1.2s; }
 
+        .fd-back-btn {
+          position: absolute; top: 12px; left: 12px; z-index: 2;
+          width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+          background: rgba(255,255,255,.22); color: white; display: flex; align-items: center; justify-content: center;
+          backdrop-filter: blur(8px); transition: background .15s;
+        }
+        .fd-back-btn:hover { background: rgba(255,255,255,.36); }
+
         .hero-content {
           position: relative; z-index: 1;
           display: grid; grid-template-columns: auto minmax(0, 1fr);
-          gap: 16px; align-items: center;
+          gap: 16px; align-items: center; padding-top: 4px;
         }
         .avatar-wrap { position: relative; width: 80px; height: 80px; flex: 0 0 auto; }
         .fd-avatar {
@@ -245,8 +274,21 @@ function FarmDashboardContent() {
         .button-secondary { border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.14); color: white; }
         .button-primary:hover, .button-secondary:hover { transform: translateY(-2px); }
 
+        /* ── Completion bar ── */
+        .fd-completion {
+          position: relative; z-index: 1; margin-top: 16px;
+          background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.18);
+          border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(8px);
+        }
+        .fd-completion-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .fd-completion-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.9); }
+        .fd-completion-pct { font-size: 13px; font-weight: 800; color: white; }
+        .fd-completion-bar { width: 100%; height: 6px; background: rgba(255,255,255,.22); border-radius: 10px; overflow: hidden; }
+        .fd-completion-fill { height: 100%; border-radius: 10px; background: white; transition: width 1s ease; }
+        .fd-completion-hint { font-size: 10px; color: rgba(255,255,255,.68); margin-top: 6px; line-height: 1.5; }
+
         .hero-meta {
-          position: relative; z-index: 1; margin-top: 14px;
+          position: relative; z-index: 1; margin-top: 12px;
           display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px;
         }
         .meta-pill {
@@ -258,6 +300,42 @@ function FarmDashboardContent() {
         .meta-pill-icon { width: 40px; height: 40px; object-fit: contain; flex: 0 0 auto; }
         .meta-pill-num { color: white; font-size: 20px; line-height: 1; font-weight: 800; }
         .meta-pill-label { color: rgba(255,255,255,.82); font-size: 13px; font-weight: 500; line-height: 1; }
+
+        /* ── Urgent tasks ── */
+        .fd-urgent-wrap { animation: fd-rise .56s ease .04s both; }
+        .fd-urgent-card {
+          border-radius: 16px; padding: 16px;
+          background: rgba(255,255,255,.92); border: 1px solid #f8edf1;
+          box-shadow: 0 4px 14px rgba(31,26,28,.03);
+        }
+        .fd-urgent-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .fd-urgent-head-icon { width: 28px; height: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fd-urgent-head-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .fd-task-row {
+          display: flex; align-items: center; gap: 12px;
+          padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
+        }
+        .fd-task-row:last-child { margin-bottom: 0; }
+        .fd-task-high { background: #FEF2F2; border: 1px solid #FECACA; }
+        .fd-task-medium { background: #FFFBEB; border: 1px solid #FDE68A; }
+        .fd-task-low { background: #F0F9FF; border: 1px solid #BAE6FD; }
+        .fd-task-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .fd-task-high .fd-task-dot { background: #EF4444; }
+        .fd-task-medium .fd-task-dot { background: #F59E0B; }
+        .fd-task-low .fd-task-dot { background: #0EA5E9; }
+        .fd-task-msg { flex: 1; font-size: 12px; font-weight: 600; color: ${F.ink}; line-height: 1.4; min-width: 0; }
+        .fd-task-btn {
+          font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px;
+          text-decoration: none; flex-shrink: 0; white-space: nowrap; cursor: pointer;
+        }
+        .fd-task-high .fd-task-btn { background: #EF4444; color: white; }
+        .fd-task-medium .fd-task-btn { background: #F59E0B; color: white; }
+        .fd-task-low .fd-task-btn { background: #0EA5E9; color: white; }
+        .fd-no-tasks {
+          display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+          background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px;
+          font-size: 12px; font-weight: 600; color: #16A34A;
+        }
 
         /* ── Quick chips ── */
         .fd-quick-wrap { animation: fd-rise .58s ease .08s both; }
@@ -273,6 +351,20 @@ function FarmDashboardContent() {
         .fd-quick-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(31,26,28,.07); border-color: #edc7d3; }
         .fd-quick-chip img { width: 36px; height: 36px; object-fit: contain; }
         .fd-quick-chip-label { font-size: 11px; font-weight: 600; color: ${F.ink}; text-align: center; line-height: 1.4; }
+
+        /* ── KPI ── */
+        .fd-kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; }
+        .fd-kpi {
+          background: white; border: 2px solid ${F.line}; border-radius: 14px; padding: 14px;
+          cursor: pointer; transition: all .18s ease; user-select: none;
+        }
+        .fd-kpi:hover { border-color: ${F.pinkBorder}; box-shadow: 0 4px 14px rgba(232,70,119,.08); transform: translateY(-2px); }
+        .fd-kpi.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .fd-kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .fd-kpi-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fd-kpi-label { font-size: 11px; font-weight: 700; color: ${F.inkSoft}; line-height: 1.3; }
+        .fd-kpi-value { font-family: inherit; font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+        .fd-kpi-sub { font-size: 10px; font-weight: 600; color: ${F.muted}; }
 
         /* ── Cards ── */
         .profile-card {
@@ -290,45 +382,20 @@ function FarmDashboardContent() {
         .card-head h2 { margin: 0; color: ${F.ink}; font-size: 16px; line-height: 1.35; font-weight: 650; letter-spacing: 0; }
         .card-link { color: ${F.pink}; font-size: 12px; font-weight: 500; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap; }
 
-        /* ── Finance ── */
-        .fd-finance-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
-        .fd-expense-card {
-          background: linear-gradient(135deg, #FFF0F5, ${F.pinkSoft});
-          border: 1px solid ${F.pinkBorder}; border-radius: 14px; padding: 20px;
-          display: flex; flex-direction: column; justify-content: center;
-        }
-        .fd-expense-icon { width: 40px; height: 40px; border-radius: 12px; background: white; color: ${F.pink}; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(232,70,119,.12); }
-        .fd-expense-label { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; }
-        .fd-expense-sub { font-size: 11px; color: ${F.muted}; margin-top: 2px; }
-        .fd-expense-amount { font-family: inherit; font-size: 32px; font-weight: 700; color: ${F.pink}; margin: 10px 0 4px; letter-spacing: -0.5px; }
-        .fd-donut-card { background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 20px; }
-        .fd-donut-title { font-size: 13px; font-weight: 700; color: ${F.ink}; margin-bottom: 14px; }
-        .fd-donut-wrap { display: flex; align-items: center; gap: 22px; }
-        .fd-donut { width: 120px; height: 120px; border-radius: 50%; flex-shrink: 0; position: relative; }
-        .fd-donut::after { content: ''; position: absolute; inset: 24px; background: white; border-radius: 50%; }
-        .fd-donut-empty { width: 120px; height: 120px; border-radius: 50%; background: ${F.line}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: ${F.muted}; text-align: center; }
-        .fd-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-        .fd-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-        .fd-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-        .fd-legend-name { color: ${F.inkSoft}; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fd-legend-pct { color: ${F.muted}; font-weight: 700; flex-shrink: 0; }
-        .fd-legend-amt { color: ${F.ink}; font-weight: 700; font-family: inherit; flex-shrink: 0; min-width: 56px; text-align: right; }
-
-        /* ── KPI ── */
-        .fd-kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
-        .fd-kpi { background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 16px 16px; }
-        .fd-kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-        .fd-kpi-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .fd-kpi-label { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
-        .fd-kpi-value { font-family: inherit; font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
-        .fd-kpi-gender { display: flex; gap: 10px; font-size: 11px; font-weight: 700; }
-        .fd-kpi-gender .m { color: #2563EB; display: inline-flex; align-items: center; gap: 3px; }
-        .fd-kpi-gender .f { color: #DB2777; display: inline-flex; align-items: center; gap: 3px; }
-        .fd-kpi-gender .total { color: ${F.muted}; font-weight: 600; }
+        /* ── Finance compact ── */
+        .fd-fin-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+        .fd-fin-stat { background: #FAFAFA; border: 1px solid ${F.line}; border-radius: 12px; padding: 14px; }
+        .fd-fin-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+        .fd-fin-val { font-family: inherit; font-size: 20px; font-weight: 700; color: ${F.ink}; line-height: 1; }
+        .fd-fin-val.income { color: #16A34A; }
+        .fd-fin-val.expense { color: #EF4444; }
+        .fd-fin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         /* ── Breeding ── */
         .fd-link-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all .15s; cursor: pointer; }
         .fd-link-pill:hover { background: #FDE7EF; border-color: ${F.pink}; }
+        .fd-link-pill-ghost { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.inkSoft}; background: white; border: 1px solid ${F.lineMid}; padding: 6px 14px; border-radius: 20px; text-decoration: none; transition: all .15s; }
+        .fd-link-pill-ghost:hover { background: #F9FAFB; border-color: #D1D5DB; }
         .fd-litter-row { background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
         .fd-litter-code { text-align: center; min-width: 52px; }
         .fd-litter-code-label { font-size: 9px; color: ${F.muted}; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
@@ -347,12 +414,7 @@ function FarmDashboardContent() {
         .fd-btn-ghost:hover { background: ${F.line}; }
         .fd-btn-birth { padding: 8px 18px; border-radius: 10px; color: white; font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; transition: all .15s; white-space: nowrap; border: none; }
 
-        /* ── Summary + Activity ── */
-        .fd-mid-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 12px; align-items: start; }
-        .fd-summary-icon { width: 40px; height: 40px; border-radius: 12px; background: ${F.pinkSoft}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-        .fd-summary-big { font-family: inherit; font-size: 28px; font-weight: 700; color: ${F.ink}; }
-        .fd-summary-sub { font-size: 12px; color: ${F.inkSoft}; margin-top: 6px; line-height: 1.6; }
-        .fd-summary-sub b { color: ${F.pink}; }
+        /* ── Activity ── */
         .fd-act-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid ${F.line}; }
         .fd-act-row:last-child { border-bottom: none; }
         .fd-act-dot { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -379,10 +441,19 @@ function FarmDashboardContent() {
         .fd-roi-val { font-size: 12px; font-weight: 700; font-family: inherit; }
         .fd-roi-arrow { width: 30px; height: 30px; border-radius: 50%; background: #FAFAFA; color: ${F.muted}; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all .15s; flex-shrink: 0; }
         .fd-roi-arrow:hover { background: ${F.pink}; color: white; }
+        .fd-pending-roi { background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; padding: 8px 10px; font-size: 10px; color: ${F.muted}; font-weight: 600; text-align: center; margin-top: 4px; }
 
         /* ── Directory ── */
-        .fd-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-        .fd-filter-icon { background: ${F.pinkSoft}; color: ${F.pink}; padding: 8px; border-radius: 10px; display: flex; }
+        .fd-dir-search-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .fd-search-wrap { position: relative; flex: 1; min-width: 140px; }
+        .fd-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: ${F.muted}; pointer-events: none; }
+        .fd-search-input {
+          width: 100%; background: white; border: 1px solid ${F.lineMid}; font-size: 13px;
+          font-weight: 500; color: ${F.ink}; padding: 9px 12px 9px 34px; border-radius: 10px;
+          outline: none; font-family: inherit; transition: border-color .15s;
+        }
+        .fd-search-input::placeholder { color: ${F.muted}; }
+        .fd-search-input:focus { border-color: ${F.pinkBorder}; }
         .fd-select { background: white; border: 1px solid ${F.lineMid}; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; padding: 8px 12px; border-radius: 10px; outline: none; cursor: pointer; transition: all .15s; font-family: inherit; }
         .fd-select:focus { border-color: ${F.pinkBorder}; }
         .fd-dir-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
@@ -402,15 +473,15 @@ function FarmDashboardContent() {
         .fd-empty { background: white; border: 1px dashed ${F.lineMid}; border-radius: 14px; padding: 28px; text-align: center; color: ${F.muted}; font-size: 13px; font-weight: 600; }
 
         @media (max-width: 900px) {
-          .fd-finance-grid, .fd-mid-grid { grid-template-columns: 1fr; }
-          .fd-kpi-grid { grid-template-columns: repeat(2,1fr); }
+          .fd-kpi-grid { grid-template-columns: repeat(3,1fr); }
           .fd-litter-grid { grid-template-columns: repeat(2,1fr); }
           .fd-dir-grid { grid-template-columns: repeat(2,1fr); }
+          .fd-fin-row { grid-template-columns: repeat(3,1fr); }
         }
         @media (max-width: 600px) {
           .fd-page { padding: 10px 12px 68px; }
           .fd-hero { border-radius: 16px; padding: 16px; }
-          .hero-content { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+          .hero-content { grid-template-columns: 1fr; justify-items: center; text-align: center; padding-top: 24px; }
           .hero-title-row, .hero-actions { justify-content: center; }
           .avatar-wrap { width: 70px; height: 70px; }
           .hero-meta { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
@@ -421,12 +492,18 @@ function FarmDashboardContent() {
           .fd-quick-chip { padding: 10px 4px 8px; gap: 6px; }
           .fd-quick-chip img { width: 28px; height: 28px; }
           .fd-quick-chip-label { font-size: 10px; }
+          .fd-kpi-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+          .fd-kpi { padding: 10px; }
+          .fd-kpi-value { font-size: 22px; }
           .fd-litter-grid, .fd-dir-grid { grid-template-columns: 1fr; }
           .fd-litter-row { gap: 12px; }
           .fd-litter-actions { width: 100%; justify-content: flex-end; }
-          .fd-donut-wrap { flex-direction: column; }
-          .fd-kpi-grid { grid-template-columns: repeat(2,1fr); }
+          .fd-fin-row { grid-template-columns: repeat(3,1fr); }
           .profile-card { border-radius: 14px; padding: 14px; }
+        }
+        @media (max-width: 420px) {
+          .fd-kpi-grid { grid-template-columns: repeat(2,1fr); }
+          .fd-fin-row { grid-template-columns: 1fr; }
         }
         @media (prefers-reduced-motion: reduce) {
           .fd-hero, .fd-quick-wrap, .profile-card, .fd-hero::before, .fd-hero::after { animation: none !important; transition: none !important; }
@@ -436,8 +513,11 @@ function FarmDashboardContent() {
       <main className="fd-page">
         <div className="fd-shell">
 
-          {/* ── Hero ── */}
+          {/* ── 1. Hero ── */}
           <section className="fd-hero">
+            <button onClick={handleBackToParent} className="fd-back-btn" aria-label="ย้อนกลับ">
+              <Icon.ArrowLeft />
+            </button>
             <div className="hero-content">
               <div className="avatar-wrap">
                 <div className="fd-avatar">
@@ -447,178 +527,202 @@ function FarmDashboardContent() {
               <div>
                 <div className="hero-kicker">
                   <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
-                  Farm Dashboard
+                  แดชบอร์ดฟาร์ม
                 </div>
                 <div className="hero-title-row">
                   <h1 className="hero-title">{farm.farm_name}</h1>
-                  <img src="/icons/icon-verified.png" alt="ยืนยันแล้ว" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+                  {farm.is_verified && <img src="/icons/icon-verified.png" alt="ยืนยันแล้ว" style={{ width: 26, height: 26, objectFit: 'contain' }} />}
                 </div>
                 <p className="hero-subtitle">{farm.bio || `ฟาร์ม${speciesTh(farm.species) || 'สัตว์เลี้ยง'}`}</p>
                 <div className="hero-actions">
-                  <button onClick={handleBackToParent} className="button-secondary"><Icon.ArrowLeft /> ย้อนกลับ</button>
-                  <Link href={`/farm-dashboard/${farmId}/transactions/create?from=${fromPage}`} className="button-primary"><Icon.Wallet /> บันทึกรายการ</Link>
+                  <Link href={`/partner`} className="button-primary"><Icon.Edit /> แก้ไขข้อมูลฟาร์ม</Link>
+                  <Link href={`/farm/${farmId}`} className="button-secondary"><Icon.Eye /> ดูหน้าฟาร์มที่ลูกค้าเห็น</Link>
                 </div>
               </div>
             </div>
+
+            <div className="fd-completion">
+              <div className="fd-completion-top">
+                <span className="fd-completion-label">โปรไฟล์ฟาร์มสมบูรณ์</span>
+                <span className="fd-completion-pct">{farmCompletion}%</span>
+              </div>
+              <div className="fd-completion-bar">
+                <div className="fd-completion-fill" style={{ width: `${farmCompletion}%` }} />
+              </div>
+              {farmCompletion < 100 && (
+                <p className="fd-completion-hint">
+                  {!farm.image_url && 'เพิ่มรูปฟาร์ม · '}
+                  {!farm.bio && 'เพิ่มคำอธิบายฟาร์ม · '}
+                  {!farm.is_verified && 'ยืนยันตัวตนฟาร์ม'}
+                  {' '}เพื่อให้ลูกค้าไว้วางใจมากขึ้น
+                </p>
+              )}
+            </div>
+
             <div className="hero-meta">
               <div className="meta-pill">
                 <img className="meta-pill-icon" src="/icons/icon-my-pets.png" alt="" />
                 <strong className="meta-pill-num">{allPets.length}</strong>
-                <span className="meta-pill-label">สัตว์เลี้ยง</span>
+                <span className="meta-pill-label">สัตว์ทั้งหมด</span>
               </div>
               <div className="meta-pill">
                 <img className="meta-pill-icon" src="/icons/icon-farm.png" alt="" />
                 <strong className="meta-pill-num">{activeLitters.length}</strong>
-                <span className="meta-pill-label">กำลังตั้งท้อง</span>
+                <span className="meta-pill-label">ครอกที่เปิดอยู่</span>
               </div>
             </div>
           </section>
 
-          {/* ── Quick chips ── */}
+          {/* ── 2. วันนี้ต้องทำอะไร ── */}
+          <div className="fd-urgent-wrap">
+            <div className="fd-urgent-card">
+              <div className="fd-urgent-head">
+                <div className="fd-urgent-head-icon"><Icon.Alert /></div>
+                <span className="fd-urgent-head-title">วันนี้ต้องทำอะไร</span>
+              </div>
+              {urgentTasks.length === 0 ? (
+                <div className="fd-no-tasks">
+                  <Icon.Check />
+                  <span>วันนี้ยังไม่มีงานด่วน ทุกอย่างเรียบร้อยดี</span>
+                </div>
+              ) : urgentTasks.map((task, i) => (
+                <div key={i} className={`fd-task-row fd-task-${task.urgency}`}>
+                  <div className="fd-task-dot" />
+                  <span className="fd-task-msg">{task.message}</span>
+                  {task.href
+                    ? <Link href={task.href} className="fd-task-btn">{task.action}</Link>
+                    : <button className="fd-task-btn" style={{ border: 'none', cursor: 'pointer' }}>{task.action}</button>
+                  }
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 3. Quick chips ── */}
           <div className="fd-quick-wrap">
             <div className="fd-quick-scroll">
               <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`}>
                 <img src="/icons/icon-my-pets.png" alt="" />
-                <span className="fd-quick-chip-label">เพิ่มทีละตัว</span>
-              </Link>
-              <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/pets/bulk-create?from=${fromPage}`}>
-                <img src="/icons/icon-my-pets.png" alt="" />
-                <span className="fd-quick-chip-label">เพิ่มหลายตัว</span>
+                <span className="fd-quick-chip-label">เพิ่มสัตว์</span>
               </Link>
               <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`}>
                 <img src="/icons/icon-farm.png" alt="" />
-                <span className="fd-quick-chip-label">บันทึกครอก</span>
+                <span className="fd-quick-chip-label">จัดการครอก</span>
+              </Link>
+              <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/transactions/create?from=${fromPage}`}>
+                <img src="/icons/icon-wallet.png" alt="" />
+                <span className="fd-quick-chip-label">บันทึกการเงิน</span>
               </Link>
               <Link className="fd-quick-chip" href={`/farm/${farmId}`}>
                 <img src="/icons/icon-partner.png" alt="" />
-                <span className="fd-quick-chip-label">หน้าฟาร์มสาธารณะ</span>
+                <span className="fd-quick-chip-label">ดูหน้าฟาร์ม</span>
               </Link>
             </div>
           </div>
 
-          {/* ── Finance ── */}
-          <section className="profile-card">
-            <div className="card-head">
-              <div className="card-title">
-                <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
-                <h2>สรุปภาพรวมการเงิน</h2>
-              </div>
-            </div>
-            <div className="fd-finance-grid">
-              <div className="fd-expense-card">
-                <div className="fd-expense-icon"><Icon.Wallet /></div>
-                <div className="fd-expense-label">ค่าใช้จ่ายเดือนนี้</div>
-                <div className="fd-expense-sub">{monthLabel}</div>
-                <div className="fd-expense-amount">฿{monthExpenseTotal.toLocaleString()}</div>
-                <div style={{ fontSize: '11px', color: F.muted }}>รายจ่ายสะสมทั้งหมด ฿{expense.toLocaleString()}</div>
-              </div>
-              <div className="fd-donut-card">
-                <div className="fd-donut-title">หมวดหมู่ค่าใช้จ่าย</div>
-                {categoryList.length === 0 ? (
-                  <div className="fd-donut-wrap">
-                    <div className="fd-donut-empty">ยังไม่มี<br/>ข้อมูล</div>
-                    <div className="fd-legend"><span style={{ fontSize: '12px', color: F.muted }}>เริ่มบันทึกรายจ่ายเพื่อดูสัดส่วนหมวดหมู่</span></div>
-                  </div>
-                ) : (
-                  <div className="fd-donut-wrap">
-                    <div className="fd-donut" style={{ background: `conic-gradient(${conicSegments})` }} />
-                    <div className="fd-legend">
-                      {categoryList.map((c, i) => (
-                        <div key={i} className="fd-legend-row">
-                          <span className="fd-legend-dot" style={{ background: c.color }} />
-                          <span className="fd-legend-name">{c.name}</span>
-                          <span className="fd-legend-pct">{categoryTotal > 0 ? Math.round((c.amount / categoryTotal) * 100) : 0}%</span>
-                          <span className="fd-legend-amt">{c.amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* ── KPI ── */}
+          {/* ── 4. KPI (tappable) ── */}
           <section className="profile-card">
             <div className="card-head">
               <div className="card-title">
                 <span className="card-title-icon"><img src="/icons/icon-my-pets.png" alt="" /></span>
-                <h2>จำนวนสัตว์เลี้ยงทั้งหมด</h2>
+                <h2>สถานะสัตว์ในฟาร์ม</h2>
               </div>
+              {filterStatus && (
+                <button onClick={() => setFilterStatus("")} style={{ fontSize: '11px', fontWeight: 700, color: F.muted, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+                  ล้างตัวกรอง ×
+                </button>
+              )}
             </div>
             <div className="fd-kpi-grid">
-              <div className="fd-kpi">
-                <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Paw /></div>
-                  <div className="fd-kpi-label">พ่อแม่พันธุ์</div>
-                </div>
-                <div className="fd-kpi-value" style={{ color: '#7C3AED' }}>{breeders.length}</div>
-                <div className="fd-kpi-gender"><span className="f"><Icon.Female /> {breedersG.f}</span><span className="m"><Icon.Male /> {breedersG.m}</span></div>
-              </div>
-              <div className="fd-kpi">
-                <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}><Icon.Users /></div>
-                  <div className="fd-kpi-label">พร้อมย้ายบ้าน</div>
-                </div>
-                <div className="fd-kpi-value" style={{ color: '#16A34A' }}>{readyMove.length}</div>
-                <div className="fd-kpi-gender"><span className="m"><Icon.Male /> {readyG.m}</span><span className="f"><Icon.Female /> {readyG.f}</span></div>
-              </div>
-              <div className="fd-kpi">
-                <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Scissors /></div>
-                  <div className="fd-kpi-label">ทำหมันแล้ว</div>
-                </div>
-                <div className="fd-kpi-value" style={{ color: '#D97706' }}>{neutered.length}</div>
-                <div className="fd-kpi-gender"><span className="m"><Icon.Male /> {neuteredG.m}</span><span className="f"><Icon.Female /> {neuteredG.f}</span></div>
-              </div>
-              <div className="fd-kpi">
+              <div className={`fd-kpi${filterStatus === '' ? ' active' : ''}`} onClick={() => handleKpiClick('')}>
                 <div className="fd-kpi-top">
                   <div className="fd-kpi-icon" style={{ background: F.pinkSoft, color: F.pink }}><Icon.Paw /></div>
-                  <div className="fd-kpi-label">รวมทั้งหมด</div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: F.pink }}>{allPets.length}</div>
-                <div className="fd-kpi-gender"><span className="total">{speciesTh(farm.species) || 'สัตว์'}ทั้งหมด</span></div>
+                <div className="fd-kpi-label">ทั้งหมด</div>
+                <div className="fd-kpi-sub">{speciesTh(farm.species) || 'สัตว์'}</div>
+              </div>
+              <div className={`fd-kpi${filterStatus === 'พ่อพันธุ์ / แม่พันธุ์' ? ' active' : ''}`} onClick={() => handleKpiClick('พ่อพันธุ์ / แม่พันธุ์')}>
+                <div className="fd-kpi-top">
+                  <div className="fd-kpi-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Heart /></div>
+                </div>
+                <div className="fd-kpi-value" style={{ color: '#7C3AED' }}>{breeders.length}</div>
+                <div className="fd-kpi-label">พ่อแม่พันธุ์</div>
+                <div className="fd-kpi-sub">กดเพื่อกรอง</div>
+              </div>
+              <div className={`fd-kpi${filterStatus === 'เด็ก' ? ' active' : ''}`} onClick={() => handleKpiClick('เด็ก')}>
+                <div className="fd-kpi-top">
+                  <div className="fd-kpi-icon" style={{ background: '#FEF9C3', color: '#CA8A04' }}><Icon.Paw /></div>
+                </div>
+                <div className="fd-kpi-value" style={{ color: '#CA8A04' }}>{babies.length}</div>
+                <div className="fd-kpi-label">ลูกสัตว์</div>
+                <div className="fd-kpi-sub">กดเพื่อกรอง</div>
+              </div>
+              <div className={`fd-kpi${filterStatus === 'พร้อมย้ายบ้าน' ? ' active' : ''}`} onClick={() => handleKpiClick('พร้อมย้ายบ้าน')}>
+                <div className="fd-kpi-top">
+                  <div className="fd-kpi-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}><Icon.Users /></div>
+                </div>
+                <div className="fd-kpi-value" style={{ color: '#16A34A' }}>{readyOnly.length}</div>
+                <div className="fd-kpi-label">พร้อมย้ายบ้าน</div>
+                <div className="fd-kpi-sub">กดเพื่อกรอง</div>
+              </div>
+              <div className="fd-kpi" onClick={handleLittersKpiClick}>
+                <div className="fd-kpi-top">
+                  <div className="fd-kpi-icon" style={{ background: '#FEE2E2', color: '#EF4444' }}><Icon.Layers /></div>
+                </div>
+                <div className="fd-kpi-value" style={{ color: '#EF4444' }}>{activeLitters.length}</div>
+                <div className="fd-kpi-label">ครอกที่เปิดอยู่</div>
+                <div className="fd-kpi-sub">กดดูครอก</div>
               </div>
             </div>
           </section>
 
-          {/* ── Breeding tracker ── */}
-          <section className="profile-card">
+          {/* ── 5. ครอกและการผสมพันธุ์ ── */}
+          <section className="profile-card" ref={breedingRef as React.RefObject<HTMLDivElement>}>
             <div className="card-head">
               <div className="card-title">
                 <span className="card-title-icon"><img src="/icons/icon-farm.png" alt="" /></span>
-                <h2>ติดตามสถานะการจับคู่บรีด</h2>
+                <h2>ครอกและการผสมพันธุ์</h2>
               </div>
-              <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> บันทึกผสมพันธุ์</Link>
+              <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> บันทึกการผสมพันธุ์</Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {activeLitters.length === 0 ? (
-                <div className="fd-empty">ยังไม่มีครอกที่รอคลอด</div>
+                <div className="fd-empty">ยังไม่มีครอกที่เปิดอยู่ — กด "บันทึกการผสมพันธุ์" เพื่อเริ่มต้น</div>
               ) : activeLitters.map((litter) => {
-                const progress = calculatePregnancyProgress(litter.mating_date, litter.expected_birth_date);
+                const progress = litter.mating_date && litter.expected_birth_date
+                  ? calculatePregnancyProgress(litter.mating_date, litter.expected_birth_date)
+                  : 0;
+                const daysLeftNum = litter.expected_birth_date
+                  ? Math.ceil((new Date(litter.expected_birth_date).getTime() - Date.now()) / 86400000)
+                  : 999;
                 const isDue = progress >= 100;
-                const daysLeft = calculateDaysLeft(litter.expected_birth_date);
+                const isNear = !isDue && daysLeftNum <= 7;
+                const progressColor = isDue ? '#EF4444' : isNear ? '#F59E0B' : F.pink;
+                const daysLabel = isDue ? 'ครบกำหนด!' : daysLeftNum >= 0 ? `${daysLeftNum} วัน` : 'ครบกำหนด!';
                 return (
                   <div key={litter.id} className="fd-litter-row">
                     <div className="fd-litter-code">
-                      <div className="fd-litter-code-label">Litter</div>
+                      <div className="fd-litter-code-label">ครอก</div>
                       <div className="fd-litter-code-val">{litter.litter_code || 'TBA'}</div>
                     </div>
                     <div className="fd-parents">
-                      <div className="fd-parent-img fd-parent-sire">{litter.sire?.image_url ? <img src={litter.sire.image_url} /> : <Icon.Male />}</div>
+                      <div className="fd-parent-img fd-parent-sire">{litter.sire?.image_url ? <img src={litter.sire.image_url} alt="" /> : <Icon.Male />}</div>
                       <span style={{ color: F.pink, display: 'flex', alignItems: 'center' }}><Icon.Heart /></span>
-                      <div className="fd-parent-img fd-parent-dam">{litter.dam?.image_url ? <img src={litter.dam.image_url} /> : <Icon.Female />}</div>
+                      <div className="fd-parent-img fd-parent-dam">{litter.dam?.image_url ? <img src={litter.dam.image_url} alt="" /> : <Icon.Female />}</div>
                     </div>
                     <div className="fd-progress-wrap">
                       <div className="fd-progress-top">
                         <span style={{ color: F.muted }}>คาดคลอด: <span style={{ color: F.inkSoft }}>{fmtDate(litter.expected_birth_date)}</span></span>
-                        <span style={{ color: isDue ? '#EF4444' : F.ink }}>{daysLeft} <span style={{ color: F.muted, fontWeight: 500 }}>({progress}%)</span></span>
+                        <span style={{ color: progressColor, fontWeight: 800 }}>{daysLabel}</span>
                       </div>
-                      <div className="fd-progress-bar"><div className="fd-progress-fill" style={{ width: `${progress}%`, background: isDue ? '#EF4444' : F.pink }} /></div>
+                      <div className="fd-progress-bar">
+                        <div className="fd-progress-fill" style={{ width: `${progress}%`, background: progressColor }} />
+                      </div>
                     </div>
                     <div className="fd-litter-actions">
                       <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`} className="fd-btn-ghost">รายละเอียด</Link>
-                      <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}/birth?from=${fromPage}`} className="fd-btn-birth" style={{ background: isDue ? '#EF4444' : F.pink }}>{isDue ? 'ด่วน! บันทึกคลอด' : 'บันทึกคลอด'}</Link>
+                      <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}/birth?from=${fromPage}`} className="fd-btn-birth" style={{ background: progressColor }}>{isDue ? 'ด่วน! บันทึกคลอด' : 'บันทึกคลอด'}</Link>
                     </div>
                   </div>
                 );
@@ -626,47 +730,136 @@ function FarmDashboardContent() {
             </div>
           </section>
 
-          {/* ── Summary + Recent Activity ── */}
-          <div className="fd-mid-grid">
-            <div className="profile-card">
-              <div className="fd-summary-icon"><Icon.Layers /></div>
-              <div className="fd-summary-big">{allLitters.length} ครอก</div>
-              <div className="fd-summary-sub">
-                คลอดแล้ว <b>{bornLitters.length}</b> ครอก · กำลังตั้งท้อง <b>{activeLitters.length}</b> ครอก<br/>
-                กำไรสุทธิรวม <b style={{ color: netProfit >= 0 ? F.pink : '#DC2626' }}>{netProfit >= 0 ? '' : '-'}฿{Math.abs(netProfit).toLocaleString()}</b>
+          {/* ── 6. การเงินเดือนนี้แบบย่อ ── */}
+          <section className="profile-card">
+            <div className="card-head">
+              <div className="card-title">
+                <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
+                <h2>การเงินเดือนนี้แบบย่อ</h2>
               </div>
+              <span style={{ fontSize: '11px', color: F.muted, fontWeight: 600 }}>{monthLabel}</span>
             </div>
-            <div className="profile-card">
-              <div className="card-head" style={{ marginBottom: '8px' }}>
-                <div className="card-title">
-                  <span className="card-title-icon"><Icon.Activity /></span>
-                  <h2>กิจกรรมล่าสุดในฟาร์ม</h2>
+            <div className="fd-fin-row">
+              <div className="fd-fin-stat">
+                <div className="fd-fin-label">รายรับเดือนนี้</div>
+                <div className="fd-fin-val income">฿{thisMonthIncome.toLocaleString()}</div>
+              </div>
+              <div className="fd-fin-stat">
+                <div className="fd-fin-label">รายจ่ายเดือนนี้</div>
+                <div className="fd-fin-val expense">฿{monthExpenseTotal.toLocaleString()}</div>
+              </div>
+              <div className="fd-fin-stat">
+                <div className="fd-fin-label">กำไรสุทธิ</div>
+                <div className="fd-fin-val" style={{ color: thisMonthNet >= 0 ? '#16A34A' : '#EF4444' }}>
+                  {thisMonthNet >= 0 ? '' : '-'}฿{Math.abs(thisMonthNet).toLocaleString()}
                 </div>
               </div>
-              {recentActivity.length === 0 ? (
-                <div style={{ padding: '16px 0', textAlign: 'center', color: F.muted, fontSize: '12px' }}>ยังไม่มีกิจกรรม</div>
-              ) : recentActivity.map(a => (
-                <div key={a.id} className="fd-act-row">
-                  <div className="fd-act-dot" style={{ background: a.type === 'litter' ? F.pinkSoft : a.type === 'income' ? '#DCFCE7' : '#FEE2E2' }}>
-                    <img src={a.type === 'litter' ? '/icons/icon-farm.png' : '/icons/icon-wallet.png'} alt="" />
-                  </div>
-                  <div className="fd-act-info">
-                    <div className="fd-act-title">{a.title}</div>
-                    <div className="fd-act-date">{fmtDate(a.date)}</div>
-                  </div>
-                  {a.amount !== null && <div className="fd-act-amt" style={{ color: a.amount >= 0 ? '#16A34A' : '#DC2626' }}>{a.amount >= 0 ? '+' : ''}{a.amount.toLocaleString()}</div>}
-                </div>
-              ))}
             </div>
-          </div>
+            <div className="fd-fin-actions">
+              <Link href={`/farm-dashboard/${farmId}/transactions/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> เพิ่มรายรับ/รายจ่าย</Link>
+            </div>
+          </section>
 
-          {/* ── Litter history & ROI ── */}
+          {/* ── 7. กิจกรรมล่าสุด ── */}
+          <section className="profile-card">
+            <div className="card-head">
+              <div className="card-title">
+                <span className="card-title-icon"><Icon.Activity /></span>
+                <h2>กิจกรรมล่าสุดในฟาร์ม</h2>
+              </div>
+            </div>
+            {recentActivity.length === 0 ? (
+              <div style={{ padding: '16px 0', textAlign: 'center', color: F.muted, fontSize: '12px' }}>ยังไม่มีกิจกรรม</div>
+            ) : recentActivity.map(a => (
+              <div key={a.id} className="fd-act-row">
+                <div className="fd-act-dot" style={{ background: a.type === 'litter' ? F.pinkSoft : a.type === 'income' ? '#DCFCE7' : '#FEE2E2' }}>
+                  <img src={a.type === 'litter' ? '/icons/icon-farm.png' : '/icons/icon-wallet.png'} alt="" />
+                </div>
+                <div className="fd-act-info">
+                  <div className="fd-act-title">{a.title}</div>
+                  <div className="fd-act-date">{fmtDate(a.date)}</div>
+                </div>
+                {a.amount !== null && <div className="fd-act-amt" style={{ color: a.amount >= 0 ? '#16A34A' : '#DC2626' }}>{a.amount >= 0 ? '+' : ''}{a.amount.toLocaleString()}</div>}
+              </div>
+            ))}
+          </section>
+
+          {/* ── 8. สัตว์ในฟาร์ม ── */}
+          <section className="profile-card" ref={directoryRef as React.RefObject<HTMLDivElement>}>
+            <div className="card-head">
+              <div className="card-title">
+                <span className="card-title-icon"><Icon.Users /></span>
+                <h2>สัตว์ในฟาร์ม</h2>
+              </div>
+              <Link href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> เพิ่มสัตว์</Link>
+            </div>
+
+            <div className="fd-dir-search-row">
+              <div className="fd-search-wrap">
+                <span className="fd-search-icon"><Icon.Search /></span>
+                <input
+                  type="text"
+                  className="fd-search-input"
+                  placeholder="ค้นหาชื่อหรือสายพันธุ์..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="fd-select">
+                <option value="">ทุกเพศ</option>
+                <option value="male">ตัวผู้</option>
+                <option value="female">ตัวเมีย</option>
+              </select>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="fd-select">
+                <option value="">ทุกสถานะ</option>
+                <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อแม่พันธุ์</option>
+                <option value="เด็ก">ลูกสัตว์</option>
+                <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
+                <option value="ติดจอง">ติดจอง</option>
+                <option value="ทำหมัน / ปลดระวาง">ปลดระวาง</option>
+              </select>
+            </div>
+
+            <p style={{ fontSize: '11px', fontWeight: 600, color: F.muted, marginBottom: '12px' }}>แสดงผล {filteredPets.length} จาก {allPets.length} ตัว</p>
+
+            {filteredPets.length === 0 ? (
+              <div className="fd-empty">ไม่พบสัตว์ที่ตรงกับเงื่อนไขการค้นหา</div>
+            ) : (
+              <div className="fd-dir-grid">
+                {filteredPets.map(pet => {
+                  const isMale = isMaleFn(pet.gender);
+                  const breedName = pet.breed ? pet.breed.split('(')[0].trim() : 'ไม่ระบุสายพันธุ์';
+                  return (
+                    <Link key={pet.id} href={`/pets/${pet.id}`} className="fd-pet-card">
+                      <div className="fd-pet-img">
+                        {pet.image_url
+                          ? <img src={pet.image_url} alt={pet.name} />
+                          : <img src="/paw.png" alt="" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />}
+                      </div>
+                      <div className="fd-pet-info">
+                        <div className="fd-pet-name">{pet.name}</div>
+                        <div className="fd-pet-breed">{breedName}</div>
+                        <div className="fd-pet-tags">
+                          <span className={`fd-tag ${isMale ? 'fd-tag-male' : 'fd-tag-female'}`}>{isMale ? <Icon.Male /> : <Icon.Female />} {isMale ? 'ผู้' : 'เมีย'}</span>
+                          <span className="fd-tag fd-tag-status">{pet.status || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div style={{ color: '#D1D5DB', flexShrink: 0 }}><Icon.ChevronRight /></div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* ── 9. ประวัติครอก & ผลประกอบการ ── */}
           <section className="profile-card">
             <div className="card-head">
               <div className="card-title">
                 <span className="card-title-icon"><Icon.TrendingUp /></span>
                 <h2>ประวัติครอก &amp; ผลประกอบการ</h2>
               </div>
+              <span style={{ fontSize: '11px', color: F.muted, fontWeight: 600 }}>รวม {allLitters.length} ครอก · คลอดแล้ว {bornLitters.length}</span>
             </div>
             <div className="fd-litter-grid">
               {allLitters.length === 0 ? (
@@ -677,14 +870,14 @@ function FarmDashboardContent() {
                 const litterIncome = litterTxs.filter(t => t.transaction_type === 'income').reduce((a, b) => a + Number(b.amount), 0);
                 const litterExpense = litterTxs.filter(t => t.transaction_type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
                 const litterProfit = litterIncome - litterExpense;
-                const isBorn = litter.status !== "รอคลอด";
+                const isBorn = litter.status !== 'รอคลอด';
                 return (
                   <div key={litter.id} className="fd-litter-card">
                     <div className="fd-litter-card-head">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div className="fd-litter-parents-stack">
-                          <div className="fd-parent-img fd-parent-sire" style={{ border: '2px solid white' }}>{litter.sire?.image_url ? <img src={litter.sire.image_url} /> : <Icon.Male />}</div>
-                          <div className="fd-parent-img fd-parent-dam" style={{ border: '2px solid white' }}>{litter.dam?.image_url ? <img src={litter.dam.image_url} /> : <Icon.Female />}</div>
+                          <div className="fd-parent-img fd-parent-sire" style={{ border: '2px solid white' }}>{litter.sire?.image_url ? <img src={litter.sire.image_url} alt="" /> : <Icon.Male />}</div>
+                          <div className="fd-parent-img fd-parent-dam" style={{ border: '2px solid white' }}>{litter.dam?.image_url ? <img src={litter.dam.image_url} alt="" /> : <Icon.Female />}</div>
                         </div>
                         <div>
                           <p style={{ fontFamily: 'inherit', fontSize: '14px', fontWeight: 700, color: F.ink }}>{litter.litter_code || 'N/A'}</p>
@@ -701,7 +894,7 @@ function FarmDashboardContent() {
                             {litterKittens.map(k => (
                               <div key={k.id} className="fd-kitten-avatar" title={k.name}>
                                 {k.image_url
-                                  ? <img src={k.image_url} />
+                                  ? <img src={k.image_url} alt={k.name} />
                                   : <img src="/paw.png" alt="" style={{ width: '70%', height: '70%', objectFit: 'contain' }} />}
                               </div>
                             ))}
@@ -709,79 +902,32 @@ function FarmDashboardContent() {
                           </div>
                         </div>
                       )}
-                      <div className="fd-roi-row" style={{ marginTop: isBorn ? 0 : 'auto' }}>
-                        <div className="fd-roi-items">
-                          <div><div className="fd-roi-label">รายรับ</div><div className="fd-roi-val" style={{ color: '#16A34A' }}>{litterIncome.toLocaleString()}</div></div>
-                          <div><div className="fd-roi-label">ต้นทุน</div><div className="fd-roi-val" style={{ color: '#EF4444' }}>{litterExpense.toLocaleString()}</div></div>
-                          <div><div className="fd-roi-label">กำไรสุทธิ</div><div className="fd-roi-val" style={{ color: litterProfit >= 0 ? F.pink : F.muted }}>{litterProfit > 0 ? '+' : ''}{litterProfit.toLocaleString()}</div></div>
+                      {isBorn ? (
+                        <div className="fd-roi-row" style={{ marginTop: 0 }}>
+                          <div className="fd-roi-items">
+                            <div><div className="fd-roi-label">รายรับ</div><div className="fd-roi-val" style={{ color: '#16A34A' }}>{litterIncome.toLocaleString()}</div></div>
+                            <div><div className="fd-roi-label">ต้นทุน</div><div className="fd-roi-val" style={{ color: '#EF4444' }}>{litterExpense.toLocaleString()}</div></div>
+                            <div><div className="fd-roi-label">กำไรสุทธิ</div><div className="fd-roi-val" style={{ color: litterProfit >= 0 ? F.pink : F.muted }}>{litterProfit > 0 ? '+' : ''}{litterProfit.toLocaleString()}</div></div>
+                          </div>
+                          <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`} className="fd-roi-arrow"><Icon.ChevronRight /></Link>
                         </div>
-                        <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`} className="fd-roi-arrow"><Icon.ChevronRight /></Link>
-                      </div>
+                      ) : (
+                        <div>
+                          <div className="fd-roi-row" style={{ marginTop: 'auto' }}>
+                            <div className="fd-roi-items">
+                              <div><div className="fd-roi-label">ต้นทุนสะสม</div><div className="fd-roi-val" style={{ color: '#EF4444' }}>{litterExpense.toLocaleString()}</div></div>
+                              <div><div className="fd-roi-label">รายรับที่บันทึก</div><div className="fd-roi-val" style={{ color: '#16A34A' }}>{litterIncome.toLocaleString()}</div></div>
+                            </div>
+                            <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}?from=${fromPage}`} className="fd-roi-arrow"><Icon.ChevronRight /></Link>
+                          </div>
+                          <div className="fd-pending-roi">รอปิดครอก — กำไรจะแสดงหลังบันทึกคลอด</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </section>
-
-          {/* ── Farm Directory ── */}
-          <section className="profile-card">
-            <div className="card-head">
-              <div className="card-title">
-                <span className="card-title-icon"><Icon.Users /></span>
-                <h2>Farm Directory</h2>
-              </div>
-              <div className="fd-filters">
-                <div className="fd-filter-icon"><Icon.Filter /></div>
-                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="fd-select">
-                  <option value="">ทุกสถานะ</option>
-                  <option value="พ่อพันธุ์ / แม่พันธุ์">พ่อแม่พันธุ์</option>
-                  <option value="เด็ก">เด็กๆ (Baby)</option>
-                  <option value="พร้อมย้ายบ้าน">พร้อมย้ายบ้าน</option>
-                  <option value="ติดจอง">ติดจอง</option>
-                  <option value="ทำหมัน / ปลดระวาง">ปลดระวาง</option>
-                </select>
-                <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="fd-select">
-                  <option value="">ทุกเพศ</option>
-                  <option value="male">ตัวผู้ (Male)</option>
-                  <option value="female">ตัวเมีย (Female)</option>
-                </select>
-                <select value={filterBreed} onChange={(e) => setFilterBreed(e.target.value)} className="fd-select" style={{ maxWidth: '130px' }}>
-                  <option value="">ทุกสายพันธุ์</option>
-                  {uniqueBreeds.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-            </div>
-            <p style={{ fontSize: '11px', fontWeight: 600, color: F.muted, marginBottom: '12px' }}>สมาชิกทั้งหมด ({filteredPets.length} ตัว)</p>
-
-            {filteredPets.length === 0 ? (
-              <div className="fd-empty">ไม่พบสมาชิกที่ตรงกับเงื่อนไขการค้นหา</div>
-            ) : (
-              <div className="fd-dir-grid">
-                {filteredPets.map(pet => {
-                  const isMale = isMaleFn(pet.gender);
-                  const breedName = pet.breed ? pet.breed.split('(')[0].trim() : "ไม่ระบุ";
-                  return (
-                    <Link key={pet.id} href={`/pets/${pet.id}`} className="fd-pet-card">
-                      <div className="fd-pet-img">
-                        {pet.image_url
-                          ? <img src={pet.image_url} />
-                          : <img src="/paw.png" alt="" style={{ width: '65%', height: '65%', objectFit: 'contain' }} />}
-                      </div>
-                      <div className="fd-pet-info">
-                        <div className="fd-pet-name">{pet.name}</div>
-                        <div className="fd-pet-breed">{breedName}</div>
-                        <div className="fd-pet-tags">
-                          <span className={`fd-tag ${isMale ? 'fd-tag-male' : 'fd-tag-female'}`}>{isMale ? <Icon.Male /> : <Icon.Female />} {isMale ? 'M' : 'F'}</span>
-                          <span className="fd-tag fd-tag-status">{pet.status || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div style={{ color: '#D1D5DB', flexShrink: 0 }}><Icon.ChevronRight /></div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </section>
 
         </div>
