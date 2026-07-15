@@ -45,6 +45,7 @@ export default function PublicFarmProfile() {
   const [bioExpanded, setBioExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     const fetchFarmProfile = async () => {
@@ -213,6 +214,19 @@ export default function PublicFarmProfile() {
         .fp-cta-ghost { background: white; color: ${F.pink}; border: 1px solid ${F.pinkBorder}; }
         .fp-cta-ghost:hover { background: ${F.pinkSoft}; }
         .fp-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: ${F.ink}; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 60; }
+        /* ── Add pet modal ── */
+        .fp-modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(31,26,28,0.45); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
+        .fp-modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 36px; width: 100%; max-width: 480px; animation: fp-sheet-up .22s ease; }
+        @keyframes fp-sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .fp-modal-handle { width: 40px; height: 4px; border-radius: 2px; background: #E5E7EB; margin: 0 auto 18px; }
+        .fp-modal-title { font-size: 16px; font-weight: 700; color: ${F.ink}; margin-bottom: 16px; text-align: center; }
+        .fp-modal-options { display: flex; gap: 12px; }
+        .fp-modal-option { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 12px; border-radius: 18px; border: 1.5px solid ${F.line}; background: white; text-decoration: none; cursor: pointer; transition: border-color .15s, background .15s; }
+        .fp-modal-option:hover { border-color: ${F.pinkBorder}; background: ${F.pinkSoft}; }
+        .fp-modal-option-img { width: 56px; height: 56px; object-fit: contain; }
+        .fp-modal-option-label { font-size: 13px; font-weight: 700; color: ${F.ink}; text-align: center; line-height: 1.3; }
+        .fp-modal-cancel { width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: none; background: #F3F4F6; color: ${F.inkSoft}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
         /* ── Owner action tabs ── */
         .fp-owner-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 55; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(232,70,119,0.10); box-shadow: 0 -4px 24px rgba(31,26,28,0.08); padding-bottom: env(safe-area-inset-bottom, 0px); }
         .fp-owner-inner { display: flex; align-items: stretch; height: 68px; }
@@ -407,13 +421,33 @@ export default function PublicFarmProfile() {
         </div>
 
         {/* ── Sticky CTA / Owner Action Tabs ── */}
+        {showAddModal && (
+          <div className="fp-modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="fp-modal-sheet" onClick={e => e.stopPropagation()}>
+              <div className="fp-modal-handle" />
+              <div className="fp-modal-title">เพิ่มสัตว์ในฟาร์ม</div>
+              <div className="fp-modal-options">
+                <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fp-modal-option" onClick={() => setShowAddModal(false)}>
+                  <img className="fp-modal-option-img" src="/icons/icon-tab-add.png" alt="" />
+                  <span className="fp-modal-option-label">เพิ่ม 1 ตัว</span>
+                </Link>
+                <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} className="fp-modal-option" onClick={() => setShowAddModal(false)}>
+                  <img className="fp-modal-option-img" src="/icons/icon-my-pets.png" alt="" />
+                  <span className="fp-modal-option-label">เพิ่มหลายตัว</span>
+                </Link>
+              </div>
+              <button className="fp-modal-cancel" onClick={() => setShowAddModal(false)}>ยกเลิก</button>
+            </div>
+          </div>
+        )}
+
         {isOwner ? (
           <div className="fp-owner-bar">
             <div className="fp-owner-inner">
-              <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fp-owner-tab">
+              <button className="fp-owner-tab" onClick={() => setShowAddModal(true)}>
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-tab-add.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">เพิ่มสัตว์</span>
-              </Link>
+              </button>
               <Link href={`/farm-dashboard/${farmId}/litters/create`} className="fp-owner-tab">
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">จับคู่บรีด</span>
