@@ -213,10 +213,10 @@ function FarmDashboardContent() {
         /* ── Farm owner bottom tab bar ── */
         .fd-tab-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 55; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(232,70,119,0.10); box-shadow: 0 -4px 24px rgba(31,26,28,0.08); padding-bottom: env(safe-area-inset-bottom, 0px); }
         .fd-tab-inner { display: flex; align-items: stretch; height: 68px; }
-        .fd-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-decoration: none; color: #b0a0a8; border: none; background: none; font-family: inherit; cursor: pointer; }
-        .fd-tab-icon { width: 72px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; opacity: 0.45; transition: opacity .15s, background .15s; }
-        .fd-tab-icon.active { opacity: 1; background: rgba(232,70,119,0.09); }
-        .fd-tab-label { font-size: 10px; font-weight: 500; line-height: 1.2; }
+        .fd-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-decoration: none; color: ${F.inkSoft}; border: none; background: none; font-family: inherit; cursor: pointer; }
+        .fd-tab-icon { width: 72px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+        .fd-tab-icon:active { background: rgba(232,70,119,0.09); }
+        .fd-tab-label { font-size: 10px; font-weight: 600; line-height: 1.2; }
         .fd-shell { max-width: 1100px; margin: 0 auto; display: grid; gap: 12px; }
 
         /* ── Hero ── */
