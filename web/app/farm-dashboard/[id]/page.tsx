@@ -527,7 +527,7 @@ function FarmDashboardContent() {
                 </div>
                 <p className="hero-subtitle">{farm.bio || `ฟาร์ม${speciesTh(farm.species) || 'สัตว์เลี้ยง'}`}</p>
                 <div className="hero-actions">
-                  <Link href={`/partner`} className="button-primary"><Icon.Edit /> แก้ไขข้อมูลฟาร์ม</Link>
+                  <Link href={`/farm-dashboard/${farmId}/edit`} className="button-primary"><Icon.Edit /> แก้ไขข้อมูลฟาร์ม</Link>
                   <Link href={`/farm/${farmId}`} className="button-secondary"><Icon.Eye /> ดูหน้าฟาร์มที่ลูกค้าเห็น</Link>
                 </div>
               </div>
