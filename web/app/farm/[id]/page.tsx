@@ -414,11 +414,11 @@ export default function PublicFarmProfile() {
                 <span className="fp-owner-tab-label">เพิ่มสัตว์</span>
               </Link>
               <Link href={`/farm-dashboard/${farmId}/litters/create`} className="fp-owner-tab">
-                <div className="fp-owner-tab-icon"><img src="/icons/icon-partner.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+                <div className="fp-owner-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">จับคู่บรีด</span>
               </Link>
               <Link href={`/farm-dashboard/${farmId}/litters`} className="fp-owner-tab">
-                <div className="fp-owner-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+                <div className="fp-owner-tab-icon"><img src="/icons/icon-feeding.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">ลูกแมว</span>
               </Link>
               <Link href={`/profile/finance`} className="fp-owner-tab">

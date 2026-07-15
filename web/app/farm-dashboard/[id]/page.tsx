@@ -948,11 +948,11 @@ function FarmDashboardContent() {
             <span className="fd-tab-label">เพิ่มสัตว์</span>
           </Link>
           <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-partner.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
             <span className="fd-tab-label">จับคู่บรีด</span>
           </Link>
           <Link href={`/farm-dashboard/${farmId}/litters?from=${fromPage}`} className="fd-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
             <span className="fd-tab-label">ลูกแมว</span>
           </Link>
           <Link href={`/profile/finance`} className="fd-tab">
