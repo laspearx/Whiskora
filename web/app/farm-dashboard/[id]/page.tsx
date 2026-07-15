@@ -16,24 +16,14 @@ const F = {
 
 const Icon = {
   ArrowLeft: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Filter: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
   Search: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   Male: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><line x1="13.5" y1="10.5" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>,
   Female: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
   ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
   Plus: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Users: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  Paw: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
-  Wallet: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>,
-  TrendingUp: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
-  Activity: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  Farm: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10 12 3l9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>,
   Heart: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
   Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   Eye: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  Alert: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
-  Layers: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
 };
 
 function FarmDashboardContent() {
@@ -344,21 +334,6 @@ function FarmDashboardContent() {
           font-size: 12px; font-weight: 600; color: #16A34A;
         }
 
-        /* ── Quick chips ── */
-        .fd-quick-wrap { animation: fd-rise .58s ease .08s both; }
-        .fd-quick-scroll { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
-        .fd-quick-chip {
-          border-radius: 14px; padding: 14px 8px 12px;
-          border: 1px solid #f8edf1; background: rgba(255,255,255,.92);
-          box-shadow: 0 4px 14px rgba(31,26,28,.03);
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          gap: 8px; text-decoration: none; color: ${F.ink};
-          transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-        }
-        .fd-quick-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(31,26,28,.07); border-color: #edc7d3; }
-        .fd-quick-chip img { width: 36px; height: 36px; object-fit: contain; }
-        .fd-quick-chip-label { font-size: 11px; font-weight: 600; color: ${F.ink}; text-align: center; line-height: 1.4; }
-
         /* ── KPI ── */
         .fd-kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; }
         .fd-kpi {
@@ -495,10 +470,6 @@ function FarmDashboardContent() {
           .meta-pill { padding: 7px 10px; gap: 6px; }
           .meta-pill-icon { width: 34px; height: 34px; }
           .meta-pill-num { font-size: 17px; }
-          .fd-quick-scroll { grid-template-columns: repeat(4,1fr); gap: 8px; }
-          .fd-quick-chip { padding: 10px 4px 8px; gap: 6px; }
-          .fd-quick-chip img { width: 28px; height: 28px; }
-          .fd-quick-chip-label { font-size: 10px; }
           .fd-kpi-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
           .fd-kpi { padding: 10px; }
           .fd-kpi-value { font-size: 22px; }
@@ -513,7 +484,7 @@ function FarmDashboardContent() {
           .fd-fin-row { grid-template-columns: 1fr; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .fd-hero, .fd-quick-wrap, .profile-card, .fd-hero::before, .fd-hero::after { animation: none !important; transition: none !important; }
+          .fd-hero, .profile-card, .fd-hero::before, .fd-hero::after { animation: none !important; transition: none !important; }
         }
       `}</style>
 
@@ -528,7 +499,7 @@ function FarmDashboardContent() {
             <div className="hero-content">
               <div className="avatar-wrap">
                 <div className="fd-avatar">
-                  {farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : <Icon.Farm />}
+                  {farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : <img src="/icons/icon-farm.png" alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} />}
                 </div>
               </div>
               <div>
@@ -584,12 +555,12 @@ function FarmDashboardContent() {
           <div className="fd-urgent-wrap">
             <div className="fd-urgent-card">
               <div className="fd-urgent-head">
-                <div className="fd-urgent-head-icon"><Icon.Alert /></div>
+                <div className="fd-urgent-head-icon"><img src="/icons/icon-calendar.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /></div>
                 <span className="fd-urgent-head-title">วันนี้ต้องทำอะไร</span>
               </div>
               {urgentTasks.length === 0 ? (
                 <div className="fd-no-tasks">
-                  <Icon.Check />
+                  <img src="/icons/icon-verified.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
                   <span>วันนี้ยังไม่มีงานด่วน ทุกอย่างเรียบร้อยดี</span>
                 </div>
               ) : urgentTasks.map((task, i) => (
@@ -605,29 +576,7 @@ function FarmDashboardContent() {
             </div>
           </div>
 
-          {/* ── 3. Quick chips ── */}
-          <div className="fd-quick-wrap">
-            <div className="fd-quick-scroll">
-              <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`}>
-                <img src="/icons/icon-my-pets.png" alt="" />
-                <span className="fd-quick-chip-label">เพิ่มสัตว์</span>
-              </Link>
-              <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`}>
-                <img src="/icons/icon-farm.png" alt="" />
-                <span className="fd-quick-chip-label">จัดการครอก</span>
-              </Link>
-              <Link className="fd-quick-chip" href={`/farm-dashboard/${farmId}/transactions/create?from=${fromPage}`}>
-                <img src="/icons/icon-wallet.png" alt="" />
-                <span className="fd-quick-chip-label">บันทึกการเงิน</span>
-              </Link>
-              <Link className="fd-quick-chip" href={`/farm/${farmId}`}>
-                <img src="/icons/icon-partner.png" alt="" />
-                <span className="fd-quick-chip-label">ดูหน้าฟาร์ม</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* ── 4. KPI (tappable) ── */}
+          {/* ── 3. KPI (tappable) ── */}
           <section className="profile-card">
             <div className="card-head">
               <div className="card-title">
@@ -643,7 +592,7 @@ function FarmDashboardContent() {
             <div className="fd-kpi-grid">
               <div className={`fd-kpi${filterStatus === '' ? ' active' : ''}`} onClick={() => handleKpiClick('')}>
                 <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: F.pinkSoft, color: F.pink }}><Icon.Paw /></div>
+                  <div className="fd-kpi-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-my-pets.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: F.pink }}>{allPets.length}</div>
                 <div className="fd-kpi-label">ทั้งหมด</div>
@@ -651,7 +600,7 @@ function FarmDashboardContent() {
               </div>
               <div className={`fd-kpi${filterStatus === 'พ่อพันธุ์ / แม่พันธุ์' ? ' active' : ''}`} onClick={() => handleKpiClick('พ่อพันธุ์ / แม่พันธุ์')}>
                 <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Heart /></div>
+                  <div className="fd-kpi-icon" style={{ background: '#F3E8FF' }}><img src="/icons/icon-breeding.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: '#7C3AED' }}>{breeders.length}</div>
                 <div className="fd-kpi-label">พ่อแม่พันธุ์</div>
@@ -659,7 +608,7 @@ function FarmDashboardContent() {
               </div>
               <div className={`fd-kpi${filterStatus === 'เด็ก' ? ' active' : ''}`} onClick={() => handleKpiClick('เด็ก')}>
                 <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#FEF9C3', color: '#CA8A04' }}><Icon.Paw /></div>
+                  <div className="fd-kpi-icon" style={{ background: '#FEF9C3' }}><img src="/icons/icon-feeding.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: '#CA8A04' }}>{babies.length}</div>
                 <div className="fd-kpi-label">ลูกสัตว์</div>
@@ -667,7 +616,7 @@ function FarmDashboardContent() {
               </div>
               <div className={`fd-kpi${filterStatus === 'พร้อมย้ายบ้าน' ? ' active' : ''}`} onClick={() => handleKpiClick('พร้อมย้ายบ้าน')}>
                 <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}><Icon.Users /></div>
+                  <div className="fd-kpi-icon" style={{ background: '#DCFCE7' }}><img src="/icons/icon-partner.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: '#16A34A' }}>{readyOnly.length}</div>
                 <div className="fd-kpi-label">พร้อมย้ายบ้าน</div>
@@ -675,7 +624,7 @@ function FarmDashboardContent() {
               </div>
               <div className="fd-kpi" onClick={handleLittersKpiClick}>
                 <div className="fd-kpi-top">
-                  <div className="fd-kpi-icon" style={{ background: '#FEE2E2', color: '#EF4444' }}><Icon.Layers /></div>
+                  <div className="fd-kpi-icon" style={{ background: '#FEE2E2' }}><img src="/icons/icon-farm.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>
                 </div>
                 <div className="fd-kpi-value" style={{ color: '#EF4444' }}>{activeLitters.length}</div>
                 <div className="fd-kpi-label">ครอกที่เปิดอยู่</div>
@@ -688,7 +637,7 @@ function FarmDashboardContent() {
           <section className="profile-card" ref={breedingRef as React.RefObject<HTMLDivElement>}>
             <div className="card-head">
               <div className="card-title">
-                <span className="card-title-icon"><img src="/icons/icon-farm.png" alt="" /></span>
+                <span className="card-title-icon"><img src="/icons/icon-breeding.png" alt="" /></span>
                 <h2>ครอกและการผสมพันธุ์</h2>
               </div>
               <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> บันทึกการผสมพันธุ์</Link>
@@ -771,7 +720,7 @@ function FarmDashboardContent() {
           <section className="profile-card">
             <div className="card-head">
               <div className="card-title">
-                <span className="card-title-icon"><Icon.Activity /></span>
+                <span className="card-title-icon"><img src="/icons/icon-health.png" alt="" /></span>
                 <h2>กิจกรรมล่าสุดในฟาร์ม</h2>
               </div>
             </div>
@@ -795,7 +744,7 @@ function FarmDashboardContent() {
           <section className="profile-card" ref={directoryRef as React.RefObject<HTMLDivElement>}>
             <div className="card-head">
               <div className="card-title">
-                <span className="card-title-icon"><Icon.Users /></span>
+                <span className="card-title-icon"><img src="/icons/icon-my-pets.png" alt="" /></span>
                 <h2>สัตว์ในฟาร์ม</h2>
               </div>
               <Link href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`} className="fd-link-pill"><Icon.Plus /> เพิ่มสัตว์</Link>
@@ -863,7 +812,7 @@ function FarmDashboardContent() {
           <section className="profile-card">
             <div className="card-head">
               <div className="card-title">
-                <span className="card-title-icon"><Icon.TrendingUp /></span>
+                <span className="card-title-icon"><img src="/icons/icon-wallet.png" alt="" /></span>
                 <h2>ประวัติครอก &amp; ผลประกอบการ</h2>
               </div>
               <span style={{ fontSize: '11px', color: F.muted, fontWeight: 600 }}>รวม {allLitters.length} ครอก · คลอดแล้ว {bornLitters.length}</span>
