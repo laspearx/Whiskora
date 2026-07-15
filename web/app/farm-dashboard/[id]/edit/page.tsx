@@ -197,7 +197,7 @@ export default function EditFarmPage() {
         .fe-textarea { resize: none; }
 
         /* ── Save bar ── */
-        .fe-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .fe-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
         .fe-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
         .fe-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .fe-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
@@ -207,7 +207,7 @@ export default function EditFarmPage() {
         .fe-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ── Crop modal ── */
-        .fe-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
+        .fe-modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
         .fe-modal-card { background: white; width: 100%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
         .fe-crop-area { position: relative; width: 100%; background: #111; }
         .fe-crop-area-sq { height: 300px; }
