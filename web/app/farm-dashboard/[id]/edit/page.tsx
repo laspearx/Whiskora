@@ -49,6 +49,9 @@ export default function EditFarmPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  const onAvatarCropComplete = useCallback((_: any, px: any) => setAvatarAreaPx(px), []);
+  const onCoverCropComplete = useCallback((_: any, px: any) => setCoverAreaPx(px), []);
+
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -66,8 +69,8 @@ export default function EditFarmPage() {
   }, [farmId, router]);
 
   const getCroppedImg = async (src: string, px: any, round = false): Promise<Blob> => {
-    const img = new Image(); img.src = src;
-    await new Promise(r => (img.onload = r));
+    const img = new Image();
+    await new Promise(r => { img.onload = r; img.src = src; });
     const canvas = document.createElement("canvas");
     canvas.width = px.width; canvas.height = px.height;
     const ctx = canvas.getContext("2d")!;
@@ -304,7 +307,7 @@ export default function EditFarmPage() {
           <div className="fe-modal-card">
             <div className="fe-crop-area fe-crop-area-sq">
               <Cropper image={avatarSrc} crop={avatarCrop} zoom={avatarZoom} aspect={1} cropShape="round"
-                onCropChange={setAvatarCrop} onCropComplete={useCallback((_: any, px: any) => setAvatarAreaPx(px), [])}
+                onCropChange={setAvatarCrop} onCropComplete={onAvatarCropComplete}
                 onZoomChange={setAvatarZoom} />
             </div>
             <div className="fe-modal-body">
@@ -326,7 +329,7 @@ export default function EditFarmPage() {
           <div className="fe-modal-card" style={{ maxWidth: 480 }}>
             <div className="fe-crop-area fe-crop-area-wide">
               <Cropper image={coverSrc} crop={coverCrop} zoom={coverZoom} aspect={3}
-                onCropChange={setCoverCrop} onCropComplete={useCallback((_: any, px: any) => setCoverAreaPx(px), [])}
+                onCropChange={setCoverCrop} onCropComplete={onCoverCropComplete}
                 onZoomChange={setCoverZoom} />
             </div>
             <div className="fe-modal-body">
