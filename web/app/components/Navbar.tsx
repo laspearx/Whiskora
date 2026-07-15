@@ -405,8 +405,7 @@ function TabBtn({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: active ? 1 : 0.45,
-        transition: 'opacity .15s, background .15s',
+        transition: 'background .15s',
       }}>
         {icon}
       </span>
