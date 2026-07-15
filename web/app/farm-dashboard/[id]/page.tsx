@@ -209,7 +209,14 @@ function FarmDashboardContent() {
 
         * { box-sizing: border-box; }
 
-        .fd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; padding: 16px 16px 80px; }
+        .fd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; padding: 16px 16px 88px; }
+        /* ── Farm owner bottom tab bar ── */
+        .fd-tab-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 55; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(232,70,119,0.10); box-shadow: 0 -4px 24px rgba(31,26,28,0.08); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .fd-tab-inner { display: flex; align-items: stretch; height: 68px; }
+        .fd-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-decoration: none; color: #b0a0a8; border: none; background: none; font-family: inherit; cursor: pointer; }
+        .fd-tab-icon { width: 72px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; opacity: 0.45; transition: opacity .15s, background .15s; }
+        .fd-tab-icon.active { opacity: 1; background: rgba(232,70,119,0.09); }
+        .fd-tab-label { font-size: 10px; font-weight: 500; line-height: 1.2; }
         .fd-shell { max-width: 1100px; margin: 0 auto; display: grid; gap: 12px; }
 
         /* ── Hero ── */
@@ -932,6 +939,32 @@ function FarmDashboardContent() {
 
         </div>
       </main>
+
+      {/* ── Farm owner bottom tab bar ── */}
+      <nav className="fd-tab-bar" aria-label="เมนูฟาร์ม">
+        <div className="fd-tab-inner">
+          <Link href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`} className="fd-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-tab-add.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <span className="fd-tab-label">เพิ่มสัตว์</span>
+          </Link>
+          <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-partner.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <span className="fd-tab-label">จับคู่บรีด</span>
+          </Link>
+          <Link href={`/farm-dashboard/${farmId}/litters?from=${fromPage}`} className="fd-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <span className="fd-tab-label">ลูกแมว</span>
+          </Link>
+          <Link href={`/profile/finance`} className="fd-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <span className="fd-tab-label">รายรับรายจ่าย</span>
+          </Link>
+          <Link href={`/farm-dashboard/${farmId}/appointments?from=${fromPage}`} className="fd-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-calendar.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
+            <span className="fd-tab-label">เพิ่มนัดหมาย</span>
+          </Link>
+        </div>
+      </nav>
     </>
   );
 }
