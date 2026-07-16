@@ -248,7 +248,7 @@ function FarmDashboardContent() {
   const visibleTasks = showAllTasks ? allTasks : allTasks.slice(0, TASK_LIMIT);
 
   /* ── Farm Overview stats ── */
-  const breeders      = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์').length;
+  const breeders      = pets.filter(p => ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'].includes(p.status)).length;
   const pregnant      = activeLitters.filter(l => l.dam_id).length;
   const babies        = pets.filter(p => p.status === 'เด็ก').length;
   const readyToMove   = pets.filter(p => p.status === 'พร้อมย้ายบ้าน').length;
