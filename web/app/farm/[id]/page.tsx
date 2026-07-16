@@ -139,8 +139,8 @@ export default function PublicFarmProfile() {
         .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
         /* ── Cover ── */
-        .fp-cover { position: relative; height: 280px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; }
-        .fp-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; }
+        .fp-cover img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
         .fp-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 40%); }
         .fp-cover-top { position: absolute; top: 16px; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
         .fp-cover-btn { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); color: ${F.ink}; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.12); transition: all .15s; }
@@ -243,7 +243,6 @@ export default function PublicFarmProfile() {
         @media (max-width: 420px) {
           .fp-stats-grid { grid-template-columns: repeat(2, 1fr); }
           .fp-name { font-size: 22px; }
-          .fp-cover { height: 220px; }
         }
       `}</style>
 
