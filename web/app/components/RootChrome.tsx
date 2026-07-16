@@ -11,11 +11,12 @@ import ScrollToTop from "@/app/components/ScrollToTop";
 import thMessages from "@/messages/th.json";
 
 const localeRoutePattern = /^\/(th|en)(\/|$)/;
+const farmWorkspacePattern = /^\/farm-dashboard\//;
 
 export default function RootChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (localeRoutePattern.test(pathname)) {
+  if (localeRoutePattern.test(pathname) || farmWorkspacePattern.test(pathname)) {
     return <>{children}</>;
   }
 

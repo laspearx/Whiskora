@@ -84,3 +84,32 @@ export function isKnownSpecies(value?: string | null): boolean {
 export const OTHER_SPECIES: SpeciesDef[] = SPECIES_LIST.filter(
   (s) => s.id !== 'cat' && s.id !== 'dog'
 );
+
+// ── Gestation config per species ─────────────────────────────────────────────
+export interface GestationConfig {
+  gestationDays: number;       // median gestation (days)
+  gestationMin: number;        // earliest normal birth — due window start
+  gestationMax: number;        // latest normal birth — due window end
+  overdueTolerance: number;    // days past gestationMax before truly overdue
+  nearDueThreshold: number;    // days before gestationMin to show near_due
+}
+
+const GESTATION_MAP: Record<string, GestationConfig> = {
+  cat:      { gestationDays: 65, gestationMin: 62, gestationMax: 68, overdueTolerance: 3, nearDueThreshold: 7 },
+  dog:      { gestationDays: 63, gestationMin: 58, gestationMax: 68, overdueTolerance: 3, nearDueThreshold: 7 },
+  rabbit:   { gestationDays: 31, gestationMin: 28, gestationMax: 34, overdueTolerance: 2, nearDueThreshold: 5 },
+  hamster:  { gestationDays: 16, gestationMin: 15, gestationMax: 18, overdueTolerance: 1, nearDueThreshold: 3 },
+  bird:     { gestationDays: 18, gestationMin: 14, gestationMax: 22, overdueTolerance: 2, nearDueThreshold: 3 },
+  squirrel: { gestationDays: 40, gestationMin: 38, gestationMax: 44, overdueTolerance: 3, nearDueThreshold: 5 },
+  hedgehog: { gestationDays: 35, gestationMin: 33, gestationMax: 38, overdueTolerance: 2, nearDueThreshold: 4 },
+};
+
+const GESTATION_DEFAULT: GestationConfig = {
+  gestationDays: 65, gestationMin: 60, gestationMax: 70, overdueTolerance: 5, nearDueThreshold: 7,
+};
+
+export function getGestationConfig(species?: string | null): GestationConfig {
+  if (!species) return GESTATION_DEFAULT;
+  const id = SPECIES_MAP[species] ? species : (TH_TO_ID[species] ?? species);
+  return GESTATION_MAP[id] ?? GESTATION_DEFAULT;
+}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { speciesTh } from "@/lib/species";
+import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
@@ -13,8 +13,10 @@ const F = {
   pink: '#e84677', pinkSoft: '#fde2ea', pinkBorder: '#FBCFE8',
   green: '#16A34A', greenSoft: '#F0FDF4', greenBorder: '#BBF7D0',
   amber: '#D97706', amberSoft: '#FFFBEB', amberBorder: '#FDE68A',
+  orange: '#F97316', orangeSoft: '#FFF7ED', orangeBorder: '#FED7AA',
   red: '#EF4444', redSoft: '#FEF2F2', redBorder: '#FECACA',
   purple: '#7C3AED', purpleSoft: '#F3E8FF',
+  slate: '#64748B', slateSoft: '#F1F5F9', slateBorder: '#CBD5E1',
   line: '#f3dde3', lineMid: '#E5E7EB', bg: '#fffafc',
 };
 
@@ -29,6 +31,49 @@ const Icon = {
   Female:       () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="5"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
   Heart:        () => <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
   X:            () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Check:        () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+};
+
+/* ── Pregnancy status derivation ── */
+type ActiveLitterStatus = 'waiting_confirmation' | 'pregnant' | 'near_due' | 'due_window' | 'overdue';
+interface LitterStatusInfo {
+  status: ActiveLitterStatus;
+  daysPregnant: number;
+  daysUntilWindowStart: number;
+  daysOverdue: number;
+  minDueDate: Date | null;
+  maxDueDate: Date | null;
+}
+
+function deriveLitterStatus(litter: any, species: string | null | undefined): LitterStatusInfo {
+  const cfg = getGestationConfig(species);
+  if (!litter.mating_date) {
+    return { status: 'waiting_confirmation', daysPregnant: 0, daysUntilWindowStart: cfg.gestationMin, daysOverdue: 0, minDueDate: null, maxDueDate: null };
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const mating = new Date(litter.mating_date); mating.setHours(0, 0, 0, 0);
+  const daysPregnant = Math.round((today.getTime() - mating.getTime()) / 86400000);
+  const minDueDate = new Date(mating.getTime() + cfg.gestationMin * 86400000);
+  const maxDueDate = new Date(mating.getTime() + cfg.gestationMax * 86400000);
+  const daysUntilWindowStart = cfg.gestationMin - daysPregnant;
+  const daysUntilWindowEnd   = cfg.gestationMax - daysPregnant;
+  const daysOverdue = daysUntilWindowEnd < 0 ? Math.abs(daysUntilWindowEnd) : 0;
+
+  let status: ActiveLitterStatus;
+  if (daysUntilWindowEnd < 0 && daysOverdue > cfg.overdueTolerance) {
+    status = 'overdue';
+  } else if (daysUntilWindowStart <= 0) {
+    status = 'due_window';
+  } else if (daysUntilWindowStart <= cfg.nearDueThreshold) {
+    status = 'near_due';
+  } else {
+    status = 'pregnant';
+  }
+  return { status, daysPregnant, daysUntilWindowStart, daysOverdue, minDueDate, maxDueDate };
+}
+
+const STATUS_URGENCY: Record<ActiveLitterStatus, number> = {
+  overdue: 0, due_window: 1, near_due: 2, pregnant: 3, waiting_confirmation: 4,
 };
 
 /* ── Helpers ── */
@@ -89,7 +134,7 @@ function FarmDashboardContent() {
       const [petsRes, littersRes, txRes] = await Promise.all([
         supabase.from('pets').select('*').eq('farm_id', farmId),
         supabase.from('litters')
-          .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url)')
+          .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url,species)')
           .eq('farm_id', farmId).order('mating_date', { ascending: false }),
         supabase.from('farm_transactions').select('*').eq('farm_id', farmId)
           .order('transaction_date', { ascending: false }),
@@ -120,8 +165,14 @@ function FarmDashboardContent() {
 
   /* ── Derived ── */
   const petMap = Object.fromEntries(pets.map(p => [p.id, p]));
-  const activeLitters = litters.filter(l => l.status === 'รอคลอด');
-  const bornLitters   = litters.filter(l => l.status !== 'รอคลอด');
+  const activeLitters = litters
+    .filter(l => l.status === 'รอคลอด')
+    .sort((a, b) => {
+      const sa = deriveLitterStatus(a, a.dam?.species || farm?.pet_type);
+      const sb = deriveLitterStatus(b, b.dam?.species || farm?.pet_type);
+      return STATUS_URGENCY[sa.status] - STATUS_URGENCY[sb.status];
+    });
+  const bornLitters = litters.filter(l => l.status !== 'รอคลอด');
 
   /* Profile completion */
   const completionItems = [
@@ -325,24 +376,41 @@ function FarmDashboardContent() {
         .fd-ov-label { font-size:9px; font-weight:700; color:${F.inkSoft}; line-height:1.3; }
         .fd-ov-icon  { width:20px; height:20px; object-fit:contain; margin-bottom:2px; }
 
-        /* ─── 4. Active Litters ─── */
-        .fd-litter { border:1px solid ${F.line}; border-radius:12px; padding:12px; margin-bottom:8px; }
-        .fd-litter:last-child { margin-bottom:0; }
-        .fd-litter-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-        .fd-litter-code { font-size:16px; font-weight:700; color:${F.ink}; flex-shrink:0; }
-        .fd-parents { display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:9px; background:#FAFAFA; border:1px solid ${F.lineMid}; flex:1; min-width:0; overflow:hidden; }
-        .fd-pimg { width:26px; height:26px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; }
-        .fd-pimg img { width:100%; height:100%; object-fit:cover; }
-        .fd-psire { background:#DBEAFE; color:#2563EB; }
-        .fd-pdam  { background:#FCE7F3; color:#DB2777; }
-        .fd-pname { font-size:10px; color:${F.muted}; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .fd-status-chip { font-size:9px; font-weight:800; padding:3px 9px; border-radius:7px; white-space:nowrap; flex-shrink:0; }
-        .fd-litter-bar { height:5px; background:${F.line}; border-radius:10px; overflow:hidden; margin-bottom:8px; }
-        .fd-litter-bar-fill { height:100%; border-radius:10px; transition:width .8s ease; }
-        .fd-litter-date { font-size:10px; color:${F.muted}; font-weight:600; margin-bottom:8px; }
-        .fd-litter-btns { display:flex; gap:7px; }
-        .fd-btn-ghost { padding:6px 13px; border-radius:8px; background:#FAFAFA; color:${F.inkSoft}; font-size:11px; font-weight:700; border:1px solid ${F.lineMid}; text-decoration:none; cursor:pointer; transition:all .15s; }
-        .fd-btn-action { padding:6px 14px; border-radius:8px; color:white; font-size:11px; font-weight:700; text-decoration:none; cursor:pointer; transition:all .15s; border:none; }
+        /* ─── 4. Pregnancy Tracking Card ─── */
+        .ptc { position:relative; border:1px solid ${F.line}; border-radius:14px; overflow:hidden; margin-bottom:10px; background:white; box-shadow:0 1px 4px rgba(31,26,28,.06); }
+        .ptc:last-child { margin-bottom:0; }
+        .ptc-accent { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:14px 0 0 14px; }
+        .ptc-inner { padding:12px 13px 13px 17px; }
+        .ptc-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+        .ptc-code { font-size:15px; font-weight:800; color:${F.ink}; flex-shrink:0; letter-spacing:-.01em; }
+        .ptc-badge { font-size:9px; font-weight:800; padding:3px 9px; border-radius:20px; white-space:nowrap; letter-spacing:.02em; }
+        .ptc-parents { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+        .ptc-avatars { display:flex; flex-shrink:0; }
+        .ptc-av { width:28px; height:28px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 0 0 1px ${F.line}; }
+        .ptc-av + .ptc-av { margin-left:-8px; }
+        .ptc-av img { width:100%; height:100%; object-fit:cover; }
+        .ptc-av-sire { background:#DBEAFE; color:#2563EB; font-size:9px; }
+        .ptc-av-dam  { background:#FCE7F3; color:#DB2777; font-size:9px; }
+        .ptc-pair-name { font-size:11px; font-weight:700; color:${F.inkSoft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .ptc-divider { height:1px; background:${F.line}; margin:0 0 10px; }
+        .ptc-summary { margin-bottom:10px; }
+        .ptc-main { font-size:14px; font-weight:800; color:${F.ink}; line-height:1.3; margin-bottom:2px; }
+        .ptc-sub  { font-size:11px; font-weight:600; color:${F.muted}; line-height:1.4; margin-bottom:4px; }
+        .ptc-dates { font-size:10px; color:${F.muted}; font-weight:500; }
+        .ptc-timeline { display:flex; align-items:flex-start; gap:0; margin-bottom:12px; }
+        .ptc-stage { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+        .ptc-stage-row { display:flex; align-items:center; width:100%; }
+        .ptc-stage-dot { width:16px; height:16px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2px solid currentColor; transition:all .2s; }
+        .ptc-stage-line { flex:1; height:2px; background:currentColor; }
+        .ptc-stage-label { font-size:8.5px; font-weight:700; margin-top:4px; text-align:center; line-height:1.3; width:100%; }
+        .ptc-actions { display:flex; gap:8px; }
+        .ptc-btn-ghost { flex:1; padding:8px 10px; border-radius:9px; background:#FAFAFA; color:${F.inkSoft}; font-size:11px; font-weight:700; border:1px solid ${F.lineMid}; text-decoration:none; text-align:center; cursor:pointer; transition:background .15s; display:block; }
+        .ptc-btn-ghost:hover { background:#F3F4F6; }
+        .ptc-btn-primary { flex:2; padding:8px 12px; border-radius:9px; color:white; font-size:11px; font-weight:800; text-decoration:none; text-align:center; cursor:pointer; border:none; display:block; transition:filter .15s; }
+        .ptc-btn-primary:hover { filter:brightness(1.08); }
+        .ptc-missing { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 0; }
+        .ptc-missing-text { font-size:12px; color:${F.muted}; font-weight:600; }
+        .ptc-missing-btn { font-size:11px; font-weight:700; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:8px; text-decoration:none; white-space:nowrap; }
 
         /* ─── 5. Finance ─── */
         .fd-fin-row { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
@@ -554,37 +622,128 @@ function FarmDashboardContent() {
             {activeLitters.length === 0 ? (
               <div className="fd-empty-sm">ยังไม่มีครอกที่กำลังดำเนิน</div>
             ) : activeLitters.slice(0, 2).map(litter => {
-              const pct  = litter.mating_date && litter.expected_birth_date ? calcPct(litter.mating_date, litter.expected_birth_date) : 0;
-              const diff = litter.expected_birth_date ? daysDiff(litter.expected_birth_date) : 999;
-              const isOverdue = pct >= 100;
-              const isNear    = !isOverdue && diff <= 5;
-              const barColor  = isOverdue ? F.red : isNear ? F.amber : F.pink;
-              const chipText  = isOverdue ? 'ครบกำหนดแล้ว' : diff >= 0 ? `อีก ${diff} วัน` : 'เลยกำหนด';
-              const chipBg    = isOverdue ? F.redSoft : isNear ? F.amberSoft : F.pinkSoft;
+              const species = litter.dam?.species || farm?.pet_type;
+              const si = deriveLitterStatus(litter, species);
+              const { status, daysPregnant, daysUntilWindowStart, daysOverdue, minDueDate, maxDueDate } = si;
+
+              /* ── accent + badge colors ── */
+              const accentColor = status === 'overdue' ? F.red
+                : status === 'due_window' ? F.orange
+                : status === 'near_due'   ? F.amber
+                : status === 'pregnant'   ? F.pink
+                : F.slate;
+              const badgeBg = status === 'overdue' ? F.redSoft
+                : status === 'due_window' ? F.orangeSoft
+                : status === 'near_due'   ? F.amberSoft
+                : status === 'pregnant'   ? F.pinkSoft
+                : F.slateSoft;
+              const badgeLabel = status === 'overdue' ? 'เลยกำหนด'
+                : status === 'due_window' ? 'เฝ้าคลอด'
+                : status === 'near_due'   ? 'ใกล้คลอด'
+                : status === 'pregnant'   ? 'กำลังตั้งท้อง'
+                : 'รอยืนยัน';
+
+              /* ── summary text ── */
+              const mainText = !litter.mating_date ? 'ยังไม่ระบุวันผสม'
+                : `วันที่ ${daysPregnant} ของการตั้งท้อง`;
+              const subText = status === 'waiting_confirmation' ? 'กรุณาระบุวันผสมเพื่อติดตาม'
+                : status === 'pregnant'   ? `เหลืออีกประมาณ ${daysUntilWindowStart} วัน ถึงช่วงคาดคลอด`
+                : status === 'near_due'   ? `อีก ${daysUntilWindowStart} วัน ถึงช่วงคาดคลอด`
+                : status === 'due_window' ? 'อยู่ในช่วงเฝ้าคลอด'
+                : daysOverdue > 0        ? `เลยช่วงคาดการณ์ ${daysOverdue} วัน — ควรตรวจสอบ`
+                : 'เลยช่วงคาดการณ์';
+
+              /* ── date range display ── */
+              const datesText = litter.mating_date && minDueDate && maxDueDate
+                ? `ผสม ${fmtDate(litter.mating_date, true)} · คาดคลอด ${fmtDate(minDueDate.toISOString(), true)}–${fmtDate(maxDueDate.toISOString(), true)}`
+                : litter.mating_date
+                ? `ผสม ${fmtDate(litter.mating_date, true)}`
+                : null;
+
+              /* ── stage timeline ── */
+              const STAGES = ['ผสมแล้ว', 'ยืนยันตั้งท้อง', 'ใกล้คลอด', 'คลอดแล้ว'];
+              const currentStage = status === 'waiting_confirmation' ? 0
+                : status === 'pregnant' ? 1
+                : 2; // near_due / due_window / overdue all at stage 2
+
+              /* ── primary action ── */
+              const primaryLabel = status === 'waiting_confirmation' ? 'บันทึกผลตรวจ'
+                : (status === 'pregnant' || status === 'near_due') ? 'ดูการติดตาม'
+                : 'บันทึกคลอด';
+              const primaryHref = status === 'waiting_confirmation'
+                ? `/farm-dashboard/${farmId}/litters/${litter.id}/edit`
+                : (status === 'pregnant' || status === 'near_due')
+                ? `/farm-dashboard/${farmId}/litters/${litter.id}`
+                : `/farm-dashboard/${farmId}/litters/${litter.id}/birth`;
+
               return (
-                <div key={litter.id} className="fd-litter">
-                  <div className="fd-litter-top">
-                    <div className="fd-litter-code">{litter.litter_code || 'TBA'}</div>
-                    <div className="fd-parents">
-                      <div className="fd-pimg fd-psire">{litter.sire?.image_url ? <img src={litter.sire.image_url} alt="" /> : <Icon.Male />}</div>
-                      <span style={{ color: F.pink, display: 'flex', alignItems: 'center' }}><Icon.Heart /></span>
-                      <div className="fd-pimg fd-pdam">{litter.dam?.image_url ? <img src={litter.dam.image_url} alt="" /> : <Icon.Female />}</div>
-                      <span className="fd-pname">{litter.sire?.name || '?'} × {litter.dam?.name || '?'}</span>
+                <div key={litter.id} className="ptc">
+                  <div className="ptc-accent" style={{ background: accentColor }} />
+                  <div className="ptc-inner">
+
+                    {/* Header */}
+                    <div className="ptc-header">
+                      <div className="ptc-code">ครอก {litter.litter_code || 'TBA'}</div>
+                      <span className="ptc-badge" style={{ background: badgeBg, color: accentColor }}>{badgeLabel}</span>
                     </div>
-                    <span className="fd-status-chip" style={{ background: chipBg, color: barColor }}>{chipText}</span>
-                  </div>
-                  <div className="fd-litter-bar">
-                    <div className="fd-litter-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
-                  </div>
-                  <div className="fd-litter-date">
-                    {litter.mating_date && `ผสม ${fmtDate(litter.mating_date, true)}`}
-                    {litter.expected_birth_date && ` · คาดคลอด ${fmtDate(litter.expected_birth_date, true)}`}
-                  </div>
-                  <div className="fd-litter-btns">
-                    <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}`} className="fd-btn-ghost">รายละเอียด</Link>
-                    <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}/birth`} className="fd-btn-action" style={{ background: barColor }}>
-                      {isOverdue ? 'ด่วน — บันทึกคลอด' : 'บันทึกคลอด'}
-                    </Link>
+
+                    {/* Parent pair */}
+                    <div className="ptc-parents">
+                      <div className="ptc-avatars">
+                        <div className="ptc-av ptc-av-sire">
+                          {litter.sire?.image_url ? <img src={litter.sire.image_url} alt="" /> : <Icon.Male />}
+                        </div>
+                        <div className="ptc-av ptc-av-dam">
+                          {litter.dam?.image_url ? <img src={litter.dam.image_url} alt="" /> : <Icon.Female />}
+                        </div>
+                      </div>
+                      <span className="ptc-pair-name">{litter.sire?.name || '?'} × {litter.dam?.name || '?'}</span>
+                    </div>
+
+                    <div className="ptc-divider" />
+
+                    {/* Pregnancy summary */}
+                    {status === 'waiting_confirmation' ? (
+                      <div className="ptc-missing">
+                        <span className="ptc-missing-text">ข้อมูลการผสมยังไม่ครบ</span>
+                        <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}/edit`} className="ptc-missing-btn">แก้ไขข้อมูล</Link>
+                      </div>
+                    ) : (
+                      <div className="ptc-summary">
+                        <div className="ptc-main">{mainText}</div>
+                        <div className="ptc-sub" style={{ color: status === 'overdue' ? F.red : status === 'due_window' ? F.orange : status === 'near_due' ? F.amber : F.muted }}>{subText}</div>
+                        {datesText && <div className="ptc-dates">{datesText}</div>}
+                      </div>
+                    )}
+
+                    {/* Stage timeline */}
+                    <div className="ptc-timeline" style={{ marginBottom: 12 }}>
+                      {STAGES.map((label, i) => {
+                        const isDone    = i < currentStage;
+                        const isCurrent = i === currentStage;
+                        const dotColor  = isDone ? F.green : isCurrent ? accentColor : F.lineMid;
+                        const lineColor = isDone ? F.green : F.lineMid;
+                        const labelColor = isDone ? F.green : isCurrent ? accentColor : F.muted;
+                        return (
+                          <div key={label} className="ptc-stage">
+                            <div className="ptc-stage-row">
+                              <div className="ptc-stage-dot" style={{ borderColor: dotColor, background: isDone ? F.green : isCurrent ? accentColor : 'white', color: 'white' }}>
+                                {isDone && <Icon.Check />}
+                              </div>
+                              {i < STAGES.length - 1 && <div className="ptc-stage-line" style={{ background: lineColor }} />}
+                            </div>
+                            <div className="ptc-stage-label" style={{ color: labelColor }}>{label}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="ptc-actions">
+                      <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}`} className="ptc-btn-ghost">ดูรายละเอียด</Link>
+                      <Link href={primaryHref} className="ptc-btn-primary" style={{ background: accentColor }}>{primaryLabel}</Link>
+                    </div>
+
                   </div>
                 </div>
               );
