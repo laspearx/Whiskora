@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -119,6 +119,10 @@ function FarmDashboardContent() {
 
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showAllTasks,    setShowAllTasks]    = useState(false);
+  const [uploadingCover,  setUploadingCover]  = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const coverInputRef  = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!farmId) return;
@@ -276,6 +280,37 @@ function FarmDashboardContent() {
     return Math.round(((n - s) / (e - s)) * 100);
   };
 
+  const uploadImage = async (file: File, path: string): Promise<string | null> => {
+    const { data, error } = await supabase.storage.from('farm-assets').upload(path, file, { upsert: true });
+    if (error) { alert('อัพโหลดรูปไม่สำเร็จ: ' + error.message); return null; }
+    const { data: { publicUrl } } = supabase.storage.from('farm-assets').getPublicUrl(data.path);
+    return publicUrl;
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploadingCover(true);
+    const url = await uploadImage(file, `${farmId}/cover_${Date.now()}.${file.name.split('.').pop()}`);
+    if (url) {
+      await supabase.from('farms').update({ cover_url: url, updated_at: new Date().toISOString() }).eq('id', farmId);
+      setFarm((f: any) => ({ ...f, cover_url: url }));
+    }
+    setUploadingCover(false);
+    e.target.value = '';
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploadingAvatar(true);
+    const url = await uploadImage(file, `${farmId}/avatar_${Date.now()}.${file.name.split('.').pop()}`);
+    if (url) {
+      await supabase.from('farms').update({ image_url: url, updated_at: new Date().toISOString() }).eq('id', farmId);
+      setFarm((f: any) => ({ ...f, image_url: url }));
+    }
+    setUploadingAvatar(false);
+    e.target.value = '';
+  };
+
   const handleBack = () => fromPage === 'partner' ? router.push('/partner') : router.push('/profile');
 
   /* ── FAB actions ── */
@@ -299,36 +334,44 @@ function FarmDashboardContent() {
 
         .fd-page { font-family:inherit; min-height:100vh; color:${F.ink}; background:${F.bg}; padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 16px); }
 
-        /* ─── 1. Header ─── */
-        .fd-hdr {
-          background:linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%);
-          padding:12px 16px 18px; position:relative; overflow:hidden;
-          border-radius:0 0 28px 28px;
-          box-shadow:0 4px 20px rgba(232,70,119,.22);
-        }
-        .fd-hdr::before {
-          content:""; position:absolute; width:180px; height:180px; border-radius:50%;
-          background:radial-gradient(circle,rgba(255,255,255,.16),transparent 68%);
-          top:-70px; right:-50px; pointer-events:none;
-        }
-        .fd-hdr-row { display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
-        .fd-back { width:28px; height:28px; border-radius:50%; border:none; cursor:pointer; flex-shrink:0; background:rgba(255,255,255,.2); color:white; display:flex; align-items:center; justify-content:center; }
-        .fd-av { width:44px; height:44px; border-radius:50%; overflow:hidden; flex-shrink:0; border:2px solid rgba(255,255,255,.85); background:white; display:flex; align-items:center; justify-content:center; }
-        .fd-av img { width:100%; height:100%; object-fit:cover; }
-        .fd-hdr-info { flex:1; min-width:0; }
-        .fd-hdr-name { font-size:clamp(14px,3.5vw,18px); font-weight:700; color:white; line-height:1.2; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
-        .fd-hdr-name img { width:16px; height:16px; object-fit:contain; flex-shrink:0; }
-        .fd-hdr-sub { font-size:11px; color:rgba(255,255,255,.75); font-weight:600; margin-top:1px; }
-        .fd-hdr-btns { display:flex; gap:6px; flex-shrink:0; }
-        .fd-hbtn { display:inline-flex; align-items:center; gap:4px; padding:5px 11px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; border:none; text-decoration:none; transition:all .15s; }
-        .fd-hbtn-p { background:white; color:${F.pink}; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-        .fd-hbtn-g { background:rgba(255,255,255,.15); color:white; border:1px solid rgba(255,255,255,.28); }
+        /* ─── 1. Cover + Identity Header ─── */
+        .fd-cover { position:relative; aspect-ratio:3/1; min-height:140px; background:linear-gradient(135deg,${F.pinkSoft},#FFE8F0); overflow:hidden; cursor:pointer; }
+        .fd-cover img.fd-cover-img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+        .fd-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,.18),transparent 45%); }
+        .fd-cover-top { position:absolute; top:14px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:2; }
+        .fd-cover-btn { width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); color:${F.ink}; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; box-shadow:0 2px 8px rgba(0,0,0,.12); transition:all .15s; text-decoration:none; }
+        .fd-cover-btn:hover { background:white; }
+        .fd-cover-actions { display:flex; gap:6px; }
+        .fd-cover-hint { position:absolute; bottom:8px; right:10px; font-size:10px; font-weight:600; color:rgba(255,255,255,.8); background:rgba(0,0,0,.28); backdrop-filter:blur(4px); padding:3px 8px; border-radius:8px; z-index:2; pointer-events:none; }
+        .fd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:700; color:${F.pink}; }
 
-        .fd-prog-bar { position:relative; z-index:1; margin-top:10px; display:flex; align-items:center; gap:8px; }
-        .fd-prog-track { flex:1; height:4px; background:rgba(255,255,255,.22); border-radius:10px; overflow:hidden; }
-        .fd-prog-fill  { height:100%; border-radius:10px; background:white; transition:width 1s ease; }
-        .fd-prog-text  { font-size:10px; font-weight:700; color:rgba(255,255,255,.85); white-space:nowrap; }
-        .fd-prog-hint  { font-size:10px; color:rgba(255,255,255,.65); margin-top:3px; }
+        .fd-identity { background:white; border-radius:22px 22px 0 0; margin-top:-22px; position:relative; z-index:3; padding:0 18px 18px; }
+        .fd-id-row { display:flex; align-items:flex-end; gap:14px; padding-top:12px; }
+        .fd-avatar { width:96px; height:96px; border-radius:50%; border:4px solid white; margin-top:-58px; overflow:hidden; background:${F.pinkSoft}; display:flex; align-items:center; justify-content:center; font-size:38px; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,.12); cursor:pointer; position:relative; }
+        .fd-avatar img { width:100%; height:100%; object-fit:cover; }
+        .fd-avatar-edit { position:absolute; bottom:4px; right:2px; width:24px; height:24px; background:${F.pink}; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; }
+        .fd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+        .fd-id-main { flex:1; min-width:0; padding-bottom:4px; }
+        .fd-name { font-size:clamp(16px,4vw,22px); font-weight:700; color:${F.ink}; line-height:1.15; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
+        .fd-name img { width:20px; height:20px; object-fit:contain; flex-shrink:0; }
+        .fd-tagline { font-size:12px; color:${F.muted}; font-weight:400; }
+        .fd-id-actions { display:flex; gap:6px; margin-top:6px; }
+        .fd-id-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; border:none; text-decoration:none; transition:all .15s; }
+        .fd-id-btn-p { background:${F.pink}; color:white; }
+        .fd-id-btn-g { background:#F3F4F6; color:${F.inkSoft}; }
+
+        .fd-prog-bar { display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid ${F.line}; }
+        .fd-prog-track { flex:1; height:5px; background:${F.line}; border-radius:10px; overflow:hidden; }
+        .fd-prog-fill  { height:100%; border-radius:10px; background:${F.pink}; transition:width 1s ease; }
+        .fd-prog-text  { font-size:11px; font-weight:700; color:${F.pink}; white-space:nowrap; }
+
+        .fd-verify-btn { display:flex; align-items:center; gap:8px; margin-top:12px; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; }
+        .fd-verify-btn:hover { background:#fde7ef; border-color:${F.pink}; }
+        .fd-verify-btn img { width:28px; height:28px; object-fit:contain; }
+        .fd-verify-btn-text { flex:1; }
+        .fd-verify-btn-title { font-size:13px; font-weight:700; color:${F.pink}; }
+        .fd-verify-btn-sub { font-size:11px; color:${F.muted}; font-weight:400; }
+        .fd-pending-badge { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 14px; border-radius:12px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12px; font-weight:600; color:#92400E; }
 
         /* ─── Content wrapper ─── */
         .fd-body { padding:12px 12px 0; display:flex; flex-direction:column; gap:10px; max-width:640px; margin:0 auto; }
@@ -474,32 +517,54 @@ function FarmDashboardContent() {
       <div className="fd-page">
 
         {/* ════════════════════════════════
-            1. Compact Farm Header
+            1. Cover + Identity Header
         ════════════════════════════════ */}
-        <header className="fd-hdr">
-          <div className="fd-hdr-row">
-            <button className="fd-back" onClick={handleBack} aria-label="ย้อนกลับ">
-              <Icon.ArrowLeft />
-            </button>
-            <div className="fd-av">
+
+        {/* Cover */}
+        <div className="fd-cover" onClick={() => coverInputRef.current?.click()}>
+          {(farm.cover_url || farm.image_url) && (
+            <img className="fd-cover-img" src={farm.cover_url || farm.image_url} alt={farm.farm_name} />
+          )}
+          <div className="fd-cover-overlay" />
+          <div className="fd-cover-top" onClick={e => e.stopPropagation()}>
+            <button className="fd-cover-btn" onClick={handleBack} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <div className="fd-cover-actions">
+              <Link href={`/farm/${farmId}`} className="fd-cover-btn" aria-label="ดูหน้าฟาร์ม"><Icon.Eye /></Link>
+              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-cover-btn" aria-label="แก้ไข"><Icon.Edit /></Link>
+            </div>
+          </div>
+          <div className="fd-cover-hint">กดเพื่อเปลี่ยนรูปปก</div>
+          {uploadingCover && <div className="fd-cover-spin">กำลังอัพโหลด...</div>}
+          <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
+        </div>
+
+        {/* Identity */}
+        <div className="fd-identity">
+          <div className="fd-id-row">
+            <div className="fd-avatar" onClick={() => avatarInputRef.current?.click()}>
               {farm.image_url
                 ? <img src={farm.image_url} alt={farm.farm_name} />
-                : <img src="/icons/icon-farm.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />}
-            </div>
-            <div className="fd-hdr-info">
-              <div className="fd-hdr-name">
-                {farm.farm_name}
-                {farm.is_verified && <img src="/icons/icon-verified.png" alt="ยืนยันแล้ว" />}
+                : <img src="/icons/icon-farm.png" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />}
+              <div className="fd-avatar-edit">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </div>
-              <div className="fd-hdr-sub">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
+              {uploadingAvatar && <div className="fd-avatar-spin"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>}
+              <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
             </div>
-            <div className="fd-hdr-btns">
-              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-hbtn fd-hbtn-p">
-                <Icon.Edit /> แก้ไข
-              </Link>
-              <Link href={`/farm/${farmId}`} className="fd-hbtn fd-hbtn-g">
-                <Icon.Eye />
-              </Link>
+            <div className="fd-id-main">
+              <h1 className="fd-name">
+                {farm.farm_name}
+                {farm.is_verified && <img src="/icons/icon-verified-badge.png" alt="ยืนยันแล้ว" />}
+              </h1>
+              <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
+              <div className="fd-id-actions">
+                <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-id-btn fd-id-btn-p">
+                  <Icon.Edit /> แก้ไขโปรไฟล์
+                </Link>
+                <Link href={`/farm/${farmId}`} className="fd-id-btn fd-id-btn-g">
+                  <Icon.Eye /> ดูหน้าฟาร์ม
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -508,11 +573,28 @@ function FarmDashboardContent() {
               <div className="fd-prog-track">
                 <div className="fd-prog-fill" style={{ width: `${farmCompletion}%` }} />
               </div>
-              <span className="fd-prog-text">{farmCompletion}%</span>
-              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-prog-text" style={{ textDecoration: 'underline', marginLeft: 4 }}>เพิ่มข้อมูล</Link>
+              <span className="fd-prog-text">{farmCompletion}% สมบูรณ์</span>
+              <Link href={`/farm-dashboard/${farmId}/edit`} style={{ fontSize: 11, fontWeight: 700, color: F.muted, textDecoration: 'underline' }}>เพิ่มข้อมูล</Link>
             </div>
           )}
-        </header>
+
+          {!farm.is_verified && farm.verification_status !== 'pending' && (
+            <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn">
+              <img src="/icons/icon-non-verified.png" alt="" />
+              <div className="fd-verify-btn-text">
+                <div className="fd-verify-btn-title">ยืนยันตัวตนฟาร์ม</div>
+                <div className="fd-verify-btn-sub">รับป้าย Verified เพื่อเพิ่มความน่าเชื่อถือ</div>
+              </div>
+              <Icon.ChevronRight />
+            </Link>
+          )}
+          {farm.verification_status === 'pending' && (
+            <div className="fd-pending-badge">
+              <img src="/icons/icon-non-verified.png" alt="" style={{ width: 22, height: 22 }} />
+              รอการตรวจสอบจากแอดมิน — เราจะแจ้งผลเร็วๆ นี้
+            </div>
+          )}
+        </div>
 
         <div className="fd-body">
 
