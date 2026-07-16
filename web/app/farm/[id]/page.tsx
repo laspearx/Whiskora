@@ -136,11 +136,10 @@ export default function PublicFarmProfile() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
+        .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; overflow-x: clip; }
         .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
         /* ── Cover ── */
-        .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; margin-left: -1rem; margin-right: -1rem; }
-        @media (min-width: 768px) { .fp-cover { margin-left: -1.5rem; margin-right: -1.5rem; } }
+        .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; width: 100vw; left: 50%; transform: translateX(-50%); }
         .fp-cover img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
         .fp-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 40%); }
         .fp-cover-top { position: absolute; top: 16px; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
@@ -280,10 +279,10 @@ export default function PublicFarmProfile() {
                 </h1>
                 <p className="fp-tagline">ฟาร์ม{speciesLabel(farm.species)}</p>
                 <div className="fp-meta-row">
-                  {farmLocation && <span className="fp-meta-item"><Icon.Pin /> {farmLocation}</span>}
+                  {farmLocation && <span className="fp-meta-item"><img src="/icons/icon-location.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> {farmLocation}</span>}
                   <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
                   <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
-                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> โฮมบรีด</>}
+                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> โฮมบรีด</>}
                   </span>
                 </div>
               </div>
@@ -303,7 +302,7 @@ export default function PublicFarmProfile() {
               </div>
               <div className="fp-quality">
                 <div className="fp-quality-icon" style={isVerified ? { background: F.pink, color: 'white' } : { background: F.pinkSoft, color: F.pink }}>
-                  {isVerified ? <Icon.Shield /> : <Icon.Paw />}
+                  {isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                 </div>
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
@@ -316,7 +315,7 @@ export default function PublicFarmProfile() {
             <div className="fp-stats-card">
               <div className="fp-stats-grid">
                 <div className="fp-stat">
-                  <div className="fp-stat-label"><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-label"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
                   <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
                   <div className="fp-stat-unit">ตัว</div>
                 </div>
@@ -348,7 +347,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> ข้อมูลฟาร์ม</div>
+                <div className="fp-section-title"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
               </div>
               <div className="fp-info-grid">
                 <div className="fp-info-row">
@@ -358,14 +357,14 @@ export default function PublicFarmProfile() {
                 </div>
                 {farm.phone && (
                   <div className="fp-info-row">
-                    <span className="fp-info-icon"><Icon.Phone /></span>
+                    <span className="fp-info-icon"><img src="/icons/icon-phone.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">เบอร์โทรศัพท์</span>
                     <span className="fp-info-val">{farm.phone}</span>
                   </div>
                 )}
                 {farmLocation && (
                   <div className="fp-info-row">
-                    <span className="fp-info-icon"><Icon.Pin /></span>
+                    <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">ที่อยู่</span>
                     <span className="fp-info-val">{farmLocation}</span>
                   </div>
@@ -473,7 +472,7 @@ export default function PublicFarmProfile() {
             <div className="fp-cta-inner">
               <button className="fp-cta-btn fp-cta-ghost" onClick={handleShare}><Icon.Share /> แชร์ฟาร์ม</button>
               {farm.phone && (
-                <a className="fp-cta-btn fp-cta-primary" href={`tel:${farm.phone}`}><Icon.Phone /> ติดต่อฟาร์ม</a>
+                <a className="fp-cta-btn fp-cta-primary" href={`tel:${farm.phone}`}><img src="/icons/icon-phone.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} /> ติดต่อฟาร์ม</a>
               )}
             </div>
           </div>
