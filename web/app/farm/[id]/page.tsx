@@ -290,9 +290,6 @@ export default function PublicFarmProfile() {
                 <div className="fp-meta-row">
                   {uniqueBreeds.length > 0 && <span className="fp-meta-item">{uniqueBreeds.join(' · ')}</span>}
                   <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
-                  <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
-                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> โฮมบรีด</>}
-                  </span>
                 </div>
               </div>
             </div>
@@ -310,8 +307,8 @@ export default function PublicFarmProfile() {
                 )}
               </div>
               <div className="fp-quality">
-                <div className="fp-quality-icon" style={isVerified ? { background: F.pink, color: 'white' } : { background: F.pinkSoft, color: F.pink }}>
-                  {isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-pink.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />}
+                <div className="fp-quality-icon" style={{ background: 'transparent' }}>
+                  <img src={isVerified ? '/icons/icon-verified-badge.png' : '/icons/icon-non-verified.png'} alt="" style={{ width: 44, height: 44, objectFit: 'contain' }} />
                 </div>
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
@@ -324,7 +321,7 @@ export default function PublicFarmProfile() {
             <div className="fp-stats-card">
               <div className="fp-stats-grid">
                 <div className="fp-stat">
-                  <div className="fp-stat-label"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-label">ทั้งหมด</div>
                   <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
                   <div className="fp-stat-unit">ตัว</div>
                 </div>
@@ -356,7 +353,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
+                <div className="fp-section-title">ข้อมูลฟาร์ม</div>
               </div>
               <div className="fp-info-grid">
                 <div className="fp-info-row">
@@ -396,7 +393,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
+                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> สัตว์เลี้ยงพร้อมย้ายบ้าน</div>
               </div>
               {readyPets.length === 0 ? (
                 <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
