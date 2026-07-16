@@ -302,7 +302,9 @@ function FarmDashboardContent() {
         /* ─── 1. Header ─── */
         .fd-hdr {
           background:linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%);
-          padding:12px 16px 14px; position:relative; overflow:hidden;
+          padding:12px 16px 18px; position:relative; overflow:hidden;
+          border-radius:0 0 28px 28px;
+          box-shadow:0 4px 20px rgba(232,70,119,.22);
         }
         .fd-hdr::before {
           content:""; position:absolute; width:180px; height:180px; border-radius:50%;
@@ -337,7 +339,7 @@ function FarmDashboardContent() {
         .fd-sec { background:white; border:1px solid ${F.line}; border-radius:14px; padding:14px; }
         .fd-sec-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
         .fd-sec-title { display:flex; align-items:center; gap:7px; }
-        .fd-sec-title img { width:20px; height:20px; object-fit:contain; }
+        .fd-sec-title img { width:26px; height:26px; object-fit:contain; }
         .fd-sec-h { margin:0; font-size:14px; font-weight:700; color:${F.ink}; }
         .fd-sec-badge { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; border-radius:8px; font-size:9px; font-weight:800; padding:0 4px; }
         .fd-link-sm { color:${F.pink}; font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:2px; }
@@ -346,8 +348,8 @@ function FarmDashboardContent() {
         /* ─── 2. Today / Action Center ─── */
         .fd-task-row { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; margin-bottom:5px; }
         .fd-task-row:last-child { margin-bottom:0; }
-        .fd-task-icon { width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .fd-task-icon img { width:14px; height:14px; object-fit:contain; }
+        .fd-task-icon { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .fd-task-icon img { width:18px; height:18px; object-fit:contain; }
         .fd-task-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
         .fd-task-msg { flex:1; font-size:12px; font-weight:600; color:${F.ink}; line-height:1.4; min-width:0; }
         .fd-task-btn { font-size:10px; font-weight:700; padding:3px 9px; border-radius:7px; text-decoration:none; white-space:nowrap; flex-shrink:0; border:none; cursor:pointer; font-family:inherit; }
@@ -364,7 +366,7 @@ function FarmDashboardContent() {
         .fd-t-upcoming .fd-task-btn { background:#2563EB; color:white; }
         .fd-t-info     .fd-task-btn { background:${F.lineMid}; color:${F.inkSoft}; }
         .fd-today-empty { font-size:12px; color:${F.green}; font-weight:600; display:flex; align-items:center; gap:6px; }
-        .fd-today-empty img { width:14px; height:14px; object-fit:contain; }
+        .fd-today-empty img { width:18px; height:18px; object-fit:contain; }
         .fd-show-more { margin-top:8px; font-size:11px; font-weight:700; color:${F.pink}; background:none; border:none; cursor:pointer; font-family:inherit; padding:4px 0; }
 
         /* ─── 3. Farm Overview ─── */
@@ -374,7 +376,7 @@ function FarmDashboardContent() {
         .fd-ov-stat:hover { border-color:rgba(232,70,119,.2); transform:translateY(-1px); }
         .fd-ov-count { font-size:22px; font-weight:800; line-height:1; }
         .fd-ov-label { font-size:9px; font-weight:700; color:${F.inkSoft}; line-height:1.3; }
-        .fd-ov-icon  { width:20px; height:20px; object-fit:contain; margin-bottom:2px; }
+        .fd-ov-icon  { width:28px; height:28px; object-fit:contain; margin-bottom:4px; }
 
         /* ─── 4. Pregnancy Tracking Card ─── */
         .ptc { position:relative; border:1px solid ${F.line}; border-radius:14px; overflow:hidden; margin-bottom:10px; background:white; box-shadow:0 1px 4px rgba(31,26,28,.06); }
