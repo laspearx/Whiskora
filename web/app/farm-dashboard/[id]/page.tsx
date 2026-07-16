@@ -387,10 +387,8 @@ function FarmDashboardContent() {
         .fd-nav { position:fixed; bottom:0; left:0; right:0; z-index:55; background:rgba(255,255,255,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid rgba(232,70,119,.10); box-shadow:0 -4px 24px rgba(31,26,28,.07); padding-bottom:env(safe-area-inset-bottom,0px); }
         .fd-nav-inner { display:flex; align-items:stretch; height:68px; }
         .fd-nav-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; text-decoration:none; color:${F.inkSoft}; border:none; background:none; font-family:inherit; cursor:pointer; }
-        .fd-nav-tab.active { color:${F.pink}; }
         .fd-tab-icon { width:72px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; transition:background .15s; }
         .fd-nav-tab:active .fd-tab-icon { background:rgba(232,70,119,.09); }
-        .fd-nav-tab.active .fd-tab-icon { background:rgba(232,70,119,.09); }
         .fd-tab-icon img { width:48px; height:48px; object-fit:contain; }
         .fd-nav-tab span { font-size:10px; font-weight:600; line-height:1.2; }
 
@@ -679,23 +677,23 @@ function FarmDashboardContent() {
       ════════════════════════════════ */}
       <nav className="fd-nav" aria-label="เมนูฟาร์ม">
         <div className="fd-nav-inner">
-          <button className="fd-nav-tab active" onClick={() => {}} aria-current="page">
-            <div className="fd-tab-icon"><img src="/icons/icon-farm.png" alt="" /></div>
-            <span>หน้าหลัก</span>
-          </button>
-          <Link href={`/farm-dashboard/${farmId}/pets`} className="fd-nav-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
-            <span>สัตว์</span>
+          <Link href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`} className="fd-nav-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-tab-add.png" alt="" /></div>
+            <span>เพิ่มสัตว์</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/litters`} className="fd-nav-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-breeding.png" alt="" /></div>
-            <span>ครอก</span>
+          <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-nav-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
+            <span>จับคู่บรีด</span>
+          </Link>
+          <Link href={`/farm-dashboard/${farmId}/litters?from=${fromPage}`} className="fd-nav-tab">
+            <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
+            <span>ลูกแมว</span>
           </Link>
           <Link href="/profile/finance" className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
-            <span>การเงิน</span>
+            <span>รายรับรายจ่าย</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/appointments`} className="fd-nav-tab">
+          <Link href={`/farm-dashboard/${farmId}/appointments?from=${fromPage}`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
             <span>ปฏิทิน</span>
           </Link>
