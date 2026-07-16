@@ -191,6 +191,8 @@ export default function PublicFarmProfile() {
         .fp-info-grid { display: flex; flex-direction: column; gap: 0; }
         .fp-info-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px dotted ${F.lineMid}; }
         .fp-info-row:last-child { border-bottom: none; }
+        a.fp-info-row-link { text-decoration: none; cursor: pointer; border-radius: 10px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; transition: background .15s; }
+        a.fp-info-row-link:hover { background: ${F.pinkSoft}; }
         .fp-info-icon { color: ${F.pink}; flex-shrink: 0; display: flex; }
         .fp-info-label { font-size: 13px; color: ${F.muted}; font-weight: 400; min-width: 110px; }
         .fp-info-val { font-size: 13px; color: ${F.ink}; font-weight: 500; margin-left: auto; text-align: right; }
@@ -363,18 +365,18 @@ export default function PublicFarmProfile() {
                   <span className="fp-info-val">{ownerName}</span>
                 </div>
                 {farm.phone && (
-                  <div className="fp-info-row">
+                  <a className="fp-info-row fp-info-row-link" href={`tel:${farm.phone}`}>
                     <span className="fp-info-icon"><img src="/icons/icon-phone.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">เบอร์โทรศัพท์</span>
-                    <span className="fp-info-val">{farm.phone}</span>
-                  </div>
+                    <span className="fp-info-val" style={{ color: F.pink }}>{farm.phone}</span>
+                  </a>
                 )}
                 {farmLocation && (
-                  <div className="fp-info-row">
+                  <a className="fp-info-row fp-info-row-link" href={`https://maps.google.com/?q=${encodeURIComponent(farmLocation)}`} target="_blank" rel="noopener noreferrer">
                     <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">ที่อยู่</span>
-                    <span className="fp-info-val">{farmLocation}</span>
-                  </div>
+                    <span className="fp-info-val" style={{ color: F.pink }}>{farmLocation}</span>
+                  </a>
                 )}
                 <div className="fp-info-row">
                   <span className="fp-info-icon"><img src="/icons/icon-calendar.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
