@@ -139,7 +139,8 @@ export default function PublicFarmProfile() {
         .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
         /* ── Cover ── */
-        .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; }
+        .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; margin-left: -1rem; margin-right: -1rem; }
+        @media (min-width: 768px) { .fp-cover { margin-left: -1.5rem; margin-right: -1.5rem; } }
         .fp-cover img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
         .fp-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 40%); }
         .fp-cover-top { position: absolute; top: 16px; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
@@ -149,11 +150,11 @@ export default function PublicFarmProfile() {
         .fp-cover-verified img, .fp-cover-verified svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 12px rgba(232,70,119,0.3)); }
         /* ── Identity ── */
         .fp-identity { background: white; border-radius: 24px 24px 0 0; margin-top: -24px; position: relative; z-index: 3; padding: 0 24px 24px; }
-        .fp-id-row { display: flex; align-items: flex-end; gap: 18px; padding-top: 20px; flex-wrap: wrap; }
-        .fp-avatar { width: 96px; height: 96px; border-radius: 50%; border: 4px solid white; margin-top: -56px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 40px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .fp-id-row { display: flex; align-items: flex-end; gap: 18px; padding-top: 14px; flex-wrap: wrap; }
+        .fp-avatar { width: 116px; height: 116px; border-radius: 50%; border: 4px solid white; margin-top: -72px; overflow: hidden; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 44px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
         .fp-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .fp-id-main { flex: 1; min-width: 200px; }
-        .fp-name { font-family: inherit; font-size: 26px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .fp-name { font-family: inherit; font-size: 28px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .fp-tagline { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; margin-top: 4px; }
         .fp-meta-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; font-size: 12px; color: ${F.muted}; font-weight: 600; }
         .fp-meta-item { display: inline-flex; align-items: center; gap: 5px; }
@@ -165,7 +166,7 @@ export default function PublicFarmProfile() {
         .fp-bio-text { font-size: 13px; color: ${F.inkSoft}; line-height: 1.65; }
         .fp-bio-toggle { color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; background: none; border: none; padding: 4px 0 0; display: inline-flex; align-items: center; gap: 3px; }
         .fp-quality { display: flex; align-items: flex-start; gap: 10px; border-left: 1px solid ${F.pinkBorder}; padding-left: 20px; min-width: 180px; }
-        .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; background: ${F.pink}; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .fp-quality-title { font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.ink}; }
         .fp-quality-sub { font-size: 11px; color: ${F.inkSoft}; line-height: 1.5; margin-top: 2px; }
         /* ── Stats ── */
@@ -282,7 +283,7 @@ export default function PublicFarmProfile() {
                   {farmLocation && <span className="fp-meta-item"><Icon.Pin /> {farmLocation}</span>}
                   <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
                   <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
-                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> โฮมบรีด</>}
+                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> โฮมบรีด</>}
                   </span>
                 </div>
               </div>
@@ -301,7 +302,9 @@ export default function PublicFarmProfile() {
                 )}
               </div>
               <div className="fp-quality">
-                <div className="fp-quality-icon">{isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />}</div>
+                <div className="fp-quality-icon" style={isVerified ? { background: F.pink, color: 'white' } : { background: F.pinkSoft, color: F.pink }}>
+                  {isVerified ? <Icon.Shield /> : <Icon.Paw />}
+                </div>
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
                   <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
@@ -313,7 +316,7 @@ export default function PublicFarmProfile() {
             <div className="fp-stats-card">
               <div className="fp-stats-grid">
                 <div className="fp-stat">
-                  <div className="fp-stat-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-label"><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> {speciesLabel(farm.species)}ทั้งหมด</div>
                   <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
                   <div className="fp-stat-unit">ตัว</div>
                 </div>
@@ -345,11 +348,11 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
+                <div className="fp-section-title"><span style={{ color: F.pink, display: 'inline-flex' }}><Icon.Paw /></span> ข้อมูลฟาร์ม</div>
               </div>
               <div className="fp-info-grid">
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><Icon.User /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-nav-profile.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">เจ้าของฟาร์ม</span>
                   <span className="fp-info-val">{ownerName}</span>
                 </div>
@@ -368,12 +371,12 @@ export default function PublicFarmProfile() {
                   </div>
                 )}
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><Icon.Calendar /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-calendar.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">วันที่ก่อตั้ง</span>
                   <span className="fp-info-val">{foundedDate}</span>
                 </div>
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><Icon.Shield /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-insurance.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">มาตรฐานที่ได้รับ</span>
                   <span className={`fp-info-val ${isVerified ? 'verified' : ''}`}>{isVerified ? 'Whiskora Verified' : 'ฟาร์มโฮมบรีด (ยังไม่ยืนยัน)'}</span>
                 </div>
@@ -385,7 +388,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><Icon.Cat /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
+                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
               </div>
               {readyPets.length === 0 ? (
                 <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
