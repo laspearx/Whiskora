@@ -55,6 +55,7 @@ const TABS = [
   { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
   { id: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
   { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
+  { id: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
   { id: 'activities', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
   { id: 'docs', label: 'เอกสาร', icon: <Icon.Doc /> },
   { id: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
@@ -869,7 +870,7 @@ export default function PetDetailPage() {
               </div>
               <div className="quick-stats">
                 <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{pet.weight ? `${pet.weight} กก.` : '-'}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{pet.weight ? `${pet.weight} กก.` : '-'}</div><Link href={`/pets/${pet.id}/weight`} style={{ fontSize: '10px', fontWeight: 700, color: F.pink, textDecoration: 'none', marginTop: '2px', display: 'block' }}>+ บันทึก</Link></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
               </div>
@@ -1111,6 +1112,22 @@ export default function PetDetailPage() {
                     <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || '-'}</div></div>
                     <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Weight tab ─── */}
+          {activeTab === 'weight' && (
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, color: F.pink }}><Icon.Weight /></div>ประวัติน้ำหนัก</div>
+                <Link href={`/pets/${pet.id}/weight`} className="btn-pink" style={{ fontSize: '12px', padding: '6px 14px' }}><Icon.Plus /> บันทึกน้ำหนัก</Link>
+              </div>
+              <div className="card-body" style={{ textAlign: 'center', padding: '32px 0' }}>
+                <div style={{ color: F.muted, fontSize: '13px', marginBottom: '12px' }}>ดูและบันทึกประวัติน้ำหนักทั้งหมดได้ในหน้าถัดไป</div>
+                <Link href={`/pets/${pet.id}/weight`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '12px', background: F.pink, color: 'white', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                  <Icon.Weight /> ไปหน้าบันทึกน้ำหนัก
+                </Link>
               </div>
             </div>
           )}

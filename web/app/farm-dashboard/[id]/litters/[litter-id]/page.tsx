@@ -17,6 +17,7 @@ const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Heart: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>,
   Edit: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Weight: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
 };
 
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
@@ -91,10 +92,12 @@ export default function LitterDetailPage() {
         .ld-parent.dam .ld-parent-role { color: ${F.pink}; }
         .ld-heart { color: ${F.pinkBorder}; flex-shrink: 0; }
         /* edit action */
-        .ld-edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .ld-edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
         .ld-edit-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.lineMid}; background: white; color: ${F.inkSoft}; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; cursor: pointer; font-family: inherit; }
         .ld-edit-btn:hover { background: #F9FAFB; border-color: #D1D5DB; }
         .ld-edit-btn svg { flex-shrink: 0; }
+        .ld-weight-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; }
+        .ld-weight-btn:hover { background: #fbd5e3; }
         /* babies */
         .ld-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
         .ld-sec-title { font-family: inherit; font-size: 16px; font-weight: 700; color: ${F.ink}; }
@@ -148,7 +151,11 @@ export default function LitterDetailPage() {
               <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="ld-edit-btn">
                 <Icon.Edit /> แก้ไขข้อมูลการบรีด
               </Link>
-              <span style={{ fontSize: 11, color: F.muted, fontWeight: 600 }}>เปลี่ยนวันผสม พ่อ หรือแม่พันธุ์ได้ที่นี่</span>
+              {born && (
+                <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/weights`} className="ld-weight-btn">
+                  <Icon.Weight /> บันทึกน้ำหนักทั้งครอก
+                </Link>
+              )}
             </div>
 
             <div className="ld-parents">
