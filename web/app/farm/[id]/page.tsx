@@ -48,6 +48,12 @@ export default function PublicFarmProfile() {
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
+    const prev = document.documentElement.style.overflowX;
+    document.documentElement.style.overflowX = 'clip';
+    return () => { document.documentElement.style.overflowX = prev; };
+  }, []);
+
+  useEffect(() => {
     const fetchFarmProfile = async () => {
       try {
         const { data: farmData, error: farmError } = await supabase
@@ -128,6 +134,7 @@ export default function PublicFarmProfile() {
 
   const ownerName = owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
   const farmLocation = owner?.address || null;
+  const uniqueBreeds = [...new Set(pets.map(p => extractThai(p.breed)).filter(Boolean))].slice(0, 4);
   const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
   const bioIsLong = bioText.length > 120;
 
@@ -136,7 +143,7 @@ export default function PublicFarmProfile() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; overflow-x: clip; }
+        .fp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .fp-body { max-width: 1000px; margin: 0 auto; padding-bottom: 100px; }
         /* ── Cover ── */
         .fp-cover { position: relative; aspect-ratio: 3/1; min-height: 160px; background: linear-gradient(135deg, ${F.pinkSoft}, #FFE8F0); overflow: hidden; width: 100vw; left: 50%; transform: translateX(-50%); }
@@ -279,10 +286,10 @@ export default function PublicFarmProfile() {
                 </h1>
                 <p className="fp-tagline">ฟาร์ม{speciesLabel(farm.species)}</p>
                 <div className="fp-meta-row">
-                  {farmLocation && <span className="fp-meta-item"><img src="/icons/icon-location.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> {farmLocation}</span>}
+                  {uniqueBreeds.length > 0 && <span className="fp-meta-item">{uniqueBreeds.join(' · ')}</span>}
                   <span className="fp-meta-item"><Icon.Calendar /> เข้าร่วมเมื่อ {foundedDate}</span>
                   <span className={`fp-badge-type ${isVerified ? 'fp-badge-verified' : 'fp-badge-home'}`}>
-                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> โฮมบรีด</>}
+                    {isVerified ? <><Icon.Shield /> ฟาร์มยืนยันแล้ว</> : <><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> โฮมบรีด</>}
                   </span>
                 </div>
               </div>
@@ -302,7 +309,7 @@ export default function PublicFarmProfile() {
               </div>
               <div className="fp-quality">
                 <div className="fp-quality-icon" style={isVerified ? { background: F.pink, color: 'white' } : { background: F.pinkSoft, color: F.pink }}>
-                  {isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
+                  {isVerified ? <Icon.Shield /> : <img src="/icons/icon-paw-pink.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />}
                 </div>
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
@@ -315,7 +322,7 @@ export default function PublicFarmProfile() {
             <div className="fp-stats-card">
               <div className="fp-stats-grid">
                 <div className="fp-stat">
-                  <div className="fp-stat-label"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
+                  <div className="fp-stat-label"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> {speciesLabel(farm.species)}ทั้งหมด</div>
                   <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
                   <div className="fp-stat-unit">ตัว</div>
                 </div>
@@ -347,35 +354,35 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
+                <div className="fp-section-title"><img src="/icons/icon-paw-pink.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> ข้อมูลฟาร์ม</div>
               </div>
               <div className="fp-info-grid">
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><img src="/icons/icon-nav-profile.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-nav-profile.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">เจ้าของฟาร์ม</span>
                   <span className="fp-info-val">{ownerName}</span>
                 </div>
                 {farm.phone && (
                   <div className="fp-info-row">
-                    <span className="fp-info-icon"><img src="/icons/icon-phone.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
+                    <span className="fp-info-icon"><img src="/icons/icon-phone.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">เบอร์โทรศัพท์</span>
                     <span className="fp-info-val">{farm.phone}</span>
                   </div>
                 )}
                 {farmLocation && (
                   <div className="fp-info-row">
-                    <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
+                    <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">ที่อยู่</span>
                     <span className="fp-info-val">{farmLocation}</span>
                   </div>
                 )}
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><img src="/icons/icon-calendar.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-calendar.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">วันที่ก่อตั้ง</span>
                   <span className="fp-info-val">{foundedDate}</span>
                 </div>
                 <div className="fp-info-row">
-                  <span className="fp-info-icon"><img src="/icons/icon-insurance.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /></span>
+                  <span className="fp-info-icon"><img src="/icons/icon-insurance.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} /></span>
                   <span className="fp-info-label">มาตรฐานที่ได้รับ</span>
                   <span className={`fp-info-val ${isVerified ? 'verified' : ''}`}>{isVerified ? 'Whiskora Verified' : 'ฟาร์มโฮมบรีด (ยังไม่ยืนยัน)'}</span>
                 </div>
@@ -387,7 +394,7 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
+                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} /> {speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
               </div>
               {readyPets.length === 0 ? (
                 <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
