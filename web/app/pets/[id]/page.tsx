@@ -836,6 +836,26 @@ export default function PetDetailPage() {
         .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
         .activity-tab-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; cursor: pointer; transition: all .15s; }
         .activity-tab-btn.active { background: ${F.ink}; border-color: ${F.ink}; color: white; }
+        /* ─── Basic info table (in hero) ─── */
+        .pet-info-table { width: 100%; margin-bottom: 14px; }
+        .pet-info-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid ${F.line}; gap: 12px; }
+        .pet-info-row:last-child { border-bottom: none; }
+        .pet-info-label { font-size: 12px; font-weight: 500; color: ${F.muted}; flex-shrink: 0; }
+        .pet-info-val { font-size: 13px; font-weight: 600; color: ${F.ink}; text-align: right; min-width: 0; word-break: break-word; }
+        .pet-info-link { text-decoration: none; display: flex; align-items: center; gap: 6px; }
+        .pet-info-add { font-size: 10px; font-weight: 600; color: ${F.pink}; white-space: nowrap; }
+        /* ─── Health ticks ─── */
+        .health-tick-list { display: flex; flex-direction: column; gap: 0; }
+        .health-tick-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
+        .health-tick-row:last-child { border-bottom: none; }
+        .health-tick { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .health-tick.ok { background: #DCFCE7; color: #16A34A; }
+        .health-tick.no { background: ${F.line}; color: ${F.muted}; }
+        .health-tick-info { flex: 1; min-width: 0; }
+        .health-tick-label { font-size: 13px; font-weight: 500; color: ${F.ink}; }
+        .health-tick-detail { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
+        /* ─── Mobile: hide tabs, show content always ─── */
+        @media (max-width: 768px) { .tabs-wrapper { display: none !important; } }
         /* ─── Owner Actions ─── */
         .owner-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
         .btn-owner-action { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; cursor: pointer; transition: all .15s; }
@@ -977,16 +997,25 @@ export default function PetDetailPage() {
             <div className="hero-info">
               <div className="verified-badge"><Icon.Verified /> Verified by Whiskora</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
-              <div className="breed-tags">
-                {pet.breed && <span className="breed-tag"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {pet.breed}</span>}
-                {pet.color && <span className="breed-tag breed-tag-white">{pet.color}</span>}
-                {pet.pattern && <span className="breed-tag breed-tag-white">{pet.pattern}</span>}
-              </div>
-              <div className="quick-stats">
-                <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{pet.weight ? `${pet.weight} กก.` : '-'}</div><Link href={`/pets/${pet.id}/weight`} style={{ fontSize: '10px', fontWeight: 700, color: F.pink, textDecoration: 'none', marginTop: '2px', display: 'block' }}>+ บันทึก</Link></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
+              <div className="pet-info-table">
+                {([
+                  { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
+                  { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
+                  { label: 'น้ำหนัก', val: pet.weight ? `${pet.weight} กก.` : '-', link: `/pets/${pet.id}/weight` },
+                  { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
+                  { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                  { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
+                  { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
+                  pet.status ? { label: 'สถานะ', val: pet.status, green: true } : null,
+                ] as any[]).filter(Boolean).map((row: any, i: number) => (
+                  <div key={i} className="pet-info-row">
+                    <span className="pet-info-label">{row.label}</span>
+                    {row.link
+                      ? <Link href={row.link} className="pet-info-val pet-info-link">{row.val || '-'}<span className="pet-info-add">+ บันทึก</span></Link>
+                      : <span className="pet-info-val" style={row.mono ? { fontFamily: 'monospace', fontSize: 11 } : row.green ? { color: '#059669', fontWeight: 600 } : undefined}>{row.val}</span>
+                    }
+                  </div>
+                ))}
               </div>
               <div className="pet-id-card">
                 <div className="pet-id-left">
@@ -1042,25 +1071,6 @@ export default function PetDetailPage() {
                     <button className="btn-add-gallery" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>
                   </div>
                   <div className="card-body" style={{ padding: '16px' }}>{renderPedigree()}</div>
-                </div>
-
-                <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>ข้อมูลพื้นฐาน</div></div>
-                  <div className="card-body">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-                      {[
-                        { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
-                        { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
-                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: displayVal(pet.weight, ' กก.') },
-                        { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 600 }}>● {pet.status}</span> : '-' },
-                      ].map((item, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>
-                          <span style={{ fontSize: '12px', fontWeight: 500, color: F.muted, flexShrink: 0 }}>{item.label}</span>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: F.ink, textAlign: 'right' }}>{item.val as React.ReactNode}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {allImages.length > 0 && (
@@ -1145,16 +1155,33 @@ export default function PetDetailPage() {
               {/* Side */}
               <div className="content-side">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    {[
-                      { label: 'วัคซีนรวม (FVRCP)', val: `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` },
-                      { label: 'วัคซีนพิษสุนัขบ้า', val: `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า')).length} เข็ม` },
-                      { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
-                      { label: 'ทำหมันแล้ว', val: pet.is_neutered ? '✓' : '-' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
+                    <div className="health-tick-list">
+                      {(() => {
+                        const today = new Date();
+                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
+                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
+                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
+                        const checks = [
+                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                        ];
+                        return checks.map((c, i) => (
+                          <div key={i} className="health-tick-row">
+                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}>
+                              <Icon.Check />
+                            </div>
+                            <div className="health-tick-info">
+                              <div className="health-tick-label">{c.label}</div>
+                              <div className="health-tick-detail">{c.detail}</div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
@@ -1199,28 +1226,50 @@ export default function PetDetailPage() {
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    {[
-                      { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
-                      { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
-                      { label: 'โรคประจำตัว', val: pet.chronic_diseases || 'ไม่มี' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
+                    <div className="health-tick-list">
+                      {(() => {
+                        const today = new Date();
+                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
+                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
+                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
+                        return [
+                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                        ].map((c, i) => (
+                          <div key={i} className="health-tick-row">
+                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}><Icon.Check /></div>
+                            <div className="health-tick-info">
+                              <div className="health-tick-label">{c.label}</div>
+                              <div className="health-tick-detail">{c.detail}</div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    {pet.chronic_diseases && (
+                      <div style={{ marginTop: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>โรคประจำตัว</div>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400 }}>{pet.chronic_diseases}</p>
+                      </div>
+                    )}
                     {pet.allergies && (
-                      <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
                         <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
                       </div>
                     )}
                     {(pet.traits || pet.health_notes) && (
                       <div style={{ marginTop: '12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุ</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{pet.traits} {pet.health_notes}</p>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุเพิ่มเติม</div>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{[pet.traits, pet.health_notes].filter(Boolean).join(' ')}</p>
                       </div>
                     )}
                   </div>
+                  <div className="card-footer"><Link href={`/pets/${pet.id}/vaccines`}>ดูประวัติวัคซีนทั้งหมด →</Link></div>
                 </div>
               </div>
               <div className="content-side"></div>
