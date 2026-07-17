@@ -361,21 +361,21 @@ export default function Navbar() {
             aria-label="QR สัตว์เลี้ยง"
             style={{
               position: 'absolute',
-              top: -20,
-              width: 56,
-              height: 56,
+              top: -22,
+              width: 60,
+              height: 60,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #e84677 0%, #c4325f 100%)',
-              boxShadow: '0 4px 16px rgba(232,70,119,0.40)',
+              background: '#fde2ea',
+              boxShadow: '0 2px 10px rgba(232,70,119,0.18)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               border: '3px solid white',
             }}
           >
-            <img src="/icons/icon-scan-qr-code.png" alt="QR" width={32} height={32} style={{ objectFit: 'contain' }} />
+            <img src="/icons/icon-scan-qr-code.png" alt="QR" width={64} height={64} style={{ objectFit: 'contain' }} />
           </button>
-          <span style={{ marginTop: 36, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
+          <span style={{ marginTop: 40, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
         </div>
 
         {/* บริการ */}

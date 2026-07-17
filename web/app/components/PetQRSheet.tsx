@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "@/i18n/navigation";
 
 const F = {
   ink: "#1f1a1c",
@@ -12,14 +13,22 @@ const F = {
   line: "#f3dde3",
 };
 
-type Step = "choose" | "select" | "show";
+type Step = "choose" | "select" | "show" | "scan";
 
 export default function PetQRSheet({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("choose");
   const [pets, setPets] = useState<any[]>([]);
   const [selectedPet, setSelectedPet] = useState<any>(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [loadingPets, setLoadingPets] = useState(false);
+  const [scanError, setScanError] = useState("");
+  const [scanResult, setScanResult] = useState("");
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number>(0);
 
   const handleShowMyQr = async () => {
     setLoadingPets(true);
@@ -48,28 +57,109 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
     setQrDataUrl(dataUrl);
   };
 
+  const stopCamera = () => {
+    cancelAnimationFrame(rafRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  const startScan = async () => {
+    setScanError("");
+    setScanResult("");
+    setStep("scan");
+  };
+
+  useEffect(() => {
+    if (step !== "scan") return;
+
+    let active = true;
+
+    const init = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        tick();
+      } catch {
+        if (active) setScanError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์");
+      }
+    };
+
+    const tick = async () => {
+      if (!active || !videoRef.current || !canvasRef.current) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      try {
+        const jsQR = (await import("jsqr")).default;
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code && active) {
+          const url = code.data;
+          if (url.includes("/p/")) {
+            active = false;
+            stopCamera();
+            setScanResult(url);
+            onClose();
+            router.push(url.replace(window.location.origin, "") as any);
+            return;
+          }
+        }
+      } catch {
+        // jsqr not installed yet — show message
+        if (active) setScanError("กรุณา install jsqr ก่อน: pnpm add jsqr");
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    init();
+
+    return () => {
+      active = false;
+      stopCamera();
+    };
+  }, [step]);
+
+  const goBack = () => {
+    if (step === "scan") stopCamera();
+    setStep("choose");
+    setScanError("");
+  };
+
   return (
     <>
       <style>{`
         @keyframes qr-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes qrs-scan-line { 0%,100% { top: 10%; } 50% { top: 85%; } }
         .qrs-overlay { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; justify-content: flex-end; }
         .qrs-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.48); backdrop-filter: blur(4px); }
         .qrs-sheet { position: relative; background: white; border-radius: 24px 24px 0 0; padding: 8px 20px env(safe-area-inset-bottom, 40px); max-height: 82vh; overflow-y: auto; animation: qr-sheet-up 0.28s cubic-bezier(0.32,0.72,0,1) both; }
         .qrs-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 999px; margin: 12px auto 20px; }
         .qrs-title { margin: 0 0 20px; font-size: 20px; font-weight: 700; color: ${F.ink}; text-align: center; }
         .qrs-back { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 999px; line-height: 0; }
-        .qrs-back svg { width: 20px; height: 20px; }
         .qrs-row-title { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .qrs-opt { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 18px; cursor: pointer; text-align: left; width: 100%; margin-bottom: 12px; transition: opacity .15s; }
+        .qrs-opt { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 18px; cursor: pointer; text-align: left; width: 100%; margin-bottom: 12px; transition: opacity .15s; border: none; }
         .qrs-opt:active { opacity: .75; }
-        .qrs-opt-primary { border: 2px solid ${F.pink}; background: ${F.pinkSoft}; }
-        .qrs-opt-muted { border: 2px solid #e5e7eb; background: #fafafa; position: relative; }
-        .qrs-opt-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .qrs-opt-icon-pink { background: ${F.pink}; }
-        .qrs-opt-icon-gray { background: #f3f4f6; }
+        .qrs-opt-primary { border: 2px solid ${F.pink} !important; background: ${F.pinkSoft}; }
+        .qrs-opt-secondary { border: 2px solid #e5e7eb !important; background: #fafafa; }
         .qrs-opt-label { font-weight: 700; font-size: 16px; color: ${F.ink}; }
         .qrs-opt-sub { font-size: 13px; color: ${F.muted}; margin-top: 3px; }
-        .qrs-soon { position: absolute; top: 12px; right: 14px; background: #e5e7eb; color: #6b7280; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
         .qrs-empty { text-align: center; padding: 40px 0; color: ${F.muted}; font-size: 14px; }
         .qrs-pet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 8px; padding: 4px 0 8px; }
         .qrs-pet-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 0; }
@@ -78,11 +168,22 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
         .qrs-pet-btn:hover .qrs-pet-circle { border-color: ${F.pink}; }
         .qrs-pet-circle img { width: 100%; height: 100%; object-fit: cover; }
         .qrs-pet-name { font-weight: 600; font-size: 11px; color: ${F.ink}; text-align: center; line-height: 1.3; word-break: break-word; max-width: 72px; }
-        .qrs-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .qrs-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 8px; }
         .qrs-qr-box { padding: 20px; background: white; border: 2px solid ${F.line}; border-radius: 24px; box-shadow: 0 12px 32px rgba(232,70,119,.12); }
         .qrs-qr-pet-name { font-weight: 700; font-size: 16px; color: ${F.ink}; }
-        .qrs-qr-desc { font-size: 13px; color: ${F.muted}; text-align: center; line-height: 1.6; }
+        .qrs-qr-desc { font-size: 13px; color: ${F.muted}; text-align: center; line-height: 1.6; margin: 4px 0 0; }
         .qrs-placeholder { width: 220px; height: 220px; background: ${F.pinkSoft}; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: ${F.muted}; font-size: 14px; }
+        .qrs-viewfinder { position: relative; width: 100%; aspect-ratio: 1; border-radius: 20px; overflow: hidden; background: #000; }
+        .qrs-video { width: 100%; height: 100%; object-fit: cover; }
+        .qrs-corners { position: absolute; inset: 0; pointer-events: none; }
+        .qrs-corner { position: absolute; width: 28px; height: 28px; border-color: ${F.pink}; border-style: solid; border-radius: 4px; }
+        .qrs-corner-tl { top: 16px; left: 16px; border-width: 3px 0 0 3px; }
+        .qrs-corner-tr { top: 16px; right: 16px; border-width: 3px 3px 0 0; }
+        .qrs-corner-bl { bottom: 16px; left: 16px; border-width: 0 0 3px 3px; }
+        .qrs-corner-br { bottom: 16px; right: 16px; border-width: 0 3px 3px 0; }
+        .qrs-scan-line { position: absolute; left: 16px; right: 16px; height: 2px; background: linear-gradient(90deg, transparent, ${F.pink}, transparent); animation: qrs-scan-line 2s ease-in-out infinite; border-radius: 999px; }
+        .qrs-scan-hint { text-align: center; font-size: 13px; color: ${F.muted}; margin-top: 16px; }
+        .qrs-scan-error { text-align: center; font-size: 13px; color: #ef4444; margin-top: 12px; padding: 12px; background: #fef2f2; border-radius: 12px; }
       `}</style>
 
       <div className="qrs-overlay">
@@ -90,31 +191,28 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
         <div className="qrs-sheet">
           <div className="qrs-handle" />
 
+          {/* ── Step: choose ── */}
           {step === "choose" && (
             <>
               <h2 className="qrs-title">QR สัตว์เลี้ยง</h2>
               <button className="qrs-opt qrs-opt-primary" onClick={handleShowMyQr}>
-                <div className="qrs-opt-icon qrs-opt-icon-pink">
-                  <img src="/icons/icon-qr-code.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-                </div>
+                <img src="/icons/icon-qr-code.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
                 <div>
                   <div className="qrs-opt-label">โชว์ QR สัตว์เลี้ยงของฉัน</div>
                   <div className="qrs-opt-sub">ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยง</div>
                 </div>
               </button>
-              <div className="qrs-opt qrs-opt-muted" style={{ cursor: "default" }}>
-                <div className="qrs-opt-icon qrs-opt-icon-gray">
-                  <img src="/icons/icon-scan.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain', opacity: 0.65 }} />
-                </div>
-                <div style={{ opacity: 0.65 }}>
+              <button className="qrs-opt qrs-opt-secondary" onClick={startScan}>
+                <img src="/icons/icon-scan.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
+                <div>
                   <div className="qrs-opt-label">สแกน QR สัตว์เลี้ยงของคนอื่น</div>
-                  <div className="qrs-opt-sub">เร็วๆ นี้</div>
+                  <div className="qrs-opt-sub">เปิดกล้องสแกน QR เพื่อดูโปรไฟล์สัตว์เลี้ยง</div>
                 </div>
-                <div className="qrs-soon">เร็วๆ นี้</div>
-              </div>
+              </button>
             </>
           )}
 
+          {/* ── Step: select ── */}
           {step === "select" && (
             <>
               <div className="qrs-row-title">
@@ -144,6 +242,7 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
             </>
           )}
 
+          {/* ── Step: show QR ── */}
           {step === "show" && selectedPet && (
             <>
               <div className="qrs-row-title">
@@ -165,6 +264,33 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
                   <p className="qrs-qr-desc">ให้คนอื่นสแกน QR เพื่อดูข้อมูลของ {selectedPet.name}</p>
                 </div>
               </div>
+            </>
+          )}
+
+          {/* ── Step: scan ── */}
+          {step === "scan" && (
+            <>
+              <div className="qrs-row-title">
+                <button className="qrs-back" onClick={goBack}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke={F.ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: F.ink }}>สแกน QR สัตว์เลี้ยง</h2>
+              </div>
+              <div className="qrs-viewfinder">
+                <video ref={videoRef} className="qrs-video" playsInline muted />
+                <canvas ref={canvasRef} style={{ display: "none" }} />
+                <div className="qrs-corners">
+                  <div className="qrs-corner qrs-corner-tl" />
+                  <div className="qrs-corner qrs-corner-tr" />
+                  <div className="qrs-corner qrs-corner-bl" />
+                  <div className="qrs-corner qrs-corner-br" />
+                  <div className="qrs-scan-line" />
+                </div>
+              </div>
+              {scanError
+                ? <div className="qrs-scan-error">{scanError}</div>
+                : <p className="qrs-scan-hint">จ่อกล้องไปที่ QR Code ของสัตว์เลี้ยง</p>
+              }
             </>
           )}
         </div>
