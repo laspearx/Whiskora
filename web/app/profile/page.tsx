@@ -240,7 +240,7 @@ export default function ProfilePage() {
         .pp-avatar-cam { position: absolute; right: -1px; bottom: 1px; width: 26px; height: 26px; border-radius: 999px; background: white; border: 2px solid ${F.line}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
         .pp-avatar-cam svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        .pp-hero-info { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .pp-hero-info { flex: 1; min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .pp-hero-text { flex: 1; min-width: 0; }
         .pp-name { margin: 0; font-size: 20px; font-weight: 750; color: ${F.ink}; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-subtitle { margin: 3px 0 0; font-size: 13px; color: ${F.muted}; }
@@ -573,12 +573,12 @@ export default function ProfilePage() {
             <h2 className="pp-id-promo-title">Pet ID Card</h2>
             <p className="pp-id-promo-desc">แสดง QR Code ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยงของคุณ</p>
             <div className="pp-id-promo-hint">
-              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
               กดปุ่ม QR ที่แถบเมนูด้านล่าง
             </div>
           </div>
           <div className="pp-id-promo-qr">
-            <img src="/icons/icon-qr-code.png" alt="" style={{ width: 80, height: 80, objectFit: 'contain' }} />
+            <img src="/icons/icon-qr-code.png" alt="" style={{ width: 110, height: 110, objectFit: 'contain' }} />
           </div>
         </div>
 
