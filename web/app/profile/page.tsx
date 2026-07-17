@@ -1771,6 +1771,34 @@ export default function ProfilePage() {
               </div>
             </section>
           )}
+
+          {profile?.role === 'admin' && (
+            <section className="profile-card" aria-labelledby="admin-title" style={{ borderColor: '#fca5a5', background: 'linear-gradient(135deg, #fff5f5, #fff)' }}>
+              <div className="card-head">
+                <div className="card-title">
+                  <span className="card-title-icon">
+                    <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, color: '#dc2626' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
+                  <h2 id="admin-title" style={{ color: '#dc2626' }}>ผู้ดูแลระบบ</h2>
+                </div>
+              </div>
+              <div className="business-list">
+                <Link className="business-link" href="/admin/verifications" style={{ borderColor: '#fca5a5' }}>
+                  <span className="business-icon">
+                    <svg viewBox="0 0 24 24" style={{ width: 44, height: 44, color: '#dc2626' }} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <strong>คำขอยืนยันตัวตน</strong>
+                    <span className="business-badge-row">
+                      <span className="business-type-badge" style={{ background: '#fee2e2', color: '#dc2626' }}>Admin</span>
+                    </span>
+                  </span>
+                </Link>
+              </div>
+            </section>
+          )}
         </div>
       </main>
     </>
