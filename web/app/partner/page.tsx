@@ -7,25 +7,12 @@ import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
-  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
-  pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
+  pink: '#e84677', pinkSoft: '#fde2ea', pinkBorder: '#FBCFE8', pinkDeep: '#c4325f',
   teal: '#0D9488', tealSoft: '#F0FDFA', tealBorder: '#99F6E4',
   blue: '#2563EB', blueSoft: '#EFF6FF', blueBorder: '#BFDBFE',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
-};
-
-const Icon = {
-  Farm: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Shop: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-  Service: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>,
-  Chevron: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-  Plus: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>,
-};
-
-const THEME: Record<string, any> = {
-  pink: { accent: F.pink, soft: F.pinkSoft, border: F.pinkBorder, hover: '#D63F6A' },
-  teal: { accent: F.teal, soft: F.tealSoft, border: F.tealBorder, hover: '#0B7E74' },
-  blue: { accent: F.blue, soft: F.blueSoft, border: F.blueBorder, hover: '#1D4FD7' },
+  cream: '#fffafc', paper: '#fdf0f3', line: '#f3dde3', lineMid: '#E5E7EB',
+  bg: '#fffafc',
 };
 
 export default function PartnerHubPage() {
@@ -58,122 +45,316 @@ export default function PartnerHubPage() {
   }, []);
 
   const categories = [
-    { title: 'ฟาร์มสัตว์เลี้ยง', desc: 'จัดการระบบเพาะพันธุ์ ประวัติสายเลือด และวัคซีนสัตว์เลี้ยง', icon: <Icon.Farm />, theme: 'pink', items: myFarms, registerUrl: '/partner/register-farm', dash: '/farm-dashboard', nameKey: 'farm_name' },
-    { title: 'ร้านค้าสัตว์เลี้ยง', desc: 'เปิดร้านขายอาหาร ของเล่น และอุปกรณ์สำหรับสัตว์เลี้ยง', icon: <Icon.Shop />, theme: 'teal', items: myShops, registerUrl: '/partner/register-shop', dash: '/shop-dashboard', nameKey: 'shop_name' },
-    { title: 'บริการสัตว์เลี้ยง', desc: 'ระบบรับจองคิวอาบน้ำ ตัดขน คลินิก หรือโรงแรมรับฝากเลี้ยง', icon: <Icon.Service />, theme: 'blue', items: myServices, registerUrl: '/partner/register-service', dash: '/service-dashboard', nameKey: 'service_name' },
+    {
+      title: 'ฟาร์มสัตว์เลี้ยง',
+      desc: 'จัดการระบบเพาะพันธุ์ ประวัติสายเลือด และวัคซีนสัตว์เลี้ยง',
+      icon: '/icons/icon-farm.png',
+      accentColor: F.pink,
+      softColor: F.pinkSoft,
+      borderColor: F.pinkBorder,
+      hoverColor: F.pinkDeep,
+      items: myFarms,
+      registerUrl: '/partner/register-farm',
+      dash: '/farm-dashboard',
+      nameKey: 'farm_name',
+    },
+    {
+      title: 'ร้านค้าสัตว์เลี้ยง',
+      desc: 'เปิดร้านขายอาหาร ของเล่น และอุปกรณ์สำหรับสัตว์เลี้ยง',
+      icon: '/icons/icon-shop.png',
+      accentColor: F.teal,
+      softColor: F.tealSoft,
+      borderColor: F.tealBorder,
+      hoverColor: '#0B7E74',
+      items: myShops,
+      registerUrl: '/partner/register-shop',
+      dash: '/shop-dashboard',
+      nameKey: 'shop_name',
+    },
+    {
+      title: 'บริการสัตว์เลี้ยง',
+      desc: 'ระบบรับจองคิวอาบน้ำ ตัดขน คลินิก หรือโรงแรมรับฝากเลี้ยง',
+      icon: '/icons/icon-service.png',
+      accentColor: F.blue,
+      softColor: F.blueSoft,
+      borderColor: F.blueBorder,
+      hoverColor: '#1D4FD7',
+      items: myServices,
+      registerUrl: '/partner/register-service',
+      dash: '/service-dashboard',
+      nameKey: 'service_name',
+    },
   ];
+
+  if (loading) return <PageLoader />;
 
   return (
     <>
       <style>{`
-        * { box-sizing: border-box; }
-        .ph-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .ph-body { max-width: 1000px; margin: 0 auto; padding: 40px 20px 80px; }
-        .ph-hero { margin-bottom: 36px; }
-        .ph-hero h1 { font-family: inherit; font-size: 36px; font-weight: 700; letter-spacing: -0.8px; margin: 0 0 12px; }
-        .ph-hero h1 .accent { color: ${F.pink}; }
-        .ph-hero p { font-size: 15px; font-weight: 500; line-height: 1.7; color: ${F.inkSoft}; max-width: 600px; margin: 0; }
-        .ph-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .ph-card { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 26px; display: flex; flex-direction: column; transition: all .2s; }
-        .ph-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
-        .ph-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
-        .ph-title { font-family: inherit; font-size: 19px; font-weight: 700; color: ${F.ink}; margin: 0 0 8px; }
-        .ph-desc { font-size: 13px; font-weight: 500; color: ${F.muted}; line-height: 1.6; margin: 0 0 22px; flex: 1; }
-        .ph-mine-label { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
-        .ph-mine-dot { width: 6px; height: 6px; border-radius: 50%; }
-        .ph-items { display: flex; flex-direction: column; gap: 8px; max-height: 170px; overflow-y: auto; margin-bottom: 12px; }
-        .ph-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid ${F.line}; background: #FAFAFA; text-decoration: none; transition: all .15s; }
-        .ph-item:hover { background: white; }
-        .ph-item-name { font-size: 14px; font-weight: 700; color: ${F.inkSoft}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ph-item-arrow { color: ${F.muted}; flex-shrink: 0; display: flex; }
-        .ph-add-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; text-decoration: none; padding: 6px 0; }
-        .ph-register-btn { display: block; width: 100%; text-align: center; padding: 14px; border-radius: 13px; font-size: 14px; font-weight: 700; color: white; text-decoration: none; transition: all .15s; }
-        @media (max-width: 820px) { .ph-grid { grid-template-columns: 1fr; } .ph-hero h1 { font-size: 30px; } }
+        @keyframes page-rise {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .pp-page {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 24px 0 80px;
+          animation: page-rise .45s ease both;
+          color: ${F.ink};
+        }
+
+        /* ── Header ── */
+        .pp-header {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 24px;
+        }
+        .pp-back {
+          width: 38px; height: 38px;
+          border-radius: 12px;
+          border: 1px solid ${F.line};
+          background: white;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: transform .15s, background .15s;
+          flex: 0 0 auto;
+          color: ${F.ink};
+        }
+        .pp-back:hover { transform: translateY(-1px); background: ${F.paper}; }
+        .pp-header-icon {
+          width: 44px; height: 44px;
+          display: flex; align-items: center; justify-content: center;
+          flex: 0 0 auto;
+        }
+        .pp-header-icon img { width: 44px; height: 44px; object-fit: contain; }
+        .pp-header-text h1 {
+          margin: 0;
+          font-size: 22px; font-weight: 700;
+          letter-spacing: -0.01em;
+          color: ${F.ink}; line-height: 1.2;
+        }
+        .pp-header-text p {
+          margin: 3px 0 0;
+          font-size: 13px; color: ${F.muted}; font-weight: 400;
+        }
+
+        /* ── Guest banner ── */
+        .pp-banner {
+          background: linear-gradient(135deg, ${F.pinkSoft}, #fff6f9);
+          border: 1px solid ${F.pinkBorder};
+          border-radius: 20px;
+          padding: 24px 22px;
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+        .pp-banner-icon { width: 60px; height: 60px; flex-shrink: 0; }
+        .pp-banner-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .pp-banner-text h2 { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: ${F.ink}; }
+        .pp-banner-text p { margin: 0; font-size: 13px; color: ${F.inkSoft}; line-height: 1.6; }
+
+        /* ── Category card ── */
+        .pp-card {
+          background: rgba(255,255,255,.94);
+          border: 1px solid ${F.line};
+          border-radius: 20px;
+          padding: 20px;
+          margin-bottom: 14px;
+          box-shadow: 0 4px 14px rgba(31,26,28,.03);
+          animation: page-rise .45s ease both;
+        }
+        .pp-card-head {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 10px;
+        }
+        .pp-card-icon {
+          width: 48px; height: 48px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .pp-card-icon img { width: 48px; height: 48px; object-fit: contain; }
+        .pp-card-title {
+          font-size: 16px; font-weight: 700; color: ${F.ink};
+          margin: 0 0 3px;
+        }
+        .pp-card-desc {
+          font-size: 12px; color: ${F.muted}; line-height: 1.55;
+          margin: 0;
+        }
+
+        /* ── Business items list ── */
+        .pp-items-label {
+          font-size: 10px; font-weight: 700; color: ${F.muted};
+          text-transform: uppercase; letter-spacing: 0.07em;
+          margin: 14px 0 8px;
+          display: flex; align-items: center; gap: 6px;
+        }
+        .pp-items-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .pp-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .pp-item {
+          display: flex; align-items: center; justify-content: space-between; gap: 8px;
+          padding: 12px 14px;
+          border-radius: 13px;
+          border: 1px solid ${F.line};
+          background: white;
+          text-decoration: none;
+          transition: all .15s;
+        }
+        .pp-item:hover { border-color: ${F.pinkBorder}; box-shadow: 0 2px 8px rgba(232,70,119,.07); }
+        .pp-item-name {
+          font-size: 14px; font-weight: 600; color: ${F.inkSoft};
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .pp-item-chevron { color: ${F.line}; flex-shrink: 0; transition: color .15s; }
+        .pp-item:hover .pp-item-chevron { color: ${F.pink}; }
+
+        /* ── Add more link ── */
+        .pp-add-link {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 13px; font-weight: 600; text-decoration: none;
+          padding: 6px 0;
+          transition: opacity .15s;
+        }
+        .pp-add-link:hover { opacity: .75; }
+
+        /* ── Register button ── */
+        .pp-register-btn {
+          display: flex; align-items: center; justify-content: center;
+          width: 100%;
+          padding: 13px;
+          border-radius: 13px;
+          font-size: 14px; font-weight: 700; color: white;
+          text-decoration: none;
+          border: none; cursor: pointer;
+          transition: opacity .15s, transform .15s;
+          margin-top: 14px;
+        }
+        .pp-register-btn:hover { opacity: .88; transform: translateY(-1px); }
+        .pp-register-btn:active { transform: scale(.97); }
+
+        /* ── Guest login hint ── */
+        .pp-login-hint {
+          text-align: center;
+          margin-top: 20px;
+          padding: 16px;
+          border: 1px solid ${F.line};
+          border-radius: 16px;
+          background: white;
+        }
+        .pp-login-hint p { margin: 0 0 10px; font-size: 13px; color: ${F.muted}; }
+        .pp-login-hint a {
+          font-size: 14px; font-weight: 700; color: ${F.pink};
+          text-decoration: none;
+        }
+        .pp-login-hint a:hover { text-decoration: underline; }
+
+        @media (max-width: 560px) {
+          .pp-page { padding: 16px 0 80px; }
+          .pp-card { border-radius: 16px; padding: 16px; }
+          .pp-banner { padding: 18px 16px; }
+        }
       `}</style>
 
-      {loading ? (
-        <PageLoader />
-      ) : !session ? (
-        /* ── Guest landing view ── */
-        <div className="ph-page">
-          <div className="ph-body">
-            <div className="ph-hero">
-              <h1>เปิดธุรกิจกับ<span className="accent"> Whiskora</span></h1>
-              <p>เข้าถึงลูกค้าหมื่นคนที่รักสัตว์เลี้ยง เปิดฟาร์ม ร้านค้า หรือบริการของคุณได้ฟรีในโปรแกรม Genesis — ไม่มีค่าธรรมเนียม</p>
-            </div>
-            <div className="ph-grid">
-              {categories.map((cat) => {
-                const t = THEME[cat.theme];
-                return (
-                  <div key={cat.title} className="ph-card">
-                    <div className="ph-icon" style={{ background: t.soft, color: t.accent }}>{cat.icon}</div>
-                    <h2 className="ph-title">{cat.title}</h2>
-                    <p className="ph-desc">{cat.desc}</p>
-                    <Link
-                      href={`/login?redirect=${encodeURIComponent(cat.registerUrl)}`}
-                      className="ph-register-btn"
-                      style={{ background: t.accent }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = t.hover)}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
-                    >
-                      สมัครเปิด{cat.title}
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ textAlign: 'center', marginTop: 28 }}>
-              <p style={{ fontSize: 13, color: F.muted, marginBottom: 10 }}>มีบัญชีแล้ว?</p>
-              <Link href="/login?redirect=/partner" style={{ fontSize: 14, fontWeight: 700, color: F.pink }}>เข้าสู่ระบบเพื่อจัดการกิจการ →</Link>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ── Authenticated dashboard view ── */
-        <div className="ph-page">
-          <div className="ph-body">
-            <div className="ph-hero">
-              <h1>ศูนย์รวม<span className="accent">พาร์ทเนอร์</span></h1>
-              <p>ศูนย์รวมการจัดการธุรกิจสัตว์เลี้ยงของคุณ ขยายการเติบโตและเข้าถึงกลุ่มลูกค้าคนรักสัตว์ได้ง่ายกว่าที่เคย ครบจบในที่เดียว</p>
-            </div>
-            <div className="ph-grid">
-              {categories.map((cat) => {
-                const t = THEME[cat.theme];
-                return (
-                  <div key={cat.title} className="ph-card">
-                    <div className="ph-icon" style={{ background: t.soft, color: t.accent }}>{cat.icon}</div>
-                    <h2 className="ph-title">{cat.title}</h2>
-                    <p className="ph-desc">{cat.desc}</p>
+      <div className="pp-page">
 
-                    {cat.items.length > 0 ? (
-                      <div>
-                        <div className="ph-mine-label"><span className="ph-mine-dot" style={{ background: t.accent }} /> กิจการของคุณ</div>
-                        <div className="ph-items">
-                          {cat.items.map((item: any) => (
-                            <Link key={item.id} href={`${cat.dash}/${item.id}?from=partner`} className="ph-item"
-                              onMouseEnter={(e) => (e.currentTarget.style.borderColor = t.border)}
-                              onMouseLeave={(e) => (e.currentTarget.style.borderColor = F.line)}>
-                              <span className="ph-item-name">{item[cat.nameKey] || item.name}</span>
-                              <span className="ph-item-arrow"><Icon.Chevron /></span>
-                            </Link>
-                          ))}
-                        </div>
-                        <Link href={cat.registerUrl} className="ph-add-link" style={{ color: t.accent }}><Icon.Plus /> เปิดเพิ่มอีกแห่ง</Link>
-                      </div>
-                    ) : (
-                      <Link href={cat.registerUrl} className="ph-register-btn" style={{ background: t.accent }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = t.hover)}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}>
-                        สมัครเปิด{cat.title}
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* Header */}
+        <div className="pp-header">
+          <button className="pp-back" onClick={() => router.back()} aria-label="ย้อนกลับ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <div className="pp-header-icon">
+            <img src="/icons/icon-partner.png" alt="" />
+          </div>
+          <div className="pp-header-text">
+            <h1>{session ? 'ศูนย์รวมพาร์ทเนอร์' : 'เปิดธุรกิจกับ Whiskora'}</h1>
+            <p>{session ? 'จัดการกิจการสัตว์เลี้ยงทั้งหมดของคุณ' : 'ฟาร์ม ร้านค้า และบริการ ฟรีในโปรแกรม Genesis'}</p>
           </div>
         </div>
-      )}
+
+        {/* Guest banner */}
+        {!session && (
+          <div className="pp-banner">
+            <div className="pp-banner-icon">
+              <img src="/icons/icon-partner.png" alt="" />
+            </div>
+            <div className="pp-banner-text">
+              <h2>เข้าถึงลูกค้าคนรักสัตว์เลี้ยง</h2>
+              <p>เปิดฟาร์ม ร้านค้า หรือบริการของคุณได้ฟรี ไม่มีค่าธรรมเนียม ในช่วง Genesis Program</p>
+            </div>
+          </div>
+        )}
+
+        {/* Category cards */}
+        {categories.map((cat) => (
+          <div key={cat.title} className="pp-card">
+            <div className="pp-card-head">
+              <div className="pp-card-icon">
+                <img src={cat.icon} alt={cat.title} />
+              </div>
+              <div>
+                <div className="pp-card-title">{cat.title}</div>
+                <p className="pp-card-desc">{cat.desc}</p>
+              </div>
+            </div>
+
+            {session ? (
+              <>
+                {cat.items.length > 0 && (
+                  <>
+                    <div className="pp-items-label">
+                      <span className="pp-items-dot" style={{ background: cat.accentColor }} />
+                      กิจการของคุณ
+                    </div>
+                    <div className="pp-items">
+                      {cat.items.map((item: any) => (
+                        <Link key={item.id} href={`${cat.dash}/${item.id}?from=partner`} className="pp-item">
+                          <span className="pp-item-name">{item[cat.nameKey] || item.name}</span>
+                          <svg className="pp-item-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m9 18 6-6-6-6"/>
+                          </svg>
+                        </Link>
+                      ))}
+                    </div>
+                    <Link href={cat.registerUrl} className="pp-add-link" style={{ color: cat.accentColor }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+                      เปิดเพิ่มอีกแห่ง
+                    </Link>
+                  </>
+                )}
+                {cat.items.length === 0 && (
+                  <Link href={cat.registerUrl} className="pp-register-btn" style={{ background: cat.accentColor }}>
+                    สมัครเปิด{cat.title}
+                  </Link>
+                )}
+              </>
+            ) : (
+              <Link
+                href={`/login?redirect=${encodeURIComponent(cat.registerUrl)}`}
+                className="pp-register-btn"
+                style={{ background: cat.accentColor }}
+              >
+                สมัครเปิด{cat.title}
+              </Link>
+            )}
+          </div>
+        ))}
+
+        {/* Guest login hint */}
+        {!session && (
+          <div className="pp-login-hint">
+            <p>มีบัญชีแล้ว?</p>
+            <Link href="/login?redirect=/partner">เข้าสู่ระบบเพื่อจัดการกิจการ →</Link>
+          </div>
+        )}
+
+      </div>
     </>
   );
 }
