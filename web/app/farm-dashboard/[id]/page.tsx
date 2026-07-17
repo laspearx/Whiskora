@@ -557,13 +557,15 @@ function FarmDashboardContent() {
                   {farm.is_verified && <img src="/icons/icon-verified-badge.png" alt="ยืนยันแล้ว" />}
                 </h1>
                 <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 <Link href={`/farm/${farmId}`} className="fd-view-btn">
                   <Icon.Eye /> ดูหน้าฟาร์ม
                 </Link>
+                <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-edit-icon" aria-label="แก้ไขโปรไฟล์">
+                  <img src="/icons/icon-setting.png" style={{ width: 36, height: 36 }} alt="ตั้งค่า" />
+                </Link>
               </div>
-              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-edit-icon" aria-label="แก้ไขโปรไฟล์">
-                <img src="/icons/icon-setting.png" style={{ width: 36, height: 36 }} alt="ตั้งค่า" />
-              </Link>
             </div>
           </div>
 
