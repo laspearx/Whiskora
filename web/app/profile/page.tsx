@@ -231,7 +231,7 @@ export default function ProfilePage() {
         .pp-cover-cam svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
         /* hero row: avatar floats up, name sits to the right at bottom */
-        .pp-avatar-row { display: flex; align-items: flex-end; gap: 12px; margin-top: -36px; padding-bottom: 14px; }
+        .pp-avatar-row { display: flex; align-items: flex-end; gap: 12px; margin-top: -28px; padding-bottom: 14px; }
 
         .pp-avatar-wrap { position: relative; flex-shrink: 0; }
         .pp-avatar { width: 82px; height: 82px; border-radius: 999px; border: 3.5px solid white; background: ${F.pinkSoft}; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,.13); color: ${F.pink}; }
@@ -245,8 +245,8 @@ export default function ProfilePage() {
         .pp-name { margin: 0; font-size: 20px; font-weight: 750; color: ${F.ink}; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-subtitle { margin: 3px 0 0; font-size: 13px; color: ${F.muted}; }
         .pp-chip { display: inline-flex; margin-top: 6px; padding: 2px 10px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 11px; font-weight: 500; }
-        .pp-edit-btn { flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: ${F.pinkSoft}; text-decoration: none; transition: background .15s; }
-        .pp-edit-btn:active { background: ${F.line}; }
+        .pp-edit-btn { flex-shrink: 0; display: flex; align-items: center; justify-content: center; text-decoration: none; opacity: 1; transition: opacity .15s; }
+        .pp-edit-btn:active { opacity: .6; }
 
         /* ── Sections ── */
         .pp-section { margin-bottom: 14px; }
