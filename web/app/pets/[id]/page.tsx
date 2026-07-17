@@ -9,12 +9,12 @@ import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
 
-// ─── Premium CI Tokens ─────────────────────────────────────────────────────
+// ─── Design Tokens ─────────────────────────────────────────────────────────
 const F = {
-  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
-  pink: '#E84677', pinkLight: '#F472B6', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
+  ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
+  pink: '#e84677', pinkLight: '#f472b6', pinkSoft: '#fde2ea', pinkBorder: '#FBCFE8',
   teal: '#0D9488', tealSoft: '#F0FDFA',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#f3dde3', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
@@ -593,7 +593,7 @@ export default function PetDetailPage() {
         .whiskora-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
         .topbar { display: flex; align-items: center; gap: 14px; max-width: 1100px; margin: 0 auto; padding: 24px 20px 4px; }
         .topbar-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
-        .topbar-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
+        .topbar-back:hover { background: #F9FAFB; color: ${F.ink}; transform: translateX(-1px); }
         .topbar-back:active { transform: scale(0.94); }
         .topbar-titles { display: flex; flex-direction: column; min-width: 0; }
         .topbar-title { font-family: inherit; font-size: 19px; font-weight: 700; color: ${F.ink}; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -619,7 +619,7 @@ export default function PetDetailPage() {
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
-        .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${isMale ? '#DBEAFE' : '#FCE7F3'}; color: ${isMale ? '#2563EB' : '#DB2777'}; flex-shrink: 0; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
@@ -632,7 +632,7 @@ export default function PetDetailPage() {
         .pet-id-card { background: linear-gradient(135deg, #FFF5F8 0%, white 100%); border: 1px solid ${F.pinkBorder}; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
         .pet-id-left { min-width: 0; }
         .pet-id-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        .pet-id-number { font-family: 'Prompt', monospace; font-size: 22px; font-weight: 700; color: #111827; letter-spacing: 0.5px; margin-bottom: 4px; word-break: break-all; }
+        .pet-id-number { font-family: 'Prompt', monospace; font-size: 22px; font-weight: 700; color: ${F.ink}; letter-spacing: 0.5px; margin-bottom: 4px; word-break: break-all; }
         .pet-id-reg { font-size: 10px; color: ${F.muted}; }
         .pet-id-qr-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
         .pet-id-qr { width: 72px; height: 72px; background: white; border: 1px solid ${F.lineMid}; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #374151; overflow: hidden; cursor: pointer; }
@@ -654,10 +654,10 @@ export default function PetDetailPage() {
         .content-grid { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
         .content-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
         .content-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-        .card { background: white; border: 1px solid ${F.line}; border-radius: 16px; overflow: hidden; }
+        .card { background: white; border: 1px solid ${F.line}; border-radius: 18px; overflow: hidden; }
         .card-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid ${F.line}; gap: 10px; flex-wrap: wrap; }
         .card-header .card-title { flex: 1 1 auto; min-width: 0; }
-        .card-title { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: ${F.ink}; min-width: 0; }
+        .card-title { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: ${F.ink}; min-width: 0; }
         .card-title-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .card-body { padding: 20px; }
         .card-footer { padding: 12px 20px; border-top: 1px solid ${F.line}; text-align: center; }
@@ -668,7 +668,7 @@ export default function PetDetailPage() {
         .pedigree-col { display: flex; flex-direction: column; position: relative; flex-shrink: 0; padding-right: 32px; }
         .pedigree-col:last-child { padding-right: 0; }
         .pedigree-col-head { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin-bottom: 12px; min-height: 38px; }
-        .pedigree-gen-num { display: inline-block; font-size: 10px; font-weight: 800; color: ${F.pink}; background: ${F.pinkSoft}; padding: 3px 12px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; }
+        .pedigree-gen-num { display: inline-block; font-size: 10px; font-weight: 700; color: ${F.pink}; background: ${F.pinkSoft}; padding: 3px 12px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; }
         .pedigree-gen-role { font-size: 11px; font-weight: 600; color: ${F.muted}; }
         .pedigree-col-cards { display: flex; flex-direction: column; justify-content: space-around; flex: 1; width: 180px; }
         .ped-card-slot { display: flex; align-items: center; position: relative; flex: 1; width: 180px; padding: 10px 0; min-height: 80px; }
@@ -708,14 +708,14 @@ export default function PetDetailPage() {
         .pedigree-col.has-connector .pedigree-col-cards { position: relative; }
         .health-check-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid ${F.line}; gap: 10px; }
         .health-check-item:last-child { border-bottom: none; }
-        .health-check-left { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #374151; min-width: 0; }
+        .health-check-left { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: ${F.inkSoft}; min-width: 0; }
         .check-icon { width: 22px; height: 22px; border-radius: 50%; background: #D1FAE5; display: flex; align-items: center; justify-content: center; color: #059669; flex-shrink: 0; }
         .health-check-val { font-size: 12px; font-weight: 600; color: ${F.muted}; flex-shrink: 0; text-align: right; }
         .vaccine-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid ${F.line}; }
         .vaccine-row:last-child { border-bottom: none; }
         .vaccine-icon { width: 36px; height: 36px; border-radius: 10px; background: #F0FDFA; display: flex; align-items: center; justify-content: center; color: #0D9488; flex-shrink: 0; }
         .vaccine-info { flex: 1; min-width: 0; }
-        .vaccine-name { font-size: 13px; font-weight: 700; color: ${F.ink}; }
+        .vaccine-name { font-size: 13px; font-weight: 600; color: ${F.ink}; }
         .vaccine-sub { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
         .vaccine-date { font-size: 11px; font-weight: 600; color: ${F.teal}; white-space: nowrap; flex-shrink: 0; }
         .owner-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -723,7 +723,7 @@ export default function PetDetailPage() {
         .owner-name-wrap { min-width: 0; }
         .owner-name { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .owner-cattery { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: ${F.pink}; }
-        .owner-info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #4B5563; border-bottom: 1px solid ${F.line}; word-break: break-word; }
+        .owner-info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: ${F.inkSoft}; border-bottom: 1px solid ${F.line}; word-break: break-word; }
         .owner-info-row:last-child { border-bottom: none; }
         .owner-info-icon { color: ${F.muted}; flex-shrink: 0; }
         .companion-card-inner { display: flex; align-items: center; gap: 12px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 14px; }
@@ -749,7 +749,7 @@ export default function PetDetailPage() {
         .doc-row:last-child { border-bottom: none; }
         .doc-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
         .doc-info { flex: 1; min-width: 0; }
-        .doc-name { font-size: 13px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doc-name { font-size: 13px; font-weight: 600; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-sub { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
         .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
         .doc-download { width: 32px; height: 32px; border-radius: 8px; border: 1px solid ${F.lineMid}; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; color: #6B7280; flex-shrink: 0; }
@@ -759,7 +759,7 @@ export default function PetDetailPage() {
         .timeline-item { position: relative; }
         .timeline-dot { position: absolute; left: -31px; top: 3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px ${F.lineMid}; }
         .timeline-date { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-bottom: 3px; }
-        .timeline-title { font-size: 13px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .timeline-title { font-size: 13px; font-weight: 600; color: ${F.ink}; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .timeline-id-badge { font-size: 9px; font-weight: 700; background: #F3F4F6; color: ${F.muted}; padding: 2px 7px; border-radius: 6px; font-family: monospace; letter-spacing: 0.04em; }
         .timeline-desc { font-size: 11px; color: #6B7280; margin-top: 3px; line-height: 1.5; }
         .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -787,7 +787,7 @@ export default function PetDetailPage() {
         .modal-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; }
         .modal-sub { font-size: 12px; color: ${F.muted}; margin-top: 2px; margin-bottom: 18px; }
         .field-label { display: block; font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
-        .field-input { width: 100%; padding: 12px 14px; border-radius: 12px; background: #F9FAFB; border: 1px solid ${F.lineMid}; outline: none; font-size: 14px; font-weight: 500; color: ${F.ink}; transition: all .15s; font-family: inherit; }
+        .field-input { width: 100%; padding: 12px 14px; border-radius: 12px; background: #F9FAFB; border: 1px solid ${F.lineMid}; outline: none; font-size: 14px; font-weight: 400; color: ${F.ink}; transition: all .15s; font-family: inherit; }
         .field-input:focus { border-color: ${F.pinkBorder}; background: white; }
         .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
         .chip-btn { padding: 8px 14px; border-radius: 12px; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
@@ -954,11 +954,11 @@ export default function PetDetailPage() {
                         { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
                         { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
                         { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: displayVal(pet.weight, ' กก.') },
-                        { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {pet.status}</span> : '-' },
+                        { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 600 }}>● {pet.status}</span> : '-' },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: F.muted, flexShrink: 0 }}>{item.label}</span>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: F.ink, textAlign: 'right' }}>{item.val as React.ReactNode}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 500, color: F.muted, flexShrink: 0 }}>{item.label}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: F.ink, textAlign: 'right' }}>{item.val as React.ReactNode}</span>
                         </div>
                       ))}
                     </div>
@@ -1059,8 +1059,8 @@ export default function PetDetailPage() {
                     ))}
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
-                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</div>
                       </div>
                     )}
                   </div>
@@ -1113,14 +1113,14 @@ export default function PetDetailPage() {
                     ))}
                     {pet.allergies && (
                       <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
-                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</p>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
+                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
                       </div>
                     )}
                     {(pet.traits || pet.health_notes) && (
                       <div style={{ marginTop: '12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>📝 หมายเหตุ</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 500, lineHeight: 1.6 }}>{pet.traits} {pet.health_notes}</p>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุ</div>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{pet.traits} {pet.health_notes}</p>
                       </div>
                     )}
                   </div>
@@ -1183,7 +1183,7 @@ export default function PetDetailPage() {
                             {a.activity_type?.includes('อาหาร') ? '🍗' : a.activity_type?.includes('หมอ') ? '🏥' : a.activity_type?.includes('พยาธิ') ? '💊' : '📝'}
                           </div>
                         </td>
-                        <td><div style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>{a.title}</div><div style={{ fontSize: '11px', color: F.muted, marginTop: '2px' }}>{a.description}</div></td>
+                        <td><div style={{ fontSize: '12px', fontWeight: 600, color: F.ink }}>{a.title}</div><div style={{ fontSize: '11px', color: F.muted, marginTop: '2px' }}>{a.description}</div></td>
                         <td style={{ textAlign: 'right', whiteSpace: 'nowrap', color: F.muted, fontSize: '11px' }}>{formatDate(a.activity_date)}</td>
                       </tr>
                     ))}
@@ -1261,8 +1261,8 @@ export default function PetDetailPage() {
                 <div><label className="field-label">วันที่</label><input className="field-input" type="date" value={activityForm.activity_date} onChange={(e) => setActivityForm({ ...activityForm, activity_date: e.target.value })} required /></div>
                 <div><label className="field-label">รายละเอียด (ถ้ามี)</label><textarea className="field-input" rows={3} value={activityForm.description} onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })} placeholder="บันทึกเพิ่มเติม..." style={{ resize: 'none' }} /></div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <button type="button" onClick={() => setShowActivityModal(false)} disabled={savingActivity} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: '#6B7280', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" disabled={savingActivity} style={{ flex: 2, padding: '14px', borderRadius: '12px', border: 'none', background: F.pink, color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>{savingActivity ? 'กำลังบันทึก...' : 'บันทึกกิจกรรม'}</button>
+                  <button type="button" onClick={() => setShowActivityModal(false)} disabled={savingActivity} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button type="submit" disabled={savingActivity} style={{ flex: 2, padding: '14px', borderRadius: '12px', border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{savingActivity ? 'กำลังบันทึก...' : 'บันทึกกิจกรรม'}</button>
                 </div>
               </form>
             </div>
@@ -1279,7 +1279,7 @@ export default function PetDetailPage() {
               <div className="modal-sub">สแกนเพื่อเปิดหน้าโปรไฟล์สาธารณะ</div>
               <div className="qr-modal-img">{qrDataUrl && <img src={qrDataUrl} alt="QR Code" />}</div>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => setShowQrModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: '#6B7280', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>ปิด</button>
+                <button onClick={() => setShowQrModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>ปิด</button>
                 <button onClick={handleDownloadQr} style={{ flex: 2, padding: '14px', borderRadius: '12px', border: 'none', background: F.pink, color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Icon.Download /> ดาวน์โหลด</button>
               </div>
             </div>
