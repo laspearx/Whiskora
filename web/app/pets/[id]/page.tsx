@@ -874,7 +874,7 @@ export default function PetDetailPage() {
         .btn-remove-co { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #FECACA; background: #FEF2F2; color: #EF4444; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
         .share-footer { background: linear-gradient(135deg, #FFF0F4, #FDF2F5); border: 1px solid ${F.pinkBorder}; border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
         .share-footer-left { display: flex; align-items: center; gap: 14px; }
-        .share-paw { width: 48px; height: 48px; border-radius: 50%; background: ${F.pink}; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; }
+        .share-paw { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .share-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .share-subtitle { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
         .share-url-box { display: flex; align-items: center; gap: 8px; }
@@ -1390,11 +1390,11 @@ export default function PetDetailPage() {
 
           {/* ─── Share Footer ─── */}
           <div className="share-footer" style={{ marginTop: '24px' }}>
-            <div className="share-footer-left"><div className="share-paw"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '75%', height: '75%', objectFit: 'contain' }} /></div>
+            <div className="share-footer-left"><div className="share-paw"><img src="/icons/icon-paw-sparkle.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <div><div className="share-title">แชร์โปรไฟล์ {pet.name}</div><div className="share-subtitle">ให้เพื่อนหรือครอบครัวดูได้ง่าย ๆ</div></div>
             </div>
             <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว ✓' : 'คัดลอก'}</button></div>
-            <button className="btn-pink" onClick={handleShare}><Icon.Share /> แชร์</button>
+            <button className="btn-pink" onClick={handleShare}><img src="/icons/icon-share.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> แชร์</button>
           </div>
         </div>
       </div>
