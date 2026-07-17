@@ -133,8 +133,9 @@ function FarmDashboardContent() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(true);
 
-  const [showActionSheet, setShowActionSheet] = useState(false);
-  const [showAllTasks,    setShowAllTasks]    = useState(false);
+  const [showActionSheet,    setShowActionSheet]    = useState(false);
+  const [showAddAnimalSheet, setShowAddAnimalSheet] = useState(false);
+  const [showAllTasks,       setShowAllTasks]       = useState(false);
   const [uploadingCover,  setUploadingCover]  = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const coverInputRef  = useRef<HTMLInputElement>(null);
@@ -555,6 +556,17 @@ function FarmDashboardContent() {
         .fd-nav-tab:active .fd-tab-icon { background:rgba(232,70,119,.09); }
         .fd-tab-icon img { width:48px; height:48px; object-fit:contain; }
         .fd-nav-tab span { font-size:10px; font-weight:600; line-height:1.2; }
+
+        /* ─── Add Animal mini sheet ─── */
+        .fd-add-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; animation:fd-sheet-up .2s ease; }
+        .fd-add-option { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:13px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; margin-bottom:10px; }
+        .fd-add-option:last-of-type { margin-bottom:0; }
+        .fd-add-option:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
+        .fd-add-option-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .fd-add-option-icon img { width:28px; height:28px; object-fit:contain; }
+        .fd-add-option-text { flex:1; text-align:left; }
+        .fd-add-option-title { font-size:14px; font-weight:700; color:${F.ink}; margin-bottom:2px; }
+        .fd-add-option-sub { font-size:11px; color:${F.muted}; font-weight:400; }
 
         /* ─── Misc ─── */
         .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:600; text-align:center; padding:8px 0; }
@@ -1000,22 +1012,53 @@ function FarmDashboardContent() {
         </div>
       )}
 
+      {/* ── Add Animal sheet ── */}
+      {showAddAnimalSheet && (
+        <div className="fd-sheet-overlay" onClick={() => setShowAddAnimalSheet(false)}>
+          <div className="fd-add-sheet" onClick={e => e.stopPropagation()}>
+            <div className="fd-sheet-handle" />
+            <div className="fd-sheet-title">เพิ่มสัตว์เลี้ยง</div>
+            <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fd-add-option" onClick={() => setShowAddAnimalSheet(false)}>
+              <div className="fd-add-option-icon" style={{ background: F.pinkSoft }}>
+                <img src="/icons/icon-tab-add.png" alt="" />
+              </div>
+              <div className="fd-add-option-text">
+                <div className="fd-add-option-title">เพิ่มทีละตัว</div>
+                <div className="fd-add-option-sub">บันทึกข้อมูลสัตว์เลี้ยงพร้อมประวัติครบถ้วน</div>
+              </div>
+              <Icon.ChevronRight />
+            </Link>
+            <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} className="fd-add-option" onClick={() => setShowAddAnimalSheet(false)}>
+              <div className="fd-add-option-icon" style={{ background: F.pinkSoft }}>
+                <img src="/icons/icon-my-pets.png" alt="" />
+              </div>
+              <div className="fd-add-option-text">
+                <div className="fd-add-option-title">เพิ่มหลายตัวพร้อมกัน</div>
+                <div className="fd-add-option-sub">เพิ่มลูกสัตว์ทั้งครอกได้ในครั้งเดียว</div>
+              </div>
+              <Icon.ChevronRight />
+            </Link>
+            <button className="fd-sheet-close" onClick={() => setShowAddAnimalSheet(false)}>ปิด</button>
+          </div>
+        </div>
+      )}
+
       {/* ════════════════════════════════
           Bottom Navigation (Page tabs)
       ════════════════════════════════ */}
       <nav className="fd-nav" aria-label="เมนูฟาร์ม">
         <div className="fd-nav-inner">
-          <Link href={`/farm-dashboard/${farmId}/pets/create?from=${fromPage}`} className="fd-nav-tab">
+          <button className="fd-nav-tab" onClick={() => setShowAddAnimalSheet(true)}>
             <div className="fd-tab-icon"><img src="/icons/icon-tab-add.png" alt="" /></div>
             <span>เพิ่มสัตว์</span>
-          </Link>
+          </button>
           <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
             <span>จับคู่บรีด</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/litters?from=${fromPage}`} className="fd-nav-tab">
+          <Link href={`/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('เด็ก')}`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
-            <span>ลูกแมว</span>
+            <span>ลูกสัตว์</span>
           </Link>
           <Link href="/profile/finance" className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
