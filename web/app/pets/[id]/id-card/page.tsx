@@ -585,9 +585,12 @@ export default function PetIdCardPage() {
 
             <section className="idc-theme-panel" aria-label="Pet ID card theme">
               <div className="idc-theme-head">
-                <div>
-                  <div className="idc-theme-title">Card theme</div>
-                  <div className="idc-theme-sub">Choose a style</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <img src="/icons/icon-pet-id-card.png" alt="" style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
+                  <div>
+                    <div className="idc-theme-title">ธีมบัตร</div>
+                    <div className="idc-theme-sub">เลือกสไตล์ที่ชอบ</div>
+                  </div>
                 </div>
                 <div className="idc-theme-active">{selectedTheme.name}</div>
               </div>
@@ -747,8 +750,14 @@ export default function PetIdCardPage() {
 
             <p className="idc-hint">แตะค้างที่บัตรเพื่อบันทึกรูป หรือกดปุ่มดาวน์โหลดด้านล่าง</p>
             <div className="idc-actions">
-              <button onClick={handleDownload} className="idc-btn idc-btn-ghost" disabled={!cardImageUrl}><Icon.Download /> ดาวน์โหลดบัตร</button>
-              <button onClick={handleShare} className="idc-btn idc-btn-primary"><Icon.Share /> แชร์ลิงก์ให้สแกน</button>
+              <button onClick={handleDownload} className="idc-btn idc-btn-ghost" disabled={!cardImageUrl}>
+                <img src="/icons/icon-documents.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                ดาวน์โหลดบัตร
+              </button>
+              <button onClick={handleShare} className="idc-btn idc-btn-primary">
+                <img src="/icons/icon-share.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                แชร์ลิงก์ให้สแกน
+              </button>
             </div>
           </div>
         </div>
