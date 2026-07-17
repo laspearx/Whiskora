@@ -245,7 +245,8 @@ export default function ProfilePage() {
         .pp-name { margin: 0; font-size: 20px; font-weight: 750; color: ${F.ink}; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-subtitle { margin: 3px 0 0; font-size: 13px; color: ${F.muted}; }
         .pp-chip { display: inline-flex; margin-top: 6px; padding: 2px 10px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 11px; font-weight: 500; }
-        .pp-edit-btn { flex-shrink: 0; padding: 7px 16px; border-radius: 10px; background: ${F.pink}; color: white; font-size: 13px; font-weight: 600; text-decoration: none; }
+        .pp-edit-btn { flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: ${F.pinkSoft}; text-decoration: none; transition: background .15s; }
+        .pp-edit-btn:active { background: ${F.line}; }
 
         /* ── Sections ── */
         .pp-section { margin-bottom: 14px; }
@@ -416,7 +417,9 @@ export default function ProfilePage() {
                 <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
               )}
             </div>
-            <Link href="/profile/edit" className="pp-edit-btn" style={{ flexShrink: 0 }}>แก้ไข</Link>
+            <Link href="/profile/edit" className="pp-edit-btn" aria-label="แก้ไขโปรไฟล์">
+              <img src="/icons/icon-setting.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            </Link>
           </div>
         </div>
 
