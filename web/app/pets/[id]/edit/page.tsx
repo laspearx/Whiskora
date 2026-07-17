@@ -256,10 +256,12 @@ export default function EditPetPage() {
 
         /* Photo */
         .ep-photo-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; }
-        .ep-avatar { width: 100px; height: 100px; border-radius: 50%; background: ${F.pinkSoft}; border: 3px solid ${F.pinkBorder}; overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
+        .ep-photo { position: relative; display: inline-block; }
+        .ep-avatar { width: 100px; height: 100px; border-radius: 50%; background: ${F.pinkSoft}; border: 3px solid ${F.pinkBorder}; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(232,70,119,0.15); }
         .ep-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .ep-avatar-placeholder { width: 44px; height: 44px; object-fit: contain; opacity: .5; }
-        .ep-camera-btn { width: 30px; height: 30px; border-radius: 50%; background: ${F.ink}; border: 2px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; position: absolute; bottom: 2px; right: 2px; color: white; }
+        .ep-camera-btn { width: 32px; height: 32px; border-radius: 50%; background: ${F.pink}; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; position: absolute; bottom: 2px; right: 2px; color: white; transition: background .15s; }
+        .ep-camera-btn:hover { background: #D63F6A; }
         .ep-photo-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; }
 
         /* Section Card */
@@ -355,12 +357,14 @@ export default function EditPetPage() {
 
             {/* Photo */}
             <div className="ep-photo-wrap">
-              <div className="ep-avatar" onClick={() => originalImageSrc ? setImageSrc(originalImageSrc) : fileInputRef.current?.click()}>
-                {avatarUrl
-                  ? <img src={avatarUrl} alt="Pet" />
-                  : <img className="ep-avatar-placeholder" src={speciesIcon(species === 'other' ? (otherPetText || 'other') : species)} alt="" />
-                }
-                <button type="button" className="ep-camera-btn" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+              <div className="ep-photo">
+                <div className="ep-avatar" onClick={() => originalImageSrc ? setImageSrc(originalImageSrc) : fileInputRef.current?.click()}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="Pet" />
+                    : <img className="ep-avatar-placeholder" src={speciesIcon(species === 'other' ? (otherPetText || 'other') : species)} alt="" />
+                  }
+                </div>
+                <button type="button" className="ep-camera-btn" onClick={() => fileInputRef.current?.click()}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 </button>
               </div>
