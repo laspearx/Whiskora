@@ -335,30 +335,30 @@ function FarmDashboardContent() {
         .fd-page { font-family:inherit; min-height:100vh; color:${F.ink}; background:${F.bg}; padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 16px); }
 
         /* ─── 1. Cover + Identity Header ─── */
-        .fd-cover { position:relative; aspect-ratio:3/1; min-height:140px; background:linear-gradient(135deg,${F.pinkSoft},#FFE8F0); overflow:hidden; cursor:pointer; }
+        .fd-cover { position:relative; height:168px; margin:0 -16px; background:linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%); overflow:hidden; z-index:0; }
         .fd-cover img.fd-cover-img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
-        .fd-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,.18),transparent 45%); }
+        .fd-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,.22),transparent 50%); }
         .fd-cover-top { position:absolute; top:14px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:2; }
-        .fd-cover-btn { width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); color:${F.ink}; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; box-shadow:0 2px 8px rgba(0,0,0,.12); transition:all .15s; text-decoration:none; }
+        .fd-cover-btn { width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); color:${F.ink}; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; box-shadow:0 2px 8px rgba(0,0,0,.12); transition:all .15s; text-decoration:none; }
         .fd-cover-btn:hover { background:white; }
-        .fd-cover-actions { display:flex; gap:6px; }
-        .fd-cover-hint { position:absolute; bottom:8px; right:10px; font-size:10px; font-weight:600; color:rgba(255,255,255,.8); background:rgba(0,0,0,.28); backdrop-filter:blur(4px); padding:3px 8px; border-radius:8px; z-index:2; pointer-events:none; }
+        .fd-cover-cam { position:absolute; bottom:8px; right:12px; z-index:2; width:30px; height:30px; border-radius:8px; background:rgba(0,0,0,.32); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; }
         .fd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:700; color:${F.pink}; }
 
-        .fd-identity { background:white; border-radius:22px 22px 0 0; margin-top:-22px; position:relative; z-index:3; padding:0 18px 18px; }
-        .fd-id-row { display:flex; align-items:flex-end; gap:14px; padding-top:12px; }
-        .fd-avatar { width:96px; height:96px; border-radius:50%; border:4px solid white; margin-top:-58px; overflow:hidden; background:${F.pinkSoft}; display:flex; align-items:center; justify-content:center; font-size:38px; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,.12); cursor:pointer; position:relative; }
+        .fd-identity { padding:0 0 14px; }
+        .fd-id-row { position:relative; z-index:1; display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
+        .fd-avatar { width:86px; height:86px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.pinkSoft}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
         .fd-avatar img { width:100%; height:100%; object-fit:cover; }
-        .fd-avatar-edit { position:absolute; bottom:4px; right:2px; width:24px; height:24px; background:${F.pink}; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; }
+        .fd-avatar-edit { position:absolute; bottom:3px; right:1px; width:22px; height:22px; background:${F.pink}; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; pointer-events:none; }
         .fd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; }
-        .fd-id-main { flex:1; min-width:0; padding-bottom:4px; }
-        .fd-name { font-size:clamp(16px,4vw,22px); font-weight:700; color:${F.ink}; line-height:1.15; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
-        .fd-name img { width:20px; height:20px; object-fit:contain; flex-shrink:0; }
-        .fd-tagline { font-size:12px; color:${F.muted}; font-weight:400; }
-        .fd-id-actions { display:flex; gap:6px; margin-top:6px; }
-        .fd-id-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; border:none; text-decoration:none; transition:all .15s; }
-        .fd-id-btn-p { background:${F.pink}; color:white; }
-        .fd-id-btn-g { background:#F3F4F6; color:${F.inkSoft}; }
+        .fd-id-main { flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+        .fd-id-text { flex:1; min-width:0; }
+        .fd-name { font-size:20px; font-weight:750; color:${F.ink}; line-height:1.2; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
+        .fd-name img { width:18px; height:18px; object-fit:contain; flex-shrink:0; }
+        .fd-tagline { font-size:13px; color:${F.muted}; font-weight:400; }
+        .fd-view-btn { display:inline-flex; align-items:center; gap:4px; margin-top:6px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; border:none; cursor:pointer; }
+        .fd-view-btn:hover { background:#E5E7EB; }
+        .fd-edit-icon { flex-shrink:0; display:flex; align-items:center; justify-content:center; text-decoration:none; opacity:1; transition:opacity .15s; }
+        .fd-edit-icon:active { opacity:.6; }
 
         .fd-prog-bar { display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid ${F.line}; }
         .fd-prog-track { flex:1; height:5px; background:${F.line}; border-radius:10px; overflow:hidden; }
@@ -521,19 +521,18 @@ function FarmDashboardContent() {
         ════════════════════════════════ */}
 
         {/* Cover */}
-        <div className="fd-cover" onClick={() => coverInputRef.current?.click()}>
-          {(farm.cover_url || farm.image_url) && (
-            <img className="fd-cover-img" src={farm.cover_url || farm.image_url} alt={farm.farm_name} />
+        <div className="fd-cover">
+          {farm.cover_url && (
+            <img className="fd-cover-img" src={farm.cover_url} alt={farm.farm_name} />
           )}
           <div className="fd-cover-overlay" />
-          <div className="fd-cover-top" onClick={e => e.stopPropagation()}>
+          <div className="fd-cover-top">
             <button className="fd-cover-btn" onClick={handleBack} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-            <div className="fd-cover-actions">
-              <Link href={`/farm/${farmId}`} className="fd-cover-btn" aria-label="ดูหน้าฟาร์ม"><Icon.Eye /></Link>
-              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-cover-btn" aria-label="แก้ไข"><Icon.Edit /></Link>
-            </div>
+            <Link href={`/farm/${farmId}`} className="fd-cover-btn" aria-label="ดูหน้าฟาร์ม"><Icon.Eye /></Link>
           </div>
-          <div className="fd-cover-hint">กดเพื่อเปลี่ยนรูปปก</div>
+          <button className="fd-cover-cam" onClick={() => coverInputRef.current?.click()} aria-label="เปลี่ยนรูปปก">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
           {uploadingCover && <div className="fd-cover-spin">กำลังอัพโหลด...</div>}
           <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
         </div>
@@ -552,19 +551,19 @@ function FarmDashboardContent() {
               <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
             </div>
             <div className="fd-id-main">
-              <h1 className="fd-name">
-                {farm.farm_name}
-                {farm.is_verified && <img src="/icons/icon-verified-badge.png" alt="ยืนยันแล้ว" />}
-              </h1>
-              <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
-              <div className="fd-id-actions">
-                <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-id-btn fd-id-btn-p">
-                  <Icon.Edit /> แก้ไขโปรไฟล์
-                </Link>
-                <Link href={`/farm/${farmId}`} className="fd-id-btn fd-id-btn-g">
+              <div className="fd-id-text">
+                <h1 className="fd-name">
+                  {farm.farm_name}
+                  {farm.is_verified && <img src="/icons/icon-verified-badge.png" alt="ยืนยันแล้ว" />}
+                </h1>
+                <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
+                <Link href={`/farm/${farmId}`} className="fd-view-btn">
                   <Icon.Eye /> ดูหน้าฟาร์ม
                 </Link>
               </div>
+              <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-edit-icon" aria-label="แก้ไขโปรไฟล์">
+                <img src="/icons/icon-setting.png" style={{ width: 36, height: 36 }} alt="ตั้งค่า" />
+              </Link>
             </div>
           </div>
 
