@@ -23,7 +23,6 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [loadingPets, setLoadingPets] = useState(false);
   const [scanError, setScanError] = useState("");
-  const [scanResult, setScanResult] = useState("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,26 +102,26 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
       try {
-        const jsQR = (await import("jsqr")).default;
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code && active) {
-          const url = code.data;
+        if (!("BarcodeDetector" in window)) {
+          if (active) setScanError("เบราว์เซอร์นี้ไม่รองรับการสแกน QR กรุณาใช้ Chrome บน Android หรือ Safari บน iOS 17+");
+          return;
+        }
+        // @ts-ignore — BarcodeDetector is not in all TS libs yet
+        const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+        const codes = await detector.detect(canvas);
+        if (codes.length > 0 && active) {
+          const url: string = codes[0].rawValue;
           if (url.includes("/p/")) {
             active = false;
             stopCamera();
-            setScanResult(url);
             onClose();
             router.push(url.replace(window.location.origin, "") as any);
             return;
           }
         }
       } catch {
-        // jsqr not installed yet — show message
-        if (active) setScanError("กรุณา install jsqr ก่อน: pnpm add jsqr");
-        return;
+        // detector failed silently, keep scanning
       }
 
       rafRef.current = requestAnimationFrame(tick);
