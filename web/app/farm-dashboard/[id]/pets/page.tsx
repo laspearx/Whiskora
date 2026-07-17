@@ -113,10 +113,9 @@ export default function FarmPetsPage() {
         .fpl-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid; }
         .fpl-gender-f { background: ${F.pinkSoft}; color: ${F.pink}; border-color: ${F.pinkBorder}; }
         .fpl-gender-m { background: #EFF6FF; color: ${F.blue}; border-color: #BFDBFE; }
-        .fpl-breed-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; gap: 8px; }
+        .fpl-breed-row { display: flex; flex-direction: column; margin-top: auto; gap: 2px; }
         .fpl-breed-th { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fpl-breed-en { font-size: 11px; font-weight: 500; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fpl-price { font-family: inherit; font-size: 15px; font-weight: 700; color: ${F.pink}; white-space: nowrap; flex-shrink: 0; }
       `}</style>
 
       {loading ? (
@@ -170,11 +169,8 @@ export default function FarmPetsPage() {
                           {pet.status && st && <span className="fpl-tag" style={{ background: st.bg, color: st.color, borderColor: st.border }}>{pet.status}</span>}
                         </div>
                         <div className="fpl-breed-row">
-                          <div style={{ minWidth: 0 }}>
-                            <div className="fpl-breed-th">{breed.thai}</div>
-                            {breed.eng && <div className="fpl-breed-en">{breed.eng}</div>}
-                          </div>
-                          {pet.price && <span className="fpl-price">฿{Number(pet.price).toLocaleString()}</span>}
+                          <div className="fpl-breed-th">{breed.thai}</div>
+                          {breed.eng && <div className="fpl-breed-en">{breed.eng}</div>}
                         </div>
                       </div>
                     </Link>

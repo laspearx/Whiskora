@@ -133,7 +133,6 @@ function FarmDashboardContent() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(true);
 
-  const [showActionSheet,    setShowActionSheet]    = useState(false);
   const [showAddAnimalSheet, setShowAddAnimalSheet] = useState(false);
   const [showAllTasks,       setShowAllTasks]       = useState(false);
   const [uploadingCover,  setUploadingCover]  = useState(false);
@@ -352,17 +351,6 @@ function FarmDashboardContent() {
 
   const handleBack = () => fromPage === 'partner' ? router.push('/partner') : router.push('/profile');
 
-  /* ── FAB actions ── */
-  const fabActions = [
-    { label: 'เพิ่มสัตว์',       href: `/farm-dashboard/${farmId}/pets/create`,       icon: '/icons/icon-tab-add.png' },
-    { label: 'บันทึกการผสม',     href: `/farm-dashboard/${farmId}/litters/create`,    icon: '/icons/icon-breeding.png' },
-    { label: 'บันทึกคลอด',      href: activeLitters.length === 1 ? `/farm-dashboard/${farmId}/litters/${activeLitters[0]?.id}/birth` : `/farm-dashboard/${farmId}/litters`, icon: '/icons/icon-feeding.png' },
-    { label: 'เพิ่มลูกสัตว์',   href: `/farm-dashboard/${farmId}/pets/bulk-create`,  icon: '/icons/icon-my-pets.png' },
-    { label: 'เพิ่มรายรับ',      href: `/farm-dashboard/${farmId}/transactions/create?type=income`,  icon: '/icons/icon-wallet.png' },
-    { label: 'เพิ่มรายจ่าย',     href: `/farm-dashboard/${farmId}/transactions/create?type=expense`, icon: '/icons/icon-wallet.png' },
-    { label: 'เพิ่มนัดหมาย',    href: `/farm-dashboard/${farmId}/appointments`,      icon: '/icons/icon-calendar.png' },
-  ];
-
   if (loading) return <PageLoader />;
   if (!farm)   return null;
 
@@ -383,7 +371,7 @@ function FarmDashboardContent() {
         .fd-crop-confirm { flex:2; padding:13px; border:none; border-radius:14px; background:${F.pink}; color:white; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
         .fd-crop-confirm:disabled { opacity:.6; cursor:not-allowed; }
 
-        .fd-page { font-family:inherit; min-height:100vh; color:${F.ink}; background:${F.bg}; padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 16px); }
+        .fd-page { font-family:inherit; min-height:100vh; color:${F.ink}; background:${F.bg}; padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
 
         /* ─── 1. Cover + Identity Header ─── */
         .fd-cover { position:relative; height:168px; margin:0 -16px; background:linear-gradient(135deg,${F.pink} 0%,#f06d98 55%,#f8a5c2 100%); overflow:hidden; z-index:0; }
@@ -417,13 +405,13 @@ function FarmDashboardContent() {
         .fd-prog-fill  { height:100%; border-radius:10px; background:${F.pink}; transition:width 1s ease; }
         .fd-prog-text  { font-size:11px; font-weight:600; color:${F.pink}; white-space:nowrap; }
 
-        .fd-verify-btn { display:flex; align-items:center; gap:8px; margin-top:12px; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; }
+        .fd-verify-btn { display:flex; align-items:center; gap:8px; margin:12px 12px 0; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; }
         .fd-verify-btn:hover { background:#fde7ef; border-color:${F.pink}; }
         .fd-verify-btn img { width:28px; height:28px; object-fit:contain; }
         .fd-verify-btn-text { flex:1; }
         .fd-verify-btn-title { font-size:13px; font-weight:600; color:${F.pink}; }
         .fd-verify-btn-sub { font-size:11px; color:${F.muted}; font-weight:400; }
-        .fd-pending-badge { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 14px; border-radius:12px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12px; font-weight:400; color:#92400E; }
+        .fd-pending-badge { display:flex; align-items:center; gap:8px; margin:12px 12px 0; padding:10px 14px; border-radius:12px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12px; font-weight:400; color:#92400E; }
 
         /* ─── Content wrapper ─── */
         .fd-body { padding:12px 12px 0; display:flex; flex-direction:column; gap:10px; max-width:640px; margin:0 auto; }
@@ -519,20 +507,6 @@ function FarmDashboardContent() {
         .fd-fin-empty-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
         .fd-fin-empty-btn { flex:1; min-width:120px; padding:10px; border-radius:10px; font-size:12px; font-weight:500; border:1.5px dashed ${F.lineMid}; background:white; color:${F.inkSoft}; text-decoration:none; text-align:center; cursor:pointer; transition:all .15s; display:block; }
         .fd-fin-empty-btn:hover { border-color:${F.pink}; color:${F.pink}; background:${F.pinkSoft}; }
-
-        /* ─── FAB ─── */
-        .fd-fab {
-          position:fixed;
-          bottom:calc(68px + env(safe-area-inset-bottom,0px) + 14px);
-          right:20px; z-index:56;
-          width:50px; height:50px; border-radius:50%;
-          background:${F.pink}; color:white; border:none; cursor:pointer;
-          box-shadow:0 4px 18px rgba(232,70,119,.45);
-          display:flex; align-items:center; justify-content:center;
-          transition:transform .15s, box-shadow .15s;
-        }
-        .fd-fab:hover { transform:scale(1.06); box-shadow:0 6px 22px rgba(232,70,119,.55); }
-        .fd-fab:active { transform:scale(.94); }
 
         /* Action sheet */
         .fd-sheet-overlay { position:fixed; inset:0; z-index:60; background:rgba(31,26,28,.4); backdrop-filter:blur(4px); display:flex; align-items:flex-end; justify-content:center; }
@@ -984,31 +958,6 @@ function FarmDashboardContent() {
 
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}
-
-      {/* ════════════════════════════════
-          FAB — Floating Action Button
-      ════════════════════════════════ */}
-      <button className="fd-fab" onClick={() => setShowActionSheet(true)} aria-label="เพิ่มรายการ">
-        <Icon.Plus />
-      </button>
-
-      {showActionSheet && (
-        <div className="fd-sheet-overlay" onClick={() => setShowActionSheet(false)}>
-          <div className="fd-sheet" onClick={e => e.stopPropagation()}>
-            <div className="fd-sheet-handle" />
-            <div className="fd-sheet-title">เลือกรายการที่ต้องการ</div>
-            <div className="fd-sheet-actions">
-              {fabActions.map(a => (
-                <Link key={a.label} href={a.href} className="fd-sheet-action" onClick={() => setShowActionSheet(false)}>
-                  <img src={a.icon} alt="" />
-                  <span>{a.label}</span>
-                </Link>
-              ))}
-            </div>
-            <button className="fd-sheet-close" onClick={() => setShowActionSheet(false)}>ปิด</button>
-          </div>
-        </div>
-      )}
 
       {/* ── Add Animal sheet ── */}
       {showAddAnimalSheet && (
