@@ -67,23 +67,6 @@ const CARD_THEMES: CardTheme[] = [
     shadow: '0 24px 64px rgba(205,113,104,0.20)' },
 ];
 
-const VerifiedStamp = ({ accent }: { accent: string }) => (
-  <svg width="72" height="72" viewBox="0 0 96 96" fill="none">
-    <defs>
-      <path id="topArc2" d="M 14,48 A 34,34 0 0,1 82,48" />
-      <path id="bottomArc2" d="M 82,48 A 34,34 0 0,1 14,48" />
-    </defs>
-    <circle cx="48" cy="48" r="42" stroke={accent} strokeWidth="2" strokeDasharray="4 3" fill="rgba(255,255,255,0.7)" />
-    <circle cx="48" cy="48" r="34" stroke={accent} strokeWidth="1.5" fill="none" opacity="0.4" />
-    <text fontFamily="inherit" fontSize="8" fontWeight="800" fill={accent} letterSpacing="2">
-      <textPath href="#topArc2" startOffset="50%" textAnchor="middle">✦ WHISKORA ✦</textPath>
-    </text>
-    <text fontFamily="inherit" fontSize="8" fontWeight="800" fill={accent} letterSpacing="2">
-      <textPath href="#bottomArc2" startOffset="50%" textAnchor="middle">✦ VERIFIED ✦</textPath>
-    </text>
-    <path d="M48 32 L50.5 40.5 L59.5 40.5 L52.5 45.5 L55 54 L48 49 L41 54 L43.5 45.5 L36.5 40.5 L45.5 40.5 Z" fill={accent} opacity="0.9" />
-  </svg>
-);
 
 export default function PetIdCardPage() {
   const router = useRouter();
@@ -198,10 +181,10 @@ export default function PetIdCardPage() {
         .idc-stage { display: flex; justify-content: center; margin-bottom: 20px; }
         .idc-card-scaler { position: relative; }
 
-        /* ── CARD (380×570 px at scale 1) ── */
+        /* ── CARD — fixed 360×580px, scale via transform ── */
         .pet-card {
-          width: 380px; height: 570px;
-          border-radius: 28px;
+          width: 360px; height: 580px;
+          border-radius: 26px;
           overflow: hidden;
           position: relative;
           display: flex; flex-direction: column;
@@ -214,71 +197,68 @@ export default function PetIdCardPage() {
           transition: border-color .35s ease, box-shadow .35s ease;
           animation: card-in .45s ease both;
         }
-        /* glass overlay */
-        .pet-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.38); pointer-events:none; z-index:0; }
+        .pet-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.40); pointer-events:none; z-index:0; }
         .pet-card > * { position:relative; z-index:1; }
 
-        /* header */
-        .pc-header { padding: 18px 18px 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; }
-        .pc-logo-row { display: flex; align-items: center; gap: 7px; }
-        .pc-logo-img { height: 22px; width: auto; object-fit: contain; }
-        .pc-logo-text { font-size: 18px; font-weight: 900; color: ${T.accent}; letter-spacing: -0.5px; }
-        .pc-rule { width: 100%; display: flex; align-items: center; gap: 8px; }
+        /* header — fixed 56px */
+        .pc-header { height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; flex-shrink: 0; }
+        .pc-logo-row { display: flex; align-items: center; gap: 6px; }
+        .pc-logo-img { height: 20px; width: auto; object-fit: contain; }
+        .pc-logo-text { font-size: 17px; font-weight: 900; color: ${T.accent}; letter-spacing: -0.5px; }
+        .pc-rule { width: 100%; display: flex; align-items: center; gap: 7px; }
         .pc-rule-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, ${T.border}, transparent); }
-        .pc-rule-text { font-size: 7px; font-weight: 800; letter-spacing: 0.18em; color: ${T.accent}; white-space: nowrap; }
+        .pc-rule-text { font-size: 6.5px; font-weight: 800; letter-spacing: 0.16em; color: ${T.accent}; white-space: nowrap; }
 
-        /* media row: photo + identity + qr */
-        .pc-media { display: grid; grid-template-columns: 110px 1fr 88px; gap: 10px; padding: 8px 14px; align-items: stretch; min-height: 130px; }
-        .pc-photo-wrap { position: relative; }
-        .pc-photo { width: 110px; height: 110px; border-radius: 18px; overflow: hidden; background: ${T.soft}; border: 2px solid ${T.border}; flex-shrink: 0; }
+        /* media — fixed 150px */
+        .pc-media { height: 150px; flex-shrink: 0; display: grid; grid-template-columns: 126px 1fr 86px; gap: 10px; padding: 0 14px; align-items: center; }
+        .pc-photo-wrap { position: relative; height: 126px; }
+        .pc-photo { width: 126px; height: 126px; border-radius: 18px; overflow: hidden; background: ${T.soft}; border: 2px solid ${T.border}; }
         .pc-photo img { width: 100%; height: 100%; object-fit: cover; }
         .pc-photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .pc-photo-placeholder img { width: 48px; height: 48px; object-fit: contain; opacity: .4; }
-        .pc-stamp { position: absolute; right: -22px; bottom: -24px; pointer-events: none; }
+        .pc-stamp { position: absolute; right: -18px; bottom: -20px; pointer-events: none; z-index: 2; }
 
-        /* identity (center col) */
-        .pc-identity { display: flex; flex-direction: column; justify-content: center; padding: 4px 2px; min-width: 0; }
-        .pc-verified-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 7px; font-weight: 800; color: ${T.accent}; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 7px; }
-        .pc-name { font-size: 20px; font-weight: 900; color: ${F.ink}; line-height: 1.05; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-gender-row { display: flex; align-items: center; gap: 5px; margin-top: 5px; }
-        .pc-gender-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 8px; font-weight: 700; border: 1px solid ${T.border}; background: rgba(255,255,255,.6); color: ${T.accent}; }
-        .pc-mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
-        .pc-mini-tag { font-size: 7.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(255,255,255,.6); border: 1px solid ${T.border}; color: ${F.inkSoft}; white-space: nowrap; }
+        /* identity */
+        .pc-identity { display: flex; flex-direction: column; justify-content: center; min-width: 0; height: 126px; }
+        .pc-verified-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 7px; font-weight: 800; color: ${T.accent}; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+        .pc-name { font-size: 19px; font-weight: 900; color: ${F.ink}; line-height: 1.05; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pc-gender-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 8px; font-weight: 700; border: 1px solid ${T.border}; background: rgba(255,255,255,.65); color: ${T.accent}; margin-top: 5px; align-self: flex-start; }
+        .pc-mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .pc-mini-tag { font-size: 7px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(255,255,255,.65); border: 1px solid ${T.border}; color: ${F.inkSoft}; white-space: nowrap; }
 
-        /* QR */
-        .pc-qr { background: rgba(255,255,255,.82); border-radius: 14px; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1.5px solid ${T.border}; }
-        .pc-qr-img-wrap { position: relative; width: 100%; aspect-ratio: 1; }
+        /* QR — matches photo height */
+        .pc-qr { height: 126px; background: rgba(255,255,255,.82); border-radius: 13px; padding: 6px 6px 4px; display: flex; flex-direction: column; align-items: center; border: 1.5px solid ${T.border}; box-sizing: border-box; }
+        .pc-qr-img-wrap { position: relative; flex: 1; width: 100%; }
         .pc-qr-img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
-        .pc-qr-paw { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:20px; height:20px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-        .pc-qr-paw img { width:14px; height:14px; object-fit:contain; }
-        .pc-qr-label { font-size: 7px; font-weight: 700; color: ${F.muted}; margin-top: 4px; text-align: center; letter-spacing: .06em; }
+        .pc-qr-paw { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:18px; height:18px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+        .pc-qr-paw img { width:12px; height:12px; object-fit:contain; }
+        .pc-qr-label { font-size: 6.5px; font-weight: 700; color: ${F.muted}; margin-top: 3px; letter-spacing: .08em; flex-shrink: 0; }
 
-        /* info table */
-        .pc-info { margin: 4px 14px 0; border: 1px solid ${T.border}; border-radius: 18px; overflow: hidden; background: rgba(255,255,255,.62); flex: 1; }
-        .pc-row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,.8); }
+        /* info table — fills remaining space, rows expand evenly */
+        .pc-info { margin: 8px 14px 0; border: 1px solid ${T.border}; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.62); flex: 1; display: flex; flex-direction: column; }
+        .pc-row { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,.8); min-height: 36px; }
         .pc-row:last-child { border-bottom: none; }
-        .pc-row-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: .7; }
-        .pc-row-label { font-size: 9.5px; font-weight: 700; color: ${F.muted}; width: 58px; flex-shrink: 0; }
-        .pc-row-val { font-size: 11px; font-weight: 800; color: ${F.ink}; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; }
+        .pc-row-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: .65; }
+        .pc-row-label { font-size: 9px; font-weight: 700; color: ${F.muted}; width: 54px; flex-shrink: 0; }
+        .pc-row-val { font-size: 10.5px; font-weight: 800; color: ${F.ink}; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; }
         .pc-pill-ok { background: #DCFCE7; color: #15803D; }
         .pc-pill-no { background: rgba(255,255,255,.7); color: ${F.muted}; border: 1px solid ${T.border}; }
 
-        /* pet ID bar */
-        .pc-id-bar { margin: 6px 14px 0; background: ${T.petIdBg}; border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+        /* pet ID bar — fixed 58px */
+        .pc-id-bar { flex-shrink: 0; margin: 8px 14px 0; background: ${T.petIdBg}; border-radius: 14px; height: 58px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; }
         .pc-id-left { display: flex; flex-direction: column; gap: 1px; }
         .pc-id-paw { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
-        .pc-id-paw img { width: 11px; height: 11px; object-fit: contain; }
-        .pc-id-label { font-size: 7.5px; font-weight: 700; color: rgba(255,255,255,.8); letter-spacing: .04em; }
-        .pc-id-code { font-size: 15px; font-weight: 900; color: white; letter-spacing: .01em; }
-        .pc-id-date { font-size: 7.5px; color: rgba(255,255,255,.7); margin-top: 1px; }
-        .pc-id-shield { opacity: .6; }
-        .pc-id-shield img { width: 22px; height: 22px; object-fit: contain; filter: brightness(0) invert(1); }
+        .pc-id-paw img { width: 10px; height: 10px; object-fit: contain; }
+        .pc-id-label { font-size: 7px; font-weight: 700; color: rgba(255,255,255,.8); letter-spacing: .04em; }
+        .pc-id-code { font-size: 14px; font-weight: 900; color: white; letter-spacing: .01em; line-height: 1.1; }
+        .pc-id-date { font-size: 7px; color: rgba(255,255,255,.7); }
+        .pc-id-shield img { width: 20px; height: 20px; object-fit: contain; filter: brightness(0) invert(1); opacity: .65; }
 
-        /* footer */
-        .pc-footer { margin: 6px 14px 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        /* footer — fixed 36px */
+        .pc-footer { flex-shrink: 0; height: 36px; margin: 0 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .pc-footer-txt { font-size: 8px; font-weight: 700; color: ${T.accent}; letter-spacing: .06em; }
-        .pc-footer-icon img { width: 12px; height: 12px; object-fit: contain; }
+        .pc-footer-icon img { width: 11px; height: 11px; object-fit: contain; }
 
         /* ── theme panel ── */
         .idc-theme-panel { border: 1px solid ${F.line}; border-radius: 20px; background: rgba(255,255,255,.94); padding: 16px; box-shadow: 0 4px 14px rgba(31,26,28,.04); margin-bottom: 16px; }
@@ -356,7 +336,7 @@ export default function PetIdCardPage() {
                       }
                     </div>
                     <div className="pc-stamp">
-                      <VerifiedStamp accent={T.accent} />
+                      <img src="/icons/icon-verified-stamp.png" alt="" style={{ width: 72, height: 72, objectFit: 'contain' }} />
                     </div>
                   </div>
 
