@@ -559,7 +559,7 @@ function FarmDashboardContent() {
 
         /* ─── Add Animal mini sheet ─── */
         .fd-add-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; animation:fd-sheet-up .2s ease; }
-        .fd-add-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+        .fd-add-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; max-width:300px; margin-left:auto; margin-right:auto; }
         .fd-add-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:20px 12px 16px; border-radius:16px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
         .fd-add-card:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
         .fd-add-card img { width:64px; height:64px; object-fit:contain; }
@@ -1048,7 +1048,7 @@ function FarmDashboardContent() {
           </Link>
           <Link href={`/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('เด็ก')}`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
-            <span>ลูกสัตว์</span>
+            <span>เบบี๋</span>
           </Link>
           <Link href="/profile/finance" className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
