@@ -863,7 +863,7 @@ export default function PetDetailPage() {
         .owner-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
         .btn-owner-action { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; cursor: pointer; transition: all .15s; }
         .btn-owner-action:hover { border-color: ${F.pink}; color: ${F.pink}; background: ${F.pinkSoft}; }
-        .btn-owner-action img { width: 20px; height: 20px; object-fit: contain; }
+        .btn-owner-action img { width: 30px; height: 30px; object-fit: contain; }
         .btn-owner-action.danger:hover { border-color: #EF4444; color: #EF4444; background: #FEF2F2; }
         /* ─── Co-owner list ─── */
         .co-owner-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
@@ -994,19 +994,21 @@ export default function PetDetailPage() {
                 )}
               </div>
             )}
-            <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
-              <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
+                <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
+              </div>
+              {isOwner && (
+                <Link href={`/pets/${pet.id}/edit`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
+                  <img src="/icons/icon-edit.png" alt="แก้ไข" style={{ width: 30, height: 30, objectFit: 'contain' }} />
+                </Link>
+              )}
             </div>
             <div className="hero-info">
               <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
               <div className="pet-name">
                 <span>{pet.name}</span>
                 <div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div>
-                {isOwner && (
-                  <Link href={`/pets/${pet.id}/edit`} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
-                    <img src="/icons/icon-setting.png" alt="แก้ไข" style={{ width: 26, height: 26, objectFit: 'contain' }} />
-                  </Link>
-                )}
               </div>
               <div style={{ background: 'white', border: `1px solid ${F.line}`, borderRadius: 18, padding: '4px 16px 8px', marginBottom: 14 }}>
                 <div className="pet-info-table" style={{ marginBottom: 0 }}>
@@ -1049,11 +1051,11 @@ export default function PetDetailPage() {
               {isOwner && (
                 <div className="owner-actions">
                   <button className="btn-owner-action" onClick={() => { setShowCoOwnerModal(true); setCoOwnerError(''); setCoOwnerEmail(''); }}>
-                    <img src="/icons/icon-co-owner.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+                    <img src="/icons/icon-co-owner.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
                   </button>
                   <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); setTransferError(''); }}>
-                    <img src="/icons/icon-pet-transfer.png" alt="" />
+                    <img src="/icons/icon-pet-transfer.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     โอนย้ายสัตว์เลี้ยง
                   </button>
                 </div>
