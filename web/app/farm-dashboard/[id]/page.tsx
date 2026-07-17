@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useCallback, useEffect, useState, useRef, Suspense } from "react";
+import Cropper from "react-easy-crop";
+import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
 import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -99,6 +101,20 @@ interface Task {
   icon: string;
 }
 
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200): Promise<Blob> {
+  const image = new Image();
+  image.src = imageSrc;
+  await new Promise<void>((resolve) => { image.onload = () => resolve(); });
+  const scale = Math.min(1, maxDim / Math.max(pixelCrop.width, pixelCrop.height));
+  const outW = Math.round(pixelCrop.width * scale);
+  const outH = Math.round(pixelCrop.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = outW; canvas.height = outH;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, outW, outH);
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.85));
+}
+
 /* ─────────────────────────────────────────────────────────────
    Main Component
 ───────────────────────────────────────────────────────────── */
@@ -123,6 +139,14 @@ function FarmDashboardContent() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const coverInputRef  = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Crop state
+  const [cropSrc,      setCropSrc]      = useState<string | null>(null);
+  const [cropType,     setCropType]     = useState<"avatar" | "cover" | null>(null);
+  const [cropPos,      setCropPos]      = useState<Point>({ x: 0, y: 0 });
+  const [cropZoom,     setCropZoom]     = useState(1);
+  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
+  const [cropUploading, setCropUploading] = useState(false);
 
   useEffect(() => {
     if (!farmId) return;
@@ -280,35 +304,49 @@ function FarmDashboardContent() {
     return Math.round(((n - s) / (e - s)) * 100);
   };
 
-  const uploadImage = async (file: File, path: string): Promise<string | null> => {
-    const { data, error } = await supabase.storage.from('farm-assets').upload(path, file, { upsert: true });
-    if (error) { alert('อัพโหลดรูปไม่สำเร็จ: ' + error.message); return null; }
-    const { data: { publicUrl } } = supabase.storage.from('farm-assets').getPublicUrl(data.path);
-    return publicUrl;
+  const openCrop = (file: File, type: "avatar" | "cover") => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(reader.result as string);
+      setCropType(type);
+      setCropPos({ x: 0, y: 0 });
+      setCropZoom(1);
+      setCroppedPixels(null);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    setUploadingCover(true);
-    const url = await uploadImage(file, `${farmId}/cover_${Date.now()}.${file.name.split('.').pop()}`);
-    if (url) {
-      await supabase.from('farms').update({ cover_url: url, updated_at: new Date().toISOString() }).eq('id', farmId);
-      setFarm((f: any) => ({ ...f, cover_url: url }));
-    }
-    setUploadingCover(false);
-    e.target.value = '';
+  const cancelCrop = () => {
+    setCropSrc(null); setCropType(null);
+    if (coverInputRef.current)  coverInputRef.current.value  = "";
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    setUploadingAvatar(true);
-    const url = await uploadImage(file, `${farmId}/avatar_${Date.now()}.${file.name.split('.').pop()}`);
-    if (url) {
-      await supabase.from('farms').update({ image_url: url, updated_at: new Date().toISOString() }).eq('id', farmId);
-      setFarm((f: any) => ({ ...f, image_url: url }));
+  const onCropComplete = useCallback((_: Area, pixels: Area) => setCroppedPixels(pixels), []);
+
+  const confirmCrop = async () => {
+    if (!cropSrc || !croppedPixels) return;
+    const isAvatar = cropType === "avatar";
+    if (isAvatar) setUploadingAvatar(true); else setUploadingCover(true);
+    setCropUploading(true);
+    try {
+      const blob = await getCroppedBlob(cropSrc, croppedPixels, isAvatar ? 480 : 1200);
+      const path = `${farmId}/${isAvatar ? 'avatar' : 'cover'}_${Date.now()}.jpg`;
+      const { data, error } = await supabase.storage.from('farm-assets').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) { alert('อัพโหลดรูปไม่สำเร็จ: ' + error.message); return; }
+      const { data: { publicUrl } } = supabase.storage.from('farm-assets').getPublicUrl(data.path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      const field = isAvatar ? 'image_url' : 'cover_url';
+      await supabase.from('farms').update({ [field]: url, updated_at: new Date().toISOString() }).eq('id', farmId);
+      setFarm((f: any) => ({ ...f, [field]: url }));
+      cancelCrop();
+    } catch (err) {
+      console.error('Crop upload error:', err);
+    } finally {
+      setCropUploading(false);
+      setUploadingAvatar(false);
+      setUploadingCover(false);
     }
-    setUploadingAvatar(false);
-    e.target.value = '';
   };
 
   const handleBack = () => fromPage === 'partner' ? router.push('/partner') : router.push('/profile');
@@ -331,6 +369,18 @@ function FarmDashboardContent() {
     <>
       <style>{`
         * { box-sizing:border-box; }
+
+        /* ─── Crop modal ─── */
+        .fd-crop-overlay { position:fixed; inset:0; z-index:500; display:flex; flex-direction:column; background:#000; }
+        .fd-crop-area { flex:1; position:relative; min-height:260px; }
+        .fd-crop-controls { padding:16px 20px env(safe-area-inset-bottom,24px); background:#111; display:flex; flex-direction:column; gap:14px; }
+        .fd-crop-zoom-row { display:flex; align-items:center; gap:10px; }
+        .fd-crop-zoom-label { font-size:12px; color:rgba(255,255,255,.6); flex-shrink:0; }
+        .fd-crop-zoom-input { flex:1; accent-color:${F.pink}; cursor:pointer; }
+        .fd-crop-actions { display:flex; gap:12px; }
+        .fd-crop-cancel { flex:1; padding:13px; border:1.5px solid rgba(255,255,255,.25); border-radius:14px; background:transparent; color:white; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+        .fd-crop-confirm { flex:2; padding:13px; border:none; border-radius:14px; background:${F.pink}; color:white; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
+        .fd-crop-confirm:disabled { opacity:.6; cursor:not-allowed; }
 
         .fd-page { font-family:inherit; min-height:100vh; color:${F.ink}; background:${F.bg}; padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 16px); }
 
@@ -514,6 +564,38 @@ function FarmDashboardContent() {
         @media (prefers-reduced-motion:reduce) { .fd-hdr, .fd-sec, .fd-sheet { animation:none!important; transition:none!important; } }
       `}</style>
 
+      {/* ── Crop modal ── */}
+      {cropSrc && (
+        <div className="fd-crop-overlay">
+          <div className="fd-crop-area">
+            <Cropper
+              image={cropSrc}
+              crop={cropPos}
+              zoom={cropZoom}
+              aspect={cropType === "cover" ? 16 / 9 : 1}
+              cropShape={cropType === "cover" ? "rect" : "round"}
+              showGrid={false}
+              onCropChange={setCropPos}
+              onZoomChange={setCropZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div className="fd-crop-controls">
+            <div className="fd-crop-zoom-row">
+              <span className="fd-crop-zoom-label">ย่อ/ขยาย</span>
+              <input type="range" className="fd-crop-zoom-input" min={1} max={3} step={0.01}
+                value={cropZoom} onChange={(e) => setCropZoom(Number(e.target.value))} />
+            </div>
+            <div className="fd-crop-actions">
+              <button className="fd-crop-cancel" type="button" onClick={cancelCrop}>ยกเลิก</button>
+              <button className="fd-crop-confirm" type="button" onClick={confirmCrop} disabled={cropUploading}>
+                {cropUploading ? "กำลังบันทึก..." : "ตกลง"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fd-page">
 
         {/* ════════════════════════════════
@@ -528,13 +610,13 @@ function FarmDashboardContent() {
           <div className="fd-cover-overlay" />
           <div className="fd-cover-top">
             <button className="fd-cover-btn" onClick={handleBack} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-            <Link href={`/farm/${farmId}`} className="fd-cover-btn" aria-label="ดูหน้าฟาร์ม"><Icon.Eye /></Link>
           </div>
           <button className="fd-cover-cam" onClick={() => coverInputRef.current?.click()} aria-label="เปลี่ยนรูปปก">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
           {uploadingCover && <div className="fd-cover-spin">กำลังอัพโหลด...</div>}
-          <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
+          <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "cover"); if (coverInputRef.current) coverInputRef.current.value = ""; }} />
         </div>
 
         {/* Identity */}
@@ -548,7 +630,8 @@ function FarmDashboardContent() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </div>
               {uploadingAvatar && <div className="fd-avatar-spin"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>}
-              <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+              <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "avatar"); if (avatarInputRef.current) avatarInputRef.current.value = ""; }} />
             </div>
             <div className="fd-id-main">
               <div className="fd-id-text">
@@ -558,7 +641,7 @@ function FarmDashboardContent() {
                 </h1>
                 <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexShrink: 0 }}>
                 <Link href={`/farm/${farmId}`} className="fd-view-btn">
                   <Icon.Eye /> ดูหน้าฟาร์ม
                 </Link>
