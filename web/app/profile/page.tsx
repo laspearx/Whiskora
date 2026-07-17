@@ -231,7 +231,7 @@ export default function ProfilePage() {
         .pp-cover-cam svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
         /* hero row: avatar floats up, name sits to the right at bottom */
-        .pp-avatar-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: -20px; padding-bottom: 14px; }
+        .pp-avatar-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: 8px; padding-bottom: 14px; }
 
         .pp-avatar-wrap { position: relative; flex-shrink: 0; }
         .pp-avatar { width: 82px; height: 82px; border-radius: 999px; border: 3.5px solid white; background: ${F.pinkSoft}; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,.13); color: ${F.pink}; }
@@ -573,18 +573,12 @@ export default function ProfilePage() {
             <h2 className="pp-id-promo-title">Pet ID Card</h2>
             <p className="pp-id-promo-desc">แสดง QR Code ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยงของคุณ</p>
             <div className="pp-id-promo-hint">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-                <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
-              </svg>
+              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} />
               กดปุ่ม QR ที่แถบเมนูด้านล่าง
             </div>
           </div>
           <div className="pp-id-promo-qr">
-            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-              <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
-            </svg>
+            <img src="/icons/icon-qr-code.png" alt="" style={{ width: 80, height: 80, objectFit: 'contain' }} />
           </div>
         </div>
 
