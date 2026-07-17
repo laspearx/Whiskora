@@ -230,8 +230,8 @@ export default function ProfilePage() {
         .pp-cover-cam { position: absolute; bottom: 10px; right: 14px; width: 34px; height: 34px; border-radius: 999px; background: rgba(0,0,0,.42); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; }
         .pp-cover-cam svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        /* avatar row floats at -36px above the cover bottom edge */
-        .pp-avatar-row { position: relative; display: flex; align-items: flex-end; margin-top: -36px; padding: 0; }
+        /* hero row: avatar floats up, name sits to the right at bottom */
+        .pp-avatar-row { display: flex; align-items: flex-end; gap: 12px; margin-top: -36px; padding-bottom: 14px; }
 
         .pp-avatar-wrap { position: relative; flex-shrink: 0; }
         .pp-avatar { width: 82px; height: 82px; border-radius: 999px; border: 3.5px solid white; background: ${F.pinkSoft}; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,.13); color: ${F.pink}; }
@@ -240,8 +240,7 @@ export default function ProfilePage() {
         .pp-avatar-cam { position: absolute; right: -1px; bottom: 1px; width: 26px; height: 26px; border-radius: 999px; background: white; border: 2px solid ${F.line}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
         .pp-avatar-cam svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        /* name row sits fully below the avatar/cover */
-        .pp-hero-info { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 14px; }
+        .pp-hero-info { flex: 1; min-width: 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
         .pp-hero-text { flex: 1; min-width: 0; }
         .pp-name { margin: 0; font-size: 20px; font-weight: 750; color: ${F.ink}; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-subtitle { margin: 3px 0 0; font-size: 13px; color: ${F.muted}; }
@@ -390,7 +389,7 @@ export default function ProfilePage() {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "cover"); if (coverRef.current) coverRef.current.value = ""; }} />
         </div>
 
-        {/* Avatar floats up overlapping the cover */}
+        {/* Avatar (floats up) + name side-by-side in one row */}
         <div className="pp-avatar-row">
           <div className="pp-avatar-wrap">
             <div className="pp-avatar">
@@ -409,18 +408,16 @@ export default function ProfilePage() {
             <input ref={avatarRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "avatar"); if (avatarRef.current) avatarRef.current.value = ""; }} />
           </div>
-        </div>
-
-        {/* Name + edit button sit below the cover, no overlap */}
-        <div className="pp-hero-info">
-          <div className="pp-hero-text">
-            <h1 className="pp-name">{displayName}</h1>
-            <p className="pp-subtitle">เจ้าของสัตว์เลี้ยง {pets.length} ตัว</p>
-            {user?.created_at && (
-              <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
-            )}
+          <div className="pp-hero-info">
+            <div className="pp-hero-text">
+              <h1 className="pp-name">{displayName}</h1>
+              <p className="pp-subtitle">เจ้าของสัตว์เลี้ยง {pets.length} ตัว</p>
+              {user?.created_at && (
+                <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
+              )}
+            </div>
+            <Link href="/profile/edit" className="pp-edit-btn" style={{ flexShrink: 0 }}>แก้ไข</Link>
           </div>
-          <Link href="/profile/edit" className="pp-edit-btn">แก้ไข</Link>
         </div>
 
         {/* Pet Bubbles */}
