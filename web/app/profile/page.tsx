@@ -262,7 +262,7 @@ export default function ProfilePage() {
         .pp-pet-circle img { width: 100%; height: 100%; object-fit: cover; }
         .pp-pet-fallback { width: 28px; height: 28px; object-fit: contain; }
         .pp-pet-bubble:hover .pp-pet-circle { border-color: ${F.pink}; transform: translateY(-2px); }
-        .pp-pet-add { border-style: dashed; color: ${F.muted}; font-size: 22px; font-weight: 300; }
+        .pp-pet-add { border-style: dashed; }
         .pp-pet-name { font-size: 11px; font-weight: 600; color: ${F.inkSoft}; text-align: center; max-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-empty-pets { border: 1px dashed ${F.line}; border-radius: 14px; padding: 24px; text-align: center; color: ${F.muted}; font-size: 13px; line-height: 1.6; }
 
@@ -444,7 +444,9 @@ export default function ProfilePage() {
                 </Link>
               ))}
               <Link href="/pets/create" className="pp-pet-bubble">
-                <div className="pp-pet-circle pp-pet-add">+</div>
+                <div className="pp-pet-circle pp-pet-add">
+                  <img src="/icons/icon-nav-add.png" alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                </div>
                 <span className="pp-pet-name">เพิ่ม</span>
               </Link>
             </div>

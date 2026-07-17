@@ -194,7 +194,7 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
             <>
               <h2 className="qrs-title">QR สัตว์เลี้ยง</h2>
               <button className="qrs-opt qrs-opt-primary" onClick={handleShowMyQr}>
-                <img src="/icons/icon-qr-code.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
+                <img src="/icons/icon-qr-code.png" alt="" style={{ width: 68, height: 68, objectFit: 'contain', flexShrink: 0 }} />
                 <div>
                   <div className="qrs-opt-label">โชว์ QR สัตว์เลี้ยงของฉัน</div>
                   <div className="qrs-opt-sub">ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยง</div>
