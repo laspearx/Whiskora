@@ -7,9 +7,9 @@ import * as htmlToImage from 'html-to-image';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
-  ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
-  pink: '#E84677', pinkLight: '#F9A8C9', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF',
+  ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
+  pink: '#e84677', pinkLight: '#F9A8C9', pinkSoft: '#fde2ea', pinkBorder: '#FBCFE8',
+  cream: '#fffafc', paper: '#fdf0f3', line: '#f3dde3', lineMid: '#E5E7EB',
 };
 
 type CardTheme = {
@@ -406,32 +406,33 @@ export default function PetIdCardPage() {
   return (
     <>
       <style>{`
+        @keyframes page-rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         * { box-sizing: border-box; }
         .idc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
-        .idc-wrap { max-width: 600px; margin: 0 auto; padding: 24px 20px 80px; }
+        .idc-wrap { max-width: 600px; margin: 0 auto; padding: 24px 20px 80px; animation: page-rise .4s ease both; }
         .idc-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
-        .idc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
-        .idc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
-        .idc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
-        .idc-sub { font-size: 11px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
+        .idc-back { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: white; color: ${F.ink}; cursor: pointer; border: 1px solid ${F.line}; transition: transform .15s, background .15s; flex-shrink: 0; }
+        .idc-back:hover { background: ${F.paper}; transform: translateY(-1px); }
+        .idc-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.2; margin: 0; }
+        .idc-sub { font-size: 13px; font-weight: 400; color: ${F.muted}; margin-top: 3px; }
 
         .idc-display { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100%; gap: 20px; }
-        .idc-stage { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; aspect-ratio: 2/3; position: relative; border-radius: 24px; overflow: hidden; background: #f3edf0; transition: box-shadow .35s ease; }
+        .idc-stage { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; aspect-ratio: 2/3; position: relative; border-radius: 24px; overflow: hidden; background: ${F.pinkSoft}; transition: box-shadow .35s ease; }
         .idc-stage img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 24px; animation: idc-fadein .4s ease; }
         @keyframes idc-fadein { from { opacity: 0; } to { opacity: 1; } }
-        .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(253,242,245,0.6); }
+        .idc-loading { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(253,226,234,0.55); }
         .idc-actions { display: flex; gap: 12px; width: min(100%, 400px); max-width: 100%; box-sizing: border-box; }
-        .idc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all .18s ease; font-family: inherit; }
-        .idc-btn-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
-        .idc-btn-primary:hover { background: #D63F6A; }
-        .idc-btn-ghost { background: white; color: ${F.ink}; border: 1px solid ${F.lineMid}; }
+        .idc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all .15s; font-family: inherit; }
+        .idc-btn-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.28); }
+        .idc-btn-primary:hover { background: #c4325f; }
+        .idc-btn-ghost { background: white; color: ${F.ink}; border: 1px solid ${F.line}; }
         .idc-btn-ghost:hover { border-color: ${F.pink}; color: ${F.pink}; }
-        .idc-hint { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 10px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; width: min(100%, 400px); max-width: 100%; box-sizing: border-box; }
-        .idc-theme-panel { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; border: 1px solid ${F.lineMid}; border-radius: 18px; background: rgba(255,255,255,0.94); padding: 14px; box-shadow: 0 12px 32px rgba(17,24,39,0.06); }
-        .idc-theme-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-        .idc-theme-title { font-size: 13px; font-weight: 800; color: ${F.ink}; line-height: 1.2; }
-        .idc-theme-sub { font-size: 10px; font-weight: 700; color: ${F.muted}; letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
-        .idc-theme-active { font-size: 11px; font-weight: 800; color: ${selectedTheme.accent}; white-space: nowrap; }
+        .idc-hint { font-size: 12px; font-weight: 500; color: ${F.muted}; text-align: center; background: ${F.pinkSoft}; padding: 11px 14px; border-radius: 12px; border: 1px solid ${F.pinkBorder}; width: min(100%, 400px); max-width: 100%; box-sizing: border-box; }
+        .idc-theme-panel { width: min(100%, 400px); max-width: 100%; box-sizing: border-box; border: 1px solid ${F.line}; border-radius: 20px; background: rgba(255,255,255,.94); padding: 16px; box-shadow: 0 4px 14px rgba(31,26,28,.04); }
+        .idc-theme-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .idc-theme-title { font-size: 15px; font-weight: 700; color: ${F.ink}; line-height: 1.2; }
+        .idc-theme-sub { font-size: 12px; font-weight: 400; color: ${F.muted}; margin-top: 2px; }
+        .idc-theme-active { font-size: 12px; font-weight: 700; color: ${selectedTheme.accent}; white-space: nowrap; }
         .idc-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
         .idc-theme-choice { min-width: 0; appearance: none; border: 1px solid ${F.lineMid}; background: white; border-radius: 14px; padding: 8px; cursor: pointer; font-family: inherit; text-align: left; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
         .idc-theme-choice:hover { transform: translateY(-1px); border-color: var(--theme-border); box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-accent) 18%, transparent); }
@@ -567,9 +568,10 @@ export default function PetIdCardPage() {
         <div className="idc-wrap">
           <div className="idc-topbar">
             <button onClick={() => router.back()} className="idc-back" aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <img src="/icons/icon-pet-id-card.png" alt="" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
             <div>
               <h1 className="idc-title">บัตรประจำตัวสัตว์เลี้ยง</h1>
-              <p className="idc-sub">Whiskora Pet Identification Card</p>
+              <p className="idc-sub">เลือกธีม แล้วดาวน์โหลดหรือแชร์ได้เลย</p>
             </div>
           </div>
 
@@ -743,7 +745,7 @@ export default function PetIdCardPage() {
               </div>
             </div>
 
-            <p className="idc-hint">📱 แตะค้างที่บัตรเพื่อบันทึกรูป หรือกดปุ่มดาวน์โหลดด้านล่าง</p>
+            <p className="idc-hint">แตะค้างที่บัตรเพื่อบันทึกรูป หรือกดปุ่มดาวน์โหลดด้านล่าง</p>
             <div className="idc-actions">
               <button onClick={handleDownload} className="idc-btn idc-btn-ghost" disabled={!cardImageUrl}><Icon.Download /> ดาวน์โหลดบัตร</button>
               <button onClick={handleShare} className="idc-btn idc-btn-primary"><Icon.Share /> แชร์ลิงก์ให้สแกน</button>
