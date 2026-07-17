@@ -665,9 +665,7 @@ export default function PetIdCardPage() {
                   </div>
                   <div className="card-name">
                     {pet.name ? pet.name.toUpperCase() : '-'}
-                    <span className={`card-gender ${isMale ? 'card-gender-m' : 'card-gender-f'}`}>
-                      {isMale ? '♂' : '♀'}
-                    </span>
+                    <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginLeft:4}} />
                   </div>
                   <div className="card-meta">
                     {extractBoth(pet.breed)} • {extractBoth(pet.color)}

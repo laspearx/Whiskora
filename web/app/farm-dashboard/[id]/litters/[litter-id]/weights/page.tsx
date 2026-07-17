@@ -162,7 +162,7 @@ export default function LitterWeightsPage() {
                   </div>
                   <div className="lw-pet-info">
                     <div className="lw-pet-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
-                    <span className={`lw-pet-gender ${isMale ? 'm' : 'f'}`}>{isMale ? '♂ ผู้' : '♀ เมีย'}</span>
+                    <span className={`lw-pet-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
                     {baby.weight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {baby.weight} กก.</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>

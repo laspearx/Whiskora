@@ -165,7 +165,7 @@ export default function FarmPetsPage() {
                           {pet.birth_date && <span className="fpl-age">{calculateAge(pet.birth_date)}</span>}
                         </div>
                         <div className="fpl-tags">
-                          <span className={`fpl-tag ${isFemale ? 'fpl-gender-f' : 'fpl-gender-m'}`}>{isFemale ? '♀ ตัวเมีย' : '♂ ตัวผู้'}</span>
+                          <span className={`fpl-tag ${isFemale ? 'fpl-gender-f' : 'fpl-gender-m'}`} style={{ display:'inline-flex', alignItems:'center', gap:4 }}><img src={isFemale ? '/icons/icon-women.png' : '/icons/icon-men.png'} alt="" style={{width:12,height:12,objectFit:'contain'}} />{isFemale ? 'ตัวเมีย' : 'ตัวผู้'}</span>
                           {pet.status && st && <span className="fpl-tag" style={{ background: st.bg, color: st.color, borderColor: st.border }}>{pet.status}</span>}
                         </div>
                         <div className="fpl-breed-row">

@@ -406,7 +406,8 @@ function PetRow({ pet }: { pet: any }) {
       <div className="pet-info">
         <div className="pet-name-row">
           <span className="pet-name">{pet.name}</span>
-          <span className={`gender-badge ${isMale ? "gender-male" : "gender-female"}`}>
+          <span className={`gender-badge ${isMale ? "gender-male" : "gender-female"}`} style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+            <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:12,height:12,objectFit:'contain'}} />
             {isMale ? "ตัวผู้" : "ตัวเมีย"}
           </span>
         </div>

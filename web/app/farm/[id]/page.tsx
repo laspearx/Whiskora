@@ -408,7 +408,7 @@ export default function PublicFarmProfile() {
                       <div className="fp-pet-info">
                         <div className="fp-pet-name">
                           {pet.name}
-                          <span className={isMale(pet.gender) ? 'g-m' : 'g-f'}>{isMale(pet.gender) ? '♂' : '♀'}</span>
+                          <img src={isMale(pet.gender) ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle'}} />
                         </div>
                         <div className="fp-pet-breed">{extractThai(pet.breed)}</div>
                         {pet.birth_date && <div className="fp-pet-age">{calcAge(pet.birth_date)}</div>}

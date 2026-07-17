@@ -429,11 +429,11 @@ export default function EditPetPage() {
                 <label className="ep-label">เพศ</label>
                 <div className="ep-gender-row">
                   <button type="button" className={`ep-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2a7 7 0 1 0 5.29 11.71L17 16.41V20h3v-3h3v-3h-4.41l-2.7-2.7A7 7 0 0 0 9 2zm0 2a5 5 0 1 1 0 10A5 5 0 0 1 9 4z"/></svg>
+                    <img src="/icons/icon-men.png" alt="" style={{width:16,height:16,objectFit:'contain'}} />
                     ตัวผู้
                   </button>
                   <button type="button" className={`ep-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm-1 2v3H9v2h2v2h2v-2h2v-2h-2v-3h-2z"/></svg>
+                    <img src="/icons/icon-women.png" alt="" style={{width:16,height:16,objectFit:'contain'}} />
                     ตัวเมีย
                   </button>
                 </div>

@@ -202,7 +202,7 @@ export default function LitterDetailPage() {
                       </div>
                       <div className="ld-baby-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
                       <div className="ld-baby-foot">
-                        <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`}>{isMale ? '♂ ผู้' : '♀ เมีย'}</span>
+                        <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
                         <span className="ld-baby-status">{baby.status || 'เด็ก'}</span>
                       </div>
                     </Link>

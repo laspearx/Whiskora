@@ -336,8 +336,8 @@ function CreatePetContent() {
                 <div className="cp-field" style={{ marginBottom: 0 }}>
                   <label className="cp-label">เพศ</label>
                   <div className="cp-gender">
-                    <button type="button" className={`cp-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)}>♂ ตัวผู้</button>
-                    <button type="button" className={`cp-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)}>♀ ตัวเมีย</button>
+                    <button type="button" className={`cp-gender-btn male ${gender === PET_GENDER.MALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.MALE)} style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6 }}><img src="/icons/icon-men.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> ตัวผู้</button>
+                    <button type="button" className={`cp-gender-btn female ${gender === PET_GENDER.FEMALE ? 'active' : ''}`} onClick={() => setGender(PET_GENDER.FEMALE)} style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6 }}><img src="/icons/icon-women.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> ตัวเมีย</button>
                   </div>
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
