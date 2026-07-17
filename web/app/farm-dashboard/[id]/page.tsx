@@ -467,11 +467,11 @@ function FarmDashboardContent() {
         /* ─── 3. Farm Overview ─── */
         .fd-ov-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
         @media (max-width:360px) { .fd-ov-grid { grid-template-columns:repeat(2,1fr); } }
-        .fd-ov-stat { border-radius:10px; padding:10px 8px; cursor:pointer; text-decoration:none; display:flex; flex-direction:column; gap:3px; transition:all .15s; border:1.5px solid transparent; }
+        .fd-ov-stat { border-radius:10px; padding:12px 8px 10px; cursor:pointer; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .15s; border:1.5px solid transparent; }
         .fd-ov-stat:hover { border-color:rgba(232,70,119,.2); transform:translateY(-1px); }
         .fd-ov-count { font-size:22px; font-weight:800; line-height:1; }
-        .fd-ov-label { font-size:9px; font-weight:700; color:${F.inkSoft}; line-height:1.3; }
-        .fd-ov-icon  { width:28px; height:28px; object-fit:contain; margin-bottom:4px; }
+        .fd-ov-label { font-size:9px; font-weight:700; color:${F.inkSoft}; line-height:1.3; text-align:center; }
+        .fd-ov-icon  { width:44px; height:44px; object-fit:contain; margin-bottom:4px; }
 
         /* ─── 4. Pregnancy Tracking Card ─── */
         .ptc { position:relative; border:1px solid ${F.line}; border-radius:14px; overflow:hidden; margin-bottom:10px; background:white; box-shadow:0 1px 4px rgba(31,26,28,.06); }
@@ -559,14 +559,12 @@ function FarmDashboardContent() {
 
         /* ─── Add Animal mini sheet ─── */
         .fd-add-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; animation:fd-sheet-up .2s ease; }
-        .fd-add-option { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:13px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; margin-bottom:10px; }
-        .fd-add-option:last-of-type { margin-bottom:0; }
-        .fd-add-option:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
-        .fd-add-option-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .fd-add-option-icon img { width:28px; height:28px; object-fit:contain; }
-        .fd-add-option-text { flex:1; text-align:left; }
-        .fd-add-option-title { font-size:14px; font-weight:700; color:${F.ink}; margin-bottom:2px; }
-        .fd-add-option-sub { font-size:11px; color:${F.muted}; font-weight:400; }
+        .fd-add-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+        .fd-add-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:20px 12px 16px; border-radius:16px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
+        .fd-add-card:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
+        .fd-add-card img { width:64px; height:64px; object-fit:contain; }
+        .fd-add-card-title { font-size:13px; font-weight:700; color:${F.ink}; text-align:center; line-height:1.3; }
+        .fd-add-card-sub { font-size:10px; color:${F.muted}; font-weight:400; text-align:center; line-height:1.4; }
 
         /* ─── Misc ─── */
         .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:600; text-align:center; padding:8px 0; }
@@ -748,7 +746,7 @@ function FarmDashboardContent() {
           <section className="fd-sec">
             <div className="fd-sec-head">
               <div className="fd-sec-title">
-                <img src="/icons/icon-my-pets.png" alt="" />
+                <img src="/icons/icon-home.png" alt="" style={{ width: 32, height: 32 }} />
                 <h2 className="fd-sec-h">ภาพรวมฟาร์ม</h2>
               </div>
               <Link href={`/farm-dashboard/${farmId}/pets`} className="fd-link-sm">
@@ -764,10 +762,10 @@ function FarmDashboardContent() {
             ) : (
               <div className="fd-ov-grid">
                 {[
-                  { label: 'พ่อแม่พันธุ์', count: breeders, color: F.purple, bg: '#F3E8FF', icon: '/icons/icon-breeding.png', status: 'พ่อพันธุ์ / แม่พันธุ์' },
-                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.pink, bg: F.pinkSoft, icon: '/icons/icon-feeding.png', status: null },
-                  { label: 'ลูกสัตว์', count: babies, color: F.amber, bg: F.amberSoft, icon: '/icons/icon-my-pets.png', status: 'เด็ก' },
-                  { label: 'รอส่งมอบ', count: readyToMove, color: F.green, bg: F.greenSoft, icon: '/icons/icon-partner.png', status: 'พร้อมย้ายบ้าน' },
+                  { label: 'พ่อแม่พันธุ์', count: breeders, color: F.purple, bg: '#F3E8FF', icon: '/icons/icon-my-pets.png', status: 'พ่อพันธุ์ / แม่พันธุ์' },
+                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.pink, bg: F.pinkSoft, icon: '/icons/icon-foster-home.png', status: null },
+                  { label: 'เบบี๋', count: babies, color: F.amber, bg: F.amberSoft, icon: '/icons/icon-feeding.png', status: 'เด็ก' },
+                  { label: 'รอส่งมอบ', count: readyToMove, color: F.green, bg: F.greenSoft, icon: '/icons/icon-pet-carrier.png', status: 'พร้อมย้ายบ้าน' },
                 ].map(stat => (
                   <Link
                     key={stat.label}
@@ -1018,26 +1016,18 @@ function FarmDashboardContent() {
           <div className="fd-add-sheet" onClick={e => e.stopPropagation()}>
             <div className="fd-sheet-handle" />
             <div className="fd-sheet-title">เพิ่มสัตว์เลี้ยง</div>
-            <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fd-add-option" onClick={() => setShowAddAnimalSheet(false)}>
-              <div className="fd-add-option-icon" style={{ background: F.pinkSoft }}>
-                <img src="/icons/icon-tab-add.png" alt="" />
-              </div>
-              <div className="fd-add-option-text">
-                <div className="fd-add-option-title">เพิ่มทีละตัว</div>
-                <div className="fd-add-option-sub">บันทึกข้อมูลสัตว์เลี้ยงพร้อมประวัติครบถ้วน</div>
-              </div>
-              <Icon.ChevronRight />
-            </Link>
-            <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} className="fd-add-option" onClick={() => setShowAddAnimalSheet(false)}>
-              <div className="fd-add-option-icon" style={{ background: F.pinkSoft }}>
-                <img src="/icons/icon-my-pets.png" alt="" />
-              </div>
-              <div className="fd-add-option-text">
-                <div className="fd-add-option-title">เพิ่มหลายตัวพร้อมกัน</div>
-                <div className="fd-add-option-sub">เพิ่มลูกสัตว์ทั้งครอกได้ในครั้งเดียว</div>
-              </div>
-              <Icon.ChevronRight />
-            </Link>
+            <div className="fd-add-grid">
+              <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fd-add-card" onClick={() => setShowAddAnimalSheet(false)}>
+                <img src="/icons/icon-foster-home.png" alt="" />
+                <div className="fd-add-card-title">เพิ่มทีละตัว</div>
+                <div className="fd-add-card-sub">บันทึกข้อมูลพร้อมประวัติครบถ้วน</div>
+              </Link>
+              <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} className="fd-add-card" onClick={() => setShowAddAnimalSheet(false)}>
+                <img src="/icons/icon-vet-care.png" alt="" />
+                <div className="fd-add-card-title">เพิ่มหลายตัว</div>
+                <div className="fd-add-card-sub">เพิ่มลูกสัตว์ทั้งครอกในครั้งเดียว</div>
+              </Link>
+            </div>
             <button className="fd-sheet-close" onClick={() => setShowAddAnimalSheet(false)}>ปิด</button>
           </div>
         </div>
@@ -1064,9 +1054,9 @@ function FarmDashboardContent() {
             <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
             <span>รายรับรายจ่าย</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/appointments?from=${fromPage}`} className="fd-nav-tab">
+          <Link href={`/farm-dashboard/${farmId}/appointments/create?from=${fromPage}`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
-            <span>ปฏิทิน</span>
+            <span>นัดหมาย</span>
           </Link>
         </div>
       </nav>
