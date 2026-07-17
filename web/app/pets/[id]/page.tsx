@@ -83,11 +83,12 @@ export default function PetDetailPage() {
   const petId = params.id as string;
 
   const [pet, setPet] = useState<Pet | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
-  const [owner, setOwner] = useState<UserProfile | null>(null);
+  const [coOwners, setCoOwners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -113,6 +114,20 @@ export default function PetDetailPage() {
     activity_type: 'ทั่วไป', title: '', description: '',
     activity_date: new Date().toISOString().split('T')[0],
   });
+
+  // Transfer modal
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferStep, setTransferStep] = useState<'input' | 'confirm'>('input');
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferTarget, setTransferTarget] = useState<any>(null);
+  const [transferring, setTransferring] = useState(false);
+  const [transferError, setTransferError] = useState('');
+
+  // Co-owner modal
+  const [showCoOwnerModal, setShowCoOwnerModal] = useState(false);
+  const [coOwnerEmail, setCoOwnerEmail] = useState('');
+  const [addingCoOwner, setAddingCoOwner] = useState(false);
+  const [coOwnerError, setCoOwnerError] = useState('');
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
@@ -277,6 +292,7 @@ export default function PetDetailPage() {
       setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      setSessionUserId(session.user.id);
 
       const { data: petData, error: petError } = await supabase
         .from('pets')
@@ -293,37 +309,91 @@ export default function PetDetailPage() {
       setPet(petData as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      // สร้างผังสายเลือดโดยไล่ตาม sire_id/dam_id ขึ้นไปสูงสุด 5 เจน
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
 
-      // เจ้าของ: ดึงจาก profiles (มี full_name, avatar_url, phone, location)
-      // ส่วน email ดึงจาก auth ของ session ถ้าเป็นเจ้าของเอง
-      if (petData.user_id) {
-        const { data: ownerData } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, phone, location')
-          .eq('id', petData.user_id)
-          .maybeSingle();
-        if (ownerData) {
-          const email = session.user.id === petData.user_id ? session.user.email : null;
-          setOwner({ ...ownerData, email } as UserProfile);
-        }
-      }
-
-      const { data: vaccineData } = await supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false });
-      if (vaccineData) setVaccines(vaccineData as Vaccine[]);
-
-      const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
-      if (activityData) setActivities(activityData as Activity[]);
-
-      const { data: docData } = await supabase.from('pet_documents').select('*').eq('pet_id', petId).order('created_at', { ascending: false });
-      if (docData) setDocuments(docData as PetDocument[]);
+      const [vaccineRes, activityRes, docRes, coOwnerRes] = await Promise.all([
+        supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
+        supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false }),
+        supabase.from('pet_documents').select('*').eq('pet_id', petId).order('created_at', { ascending: false }),
+        supabase.from('pet_co_owners').select('*, profile:user_id(id, full_name, avatar_url)').eq('pet_id', petId),
+      ]);
+      if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
+      if (activityRes.data) setActivities(activityRes.data as Activity[]);
+      if (docRes.data) setDocuments(docRes.data as PetDocument[]);
+      if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
 
     } catch (error) {
       console.error("Fetch Error:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ─── โอนย้าย: ค้นหาผู้ใช้จาก email ───
+  const handleTransferLookup = async () => {
+    setTransferError('');
+    if (!transferEmail.trim()) { setTransferError('กรุณากรอกอีเมล'); return; }
+    if (transferEmail.trim().toLowerCase() === sessionUserId) { setTransferError('ไม่สามารถโอนให้ตัวเองได้'); return; }
+    setTransferring(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('email', transferEmail.trim().toLowerCase())
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) { setTransferError('ไม่พบผู้ใช้งานที่มีอีเมลนี้ในระบบ'); return; }
+      setTransferTarget(data);
+      setTransferStep('confirm');
+    } catch { setTransferError('เกิดข้อผิดพลาด กรุณาลองใหม่'); }
+    finally { setTransferring(false); }
+  };
+
+  const handleTransferConfirm = async () => {
+    if (!transferTarget || !pet) return;
+    setTransferring(true);
+    try {
+      const { error } = await supabase
+        .from('pets')
+        .update({ user_id: transferTarget.id, farm_id: null })
+        .eq('id', pet.id);
+      if (error) throw error;
+      router.push('/profile');
+    } catch { setTransferError('โอนย้ายไม่สำเร็จ กรุณาลองใหม่'); setTransferring(false); }
+  };
+
+  const handleAddCoOwner = async () => {
+    setCoOwnerError('');
+    if (!coOwnerEmail.trim()) { setCoOwnerError('กรุณากรอกอีเมล'); return; }
+    setAddingCoOwner(true);
+    try {
+      const { data: targetUser, error: lookupErr } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('email', coOwnerEmail.trim().toLowerCase())
+        .maybeSingle();
+      if (lookupErr) throw lookupErr;
+      if (!targetUser) { setCoOwnerError('ไม่พบผู้ใช้งานที่มีอีเมลนี้ในระบบ'); return; }
+      if (targetUser.id === sessionUserId) { setCoOwnerError('คุณคือเจ้าของหลักอยู่แล้ว'); return; }
+      const { error: insertErr } = await supabase.from('pet_co_owners').insert({
+        pet_id: Number(petId),
+        user_id: targetUser.id,
+        added_by: sessionUserId,
+      });
+      if (insertErr) {
+        if (insertErr.code === '23505') { setCoOwnerError('ผู้ใช้นี้เป็นเจ้าของร่วมอยู่แล้ว'); return; }
+        throw insertErr;
+      }
+      setCoOwnerEmail('');
+      await fetchPetData();
+    } catch { setCoOwnerError('เกิดข้อผิดพลาด กรุณาลองใหม่'); }
+    finally { setAddingCoOwner(false); }
+  };
+
+  const handleRemoveCoOwner = async (coOwnerId: string) => {
+    if (!confirm('ลบเจ้าของร่วมคนนี้?')) return;
+    await supabase.from('pet_co_owners').delete().eq('id', coOwnerId);
+    await fetchPetData();
   };
 
   // ─── ปุ่ม: แชร์ ───
@@ -578,6 +648,7 @@ export default function PetDetailPage() {
   );
 
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
+  const isOwner = sessionUserId === pet.user_id;
   const galleryImages = parseGallery(pet.gallery_urls || '');
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
   const combinedTimeline = generateCombinedTimeline();
@@ -765,6 +836,19 @@ export default function PetDetailPage() {
         .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
         .activity-tab-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; cursor: pointer; transition: all .15s; }
         .activity-tab-btn.active { background: ${F.ink}; border-color: ${F.ink}; color: white; }
+        /* ─── Owner Actions ─── */
+        .owner-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .btn-owner-action { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; cursor: pointer; transition: all .15s; }
+        .btn-owner-action:hover { border-color: ${F.pink}; color: ${F.pink}; background: ${F.pinkSoft}; }
+        .btn-owner-action img { width: 20px; height: 20px; object-fit: contain; }
+        .btn-owner-action.danger:hover { border-color: #EF4444; color: #EF4444; background: #FEF2F2; }
+        /* ─── Co-owner list ─── */
+        .co-owner-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
+        .co-owner-row:last-child { border-bottom: none; }
+        .co-owner-avatar { width: 36px; height: 36px; border-radius: 50%; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: ${F.pink}; flex-shrink: 0; overflow: hidden; }
+        .co-owner-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .co-owner-name { flex: 1; font-size: 13px; font-weight: 600; color: ${F.ink}; }
+        .btn-remove-co { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #FECACA; background: #FEF2F2; color: #EF4444; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
         .share-footer { background: linear-gradient(135deg, #FFF0F4, #FDF2F5); border: 1px solid ${F.pinkBorder}; border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
         .share-footer-left { display: flex; align-items: center; gap: 14px; }
         .share-paw { width: 48px; height: 48px; border-radius: 50%; background: ${F.pink}; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; }
@@ -909,10 +993,12 @@ export default function PetDetailPage() {
                   <div className="pet-id-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> PET ID</div>
                   <div className="pet-id-number">{pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`}</div>
                   <div className="pet-id-reg">สมัครเมื่อ {formatDate(pet.created_at || pet.birth_date)}</div>
-                  <div className="pet-id-actions">
-                    <Link href={`/pets/${pet.id}/edit`} className="btn-id-card btn-id-edit"><Icon.Edit /> แก้ไข</Link>
-                    <Link href={`/pets/${pet.id}/id-card`} className="btn-id-card"><Icon.Doc /> สร้างบัตรประจำตัว</Link>
-                  </div>
+                  {isOwner && (
+                    <div className="pet-id-actions">
+                      <Link href={`/pets/${pet.id}/edit`} className="btn-id-card btn-id-edit"><Icon.Edit /> แก้ไข</Link>
+                      <Link href={`/pets/${pet.id}/id-card`} className="btn-id-card"><Icon.Doc /> สร้างบัตรประจำตัว</Link>
+                    </div>
+                  )}
                 </div>
                 <div className="pet-id-qr-wrapper">
                   <div className="pet-id-qr" onClick={() => setShowQrModal(true)}>{qrDataUrl ? <img src={qrDataUrl} alt="QR" /> : null}</div>
@@ -920,7 +1006,19 @@ export default function PetDetailPage() {
                 </div>
               </div>
               {pet.status && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: '20px', background: '#D1FAE5', color: '#065F46', fontSize: '11px', fontWeight: '700', border: '1px solid #A7F3D0' }}>● {pet.status}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: '20px', background: '#D1FAE5', color: '#065F46', fontSize: '11px', fontWeight: '600', border: '1px solid #A7F3D0' }}>● {pet.status}</span>
+              )}
+              {isOwner && (
+                <div className="owner-actions">
+                  <button className="btn-owner-action" onClick={() => { setShowCoOwnerModal(true); setCoOwnerError(''); setCoOwnerEmail(''); }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
+                  </button>
+                  <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); setTransferError(''); }}>
+                    <img src="/icons/icon-pet-transfer.png" alt="" />
+                    โอนย้ายสัตว์เลี้ยง
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -1067,21 +1165,20 @@ export default function PetDetailPage() {
                   <div className="card-footer"><Link href={`/pets/${pet.id}/vaccines`}>ดูประวัติสุขภาพทั้งหมด →</Link></div>
                 </div>
 
-                {owner && (
+                {coOwners.length > 0 && (
                   <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>👤</div>เจ้าของ</div></div>
+                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, color: F.pink }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>เจ้าของร่วม ({coOwners.length})</div></div>
                     <div className="card-body">
-                      <div className="owner-card-header">
-                        <div className="owner-avatar">
-                          {owner.avatar_url ? <img src={owner.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: F.pinkSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: F.pink, fontWeight: 700 }}>{owner.full_name?.[0] || '?'}</div>}
+                      {coOwners.map(co => (
+                        <div key={co.id} className="co-owner-row">
+                          <div className="co-owner-avatar">
+                            {co.profile?.avatar_url ? <img src={co.profile.avatar_url} alt="" /> : (co.profile?.full_name?.[0] || '?')}
+                          </div>
+                          <div className="co-owner-name">{co.profile?.full_name || 'ผู้ใช้'}</div>
                         </div>
-                        <div className="owner-name-wrap"><div className="owner-name">{owner.full_name || 'ไม่ระบุชื่อ'}</div>
-                          {pet.farm && <div className="owner-cattery"><Icon.Verified /> {pet.farm.farm_name}</div>}
-                        </div>
-                      </div>
-                      {owner.phone && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Phone /></span>{owner.phone}</div>}
-                      {owner.email && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Mail /></span>{owner.email}</div>}
-                      {owner.location && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Location /></span>{owner.location}</div>}
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1309,6 +1406,110 @@ export default function PetDetailPage() {
         </div>
       )}
 
+
+      {/* ─── Transfer Modal ─── */}
+      {showTransferModal && (
+        <div className="modal-overlay" onClick={() => !transferring && setShowTransferModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-pad">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                <img src="/icons/icon-pet-transfer.png" alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                <div>
+                  <div className="modal-title">โอนย้ายสัตว์เลี้ยง</div>
+                  <div className="modal-sub" style={{ marginBottom: 0 }}>โอน {pet.name} ไปยังเจ้าของใหม่</div>
+                </div>
+              </div>
+
+              {transferStep === 'input' ? (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <label className="field-label">อีเมลเจ้าของใหม่</label>
+                    <input className="field-input" type="email" placeholder="กรอกอีเมลของผู้รับ"
+                      value={transferEmail} onChange={e => setTransferEmail(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleTransferLookup()} />
+                  </div>
+                  {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowTransferModal(false)} disabled={transferring}
+                      style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ยกเลิก</button>
+                    <button onClick={handleTransferLookup} disabled={transferring}
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังค้นหา...' : 'ค้นหาผู้รับ'}</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ background: F.pinkSoft, border: `1px solid ${F.pinkBorder}`, borderRadius: 12, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: F.muted, marginBottom: 6 }}>ผู้รับสิทธิ์</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: F.line, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: F.pink, flexShrink: 0 }}>
+                        {transferTarget.avatar_url ? <img src={transferTarget.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : transferTarget.full_name?.[0] || '?'}
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: F.ink }}>{transferTarget.full_name || 'ผู้ใช้'}</div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#DC2626', lineHeight: 1.6 }}>
+                    ⚠ เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
+                  </div>
+                  {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setTransferStep('input')} disabled={transferring}
+                      style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ย้อนกลับ</button>
+                    <button onClick={handleTransferConfirm} disabled={transferring}
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: '#EF4444', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังโอน...' : 'ยืนยันโอนย้าย'}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Co-owner Modal ─── */}
+      {showCoOwnerModal && (
+        <div className="modal-overlay" onClick={() => !addingCoOwner && setShowCoOwnerModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-pad">
+              <div className="modal-title">เจ้าของร่วม</div>
+              <div className="modal-sub">{pet.name} — เพิ่ม/ลบสิทธิ์เจ้าของร่วม</div>
+
+              {coOwners.length > 0 && (
+                <div style={{ marginBottom: 18 }}>
+                  {coOwners.map(co => (
+                    <div key={co.id} className="co-owner-row">
+                      <div className="co-owner-avatar">
+                        {co.profile?.avatar_url ? <img src={co.profile.avatar_url} alt="" /> : (co.profile?.full_name?.[0] || '?')}
+                      </div>
+                      <div className="co-owner-name">{co.profile?.full_name || 'ผู้ใช้'}</div>
+                      <button className="btn-remove-co" onClick={() => handleRemoveCoOwner(co.id)} title="ลบ">
+                        <Icon.Close />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label className="field-label">เพิ่มเจ้าของร่วมใหม่ (ค้นหาด้วยอีเมล)</label>
+                  <input className="field-input" type="email" placeholder="กรอกอีเมลของผู้ใช้"
+                    value={coOwnerEmail} onChange={e => setCoOwnerEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddCoOwner()} />
+                </div>
+                {coOwnerError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{coOwnerError}</div>}
+                <div style={{ background: F.pinkSoft, border: `1px solid ${F.pinkBorder}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, color: F.inkSoft, lineHeight: 1.6 }}>
+                  เจ้าของร่วมสามารถเพิ่มข้อมูล เช่น วัคซีน นัดหมาย หรือกิจกรรม แต่ไม่สามารถแก้ไขข้อมูลพื้นฐานของสัตว์ได้
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setShowCoOwnerModal(false)} disabled={addingCoOwner}
+                    style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ปิด</button>
+                  <button onClick={handleAddCoOwner} disabled={addingCoOwner}
+                    style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{addingCoOwner ? 'กำลังเพิ่ม...' : 'เพิ่มเจ้าของร่วม'}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Lightbox ─── */}
       {lightboxImage && (
