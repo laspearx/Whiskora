@@ -64,7 +64,6 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
 
   const startScan = async () => {
     setScanError("");
-    setScanResult("");
     setStep("scan");
   };
 
