@@ -71,11 +71,13 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
         .qrs-opt-sub { font-size: 13px; color: ${F.muted}; margin-top: 3px; }
         .qrs-soon { position: absolute; top: 12px; right: 14px; background: #e5e7eb; color: #6b7280; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
         .qrs-empty { text-align: center; padding: 40px 0; color: ${F.muted}; font-size: 14px; }
-        .qrs-pet-btn { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1.5px solid ${F.line}; border-radius: 16px; background: white; cursor: pointer; text-align: left; width: 100%; margin-bottom: 10px; transition: border-color .15s; }
-        .qrs-pet-btn:hover { border-color: ${F.pink}; }
-        .qrs-pet-avatar { width: 52px; height: 52px; border-radius: 13px; overflow: hidden; background: ${F.pinkSoft}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .qrs-pet-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .qrs-pet-name { font-weight: 600; font-size: 16px; color: ${F.ink}; flex: 1; }
+        .qrs-pet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 8px; padding: 4px 0 8px; }
+        .qrs-pet-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 0; }
+        .qrs-pet-btn:active .qrs-pet-circle { transform: scale(0.93); }
+        .qrs-pet-circle { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: ${F.pinkSoft}; border: 2.5px solid ${F.line}; display: flex; align-items: center; justify-content: center; transition: border-color .15s, transform .12s; }
+        .qrs-pet-btn:hover .qrs-pet-circle { border-color: ${F.pink}; }
+        .qrs-pet-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .qrs-pet-name { font-weight: 600; font-size: 11px; color: ${F.ink}; text-align: center; line-height: 1.3; word-break: break-word; max-width: 72px; }
         .qrs-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; }
         .qrs-qr-box { padding: 20px; background: white; border: 2px solid ${F.line}; border-radius: 24px; box-shadow: 0 12px 32px rgba(232,70,119,.12); }
         .qrs-qr-pet-name { font-weight: 700; font-size: 16px; color: ${F.ink}; }
@@ -126,17 +128,18 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
               ) : pets.length === 0 ? (
                 <div className="qrs-empty">ยังไม่มีสัตว์เลี้ยงในบัญชี</div>
               ) : (
-                pets.map((pet) => (
-                  <button key={pet.id} className="qrs-pet-btn" onClick={() => handleSelectPet(pet)}>
-                    <div className="qrs-pet-avatar">
-                      {pet.image_url
-                        ? <img src={pet.image_url} alt={pet.name} />
-                        : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 30, height: 30, objectFit: "contain" }} />}
-                    </div>
-                    <span className="qrs-pet-name">{pet.name || "ยังไม่มีชื่อ"}</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                  </button>
-                ))
+                <div className="qrs-pet-grid">
+                  {pets.map((pet) => (
+                    <button key={pet.id} className="qrs-pet-btn" onClick={() => handleSelectPet(pet)}>
+                      <div className="qrs-pet-circle">
+                        {pet.image_url
+                          ? <img src={pet.image_url} alt={pet.name} />
+                          : <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />}
+                      </div>
+                      <span className="qrs-pet-name">{pet.name || "ยังไม่มีชื่อ"}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </>
           )}
