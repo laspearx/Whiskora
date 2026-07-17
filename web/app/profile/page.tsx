@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Cropper from "react-easy-crop";
+import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 
@@ -15,7 +17,6 @@ const F = {
   pink: "#e84677",
   pinkSoft: "#fde2ea",
   pinkDeep: "#c4325f",
-  leaf: "#5a9065",
 };
 
 const shortMonthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -24,6 +25,7 @@ const CIRCUMFERENCE = 2 * Math.PI * 44;
 type VaccineRow = { next_due: string | null; vaccine_name: string | null; pet_id: string | null };
 type ActivityRow = { id: string; pet_id: string; activity_type: string | null; title: string; activity_date: string };
 type BusinessLinkProps = { href: string; label: string; type: string; icon: ReactNode; verified?: boolean };
+type CropType = "avatar" | "cover";
 
 function formatMemberSince(dateStr: string): string {
   const d = new Date(dateStr);
@@ -32,14 +34,23 @@ function formatMemberSince(dateStr: string): string {
 function formatActivityDate(dateStr: string): string {
   return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(new Date(dateStr));
 }
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(date);
-}
 function getVaccineIcon(name: string | null): string {
   if (!name) return "/icons/icon-calendar.png";
   const v = name.toLowerCase();
   if (v.includes("วัคซีน") || v.includes("ฉีด") || v.includes("vaccine")) return "/icons/icon-vaccine.png";
   return "/icons/icon-calendar.png";
+}
+
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = new Image();
+  image.src = imageSrc;
+  await new Promise<void>((resolve) => { image.onload = () => resolve(); });
+  const canvas = document.createElement("canvas");
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.92));
 }
 
 export default function ProfilePage() {
@@ -55,8 +66,14 @@ export default function ProfilePage() {
   const [vaccinatedPetIds, setVaccinatedPetIds] = useState<Set<string>>(new Set());
   const [hasHealthActivities, setHasHealthActivities] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
+
+  // Crop state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropType, setCropType] = useState<CropType | null>(null);
+  const [cropPos, setCropPos] = useState<Point>({ x: 0, y: 0 });
+  const [cropZoom, setCropZoom] = useState(1);
+  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
+  const [cropUploading, setCropUploading] = useState(false);
 
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
@@ -95,11 +112,9 @@ export default function ProfilePage() {
           }
           if (actRes.data) {
             setActivities(actRes.data as ActivityRow[]);
-            setHasHealthActivities(
-              (actRes.data as ActivityRow[]).some((a) =>
-                a.activity_type?.includes("สุขภาพ") || a.activity_type?.includes("health") || a.activity_type === "ตรวจสุขภาพ"
-              )
-            );
+            setHasHealthActivities((actRes.data as ActivityRow[]).some((a) =>
+              a.activity_type?.includes("สุขภาพ") || a.activity_type?.includes("health") || a.activity_type === "ตรวจสุขภาพ"
+            ));
           }
         }
       } catch (err) {
@@ -111,6 +126,49 @@ export default function ProfilePage() {
     load();
   }, [router]);
 
+  // Crop helpers
+  const openCrop = (file: File, type: CropType) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(reader.result as string);
+      setCropType(type);
+      setCropPos({ x: 0, y: 0 });
+      setCropZoom(1);
+      setCroppedPixels(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const cancelCrop = () => {
+    setCropSrc(null);
+    setCropType(null);
+    if (avatarRef.current) avatarRef.current.value = "";
+    if (coverRef.current) coverRef.current.value = "";
+  };
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => setCroppedPixels(pixels), []);
+
+  const confirmCrop = async () => {
+    if (!cropSrc || !croppedPixels || !user) return;
+    setCropUploading(true);
+    try {
+      const blob = await getCroppedBlob(cropSrc, croppedPixels);
+      const fileName = cropType === "cover" ? "cover.jpg" : "profile.jpg";
+      const path = `${user.id}/${fileName}`;
+      await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      const field = cropType === "cover" ? "cover_url" : "avatar_url";
+      await supabase.from("profiles").upsert({ id: user.id, [field]: url, updated_at: new Date() });
+      setProfile((p: any) => ({ ...p, [field]: url }));
+      cancelCrop();
+    } catch (err) {
+      console.error("Crop upload error:", err);
+    } finally {
+      setCropUploading(false);
+    }
+  };
+
   const displayName = profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Whiskora User";
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
   const coverUrl = profile?.cover_url;
@@ -121,7 +179,7 @@ export default function ProfilePage() {
     const vaccineOk = vaccinatedPetIds.size > 0;
     const weightOk = pets.some((p) => p.weight || p.current_weight || p.weight_kg);
     const healthOk = hasHealthActivities;
-    const score = Math.round((vaccineOk ? 34 : 0) + (weightOk ? 33 : 0) + (healthOk ? 33 : 0));
+    const score = (vaccineOk ? 34 : 0) + (weightOk ? 33 : 0) + (healthOk ? 33 : 0);
     return { vaccineOk, weightOk, healthOk, score };
   }, [pets, vaccinatedPetIds, hasHealthActivities]);
 
@@ -139,36 +197,6 @@ export default function ProfilePage() {
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
   }, [appointments, pets]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploading(true);
-    try {
-      const path = `${user.id}/profile.jpg`;
-      await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-      const url = `${publicUrl}?t=${Date.now()}`;
-      await supabase.from("profiles").upsert({ id: user.id, avatar_url: url, updated_at: new Date() });
-      setProfile((p: any) => ({ ...p, avatar_url: url }));
-    } catch (err) { console.error(err); }
-    finally { setUploading(false); if (avatarRef.current) avatarRef.current.value = ""; }
-  };
-
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadingCover(true);
-    try {
-      const path = `${user.id}/cover.jpg`;
-      await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-      const url = `${publicUrl}?t=${Date.now()}`;
-      await supabase.from("profiles").upsert({ id: user.id, cover_url: url, updated_at: new Date() });
-      setProfile((p: any) => ({ ...p, cover_url: url }));
-    } catch (err) { console.error(err); }
-    finally { setUploadingCover(false); if (coverRef.current) coverRef.current.value = ""; }
-  };
-
   if (loading) return <PageLoader />;
 
   const { vaccineOk, weightOk, healthOk, score } = petCareChecks;
@@ -181,11 +209,22 @@ export default function ProfilePage() {
 
         .pp { padding: 0 0 100px; margin-top: -16px; color: ${F.ink}; font-family: var(--font-ui), inherit; animation: rise .45s ease both; }
 
+        /* ── Crop modal ── */
+        .crop-overlay { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; background: #000; }
+        .crop-area { flex: 1; position: relative; min-height: 260px; }
+        .crop-controls { padding: 16px 20px env(safe-area-inset-bottom, 24px); background: #111; display: flex; flex-direction: column; gap: 14px; }
+        .crop-zoom-row { display: flex; align-items: center; gap: 10px; }
+        .crop-zoom-label { font-size: 12px; color: rgba(255,255,255,.6); flex-shrink: 0; }
+        .crop-zoom-input { flex: 1; accent-color: ${F.pink}; cursor: pointer; }
+        .crop-actions { display: flex; gap: 12px; }
+        .crop-cancel-btn { flex: 1; padding: 13px; border: 1.5px solid rgba(255,255,255,.25); border-radius: 14px; background: transparent; color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .crop-confirm-btn { flex: 2; padding: 13px; border: none; border-radius: 14px; background: ${F.pink}; color: white; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .crop-confirm-btn:disabled { opacity: .6; cursor: not-allowed; }
+
         /* ── Cover hero ── */
         .pp-cover-wrap { position: relative; height: 168px; margin: 0 -16px; overflow: hidden; background: linear-gradient(135deg, ${F.pink} 0%, #f06d98 55%, #f8a5c2 100%); }
         .pp-cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .pp-cover-cam { position: absolute; bottom: 10px; right: 14px; width: 32px; height: 32px; border-radius: 999px; background: rgba(0,0,0,.38); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: background .15s; }
-        .pp-cover-cam:hover { background: rgba(0,0,0,.56); }
+        .pp-cover-cam { position: absolute; bottom: 10px; right: 14px; width: 34px; height: 34px; border-radius: 999px; background: rgba(0,0,0,.42); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; }
         .pp-cover-cam svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
         .pp-hero-body { position: relative; display: flex; align-items: flex-end; gap: 14px; margin-top: -36px; padding: 0 0 16px; }
@@ -219,21 +258,21 @@ export default function ProfilePage() {
         .pp-pet-bubble:hover .pp-pet-circle { border-color: ${F.pink}; transform: translateY(-2px); }
         .pp-pet-add { border-style: dashed; color: ${F.muted}; font-size: 22px; font-weight: 300; }
         .pp-pet-name { font-size: 11px; font-weight: 600; color: ${F.inkSoft}; text-align: center; max-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pp-empty-pets { border: 1px dashed ${F.line}; border-radius: 14px; padding: 24px; text-align: center; color: ${F.muted}; font-size: 13px; line-height: 1.6; }
 
         /* ── Cards ── */
         .pp-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 16px; }
-        .pp-card-title { font-size: 13px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+        .pp-card-title { font-size: 12px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
 
         /* ── Two col ── */
         .pp-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 
         /* ── Score ── */
         .pp-score-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .pp-score-svg { display: block; }
         .pp-check-list { width: 100%; display: grid; gap: 6px; }
         .pp-check { display: flex; align-items: center; gap: 7px; font-size: 12px; color: ${F.muted}; font-weight: 500; }
         .pp-check.ok { color: ${F.ink}; }
-        .pp-check-icon { width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: 700; background: #f3f4f6; color: ${F.muted}; }
+        .pp-check-icon { width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; font-weight: 800; background: #f3f4f6; color: ${F.muted}; }
         .pp-check.ok .pp-check-icon { background: #dcfce7; color: #16a34a; }
 
         /* ── Tasks ── */
@@ -287,37 +326,62 @@ export default function ProfilePage() {
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
         .pp-admin-link { display: flex; align-items: center; gap: 14px; text-decoration: none; color: ${F.ink}; }
-        .pp-admin-link svg { flex-shrink: 0; }
         .pp-admin-link strong { display: block; font-size: 15px; font-weight: 650; color: #dc2626; }
         .pp-admin-link span { display: block; font-size: 12px; color: ${F.muted}; margin-top: 2px; }
         .pp-admin-badge { margin-left: auto; padding: 3px 10px; border-radius: 999px; background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-
-        /* ── Empty ── */
-        .pp-empty-pets { border: 1px dashed ${F.line}; border-radius: 14px; padding: 24px; text-align: center; color: ${F.muted}; font-size: 13px; line-height: 1.6; }
-
-        @media (max-width: 380px) {
-          .pp-2col { grid-template-columns: 1fr; }
-          .pp-quick-grid { grid-template-columns: repeat(3, 1fr); }
-        }
       `}</style>
+
+      {/* ── Crop modal ── */}
+      {cropSrc && (
+        <div className="crop-overlay">
+          <div className="crop-area">
+            <Cropper
+              image={cropSrc}
+              crop={cropPos}
+              zoom={cropZoom}
+              aspect={cropType === "cover" ? 16 / 9 : 1}
+              cropShape={cropType === "cover" ? "rect" : "round"}
+              showGrid={false}
+              onCropChange={setCropPos}
+              onZoomChange={setCropZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div className="crop-controls">
+            <div className="crop-zoom-row">
+              <span className="crop-zoom-label">ย่อ/ขยาย</span>
+              <input
+                type="range"
+                className="crop-zoom-input"
+                min={1} max={3} step={0.01}
+                value={cropZoom}
+                onChange={(e) => setCropZoom(Number(e.target.value))}
+              />
+            </div>
+            <div className="crop-actions">
+              <button className="crop-cancel-btn" type="button" onClick={cancelCrop}>ยกเลิก</button>
+              <button className="crop-confirm-btn" type="button" onClick={confirmCrop} disabled={cropUploading}>
+                {cropUploading ? "กำลังบันทึก..." : "ตกลง"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="pp">
         {/* Cover + Avatar */}
         <div className="pp-cover-wrap">
-          {coverUrl
-            ? <img src={coverUrl} className="pp-cover-img" alt="ภาพปก" />
-            : null}
+          {coverUrl ? <img src={coverUrl} className="pp-cover-img" alt="ภาพปก" /> : null}
           <button
             className="pp-cover-cam"
             type="button"
             onClick={() => coverRef.current?.click()}
-            disabled={uploadingCover}
             aria-label="เปลี่ยนรูปปก"
-            style={uploadingCover ? { opacity: 0.5 } : undefined}
           >
             <svg viewBox="0 0 24 24"><path d="M9 6 10.4 4h3.2L15 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3Z"/><circle cx="12" cy="13" r="3.2"/></svg>
           </button>
-          <input ref={coverRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleCoverUpload} />
+          <input ref={coverRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "cover"); if (coverRef.current) coverRef.current.value = ""; }} />
         </div>
 
         <div className="pp-hero-body">
@@ -331,13 +395,12 @@ export default function ProfilePage() {
               className="pp-avatar-cam"
               type="button"
               onClick={() => avatarRef.current?.click()}
-              disabled={uploading}
               aria-label="เปลี่ยนรูปโปรไฟล์"
-              style={uploading ? { opacity: 0.5 } : undefined}
             >
               <svg viewBox="0 0 24 24"><path d="M9 6 10.4 4h3.2L15 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3Z"/><circle cx="12" cy="13" r="3.2"/></svg>
             </button>
-            <input ref={avatarRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} />
+            <input ref={avatarRef} type="file" accept="image/*" style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "avatar"); if (avatarRef.current) avatarRef.current.value = ""; }} />
           </div>
 
           <div className="pp-hero-text">
@@ -359,7 +422,6 @@ export default function ProfilePage() {
             </span>
             {pets.length > 0 && <Link href="/my-pets" className="pp-see-all">ดูทั้งหมด ›</Link>}
           </div>
-
           {pets.length > 0 ? (
             <div className="pp-pet-scroll">
               {pets.slice(0, 8).map((pet) => (
@@ -385,17 +447,16 @@ export default function ProfilePage() {
           )}
         </section>
 
-        {/* Pet Care Score + Tasks (only when pets exist) */}
+        {/* Pet Care Score + Tasks */}
         {pets.length > 0 && (
           <div className="pp-2col">
             <div className="pp-card">
               <div className="pp-card-title">Pet Care Score</div>
               <div className="pp-score-wrap">
-                <svg className="pp-score-svg" width="110" height="110" viewBox="0 0 110 110">
+                <svg width="110" height="110" viewBox="0 0 110 110">
                   <circle cx="55" cy="55" r="44" fill="none" stroke={F.line} strokeWidth="9" />
                   <circle
-                    cx="55" cy="55" r="44"
-                    fill="none"
+                    cx="55" cy="55" r="44" fill="none"
                     stroke={score > 0 ? F.pink : F.line}
                     strokeWidth="9"
                     strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
@@ -411,7 +472,7 @@ export default function ProfilePage() {
                   {[
                     { ok: vaccineOk, label: "วัคซีน" },
                     { ok: weightOk, label: "น้ำหนัก" },
-                    { ok: healthOk, label: "ตรวจสุขภาพ" },
+                    { ok: healthOk, label: "สุขภาพ" },
                   ].map(({ ok, label }) => (
                     <div key={label} className={`pp-check${ok ? " ok" : ""}`}>
                       <span className="pp-check-icon">{ok ? "✓" : "✗"}</span>
@@ -425,9 +486,7 @@ export default function ProfilePage() {
             <div className="pp-card">
               <div className="pp-card-title">สิ่งที่ต้องทำ</div>
               {tasksDue.length === 0 ? (
-                <div className="pp-tasks-empty">
-                  ไม่มีกิจกรรม<br />วันนี้และพรุ่งนี้
-                </div>
+                <div className="pp-tasks-empty">ไม่มีกิจกรรม<br />วันนี้และพรุ่งนี้</div>
               ) : (
                 <div className="pp-task-list">
                   {tasksDue.map((task, i) => {
@@ -512,9 +571,7 @@ export default function ProfilePage() {
           </div>
           <div className="pp-id-promo-qr">
             <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
               <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
             </svg>
           </div>
@@ -549,8 +606,7 @@ export default function ProfilePage() {
             <div className="pp-card pp-admin-card">
               <Link href="/admin/verifications" className="pp-admin-link">
                 <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 12l2 2 4-4"/>
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
                 <div>
                   <strong>คำขอยืนยันตัวตน</strong>
