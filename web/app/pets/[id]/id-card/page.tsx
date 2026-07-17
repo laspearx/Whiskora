@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
@@ -130,7 +130,7 @@ export default function PetIdCardPage() {
   const isMale = pet?.gender === 'male' || pet?.gender === 'ตัวผู้';
   const petCode = pet ? (pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`) : '';
   const qrUrl = typeof window !== 'undefined'
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(window.location.origin + '/p/' + petId)}&margin=0&color=1f1a1c`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(window.location.origin + '/p/' + petId)}&margin=0&color=1f1a1c`
     : '';
 
   const fmtDate = (d?: string | null) => {
@@ -168,7 +168,7 @@ export default function PetIdCardPage() {
         @keyframes card-in   { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
 
         .idc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .idc-wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px 80px; animation: page-rise .4s ease both; }
+        .idc-wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 80px; animation: page-rise .4s ease both; }
 
         /* ── topbar ── */
         .idc-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
@@ -179,9 +179,9 @@ export default function PetIdCardPage() {
 
         /* ── card stage ── */
         .idc-stage { display: flex; justify-content: center; margin-bottom: 20px; }
-        .idc-card-scaler { position: relative; }
+        .idc-card-scaler { position: relative; overflow: hidden; }
 
-        /* ── CARD — fixed 360×580px, scale via transform ── */
+        /* ── CARD — 360×580, transform-scaled ── */
         .pet-card {
           width: 360px; height: 580px;
           border-radius: 26px;
@@ -189,76 +189,93 @@ export default function PetIdCardPage() {
           position: relative;
           display: flex; flex-direction: column;
           font-family: inherit;
-          border: 1.5px solid ${T.border};
           background-image: url("${T.bg}"), linear-gradient(160deg, ${T.soft} 0%, #ffffff 60%);
           background-size: cover, cover;
           background-position: center, center;
-          box-shadow: ${T.shadow};
-          transition: border-color .35s ease, box-shadow .35s ease;
+          transition: background-image .35s ease;
           animation: card-in .45s ease both;
         }
-        .pet-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.40); pointer-events:none; z-index:0; }
+        .pet-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.38); pointer-events:none; z-index:0; }
         .pet-card > * { position:relative; z-index:1; }
 
-        /* header — fixed 56px */
-        .pc-header { height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; flex-shrink: 0; }
-        .pc-logo-row { display: flex; align-items: center; gap: 6px; }
-        .pc-logo-img { height: 20px; width: auto; object-fit: contain; }
-        .pc-logo-text { font-size: 17px; font-weight: 900; color: ${T.accent}; letter-spacing: -0.5px; }
-        .pc-rule { width: 100%; display: flex; align-items: center; gap: 7px; }
-        .pc-rule-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, ${T.border}, transparent); }
-        .pc-rule-text { font-size: 6.5px; font-weight: 800; letter-spacing: 0.16em; color: ${T.accent}; white-space: nowrap; }
+        /* ── HEADER (44px) ── */
+        .pc-header {
+          flex-shrink: 0; height: 44px;
+          padding: 0 16px;
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .pc-logo-row { display: flex; align-items: center; gap: 5px; }
+        .pc-logo-img { height: 17px; width: auto; object-fit: contain; }
+        .pc-logo-text { font-size: 15px; font-weight: 900; color: ${T.accent}; letter-spacing: -0.4px; }
+        .pc-header-right { display: flex; align-items: center; gap: 4px; }
+        .pc-header-badge { font-size: 6.5px; font-weight: 800; letter-spacing: 0.14em; color: ${T.accent}; opacity: .8; }
 
-        /* media — fixed 150px */
-        .pc-media { height: 150px; flex-shrink: 0; display: grid; grid-template-columns: 126px 1fr 86px; gap: 10px; padding: 0 14px; align-items: center; }
-        .pc-photo-wrap { position: relative; height: 126px; }
-        .pc-photo { width: 126px; height: 126px; border-radius: 18px; overflow: hidden; background: ${T.soft}; border: 2px solid ${T.border}; }
+        /* ── BODY (photo left, info right) ── */
+        .pc-body {
+          flex-shrink: 0;
+          display: grid; grid-template-columns: 116px 1fr;
+          gap: 10px; padding: 8px 14px 10px;
+          align-items: start;
+        }
+        .pc-photo-wrap { position: relative; width: 116px; }
+        .pc-photo { width: 116px; height: 116px; border-radius: 16px; overflow: hidden; background: ${T.soft}; border: 1.5px solid ${T.border}; }
         .pc-photo img { width: 100%; height: 100%; object-fit: cover; }
         .pc-photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .pc-photo-placeholder img { width: 48px; height: 48px; object-fit: contain; opacity: .4; }
-        .pc-stamp { position: absolute; right: -18px; bottom: -20px; pointer-events: none; z-index: 2; }
+        .pc-photo-placeholder img { width: 44px; height: 44px; object-fit: contain; opacity: .4; }
+        .pc-stamp { position: absolute; right: -14px; bottom: -14px; pointer-events: none; z-index: 2; }
 
-        /* identity */
-        .pc-identity { display: flex; flex-direction: column; justify-content: center; min-width: 0; height: 126px; }
-        .pc-verified-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 7px; font-weight: 800; color: ${T.accent}; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
-        .pc-name { font-size: 19px; font-weight: 900; color: ${F.ink}; line-height: 1.05; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-gender-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 8px; font-weight: 700; border: 1px solid ${T.border}; background: rgba(255,255,255,.65); color: ${T.accent}; margin-top: 5px; align-self: flex-start; }
-        .pc-mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-        .pc-mini-tag { font-size: 7px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(255,255,255,.65); border: 1px solid ${T.border}; color: ${F.inkSoft}; white-space: nowrap; }
-
-        /* QR — matches photo height */
-        .pc-qr { height: 126px; background: rgba(255,255,255,.82); border-radius: 13px; padding: 6px 6px 4px; display: flex; flex-direction: column; align-items: center; border: 1.5px solid ${T.border}; box-sizing: border-box; }
-        .pc-qr-img-wrap { position: relative; flex: 1; width: 100%; }
-        .pc-qr-img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
-        .pc-qr-paw { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:18px; height:18px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-        .pc-qr-paw img { width:12px; height:12px; object-fit:contain; }
-        .pc-qr-label { font-size: 6.5px; font-weight: 700; color: ${F.muted}; margin-top: 3px; letter-spacing: .08em; flex-shrink: 0; }
-
-        /* info table — fills remaining space, rows expand evenly */
-        .pc-info { margin: 8px 14px 0; border: 1px solid ${T.border}; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.62); flex: 1; display: flex; flex-direction: column; }
-        .pc-row { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,.8); min-height: 36px; }
-        .pc-row:last-child { border-bottom: none; }
-        .pc-row-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: .65; }
-        .pc-row-label { font-size: 9px; font-weight: 700; color: ${F.muted}; width: 54px; flex-shrink: 0; }
-        .pc-row-val { font-size: 10.5px; font-weight: 800; color: ${F.ink}; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; }
+        /* ── INFO COL (right) ── */
+        .pc-info-col { display: flex; flex-direction: column; min-width: 0; padding-top: 2px; }
+        .pc-verified-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+        .pc-verified-txt { font-size: 7px; font-weight: 800; color: ${T.accent}; letter-spacing: .1em; text-transform: uppercase; }
+        .pc-name { font-size: 20px; font-weight: 900; color: ${F.ink}; line-height: 1.05; letter-spacing: -.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .pc-badges-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+        .pc-gender-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 999px; font-size: 7.5px; font-weight: 700; border: 1px solid ${T.border}; background: rgba(255,255,255,.7); color: ${T.accent}; }
+        .pc-mini-tag { font-size: 7px; font-weight: 600; padding: 2px 6px; border-radius: 999px; background: rgba(255,255,255,.6); border: 1px solid ${T.border}; color: ${F.inkSoft}; white-space: nowrap; }
+        .pc-divider { height: 1px; background: ${T.border}; opacity: .7; margin-bottom: 5px; }
+        .pc-compact-rows { display: flex; flex-direction: column; gap: 3px; }
+        .pc-cr { display: flex; align-items: baseline; gap: 5px; }
+        .pc-cr-label { font-size: 7.5px; color: ${F.muted}; white-space: nowrap; width: 44px; flex-shrink: 0; }
+        .pc-cr-val { font-size: 8.5px; font-weight: 700; color: ${F.ink}; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pc-pill { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 999px; font-size: 7.5px; font-weight: 700; }
         .pc-pill-ok { background: #DCFCE7; color: #15803D; }
         .pc-pill-no { background: rgba(255,255,255,.7); color: ${F.muted}; border: 1px solid ${T.border}; }
 
-        /* pet ID bar — fixed 58px */
-        .pc-id-bar { flex-shrink: 0; margin: 8px 14px 0; background: ${T.petIdBg}; border-radius: 14px; height: 58px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; }
-        .pc-id-left { display: flex; flex-direction: column; gap: 1px; }
-        .pc-id-paw { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
-        .pc-id-paw img { width: 10px; height: 10px; object-fit: contain; }
-        .pc-id-label { font-size: 7px; font-weight: 700; color: rgba(255,255,255,.8); letter-spacing: .04em; }
-        .pc-id-code { font-size: 14px; font-weight: 900; color: white; letter-spacing: .01em; line-height: 1.1; }
-        .pc-id-date { font-size: 7px; color: rgba(255,255,255,.7); }
-        .pc-id-shield img { width: 20px; height: 20px; object-fit: contain; filter: brightness(0) invert(1); opacity: .65; }
+        /* ── QR SECTION (flex:1, bottom center) ── */
+        .pc-qr-section {
+          flex: 1;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          padding: 4px 20px 6px; gap: 5px;
+        }
+        .pc-qr-box {
+          position: relative;
+          width: 170px; height: 170px;
+          background: rgba(255,255,255,.9);
+          border-radius: 16px;
+          padding: 8px;
+          border: 1.5px solid ${T.border};
+          box-shadow: 0 4px 14px rgba(31,26,28,.06);
+        }
+        .pc-qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; display: block; }
+        .pc-qr-paw { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:22px; height:22px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.1); }
+        .pc-qr-paw img { width:14px; height:14px; object-fit:contain; }
+        .pc-scan-label { font-size: 8.5px; font-weight: 800; color: ${T.accent}; letter-spacing: .14em; }
 
-        /* footer — fixed 36px */
-        .pc-footer { flex-shrink: 0; height: 36px; margin: 0 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .pc-footer-txt { font-size: 8px; font-weight: 700; color: ${T.accent}; letter-spacing: .06em; }
-        .pc-footer-icon img { width: 11px; height: 11px; object-fit: contain; }
+        /* ── PET ID BAR (40px) ── */
+        .pc-id-bar {
+          flex-shrink: 0; margin: 0 14px 6px;
+          background: ${T.petIdBg}; border-radius: 12px; height: 40px;
+          padding: 0 12px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .pc-id-left { display: flex; flex-direction: column; gap: 0; }
+        .pc-id-label { font-size: 6px; font-weight: 700; color: rgba(255,255,255,.75); letter-spacing: .06em; }
+        .pc-id-code { font-size: 13px; font-weight: 900; color: white; letter-spacing: .01em; line-height: 1.15; }
+        .pc-id-shield img { width: 18px; height: 18px; object-fit: contain; filter: brightness(0) invert(1); opacity: .6; }
+
+        /* ── FOOTER (26px) ── */
+        .pc-footer { flex-shrink: 0; height: 26px; margin: 0 14px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .pc-footer-txt { font-size: 7.5px; font-weight: 700; color: ${T.accent}; letter-spacing: .06em; }
+        .pc-footer-icon img { width: 10px; height: 10px; object-fit: contain; }
 
         /* ── theme panel ── */
         .idc-theme-panel { border: 1px solid ${F.line}; border-radius: 20px; background: rgba(255,255,255,.94); padding: 16px; box-shadow: 0 4px 14px rgba(31,26,28,.04); margin-bottom: 16px; }
@@ -267,7 +284,7 @@ export default function PetIdCardPage() {
         .idc-theme-head-left img { width: 32px; height: 32px; object-fit: contain; }
         .idc-theme-title { font-size: 15px; font-weight: 700; color: ${F.ink}; }
         .idc-theme-sub { font-size: 12px; color: ${F.muted}; margin-top: 1px; }
-        .idc-theme-active { font-size: 12px; font-weight: 700; color: ${T.accent}; white-space: nowrap; transition: color .3s; }
+        .idc-theme-active { font-size: 12px; font-weight: 700; white-space: nowrap; transition: color .3s; }
         .idc-theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
         .idc-theme-btn { appearance: none; border: 1.5px solid ${F.lineMid}; background: white; border-radius: 14px; padding: 8px; cursor: pointer; font-family: inherit; text-align: left; transition: all .2s ease; }
         .idc-theme-btn:hover { transform: translateY(-1px); }
@@ -304,29 +321,23 @@ export default function PetIdCardPage() {
 
           {/* Card */}
           <div className="idc-stage">
-            <div
-              className="idc-card-scaler"
-              style={{ width: 380 * cardScale, height: 570 * cardScale }}
-            >
-              <div
-                className="pet-card"
-                style={{ transform: `scale(${cardScale})`, transformOrigin: 'top left' }}
-              >
+            <div className="idc-card-scaler" style={{ width: 360 * cardScale, height: 580 * cardScale }}>
+              <div className="pet-card" style={{ transform: `scale(${cardScale})`, transformOrigin: 'top left' }}>
+
                 {/* Header */}
                 <div className="pc-header">
                   <div className="pc-logo-row">
                     <img src="/mini-logo.png" alt="" className="pc-logo-img" style={{ filter: `brightness(0) saturate(100%) invert(31%) sepia(70%) saturate(700%) hue-rotate(300deg) brightness(95%)` }} />
                     <span className="pc-logo-text">whiskora</span>
                   </div>
-                  <div className="pc-rule">
-                    <div className="pc-rule-line" />
-                    <div className="pc-rule-text">• PET IDENTIFICATION CARD •</div>
-                    <div className="pc-rule-line" />
+                  <div className="pc-header-right">
+                    <img src="/icons/icon-verified.png" alt="" style={{ width: 10, height: 10, objectFit: 'contain' }} />
+                    <span className="pc-header-badge">PET ID CARD</span>
                   </div>
                 </div>
 
-                {/* Media */}
-                <div className="pc-media">
+                {/* Body: photo left, info right */}
+                <div className="pc-body">
                   {/* Photo */}
                   <div className="pc-photo-wrap">
                     <div className="pc-photo">
@@ -336,65 +347,55 @@ export default function PetIdCardPage() {
                       }
                     </div>
                     <div className="pc-stamp">
-                      <img src="/icons/icon-verified-stamp.png" alt="" style={{ width: 72, height: 72, objectFit: 'contain' }} />
+                      <img src="/icons/icon-verified-stamp.png" alt="" style={{ width: 60, height: 60, objectFit: 'contain' }} />
                     </div>
                   </div>
 
-                  {/* Identity */}
-                  <div className="pc-identity">
-                    <div className="pc-verified-badge">
-                      <img src="/icons/icon-verified.png" alt="" style={{ width: 10, height: 10, objectFit: 'contain' }} />
-                      Verified
+                  {/* Info col */}
+                  <div className="pc-info-col">
+                    <div className="pc-verified-row">
+                      <img src="/icons/icon-verified.png" alt="" style={{ width: 9, height: 9, objectFit: 'contain' }} />
+                      <span className="pc-verified-txt">Verified</span>
                     </div>
                     <div className="pc-name">{pet.name || '-'}</div>
-                    <div className="pc-gender-row">
+                    <div className="pc-badges-row">
                       <span className="pc-gender-badge">
-                        <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 9, height: 9, objectFit: 'contain' }} />
+                        <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 8, height: 8, objectFit: 'contain' }} />
                         {isMale ? 'ตัวผู้' : 'ตัวเมีย'}
                       </span>
-                    </div>
-                    <div className="pc-mini-tags">
-                      {calcAge(pet.birth_date) !== '-' && <span className="pc-mini-tag">{calcAge(pet.birth_date)}</span>}
-                      {pet.blood_type && <span className="pc-mini-tag">Blood {pet.blood_type}</span>}
                       {farm?.farm_name && <span className="pc-mini-tag">{farm.farm_name}</span>}
                     </div>
-                  </div>
-
-                  {/* QR */}
-                  <div className="pc-qr">
-                    <div className="pc-qr-img-wrap">
-                      {qrUrl && <img src={qrUrl} alt="QR" className="pc-qr-img" />}
-                      <div className="pc-qr-paw">
-                        <img src="/icons/paw.png" alt="" />
-                      </div>
+                    <div className="pc-divider" />
+                    <div className="pc-compact-rows">
+                      {infoRows.map((row, i) => (
+                        <div key={i} className="pc-cr">
+                          <span className="pc-cr-label">{row.label}</span>
+                          {row.isPill
+                            ? <span className={`pc-pill ${row.pillOk ? 'pc-pill-ok' : 'pc-pill-no'}`}>{row.val}</span>
+                            : <span className="pc-cr-val">{row.val}</span>
+                          }
+                        </div>
+                      ))}
                     </div>
-                    <div className="pc-qr-label">SCAN ME</div>
                   </div>
                 </div>
 
-                {/* Info rows */}
-                <div className="pc-info">
-                  {infoRows.map((row, i) => (
-                    <div key={i} className="pc-row">
-                      <img src={row.icon} alt="" className="pc-row-icon" />
-                      <span className="pc-row-label">{row.label}</span>
-                      {row.isPill
-                        ? <span className={`pc-pill ${row.pillOk ? 'pc-pill-ok' : 'pc-pill-no'}`}>{row.val}</span>
-                        : <span className="pc-row-val">{row.val}</span>
-                      }
+                {/* QR — large, bottom center */}
+                <div className="pc-qr-section">
+                  <div className="pc-qr-box">
+                    {qrUrl && <img src={qrUrl} alt="QR Code" />}
+                    <div className="pc-qr-paw">
+                      <img src="/icons/paw.png" alt="" />
                     </div>
-                  ))}
+                  </div>
+                  <div className="pc-scan-label">SCAN ME</div>
                 </div>
 
                 {/* Pet ID bar */}
                 <div className="pc-id-bar">
                   <div className="pc-id-left">
-                    <div className="pc-id-paw">
-                      <img src="/icons/icon-paw-circle-white.png" alt="" />
-                      <span className="pc-id-label">เลขประจำตัวสัตว์เลี้ยง · Pet ID</span>
-                    </div>
-                    <div className="pc-id-code">{petCode}</div>
-                    <div className="pc-id-date">ออกให้เมื่อ {fmtDate(new Date().toISOString())}</div>
+                    <span className="pc-id-label">เลขประจำตัวสัตว์เลี้ยง · Pet ID</span>
+                    <span className="pc-id-code">{petCode}</span>
                   </div>
                   <div className="pc-id-shield">
                     <img src="/icons/icon-verified-badge.png" alt="" />
@@ -406,6 +407,7 @@ export default function PetIdCardPage() {
                   <div className="pc-footer-icon"><img src="/icons/icon-verified.png" alt="" /></div>
                   <span className="pc-footer-txt">รับรองโดย Whiskora</span>
                 </div>
+
               </div>
             </div>
           </div>
