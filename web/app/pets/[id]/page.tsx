@@ -1006,7 +1006,7 @@ export default function PetDetailPage() {
                   { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
                   { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
                   { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
-                  pet.status ? { label: 'สถานะ', val: pet.status, green: true } : null,
+                  (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
                 ] as any[]).filter(Boolean).map((row: any, i: number) => (
                   <div key={i} className="pet-info-row">
                     <span className="pet-info-label">{row.label}</span>
