@@ -391,14 +391,14 @@ function FarmDashboardContent() {
         .fd-cover-top { position:absolute; top:14px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:2; }
         .fd-cover-btn { width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); color:${F.ink}; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; box-shadow:0 2px 8px rgba(0,0,0,.12); transition:all .15s; text-decoration:none; }
         .fd-cover-btn:hover { background:white; }
-        .fd-cover-cam { position:absolute; bottom:8px; right:12px; z-index:2; width:30px; height:30px; border-radius:8px; background:rgba(0,0,0,.32); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; }
+        .fd-cover-cam { position:absolute; bottom:10px; right:14px; z-index:2; width:34px; height:34px; border-radius:999px; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:white; }
         .fd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:700; color:${F.pink}; }
 
         .fd-identity { padding:0 0 14px; }
         .fd-id-row { position:relative; z-index:1; display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
         .fd-avatar { width:86px; height:86px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.pinkSoft}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
         .fd-avatar img { width:100%; height:100%; object-fit:cover; }
-        .fd-avatar-edit { position:absolute; bottom:3px; right:1px; width:22px; height:22px; background:${F.pink}; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+        .fd-avatar-edit { position:absolute; bottom:2px; right:0px; width:26px; height:26px; background:white; border-radius:999px; border:2px solid ${F.line}; color:${F.pink}; display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.1); }
         .fd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; }
         .fd-id-main { flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
         .fd-id-text { flex:1; min-width:0; }
@@ -627,7 +627,7 @@ function FarmDashboardContent() {
                 ? <img src={farm.image_url} alt={farm.farm_name} />
                 : <img src="/icons/icon-farm.png" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />}
               <div className="fd-avatar-edit">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </div>
               {uploadingAvatar && <div className="fd-avatar-spin"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>}
               <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }}

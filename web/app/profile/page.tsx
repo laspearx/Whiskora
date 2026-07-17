@@ -573,12 +573,12 @@ export default function ProfilePage() {
             <h2 className="pp-id-promo-title">Pet ID Card</h2>
             <p className="pp-id-promo-desc">แสดง QR Code ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยงของคุณ</p>
             <div className="pp-id-promo-hint">
-              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
               กดปุ่ม QR ที่แถบเมนูด้านล่าง
             </div>
           </div>
           <div className="pp-id-promo-qr">
-            <img src="/icons/icon-qr-code.png" alt="" style={{ width: 110, height: 110, objectFit: 'contain' }} />
+            <img src="/icons/icon-scan.png" alt="" style={{ width: 130, height: 130, objectFit: 'contain' }} />
           </div>
         </div>
 
