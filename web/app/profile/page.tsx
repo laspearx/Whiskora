@@ -41,16 +41,19 @@ function getVaccineIcon(name: string | null): string {
   return "/icons/icon-calendar.png";
 }
 
-async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200): Promise<Blob> {
   const image = new Image();
   image.src = imageSrc;
   await new Promise<void>((resolve) => { image.onload = () => resolve(); });
+  const scale = Math.min(1, maxDim / Math.max(pixelCrop.width, pixelCrop.height));
+  const outW = Math.round(pixelCrop.width * scale);
+  const outH = Math.round(pixelCrop.height * scale);
   const canvas = document.createElement("canvas");
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  canvas.width = outW;
+  canvas.height = outH;
   const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.92));
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, outW, outH);
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.85));
 }
 
 export default function ProfilePage() {
@@ -152,7 +155,7 @@ export default function ProfilePage() {
     if (!cropSrc || !croppedPixels || !user) return;
     setCropUploading(true);
     try {
-      const blob = await getCroppedBlob(cropSrc, croppedPixels);
+      const blob = await getCroppedBlob(cropSrc, croppedPixels, cropType === "avatar" ? 480 : 1200);
       const fileName = cropType === "cover" ? "cover.jpg" : "profile.jpg";
       const path = `${user.id}/${fileName}`;
       await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
@@ -426,7 +429,7 @@ export default function ProfilePage() {
             <span className="pp-section-title">
               {pets.length > 0 ? `บ้านนี้มีสมาชิก ${pets.length} ตัว` : "สัตว์เลี้ยงของฉัน"}
             </span>
-            {pets.length > 0 && <Link href="/my-pets" className="pp-see-all">ดูทั้งหมด ›</Link>}
+            {pets.length > 0 && <Link href="/profile/pets" className="pp-see-all">ดูทั้งหมด ›</Link>}
           </div>
           {pets.length > 0 ? (
             <div className="pp-pet-scroll">
@@ -521,7 +524,7 @@ export default function ProfilePage() {
           </div>
           <div className="pp-quick-grid">
             {[
-              { href: "/my-pets", icon: "/icons/icon-my-pets.png", label: "สัตว์เลี้ยง\nของฉัน" },
+              { href: "/profile/pets", icon: "/icons/icon-my-pets.png", label: "สัตว์เลี้ยง\nของฉัน" },
               { href: "/pets/vaccines/bulk-add", icon: "/icons/icon-vaccine.png", label: "บันทึก\nวัคซีน" },
               { href: "/health", icon: "/icons/icon-health.png", label: "ประวัติ\nสุขภาพ" },
               { href: "/profile/calendar", icon: "/icons/icon-calendar.png", label: "ปฏิทิน" },

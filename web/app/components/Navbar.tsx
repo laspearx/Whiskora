@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useLocale } from '@/i18n/context';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import PetQRSheet from '@/app/components/PetQRSheet';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 type Href = string;
@@ -43,6 +44,7 @@ export default function Navbar() {
   const [session,     setSession]     = useState<Session | null>(null);
   const [scrolled,    setScrolled]    = useState(false);
   const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [showQrSheet, setShowQrSheet] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [userOpen,    setUserOpen]    = useState(false);
 
@@ -352,19 +354,38 @@ export default function Navbar() {
           icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
-        {/* เพิ่มสัตว์เลี้ยง */}
-        <TabBtn
-          label="เพิ่มสัตว์เลี้ยง"
-          active={pathname.includes('/pets/create')}
-          onClick={() => guarded('/pets/create')}
-          icon={<img src="/icons/icon-tab-add.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
-        />
+        {/* QR สัตว์เลี้ยง — elevated center button */}
+        <div className="flex-1 flex flex-col items-center justify-center" style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowQrSheet(true)}
+            aria-label="QR สัตว์เลี้ยง"
+            style={{
+              position: 'absolute',
+              top: -20,
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #e84677 0%, #c4325f 100%)',
+              boxShadow: '0 4px 16px rgba(232,70,119,0.40)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '3px solid white',
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+              <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
+            </svg>
+          </button>
+          <span style={{ marginTop: 36, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
+        </div>
 
-        {/* สำรวจ */}
+        {/* บริการ */}
         <TabBtn
-          label="สำรวจ"
-          active={exploreActive}
-          onClick={() => go('/farm-hub')}
+          label="บริการ"
+          active={pathname.startsWith('/service-hub') || pathname.startsWith('/farm-hub')}
+          onClick={() => go('/service-hub')}
           icon={<img src="/icons/icon-tab-explore.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
@@ -378,6 +399,8 @@ export default function Navbar() {
 
       </div>
     </nav>
+
+    {showQrSheet && <PetQRSheet onClose={() => setShowQrSheet(false)} />}
   </>
   );
 }

@@ -353,18 +353,48 @@ export default function PetDetailPage() {
     a.click();
   };
 
+  const resizeImage = (file: File, maxDim: number, quality: number): Promise<Blob> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((b) => resolve(b!), 'image/jpeg', quality);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
   // ─── ปุ่ม: อัปโหลดรูป/วิดีโอเข้าแกลลอรี่ ───
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !pet) return;
+    const current = parseGallery(pet.gallery_urls || '');
+    const mainCount = pet.image_url ? 1 : 0;
+    const totalUsed = mainCount + current.length;
+    const slots = 4 - totalUsed;
+    if (slots <= 0) {
+      alert('คุณอัปโหลดรูปสัตว์เลี้ยงได้สูงสุด 4 รูป');
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+      return;
+    }
+    const filesToUpload = Array.from(files).slice(0, slots);
+    if (filesToUpload.length < files.length) {
+      alert(`เพิ่มได้อีก ${slots} รูป (สูงสุด 4 รูปต่อสัตว์เลี้ยง)`);
+    }
     setUploadingGallery(true);
     try {
-      const current = parseGallery(pet.gallery_urls || '');
       const newUrls: string[] = [];
-      for (const file of Array.from(files)) {
-        const ext = file.name.split('.').pop();
-        const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, file);
+      for (const file of filesToUpload) {
+        const isImage = file.type.startsWith('image/');
+        let uploadFile: File | Blob = file;
+        if (isImage) {
+          uploadFile = await resizeImage(file, 1200, 0.85);
+        }
+        const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, uploadFile, { contentType: 'image/jpeg' });
         if (upErr) { console.error(upErr); continue; }
         const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
         newUrls.push(publicUrl);
@@ -939,7 +969,7 @@ export default function PetDetailPage() {
                   <div className="card">
                     <div className="card-header">
                       <div className="card-title"><div className="card-title-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Image /></div>แกลลอรี่</div>
-                      <button className="btn-add-gallery" onClick={() => galleryInputRef.current?.click()} disabled={uploadingGallery}><Icon.Plus /> {uploadingGallery ? 'กำลังอัปโหลด...' : 'เพิ่มรูป/วิดีโอ'}</button>
+                      {allImages.length < 4 && <button className="btn-add-gallery" onClick={() => galleryInputRef.current?.click()} disabled={uploadingGallery}><Icon.Plus /> {uploadingGallery ? 'กำลังอัปโหลด...' : 'เพิ่มรูป/วิดีโอ'}</button>}
                     </div>
                     <div className="card-body">
                       <div className="gallery-grid">
