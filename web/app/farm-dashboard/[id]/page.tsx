@@ -405,12 +405,12 @@ function FarmDashboardContent() {
         .fd-name { font-size:20px; font-weight:750; color:${F.ink}; line-height:1.2; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
         .fd-name img { width:18px; height:18px; object-fit:contain; flex-shrink:0; }
         .fd-tagline { font-size:13px; color:${F.muted}; font-weight:400; }
-        .fd-view-btn { display:inline-flex; align-items:center; gap:4px; margin-top:6px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; border:none; cursor:pointer; }
+        .fd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; border:none; cursor:pointer; }
         .fd-view-btn:hover { background:#E5E7EB; }
         .fd-edit-icon { flex-shrink:0; display:flex; align-items:center; justify-content:center; text-decoration:none; opacity:1; transition:opacity .15s; }
         .fd-edit-icon:active { opacity:.6; }
 
-        .fd-prog-bar { display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid ${F.line}; }
+        .fd-prog-bar { display:flex; align-items:center; gap:6px; margin-top:5px; }
         .fd-prog-track { flex:1; height:5px; background:${F.line}; border-radius:10px; overflow:hidden; }
         .fd-prog-fill  { height:100%; border-radius:10px; background:${F.pink}; transition:width 1s ease; }
         .fd-prog-text  { font-size:11px; font-weight:700; color:${F.pink}; white-space:nowrap; }
@@ -640,6 +640,14 @@ function FarmDashboardContent() {
                   {farm.is_verified && <img src="/icons/icon-verified-badge.png" alt="ยืนยันแล้ว" />}
                 </h1>
                 <div className="fd-tagline">{speciesTh(farm.species) || 'ฟาร์มสัตว์เลี้ยง'}</div>
+                {farmCompletion < 100 && (
+                  <div className="fd-prog-bar">
+                    <div className="fd-prog-track">
+                      <div className="fd-prog-fill" style={{ width: `${farmCompletion}%` }} />
+                    </div>
+                    <span className="fd-prog-text">{farmCompletion}%</span>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexShrink: 0 }}>
                 <Link href={`/farm/${farmId}`} className="fd-view-btn">
@@ -651,16 +659,6 @@ function FarmDashboardContent() {
               </div>
             </div>
           </div>
-
-          {farmCompletion < 100 && (
-            <div className="fd-prog-bar">
-              <div className="fd-prog-track">
-                <div className="fd-prog-fill" style={{ width: `${farmCompletion}%` }} />
-              </div>
-              <span className="fd-prog-text">{farmCompletion}% สมบูรณ์</span>
-              <Link href={`/farm-dashboard/${farmId}/edit`} style={{ fontSize: 11, fontWeight: 700, color: F.muted, textDecoration: 'underline' }}>เพิ่มข้อมูล</Link>
-            </div>
-          )}
 
           {!farm.is_verified && farm.verification_status !== 'pending' && (
             <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn">
