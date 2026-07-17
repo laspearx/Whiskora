@@ -373,10 +373,7 @@ export default function Navbar() {
               border: '3px solid white',
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-              <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
-            </svg>
+            <img src="/icons/icon-scan-qr-code.png" alt="QR" width={32} height={32} style={{ objectFit: 'contain' }} />
           </button>
           <span style={{ marginTop: 36, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
         </div>

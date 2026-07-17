@@ -93,10 +93,7 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
               <h2 className="qrs-title">QR สัตว์เลี้ยง</h2>
               <button className="qrs-opt qrs-opt-primary" onClick={handleShowMyQr}>
                 <div className="qrs-opt-icon qrs-opt-icon-pink">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-                    <path d="M14 14h3v3"/><path d="M17 21v-4h4"/>
-                  </svg>
+                  <img src="/icons/icon-qr-code.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
                 </div>
                 <div>
                   <div className="qrs-opt-label">โชว์ QR สัตว์เลี้ยงของฉัน</div>
@@ -105,11 +102,7 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
               </button>
               <div className="qrs-opt qrs-opt-muted" style={{ cursor: "default" }}>
                 <div className="qrs-opt-icon qrs-opt-icon-gray">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={F.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-                    <rect x="7" y="7" width="10" height="10" rx="1"/>
-                  </svg>
+                  <img src="/icons/icon-scan.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain', opacity: 0.65 }} />
                 </div>
                 <div style={{ opacity: 0.65 }}>
                   <div className="qrs-opt-label">สแกน QR สัตว์เลี้ยงของคนอื่น</div>
