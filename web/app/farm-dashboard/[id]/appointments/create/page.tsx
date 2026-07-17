@@ -12,12 +12,12 @@ const F = {
 };
 
 const QUICK_TYPES = [
-  { label: "นัดส่งมอบสัตว์เลี้ยง",     icon: "/icons/icon-pet-carrier.png" },
-  { label: "ตรวจสุขภาพก่อนย้าย",        icon: "/icons/icon-vet-care.png" },
-  { label: "อาบน้ำ / ตัดขน",            icon: "/icons/icon-health.png" },
-  { label: "ฉีดวัคซีน",                  icon: "/icons/icon-health.png" },
-  { label: "ติดตามลูกค้า",              icon: "/icons/icon-partner.png" },
-  { label: "อื่นๆ",                      icon: "/icons/icon-calendar.png" },
+  { label: "นัดส่งมอบ",      icon: "/icons/icon-pet-carrier.png" },
+  { label: "ตรวจสุขภาพ",     icon: "/icons/icon-pet-records.png" },
+  { label: "กรูมมิ่ง",       icon: "/icons/icon-bath.png" },
+  { label: "ฉีดวัคซีน",      icon: "/icons/icon-vaccine.png" },
+  { label: "นัดกับลูกค้า",   icon: "/icons/icon-partner.png" },
+  { label: "อื่นๆ",           icon: "/icons/icon-calendar.png" },
 ];
 
 function AppointmentCreateContent() {
@@ -71,7 +71,7 @@ function AppointmentCreateContent() {
         .apc-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
         .apc-quick-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid ${F.line}; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; color: ${F.ink}; text-align: left; transition: all .15s; }
         .apc-quick-btn:hover, .apc-quick-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pink}; }
-        .apc-quick-btn img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+        .apc-quick-btn img { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
         .apc-input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 14px; color: ${F.ink}; outline: none; transition: border-color .15s; }
         .apc-input:focus { border-color: ${F.pink}; }
         .apc-textarea { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 13px; color: ${F.ink}; outline: none; transition: border-color .15s; resize: none; min-height: 80px; }
