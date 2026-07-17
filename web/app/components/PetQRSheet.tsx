@@ -71,66 +71,93 @@ export default function PetQRSheet({ onClose }: { onClose: () => void }) {
     if (step !== "scan") return;
 
     let active = true;
+    let zxingControls: { stop: () => void } | null = null;
 
     const init = async () => {
+      // 1. Get camera stream
+      let stream: MediaStream;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch {
+        if (active) setScanError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์");
+        return;
+      }
+      if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
+      streamRef.current = stream;
+
+      // 2. Pick scanning strategy
+      if ("BarcodeDetector" in window) {
+        // ── Native BarcodeDetector (Chrome/Edge Android, Safari iOS 16.4+) ──
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
-        tick();
-      } catch {
-        if (active) setScanError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์");
-      }
-    };
-
-    const tick = async () => {
-      if (!active || !videoRef.current || !canvasRef.current) return;
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      try {
-        if (!("BarcodeDetector" in window)) {
-          if (active) setScanError("เบราว์เซอร์นี้ไม่รองรับการสแกน QR กรุณาใช้ Chrome บน Android หรือ Safari บน iOS 17+");
-          return;
-        }
-        // @ts-ignore — BarcodeDetector is not in all TS libs yet
+        // @ts-ignore
         const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
-        const codes = await detector.detect(canvas);
-        if (codes.length > 0 && active) {
-          const url: string = codes[0].rawValue;
-          if (url.includes("/p/")) {
-            active = false;
-            stopCamera();
-            onClose();
-            router.push(url.replace(window.location.origin, "") as any);
-            return;
-          }
-        }
-      } catch {
-        // detector failed silently, keep scanning
-      }
 
-      rafRef.current = requestAnimationFrame(tick);
+        const tick = async () => {
+          if (!active || !videoRef.current || !canvasRef.current) return;
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d")!.drawImage(video, 0, 0);
+            try {
+              const codes = await detector.detect(canvas);
+              if (codes.length > 0 && active) {
+                const url: string = codes[0].rawValue;
+                if (url.includes("/p/")) {
+                  active = false;
+                  stopCamera();
+                  onClose();
+                  router.push(url.replace(window.location.origin, "") as any);
+                  return;
+                }
+              }
+            } catch { /* silent */ }
+          }
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+
+      } else {
+        // ── Fallback: @zxing/browser (Firefox, older browsers) ──
+        try {
+          const { BrowserQRCodeReader } = await import("@zxing/browser");
+          if (!active || !videoRef.current) return;
+          const codeReader = new BrowserQRCodeReader();
+          zxingControls = await codeReader.decodeFromStream(
+            stream,
+            videoRef.current,
+            (result: any, _err: any, controls: any) => {
+              if (result && active) {
+                const url: string = result.getText();
+                if (url.includes("/p/")) {
+                  active = false;
+                  controls?.stop();
+                  streamRef.current?.getTracks().forEach((t) => t.stop());
+                  streamRef.current = null;
+                  onClose();
+                  router.push(url.replace(window.location.origin, "") as any);
+                }
+              }
+            }
+          );
+        } catch {
+          if (active) setScanError("ไม่สามารถสแกน QR ได้ กรุณาลองใหม่หรือเปลี่ยนเป็น Chrome / Safari");
+        }
+      }
     };
 
     init();
 
     return () => {
       active = false;
-      stopCamera();
+      cancelAnimationFrame(rafRef.current);
+      zxingControls?.stop();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     };
   }, [step]);
 
