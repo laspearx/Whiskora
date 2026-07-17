@@ -52,13 +52,13 @@ const Icon = {
 // ─── TABS ───────────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
-  { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
-  { id: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
+  { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <img src="/icons/icon-breeding.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
+  { id: 'health', label: 'สุขภาพ', icon: <img src="/icons/icon-health.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
   { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
   { id: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
   { id: 'activities', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
-  { id: 'docs', label: 'เอกสาร', icon: <Icon.Doc /> },
-  { id: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
+  { id: 'docs', label: 'เอกสาร', icon: <img src="/icons/icon-documents.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
+  { id: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
 ];
 
 const ACTIVITY_TYPES = ['หาหมอ', 'หยดเห็บหมัด', 'ถ่ายพยาธิ', 'อาหาร', 'นิสัย', 'ทั่วไป'];
@@ -995,37 +995,39 @@ export default function PetDetailPage() {
               <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
             </div>
             <div className="hero-info">
-              <div className="verified-badge"><Icon.Verified /> Verified by Whiskora</div>
+              <div className="verified-badge"><img src="/icons/icon-verified.PNG" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> Verified by Whiskora</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
-              <div className="pet-info-table">
-                {([
-                  { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
-                  { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
-                  { label: 'น้ำหนัก', val: pet.weight ? `${pet.weight} กก.` : '-', link: `/pets/${pet.id}/weight` },
-                  { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
-                  { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
-                  { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
-                  { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
-                  (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
-                ] as any[]).filter(Boolean).map((row: any, i: number) => (
-                  <div key={i} className="pet-info-row">
-                    <span className="pet-info-label">{row.label}</span>
-                    {row.link
-                      ? <Link href={row.link} className="pet-info-val pet-info-link">{row.val || '-'}<span className="pet-info-add">+ บันทึก</span></Link>
-                      : <span className="pet-info-val" style={row.mono ? { fontFamily: 'monospace', fontSize: 11 } : row.green ? { color: '#059669', fontWeight: 600 } : undefined}>{row.val}</span>
-                    }
-                  </div>
-                ))}
+              <div style={{ background: 'white', border: `1px solid ${F.line}`, borderRadius: 18, padding: '4px 16px 8px', marginBottom: 14 }}>
+                <div className="pet-info-table" style={{ marginBottom: 0 }}>
+                  {([
+                    { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
+                    { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
+                    { label: 'น้ำหนัก', val: pet.weight ? `${pet.weight} กก.` : '-', link: `/pets/${pet.id}/weight` },
+                    { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
+                    { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                    { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
+                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
+                    (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
+                  ] as any[]).filter(Boolean).map((row: any, i: number) => (
+                    <div key={i} className="pet-info-row">
+                      <span className="pet-info-label">{row.label}</span>
+                      {row.link
+                        ? <Link href={row.link} className="pet-info-val pet-info-link">{row.val || '-'}<span className="pet-info-add">+ บันทึก</span></Link>
+                        : <span className="pet-info-val" style={row.mono ? { fontFamily: 'monospace', fontSize: 11 } : row.green ? { color: '#059669', fontWeight: 600 } : undefined}>{row.val}</span>
+                      }
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="pet-id-card">
                 <div className="pet-id-left">
-                  <div className="pet-id-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> PET ID</div>
+                  <div className="pet-id-label"><img src="/icons/paw.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> PET ID</div>
                   <div className="pet-id-number">{pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`}</div>
                   <div className="pet-id-reg">สมัครเมื่อ {formatDate(pet.created_at || pet.birth_date)}</div>
                   {isOwner && (
                     <div className="pet-id-actions">
-                      <Link href={`/pets/${pet.id}/edit`} className="btn-id-card btn-id-edit"><Icon.Edit /> แก้ไข</Link>
-                      <Link href={`/pets/${pet.id}/id-card`} className="btn-id-card"><Icon.Doc /> สร้างบัตรประจำตัว</Link>
+                      <Link href={`/pets/${pet.id}/edit`} className="btn-id-card btn-id-edit"><img src="/icons/icon-setting.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> แก้ไข</Link>
+                      <Link href={`/pets/${pet.id}/id-card`} className="btn-id-card"><img src="/icons/icon-pet-id-card.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> สร้างบัตรประจำตัว</Link>
                     </div>
                   )}
                 </div>
@@ -1034,9 +1036,6 @@ export default function PetDetailPage() {
                   <button className="btn-view-qr" onClick={() => setShowQrModal(true)}>ดู / ดาวน์โหลด QR</button>
                 </div>
               </div>
-              {pet.status && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: '20px', background: '#D1FAE5', color: '#065F46', fontSize: '11px', fontWeight: '600', border: '1px solid #A7F3D0' }}>● {pet.status}</span>
-              )}
               {isOwner && (
                 <div className="owner-actions">
                   <button className="btn-owner-action" onClick={() => { setShowCoOwnerModal(true); setCoOwnerError(''); setCoOwnerEmail(''); }}>
@@ -1067,7 +1066,7 @@ export default function PetDetailPage() {
               <div className="content-main">
                 <div className="card">
                   <div className="card-header">
-                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div>
+                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', padding: 2 }}><img src="/icons/icon-breeding.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>แผนผังสายเลือด (Pedigree)</div>
                     <button className="btn-add-gallery" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>
                   </div>
                   <div className="card-body" style={{ padding: '16px' }}>{renderPedigree()}</div>
@@ -1112,7 +1111,7 @@ export default function PetDetailPage() {
                 {/* Documents */}
                 <div className="card">
                   <div className="card-header">
-                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Doc /></div>เอกสารสำคัญ</div>
+                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', padding: 2 }}><img src="/icons/icon-documents.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>เอกสารสำคัญ</div>
                     <button className="btn-add-gallery" onClick={() => docInputRef.current?.click()} disabled={uploadingDoc}><Icon.Plus /> {uploadingDoc ? 'กำลังอัปโหลด...' : 'เพิ่มเอกสาร'}</button>
                   </div>
                   <div className="card-body">
@@ -1133,7 +1132,7 @@ export default function PetDetailPage() {
 
                 {/* Timeline preview */}
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Timeline /></div>ไทม์ไลน์กิจกรรม</div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', padding: 2 }}><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรม</div>
                     <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
                   </div>
                   <div className="card-body">
@@ -1155,7 +1154,7 @@ export default function PetDetailPage() {
               {/* Side */}
               <div className="content-side">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>สถานะสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', padding: 2 }}><img src="/icons/icon-health.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
                     <div className="health-tick-list">
                       {(() => {
@@ -1194,9 +1193,7 @@ export default function PetDetailPage() {
 
                 {coOwners.length > 0 && (
                   <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, color: F.pink }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>เจ้าของร่วม ({coOwners.length})</div></div>
+                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, padding: 2 }}><img src="/icons/icon-co-owner.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>เจ้าของร่วม ({coOwners.length})</div></div>
                     <div className="card-body">
                       {coOwners.map(co => (
                         <div key={co.id} className="co-owner-row">
@@ -1216,7 +1213,7 @@ export default function PetDetailPage() {
           {/* ─── Pedigree tab ─── */}
           {activeTab === 'pedigree' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div></div>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', padding: 2 }}><img src="/icons/icon-breeding.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>แผนผังสายเลือด (Pedigree)</div></div>
               <div className="card-body">{renderPedigree()}</div>
             </div>
           )}
@@ -1226,7 +1223,7 @@ export default function PetDetailPage() {
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>สถานะสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', padding: 2 }}><img src="/icons/icon-health.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
                     <div className="health-tick-list">
                       {(() => {
@@ -1342,7 +1339,7 @@ export default function PetDetailPage() {
           {/* ─── Docs tab ─── */}
           {activeTab === 'docs' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Doc /></div>เอกสารสำคัญ</div>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', padding: 2 }}><img src="/icons/icon-documents.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>เอกสารสำคัญ</div>
                 <button className="btn-add-gallery" onClick={() => docInputRef.current?.click()} disabled={uploadingDoc}><Icon.Plus /> {uploadingDoc ? 'กำลังอัปโหลด...' : 'เพิ่มเอกสาร'}</button>
               </div>
               <div className="card-body">
@@ -1363,7 +1360,7 @@ export default function PetDetailPage() {
           {/* ─── Timeline tab ─── */}
           {activeTab === 'timeline' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Timeline /></div>ไทม์ไลน์กิจกรรมทั้งหมด</div>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', padding: 2 }}><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรมทั้งหมด</div>
                 <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
               </div>
               <div className="card-body">
@@ -1438,7 +1435,7 @@ export default function PetDetailPage() {
         <div className="modal-overlay" onClick={() => { setShowPedigreeModal(false); setPedigreeZoom(1); }}>
           <div className="ped-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="ped-modal-head">
-              <div className="ped-modal-title"><Icon.Dna /> แผนผังสายเลือด {pet.name}</div>
+              <div className="ped-modal-title"><img src="/icons/icon-breeding.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> แผนผังสายเลือด {pet.name}</div>
             </div>
             <div className="ped-modal-stage" ref={pedStageRef}>
               <div className="ped-modal-scaler" ref={pedScalerRef} style={{ transform: `scale(${pedigreeZoom})` }}>
