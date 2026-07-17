@@ -19,6 +19,26 @@ type IconName =
   | "care"
   | "search";
 
+const ICON_SRC: Record<IconName, string> = {
+  id:       '/icons/icon-pet-id-card.png',
+  health:   '/icons/icon-health.png',
+  qr:       '/icons/icon-qr-code.png',
+  shield:   '/icons/icon-verified-badge.png',
+  tree:     '/icons/icon-breeding.png',
+  doc:      '/icons/icon-documents.png',
+  transfer: '/icons/icon-pet-transfer.png',
+  clinic:   '/icons/icon-vet-care.png',
+  shop:     '/icons/icon-shop.png',
+  owner:    '/icons/icon-my-pets.png',
+  breeder:  '/icons/icon-farm.png',
+  care:     '/icons/icon-vet-care.png',
+  search:   '/icons/icon-scan.png',
+};
+
+function IconImg({ name, size = 30 }: { name: IconName; size?: number }) {
+  return <img src={ICON_SRC[name]} alt="" width={size} height={size} style={{ objectFit: 'contain', display: 'block' }} aria-hidden="true" />;
+}
+
 const siteUrl = "https://whiskora.pet";
 
 const trustStatements = [
@@ -362,149 +382,13 @@ const homeJsonLd = {
   ],
 };
 
-function PawIcon({ color = "#ef3e7b" }: { color?: string }) {
+function PawIcon({ color = "#e84677" }: { color?: string }) {
   if (color === "#fff") {
     return <img src="/icons/icon-paw-circle-white.png" aria-hidden="true" alt="" width={25} height={25} style={{ objectFit: 'contain', flexShrink: 0 }} />;
   }
   return <img src="/paw.png" aria-hidden="true" alt="" width={25} height={25} style={{ objectFit: 'contain', flexShrink: 0 }} />;
 }
 
-function LineIcon({ name, color = "#ef3e7b" }: { name: IconName; color?: string }) {
-  const common = {
-    width: 30,
-    height: 30,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: color,
-    strokeWidth: 2,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-
-  if (name === "shield") {
-    return (
-      <svg {...common}>
-        <path d="M12 3 20 6v6c0 5-3.3 8-8 9-4.7-1-8-4-8-9V6l8-3Z" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    );
-  }
-
-  if (name === "qr") {
-    return (
-      <svg {...common}>
-        <rect x="3" y="3" width="6" height="6" />
-        <rect x="15" y="3" width="6" height="6" />
-        <rect x="3" y="15" width="6" height="6" />
-        <path d="M15 15h2v2h-2zM19 15h2v6h-6v-2h4zM12 3v4M12 12h4M12 17v4" />
-      </svg>
-    );
-  }
-
-  if (name === "health") {
-    return (
-      <svg {...common}>
-        <path d="M20 10h-4l-3 8-4-14-3 6H4" />
-        <path d="M12 21c-5-3-8-6.5-8-10.2A4.8 4.8 0 0 1 12 7a4.8 4.8 0 0 1 8 3.8c0 3.7-3 7.2-8 10.2Z" opacity=".24" />
-      </svg>
-    );
-  }
-
-  if (name === "tree") {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="5" r="2.5" />
-        <circle cx="6" cy="18" r="2.5" />
-        <circle cx="18" cy="18" r="2.5" />
-        <path d="M12 7.5v4.5M12 12H6v3.5M12 12h6v3.5" />
-      </svg>
-    );
-  }
-
-  if (name === "doc") {
-    return (
-      <svg {...common}>
-        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
-        <path d="M14 3v5h5" />
-        <path d="M8 13h8M8 17h5" />
-      </svg>
-    );
-  }
-
-  if (name === "transfer") {
-    return (
-      <svg {...common}>
-        <path d="M7 7h10M17 7l-3-3M17 7l-3 3M17 17H7M7 17l3-3M7 17l3 3" />
-        <rect x="4" y="4" width="16" height="16" rx="3" opacity=".24" />
-      </svg>
-    );
-  }
-
-  if (name === "clinic") {
-    return (
-      <svg {...common}>
-        <path d="M4 20V8l8-4 8 4v12" />
-        <path d="M9 20v-7h6v7M12 8v4M10 10h4" />
-      </svg>
-    );
-  }
-
-  if (name === "shop") {
-    return (
-      <svg {...common}>
-        <path d="M4 10h16l-1.2-5H5.2L4 10Z" />
-        <path d="M6 10v10h12V10M9 14h6" />
-      </svg>
-    );
-  }
-
-  if (name === "owner") {
-    return (
-      <svg {...common}>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M4 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5" />
-        <path d="M16 9c1.8.2 3 1.5 3 3.1 0 2-1.7 3.2-3.4 3.2" />
-      </svg>
-    );
-  }
-
-  if (name === "breeder") {
-    return (
-      <svg {...common}>
-        <path d="M5 19V9l7-5 7 5v10" />
-        <path d="M9 19v-6h6v6" />
-        <path d="M8 10h8" />
-      </svg>
-    );
-  }
-
-  if (name === "care") {
-    return (
-      <svg {...common}>
-        <path d="M12 21s-7-4.4-7-10a4.5 4.5 0 0 1 7-3.7A4.5 4.5 0 0 1 19 11c0 5.6-7 10-7 10Z" />
-        <path d="M12 9v5M9.5 11.5h5" />
-      </svg>
-    );
-  }
-
-  if (name === "search") {
-    return (
-      <svg {...common}>
-        <circle cx="10.5" cy="10.5" r="6.5" />
-        <path d="m16 16 4 4" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg {...common}>
-      <rect x="3" y="5" width="18" height="14" rx="2.5" />
-      <circle cx="9" cy="12" r="2.2" />
-      <path d="M14 10h4M14 14h3" />
-    </svg>
-  );
-}
 
 function SectionHeader({
   eyebrow,
@@ -569,13 +453,13 @@ export default function Home() {
     <>
       <style>{`
         .home-page {
-          --ink: #21192f;
-          --ink-soft: #42394f;
-          --muted: #70697d;
-          --line: #f1d9e2;
-          --pink: #ef3e7b;
-          --pink-strong: #f42f7a;
-          --pink-soft: #fff2f7;
+          --ink: #1f1a1c;
+          --ink-soft: #4a3f44;
+          --muted: #8e7e84;
+          --line: #f3dde3;
+          --pink: #e84677;
+          --pink-strong: #c4325f;
+          --pink-soft: #fde2ea;
           --blue: #407fb7;
           --green: #5c8f6b;
           --gold: #d9922f;
@@ -679,7 +563,7 @@ export default function Home() {
           background:
             linear-gradient(90deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 36%, rgba(255,255,255,.55) 62%, rgba(255,248,252,.1) 100%),
             url("/home/hero-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
-            #fff8fc;
+            #fffafc;
         }
 
         .hero-inner {
@@ -830,7 +714,7 @@ export default function Home() {
         .trust-item {
           min-height: 128px;
           padding: 22px;
-          border-right: 1px solid #f6e1e8;
+          border-right: 1px solid #f3dde3;
           display: grid;
           align-content: center;
           gap: 8px;
@@ -946,7 +830,7 @@ export default function Home() {
           background:
             linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.85) 42%, rgba(255,255,255,.22) 76%),
             url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
-            #fff8fc;
+            #fffafc;
         }
 
         .platform-copy {
@@ -989,7 +873,7 @@ export default function Home() {
           background:
             linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.92) 42%, rgba(255,255,255,.26) 72%, rgba(255,255,255,.04) 100%),
             url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
-            #fff8fc;
+            #fffafc;
           box-shadow: 0 28px 68px rgba(59,35,70,.1);
         }
 
@@ -1081,14 +965,14 @@ export default function Home() {
         .lifecycle-grid {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
-          border-top: 1px solid #f6e1e8;
+          border-top: 1px solid #f3dde3;
           margin-top: 30px;
         }
 
         .lifecycle-step {
           min-height: 210px;
           padding: 24px 18px;
-          border-right: 1px solid #f6e1e8;
+          border-right: 1px solid #f3dde3;
           display: grid;
           align-content: start;
           gap: 12px;
@@ -1104,7 +988,7 @@ export default function Home() {
           border-radius: 999px;
           display: grid;
           place-items: center;
-          background: #fff2f7;
+          background: #fde2ea;
           color: var(--pink);
           font-size: 13px;
           font-weight: 700;
@@ -1161,7 +1045,7 @@ export default function Home() {
           top: 88px;
           border: 1px solid var(--line);
           border-radius: 26px;
-          background: linear-gradient(180deg, #fff, #fff6fa);
+          background: linear-gradient(180deg, #fff, #fdf0f3);
           box-shadow: 0 24px 52px rgba(59,35,70,.12);
           padding: 24px;
         }
@@ -1220,7 +1104,7 @@ export default function Home() {
         .preview-tabs {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          border-bottom: 1px solid #fff0f6;
+          border-bottom: 1px solid #fde2ea;
         }
 
         .preview-tabs span {
@@ -1243,7 +1127,7 @@ export default function Home() {
 
         .preview-row {
           min-height: 42px;
-          border-bottom: 1px solid #fff0f6;
+          border-bottom: 1px solid #fde2ea;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1261,7 +1145,7 @@ export default function Home() {
           margin-top: 18px;
           min-height: 92px;
           border-radius: 18px;
-          background: #fff5fa;
+          background: #fdf0f3;
           display: grid;
           grid-template-columns: 78px 1fr;
           gap: 12px;
@@ -1315,7 +1199,7 @@ export default function Home() {
           border-radius: 24px;
           border: 1px solid var(--line);
           background:
-            linear-gradient(90deg, #fff6fa, #fff);
+            linear-gradient(90deg, #fdf0f3, #fff);
           box-shadow: 0 18px 38px rgba(59,35,70,.06);
           padding: 36px;
           display: grid;
@@ -1470,8 +1354,8 @@ export default function Home() {
         .intent-chip {
           border-radius: 999px;
           border: 1px solid rgba(239,62,123,.18);
-          background: #fff6fa;
-          color: #7a3653;
+          background: #fdf0f3;
+          color: #c4325f;
           font-size: 12px;
           font-weight: 600;
           padding: 9px 13px;
@@ -1501,7 +1385,7 @@ export default function Home() {
         .cta-band {
           margin-top: 76px;
           background:
-            linear-gradient(135deg, #ef3e7b, #d83269);
+            linear-gradient(135deg, #e84677, #d83269);
           color: #fff;
           padding: 54px 24px 64px;
           text-align: center;
@@ -1538,7 +1422,7 @@ export default function Home() {
             background:
               linear-gradient(90deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.95) 45%, rgba(255,255,255,.42) 74%),
               url("/home/hero-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
-              #fff8fc;
+              #fffafc;
           }
 
           .hero-inner {
@@ -1559,7 +1443,7 @@ export default function Home() {
           }
 
           .trust-item:nth-child(-n + 2) {
-            border-bottom: 1px solid #f6e1e8;
+            border-bottom: 1px solid #f3dde3;
           }
 
           .pillar-grid,
@@ -1568,7 +1452,7 @@ export default function Home() {
           }
 
           .lifecycle-step {
-            border-bottom: 1px solid #f6e1e8;
+            border-bottom: 1px solid #f3dde3;
           }
 
           .lifecycle-step:nth-child(2n) {
@@ -1595,7 +1479,7 @@ export default function Home() {
             background:
               linear-gradient(180deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 48%, rgba(255,255,255,.42) 75%, rgba(255,255,255,.04) 100%),
               url("/home/farm-promo-visual-desktop-v1.png") center bottom / 100% auto no-repeat,
-              #fff8fc;
+              #fffafc;
           }
 
           .farm-story-copy {
@@ -1627,7 +1511,7 @@ export default function Home() {
             background:
               linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.98) 48%, rgba(255,255,255,.52) 66%, rgba(255,255,255,.08) 84%),
               url("/home/hero-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
-              #fff8fc;
+              #fffafc;
           }
 
           .hero-inner,
@@ -1704,7 +1588,7 @@ export default function Home() {
             min-height: auto;
             padding: 18px;
             border-right: 0;
-            border-bottom: 1px solid #f6e1e8;
+            border-bottom: 1px solid #f3dde3;
           }
 
           .trust-item:last-child {
@@ -1748,7 +1632,7 @@ export default function Home() {
             background:
               linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.96) 50%, rgba(255,255,255,.3) 75%, rgba(255,255,255,.08) 92%),
               url("/home/farm-promo-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
-              #fff8fc;
+              #fffafc;
           }
 
           .lifecycle-section,
@@ -1766,7 +1650,7 @@ export default function Home() {
             background:
               linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,.96) 45%, rgba(255,255,255,.38) 72%, rgba(255,255,255,.04) 94%),
               url("/home/farm-promo-visual-mobile-v1.png") center bottom / 100% auto no-repeat,
-              #fff8fc;
+              #fffafc;
           }
 
           .farm-story-copy {
@@ -1816,7 +1700,7 @@ export default function Home() {
           .lifecycle-step:nth-child(2n) {
             min-height: auto;
             border-right: 0;
-            border-bottom: 1px solid #f6e1e8;
+            border-bottom: 1px solid #f3dde3;
             padding: 22px;
           }
 
@@ -1909,9 +1793,9 @@ export default function Home() {
                 </button>
               </div>
               <div className="hero-product-note" aria-label="Whiskora core product areas">
-                <div><LineIcon name="qr" /> QR Public Profile</div>
-                <div><LineIcon name="health" /> Health Records</div>
-                <div><LineIcon name="shield" /> Breeder Trust</div>
+                <div><IconImg name="qr" size={24} /> QR Public Profile</div>
+                <div><IconImg name="health" size={24} /> Health Records</div>
+                <div><IconImg name="shield" size={24} /> Breeder Trust</div>
               </div>
             </div>
             <Image
@@ -1945,7 +1829,7 @@ export default function Home() {
               {problemCards.map((problem) => (
                 <article className="problem-card" key={problem.title} data-reveal>
                   <div className="icon-box">
-                    <LineIcon name={problem.icon} />
+                    <IconImg name={problem.icon} />
                   </div>
                   <h3>{problem.title}</h3>
                   <p>{problem.desc}</p>
@@ -1959,7 +1843,7 @@ export default function Home() {
           <div className="section-inner">
             <div className="platform-copy" data-reveal="panel">
               <div className="eyebrow">
-                <LineIcon name="shield" />
+                <IconImg name="shield" size={20} />
                 ONE PLATFORM, EVERY PET LIFE
               </div>
               <h2 className="section-title">
@@ -1970,10 +1854,10 @@ export default function Home() {
                 จากโปรไฟล์แรกของลูกสัตว์ ไปจนถึงประวัติสุขภาพ ฟาร์ม เพ็ดดิกรี การส่งต่อเจ้าของ และการดูแลกับบริการต่าง ๆ Whiskora ทำให้ข้อมูลเดินทางไปพร้อมกับสัตว์เลี้ยงอย่างเป็นระบบ
               </p>
               <div className="platform-proof">
-                <div><LineIcon name="id" /> เริ่มจาก Pet ID และโปรไฟล์ฟรี</div>
-                <div><LineIcon name="health" /> เก็บข้อมูลสุขภาพและเอกสารต่อเนื่อง</div>
-                <div><LineIcon name="tree" /> รองรับสายเลือด ฟาร์ม และครอก</div>
-                <div><LineIcon name="clinic" /> พร้อมต่อยอดกับคลินิกและบริการ</div>
+                <div><IconImg name="id" size={24} /> เริ่มจาก Pet ID และโปรไฟล์ฟรี</div>
+                <div><IconImg name="health" size={24} /> เก็บข้อมูลสุขภาพและเอกสารต่อเนื่อง</div>
+                <div><IconImg name="tree" size={24} /> รองรับสายเลือด ฟาร์ม และครอก</div>
+                <div><IconImg name="clinic" size={24} /> พร้อมต่อยอดกับคลินิกและบริการ</div>
               </div>
               <button className="primary-btn" onClick={() => router.push("/register")}>
                 เริ่มสร้างโปรไฟล์สัตว์เลี้ยง
@@ -1996,7 +1880,7 @@ export default function Home() {
                 {farmHighlights.map((item) => (
                   <article className="farm-proof-card" key={item.title} data-reveal>
                     <div className="icon-box">
-                      <LineIcon name={item.icon} />
+                      <IconImg name={item.icon} />
                     </div>
                     <h3>{item.title}</h3>
                     <p>{item.desc}</p>
@@ -2027,7 +1911,7 @@ export default function Home() {
               {productPillars.map((pillar) => (
                 <article className="pillar-card" key={pillar.title} data-reveal>
                   <div className="icon-box">
-                    <LineIcon name={pillar.icon} />
+                    <IconImg name={pillar.icon} />
                   </div>
                   <h3>{pillar.title}</h3>
                   <div className="pillar-benefit">{pillar.benefit}</div>
@@ -2052,7 +1936,7 @@ export default function Home() {
             {lifecycleSteps.map((step, index) => (
               <article className="lifecycle-step" key={step.title} data-reveal>
                 <span className="step-index">{index + 1}</span>
-                <LineIcon name={step.icon} color={index % 3 === 1 ? "#407fb7" : index % 3 === 2 ? "#5c8f6b" : "#ef3e7b"} />
+                <IconImg name={step.icon} />
                 <h3>{step.title}</h3>
                 <p>{step.desc}</p>
               </article>
@@ -2072,7 +1956,7 @@ export default function Home() {
               {userGroups.map((group) => (
                 <article className="audience-card" key={group.label} data-reveal>
                   <div className="icon-box">
-                    <LineIcon name={group.icon} />
+                    <IconImg name={group.icon} />
                   </div>
                   <div className="audience-label">{group.label}</div>
                   <h3>{group.title}</h3>
@@ -2134,7 +2018,7 @@ export default function Home() {
               {featureShowcase.map((feature) => (
                 <article className="feature-card" key={feature.title} data-reveal>
                   <div className="icon-box">
-                    <LineIcon name={feature.icon} />
+                    <IconImg name={feature.icon} />
                   </div>
                   <h3>{feature.title}</h3>
                   <p>{feature.desc}</p>
@@ -2163,7 +2047,7 @@ export default function Home() {
             <div className="trust-layer-list">
               {trustLayer.map((item) => (
                 <div className="trust-layer-card" key={item} data-reveal>
-                  <LineIcon name="shield" />
+                  <IconImg name="shield" size={24} />
                   {item}
                 </div>
               ))}
