@@ -393,7 +393,7 @@ function FarmDashboardContent() {
         .fd-cover-btn { width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); color:${F.ink}; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; box-shadow:0 2px 8px rgba(0,0,0,.12); transition:all .15s; text-decoration:none; }
         .fd-cover-btn:hover { background:white; }
         .fd-cover-cam { position:absolute; bottom:10px; right:14px; z-index:2; width:34px; height:34px; border-radius:999px; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:white; }
-        .fd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:700; color:${F.pink}; }
+        .fd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:600; color:${F.pink}; }
 
         .fd-identity { padding:0 0 14px; }
         .fd-id-row { position:relative; z-index:1; display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
@@ -404,10 +404,10 @@ function FarmDashboardContent() {
         .fd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:1; }
         .fd-id-main { flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
         .fd-id-text { flex:1; min-width:0; }
-        .fd-name { font-size:20px; font-weight:750; color:${F.ink}; line-height:1.2; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
+        .fd-name { font-size:20px; font-weight:700; color:${F.ink}; line-height:1.2; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 2px; }
         .fd-name img { width:18px; height:18px; object-fit:contain; flex-shrink:0; }
         .fd-tagline { font-size:13px; color:${F.muted}; font-weight:400; }
-        .fd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; border:none; cursor:pointer; }
+        .fd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:500; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; border:none; cursor:pointer; }
         .fd-view-btn:hover { background:#E5E7EB; }
         .fd-edit-icon { flex-shrink:0; display:flex; align-items:center; justify-content:center; text-decoration:none; opacity:1; transition:opacity .15s; }
         .fd-edit-icon:active { opacity:.6; }
@@ -415,15 +415,15 @@ function FarmDashboardContent() {
         .fd-prog-bar { display:flex; align-items:center; gap:6px; margin-top:5px; }
         .fd-prog-track { flex:1; height:5px; background:${F.line}; border-radius:10px; overflow:hidden; }
         .fd-prog-fill  { height:100%; border-radius:10px; background:${F.pink}; transition:width 1s ease; }
-        .fd-prog-text  { font-size:11px; font-weight:700; color:${F.pink}; white-space:nowrap; }
+        .fd-prog-text  { font-size:11px; font-weight:600; color:${F.pink}; white-space:nowrap; }
 
         .fd-verify-btn { display:flex; align-items:center; gap:8px; margin-top:12px; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; }
         .fd-verify-btn:hover { background:#fde7ef; border-color:${F.pink}; }
         .fd-verify-btn img { width:28px; height:28px; object-fit:contain; }
         .fd-verify-btn-text { flex:1; }
-        .fd-verify-btn-title { font-size:13px; font-weight:700; color:${F.pink}; }
+        .fd-verify-btn-title { font-size:13px; font-weight:600; color:${F.pink}; }
         .fd-verify-btn-sub { font-size:11px; color:${F.muted}; font-weight:400; }
-        .fd-pending-badge { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 14px; border-radius:12px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12px; font-weight:600; color:#92400E; }
+        .fd-pending-badge { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 14px; border-radius:12px; background:#FFFBEB; border:1px solid #FDE68A; font-size:12px; font-weight:400; color:#92400E; }
 
         /* ─── Content wrapper ─── */
         .fd-body { padding:12px 12px 0; display:flex; flex-direction:column; gap:10px; max-width:640px; margin:0 auto; }
@@ -435,9 +435,9 @@ function FarmDashboardContent() {
         .fd-sec-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
         .fd-sec-title { display:flex; align-items:center; gap:7px; }
         .fd-sec-title img { width:26px; height:26px; object-fit:contain; }
-        .fd-sec-h { margin:0; font-size:14px; font-weight:700; color:${F.ink}; }
-        .fd-sec-badge { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; border-radius:8px; font-size:9px; font-weight:800; padding:0 4px; }
-        .fd-link-sm { color:${F.pink}; font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:2px; }
+        .fd-sec-h { margin:0; font-size:14px; font-weight:600; color:${F.ink}; }
+        .fd-sec-badge { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; border-radius:8px; font-size:9px; font-weight:700; padding:0 4px; }
+        .fd-link-sm { color:${F.pink}; font-size:11px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; gap:2px; }
         .fd-link-sm:hover { text-decoration:underline; }
 
         /* ─── 2. Today / Action Center ─── */
@@ -446,8 +446,8 @@ function FarmDashboardContent() {
         .fd-task-icon { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .fd-task-icon img { width:18px; height:18px; object-fit:contain; }
         .fd-task-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-        .fd-task-msg { flex:1; font-size:12px; font-weight:600; color:${F.ink}; line-height:1.4; min-width:0; }
-        .fd-task-btn { font-size:10px; font-weight:700; padding:3px 9px; border-radius:7px; text-decoration:none; white-space:nowrap; flex-shrink:0; border:none; cursor:pointer; font-family:inherit; }
+        .fd-task-msg { flex:1; font-size:12px; font-weight:400; color:${F.ink}; line-height:1.4; min-width:0; }
+        .fd-task-btn { font-size:10px; font-weight:600; padding:3px 9px; border-radius:7px; text-decoration:none; white-space:nowrap; flex-shrink:0; border:none; cursor:pointer; font-family:inherit; }
         .fd-t-overdue  { background:${F.redSoft};   border:1px solid ${F.redBorder}; }
         .fd-t-today    { background:${F.amberSoft}; border:1px solid ${F.amberBorder}; }
         .fd-t-upcoming { background:rgba(37,99,235,.06); border:1px solid #BFDBFE; }
@@ -460,17 +460,17 @@ function FarmDashboardContent() {
         .fd-t-today    .fd-task-btn { background:${F.amber}; color:white; }
         .fd-t-upcoming .fd-task-btn { background:#2563EB; color:white; }
         .fd-t-info     .fd-task-btn { background:${F.lineMid}; color:${F.inkSoft}; }
-        .fd-today-empty { font-size:12px; color:${F.green}; font-weight:600; display:flex; align-items:center; gap:6px; }
+        .fd-today-empty { font-size:12px; color:${F.green}; font-weight:400; display:flex; align-items:center; gap:6px; }
         .fd-today-empty img { width:18px; height:18px; object-fit:contain; }
-        .fd-show-more { margin-top:8px; font-size:11px; font-weight:700; color:${F.pink}; background:none; border:none; cursor:pointer; font-family:inherit; padding:4px 0; }
+        .fd-show-more { margin-top:8px; font-size:11px; font-weight:500; color:${F.pink}; background:none; border:none; cursor:pointer; font-family:inherit; padding:4px 0; }
 
         /* ─── 3. Farm Overview ─── */
         .fd-ov-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
         @media (max-width:360px) { .fd-ov-grid { grid-template-columns:repeat(2,1fr); } }
         .fd-ov-stat { border-radius:10px; padding:12px 8px 10px; cursor:pointer; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .15s; border:1.5px solid transparent; }
         .fd-ov-stat:hover { border-color:rgba(232,70,119,.2); transform:translateY(-1px); }
-        .fd-ov-count { font-size:22px; font-weight:800; line-height:1; }
-        .fd-ov-label { font-size:9px; font-weight:700; color:${F.inkSoft}; line-height:1.3; text-align:center; }
+        .fd-ov-count { font-size:22px; font-weight:700; line-height:1; }
+        .fd-ov-label { font-size:9px; font-weight:500; color:${F.inkSoft}; line-height:1.3; text-align:center; }
         .fd-ov-icon  { width:44px; height:44px; object-fit:contain; margin-bottom:4px; }
 
         /* ─── 4. Pregnancy Tracking Card ─── */
@@ -479,8 +479,8 @@ function FarmDashboardContent() {
         .ptc-accent { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:14px 0 0 14px; }
         .ptc-inner { padding:12px 13px 13px 17px; }
         .ptc-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
-        .ptc-code { font-size:15px; font-weight:800; color:${F.ink}; flex-shrink:0; letter-spacing:-.01em; }
-        .ptc-badge { font-size:9px; font-weight:800; padding:3px 9px; border-radius:20px; white-space:nowrap; letter-spacing:.02em; }
+        .ptc-code { font-size:15px; font-weight:700; color:${F.ink}; flex-shrink:0; letter-spacing:-.01em; }
+        .ptc-badge { font-size:9px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; letter-spacing:.02em; }
         .ptc-parents { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
         .ptc-avatars { display:flex; flex-shrink:0; }
         .ptc-av { width:28px; height:28px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 0 0 1px ${F.line}; }
@@ -488,36 +488,36 @@ function FarmDashboardContent() {
         .ptc-av img { width:100%; height:100%; object-fit:cover; }
         .ptc-av-sire { background:#DBEAFE; color:#2563EB; font-size:9px; }
         .ptc-av-dam  { background:#FCE7F3; color:#DB2777; font-size:9px; }
-        .ptc-pair-name { font-size:11px; font-weight:700; color:${F.inkSoft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .ptc-pair-name { font-size:11px; font-weight:400; color:${F.inkSoft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
         .ptc-divider { height:1px; background:${F.line}; margin:0 0 10px; }
         .ptc-summary { margin-bottom:10px; }
-        .ptc-main { font-size:14px; font-weight:800; color:${F.ink}; line-height:1.3; margin-bottom:2px; }
-        .ptc-sub  { font-size:11px; font-weight:600; color:${F.muted}; line-height:1.4; margin-bottom:4px; }
-        .ptc-dates { font-size:10px; color:${F.muted}; font-weight:500; }
+        .ptc-main { font-size:14px; font-weight:600; color:${F.ink}; line-height:1.3; margin-bottom:2px; }
+        .ptc-sub  { font-size:11px; font-weight:400; color:${F.muted}; line-height:1.4; margin-bottom:4px; }
+        .ptc-dates { font-size:10px; color:${F.muted}; font-weight:400; }
         .ptc-timeline { display:flex; align-items:flex-start; gap:0; margin-bottom:12px; }
         .ptc-stage { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
         .ptc-stage-row { display:flex; align-items:center; width:100%; }
         .ptc-stage-dot { width:16px; height:16px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2px solid currentColor; transition:all .2s; }
         .ptc-stage-line { flex:1; height:2px; background:currentColor; }
-        .ptc-stage-label { font-size:8.5px; font-weight:700; margin-top:4px; text-align:center; line-height:1.3; width:100%; }
+        .ptc-stage-label { font-size:8.5px; font-weight:500; margin-top:4px; text-align:center; line-height:1.3; width:100%; }
         .ptc-actions { display:flex; gap:8px; }
-        .ptc-btn-ghost { flex:1; padding:8px 10px; border-radius:9px; background:#FAFAFA; color:${F.inkSoft}; font-size:11px; font-weight:700; border:1px solid ${F.lineMid}; text-decoration:none; text-align:center; cursor:pointer; transition:background .15s; display:block; }
+        .ptc-btn-ghost { flex:1; padding:8px 10px; border-radius:9px; background:#FAFAFA; color:${F.inkSoft}; font-size:11px; font-weight:500; border:1px solid ${F.lineMid}; text-decoration:none; text-align:center; cursor:pointer; transition:background .15s; display:block; }
         .ptc-btn-ghost:hover { background:#F3F4F6; }
-        .ptc-btn-primary { flex:2; padding:8px 12px; border-radius:9px; color:white; font-size:11px; font-weight:800; text-decoration:none; text-align:center; cursor:pointer; border:none; display:block; transition:filter .15s; }
+        .ptc-btn-primary { flex:2; padding:8px 12px; border-radius:9px; color:white; font-size:11px; font-weight:600; text-decoration:none; text-align:center; cursor:pointer; border:none; display:block; transition:filter .15s; }
         .ptc-btn-primary:hover { filter:brightness(1.08); }
         .ptc-missing { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 0; }
-        .ptc-missing-text { font-size:12px; color:${F.muted}; font-weight:600; }
-        .ptc-missing-btn { font-size:11px; font-weight:700; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:8px; text-decoration:none; white-space:nowrap; }
+        .ptc-missing-text { font-size:12px; color:${F.muted}; font-weight:400; }
+        .ptc-missing-btn { font-size:11px; font-weight:500; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:8px; text-decoration:none; white-space:nowrap; }
 
         /* ─── 5. Finance ─── */
         .fd-fin-row { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
         .fd-fin-stat { flex:1; }
-        .fd-fin-label { font-size:9px; font-weight:700; color:${F.muted}; text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
-        .fd-fin-val { font-size:20px; font-weight:800; line-height:1; }
+        .fd-fin-label { font-size:9px; font-weight:500; color:${F.muted}; text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
+        .fd-fin-val { font-size:20px; font-weight:700; line-height:1; }
         .fd-fin-divider { width:1px; background:${F.line}; align-self:stretch; }
-        .fd-fin-meta { font-size:10px; color:${F.muted}; font-weight:600; display:flex; flex-wrap:wrap; gap:4px 10px; }
+        .fd-fin-meta { font-size:10px; color:${F.muted}; font-weight:400; display:flex; flex-wrap:wrap; gap:4px 10px; }
         .fd-fin-empty-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
-        .fd-fin-empty-btn { flex:1; min-width:120px; padding:10px; border-radius:10px; font-size:12px; font-weight:700; border:1.5px dashed ${F.lineMid}; background:white; color:${F.inkSoft}; text-decoration:none; text-align:center; cursor:pointer; transition:all .15s; display:block; }
+        .fd-fin-empty-btn { flex:1; min-width:120px; padding:10px; border-radius:10px; font-size:12px; font-weight:500; border:1.5px dashed ${F.lineMid}; background:white; color:${F.inkSoft}; text-decoration:none; text-align:center; cursor:pointer; transition:all .15s; display:block; }
         .fd-fin-empty-btn:hover { border-color:${F.pink}; color:${F.pink}; background:${F.pinkSoft}; }
 
         /* ─── FAB ─── */
@@ -540,13 +540,13 @@ function FarmDashboardContent() {
         @keyframes fd-sheet-up { from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }
         .fd-sheet { animation:fd-sheet-up .2s ease; }
         .fd-sheet-handle { width:36px; height:3px; border-radius:2px; background:#E5E7EB; margin:0 auto 14px; }
-        .fd-sheet-title { font-size:13px; font-weight:700; color:${F.muted}; margin-bottom:12px; text-align:center; text-transform:uppercase; letter-spacing:.05em; }
+        .fd-sheet-title { font-size:12px; font-weight:500; color:${F.muted}; margin-bottom:12px; text-align:center; text-transform:uppercase; letter-spacing:.05em; }
         .fd-sheet-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
         .fd-sheet-action { display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px; border-radius:10px; border:1px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
         .fd-sheet-action:hover { background:${F.pinkSoft}; border-color:${F.pinkBorder}; }
         .fd-sheet-action img { width:36px; height:36px; object-fit:contain; }
-        .fd-sheet-action span { font-size:9px; font-weight:700; color:${F.ink}; text-align:center; line-height:1.3; }
-        .fd-sheet-close { margin-top:12px; width:100%; padding:11px; border-radius:10px; border:none; background:#F3F4F6; color:${F.inkSoft}; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+        .fd-sheet-action span { font-size:9px; font-weight:500; color:${F.ink}; text-align:center; line-height:1.3; }
+        .fd-sheet-close { margin-top:12px; width:100%; padding:11px; border-radius:10px; border:none; background:#F3F4F6; color:${F.inkSoft}; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
 
         /* ─── Bottom Nav ─── */
         .fd-nav { position:fixed; bottom:0; left:0; right:0; z-index:55; background:rgba(255,255,255,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid rgba(232,70,119,.10); box-shadow:0 -4px 24px rgba(31,26,28,.07); padding-bottom:env(safe-area-inset-bottom,0px); }
@@ -555,7 +555,7 @@ function FarmDashboardContent() {
         .fd-tab-icon { width:72px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; transition:background .15s; }
         .fd-nav-tab:active .fd-tab-icon { background:rgba(232,70,119,.09); }
         .fd-tab-icon img { width:48px; height:48px; object-fit:contain; }
-        .fd-nav-tab span { font-size:10px; font-weight:600; line-height:1.2; }
+        .fd-nav-tab span { font-size:10px; font-weight:400; line-height:1.2; }
 
         /* ─── Add Animal mini sheet ─── */
         .fd-add-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; animation:fd-sheet-up .2s ease; }
@@ -563,12 +563,12 @@ function FarmDashboardContent() {
         .fd-add-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:20px 12px 16px; border-radius:16px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
         .fd-add-card:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
         .fd-add-card img { width:64px; height:64px; object-fit:contain; }
-        .fd-add-card-title { font-size:13px; font-weight:700; color:${F.ink}; text-align:center; line-height:1.3; }
+        .fd-add-card-title { font-size:13px; font-weight:600; color:${F.ink}; text-align:center; line-height:1.3; }
         .fd-add-card-sub { font-size:10px; color:${F.muted}; font-weight:400; text-align:center; line-height:1.4; }
 
         /* ─── Misc ─── */
-        .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:600; text-align:center; padding:8px 0; }
-        .fd-link-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:16px; text-decoration:none; transition:all .15s; }
+        .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:400; text-align:center; padding:8px 0; }
+        .fd-link-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:16px; text-decoration:none; transition:all .15s; }
         .fd-link-pill:hover { background:#fde7ef; }
 
         @media (max-width:600px) { .fd-body { padding:8px 8px 0; gap:8px; } }
