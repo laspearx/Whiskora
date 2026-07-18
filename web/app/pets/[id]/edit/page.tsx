@@ -140,7 +140,7 @@ export default function EditPetPage() {
 
   const handleSpeciesChange = (type: "cat" | "dog" | "other") => {
     setSpecies(type);
-    setOtherPetText(""); setBreed(""); setCustomBreed(""); setColor(""); setCustomColor("");
+    setOtherPetText(""); setBreed(""); setCustomBreed(""); setColor(""); setEyeColor(""); setCustomEyeColor("");
   };
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
