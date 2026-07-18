@@ -105,7 +105,7 @@ function AppointmentCreateContent() {
         .apc-back { width: 38px; height: 38px; border-radius: 11px; background: white; border: 1px solid ${F.line}; display: flex; align-items: center; justify-content: center; cursor: pointer; color: ${F.inkSoft}; flex-shrink: 0; }
         .apc-title { font-size: 20px; font-weight: 700; color: ${F.ink}; margin: 0; }
         .apc-label { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; margin-bottom: 8px; margin-top: 18px; }
-        .apc-quick { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+        .apc-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
         .apc-quick-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid ${F.line}; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; color: ${F.ink}; text-align: left; transition: all .15s; }
         .apc-quick-btn:hover, .apc-quick-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pink}; }
         .apc-quick-btn img { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
