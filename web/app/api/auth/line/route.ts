@@ -46,6 +46,12 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') || '/profile'
   const mode = searchParams.get('mode') || 'login'
 
+  // ตรวจสอบ env vars ที่จำเป็น
+  if (!process.env.LINE_CHANNEL_ID || !process.env.LINE_CHANNEL_SECRET) {
+    console.error('[LINE Auth] Missing LINE_CHANNEL_ID or LINE_CHANNEL_SECRET env vars')
+    return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent('LINE_CONFIG_MISSING')}`)
+  }
+
   const state = crypto.randomBytes(16).toString('hex')
   const cookieStore = await cookies()
 
