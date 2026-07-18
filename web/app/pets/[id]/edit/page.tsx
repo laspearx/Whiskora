@@ -34,19 +34,7 @@ const PET_DATA = {
   ],
 };
 
-const COLOR_DATA = {
-  dog: ["ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น (Fawn)", "สามสี (Tricolor)", "ลายหินอ่อน (Merle)", "ลายเสือ (Brindle)", "อื่นๆ"],
-  other: ["สีเดียวล้วน (Solid)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
-};
-
-const CAT_COLORS = [
-  "Black","Black White","Black Tortie","Black Tortie White",
-  "Blue","Blue White","Blue Tortie","Blue Tortie White",
-  "Chocolate","Chocolate White","Chocolate Tortie","Chocolate Tortie White",
-  "Cinnamon","Cinnamon White","Cinnamon Tortie","Cinnamon Tortie White",
-  "Cream","Cream White","Golden","Lilac","Lilac White","Lilac Tortie","Lilac Tortie White",
-  "Red","Red White","Silver","White","อื่นๆ (ระบุเอง)",
-];
+const CAT_EYE_OPTIONS = ["เขียว", "เหลือง", "ส้ม/คอปเปอร์", "ฟ้า", "ตาสองสี", "อื่นๆ"];
 
 const BLOOD_TYPES = ["A","B","AB","Unknown"];
 
@@ -67,7 +55,7 @@ export default function EditPetPage() {
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
   const [color, setColor] = useState("");
-  const [customColor, setCustomColor] = useState("");
+
   const [gender, setGender] = useState<PetGender>(PET_GENDER.MALE);
   const [birthdate, setBirthdate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -84,6 +72,7 @@ export default function EditPetPage() {
   const [ear, setEar] = useState("");
   const [leg, setLeg] = useState("");
   const [eyeColor, setEyeColor] = useState("");
+  const [customEyeColor, setCustomEyeColor] = useState("");
 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
@@ -121,7 +110,11 @@ export default function EditPetPage() {
       setCoat(data.coat || "");
       setEar(data.ear || "");
       setLeg(data.leg || "");
-      setEyeColor(data.eye_color || "");
+      const savedEye = data.eye_color || "";
+      const CAT_EYE_PRESET = ["เขียว", "เหลือง", "ส้ม/คอปเปอร์", "ฟ้า", "ตาสองสี"];
+      if (savedEye && !CAT_EYE_PRESET.includes(savedEye)) {
+        setEyeColor("อื่นๆ"); setCustomEyeColor(savedEye);
+      } else { setEyeColor(savedEye); }
 
       if (data.image_url) {
         setAvatarUrl(data.image_url);
@@ -204,17 +197,18 @@ export default function EditPetPage() {
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : species;
     const finalBreed = breed === 'อื่นๆ' ? customBreed : (breed || customBreed);
-    const finalColor = color === 'อื่นๆ (ระบุเอง)' ? customColor : color;
+    const finalColor = color;
+    const finalEyeColor = eyeColor === 'อื่นๆ' ? customEyeColor : eyeColor;
 
     const { error } = await supabase.from("pets").update({
-      name: name.trim(), species: finalSpecies, breed: finalBreed || null, color: finalColor || null,
+      name: name.trim(), species: finalSpecies, breed: finalBreed || null, color: finalColor || null, eye_color: finalEyeColor || null,
       gender, birth_date: birthdate || null, image_url: avatarUrl,
       allergies: allergies || null, traits: traits || null,
       is_neutered: isNeutered,
       blood_type: bloodType || null,
       microchip_number: microchip || null,
       status: status || null, price: price === "" ? null : Number(price),
-      pattern: pattern || null, coat: coat || null, ear: ear || null, leg: leg || null, eye_color: eyeColor || null,
+      pattern: null, coat: coat || null, ear: ear || null, leg: leg || null,
     }).eq("id", petId);
 
     if (error) {
@@ -465,25 +459,12 @@ export default function EditPetPage() {
                 ลักษณะภายนอก
               </div>
 
+              <div className="ep-field">
+                <label className="ep-label">สี</label>
+                <input className="ep-input" type="text" value={color} onChange={e => setColor(e.target.value)} placeholder="เช่น ดำ, ขาว, ส้ม, สามสี..." />
+              </div>
               {species === 'cat' ? (
                 <>
-                  <div className="ep-field">
-                    <label className="ep-label">สี (Color)</label>
-                    <select className="ep-select" value={color} onChange={e => setColor(e.target.value)}>
-                      <option value="">เลือกสี...</option>
-                      {CAT_COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    {color === "อื่นๆ (ระบุเอง)" && (
-                      <input className="ep-input" style={{ marginTop: 8 }} type="text" value={customColor} onChange={e => setCustomColor(e.target.value)} placeholder="ระบุสีด้วยตัวเอง..." />
-                    )}
-                  </div>
-                  <div className="ep-field">
-                    <label className="ep-label">แพทเทิร์น (Pattern)</label>
-                    <select className="ep-select" value={pattern} onChange={e => setPattern(e.target.value)}>
-                      <option value="">เลือกแพทเทิร์น...</option>
-                      {["Solid","Bicolour","Van","Harlequin","Classic Tabby","Mackerel Tabby","Spotted Tabby","Ticked Tabby","Shaded","Shell"].map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
                   <div className="ep-grid4">
                     <div className="ep-field" style={{ marginBottom: 0 }}>
                       <label className="ep-label">ขน</label>
@@ -508,36 +489,21 @@ export default function EditPetPage() {
                     </div>
                     <div className="ep-field" style={{ marginBottom: 0 }}>
                       <label className="ep-label">สีตา</label>
-                      <select className="ep-select" value={eyeColor} onChange={e => setEyeColor(e.target.value)}>
+                      <select className="ep-select" value={eyeColor} onChange={e => { setEyeColor(e.target.value); if (e.target.value !== 'อื่นๆ') setCustomEyeColor(''); }}>
                         <option value="">เลือก...</option>
-                        <option>Orange</option><option>Blue</option><option>Green</option><option>Yellow</option><option>Odd Eyed</option>
+                        {CAT_EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
+                      {eyeColor === 'อื่นๆ' && (
+                        <input className="ep-input" style={{ marginTop: 8 }} type="text" value={customEyeColor} onChange={e => setCustomEyeColor(e.target.value)} placeholder="ระบุสีตา..." />
+                      )}
                     </div>
                   </div>
                 </>
               ) : (
-                <>
-                  <div className="ep-field">
-                    <label className="ep-label">สี (Color)</label>
-                    <select className="ep-select" value={color} onChange={e => setColor(e.target.value)}>
-                      <option value="">เลือกสี...</option>
-                      {(COLOR_DATA[species as 'dog'] || COLOR_DATA.other).map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    {color === "อื่นๆ" && (
-                      <input className="ep-input" style={{ marginTop: 8 }} type="text" value={customColor} onChange={e => setCustomColor(e.target.value)} placeholder="ระบุสีด้วยตัวเอง..." />
-                    )}
-                  </div>
-                  <div className="ep-grid2">
-                    <div className="ep-field" style={{ marginBottom: 0 }}>
-                      <label className="ep-label">ลวดลาย</label>
-                      <input className="ep-input" type="text" value={pattern} onChange={e => setPattern(e.target.value)} placeholder="เช่น ลายจุด, ทักซิโด้" />
-                    </div>
-                    <div className="ep-field" style={{ marginBottom: 0 }}>
-                      <label className="ep-label">สีตา</label>
-                      <input className="ep-input" type="text" value={eyeColor} onChange={e => setEyeColor(e.target.value)} placeholder="เช่น ดำ, น้ำตาล" />
-                    </div>
-                  </div>
-                </>
+                <div className="ep-field" style={{ marginBottom: 0 }}>
+                  <label className="ep-label">สีตา</label>
+                  <input className="ep-input" type="text" value={eyeColor} onChange={e => setEyeColor(e.target.value)} placeholder="เช่น ดำ, น้ำตาล" />
+                </div>
               )}
             </div>
 

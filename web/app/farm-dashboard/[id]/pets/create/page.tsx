@@ -30,24 +30,10 @@ const breedData: Record<string, string[]> = {
   other: ["เมียร์แคต (Meerkat)", "เฟอร์เรท (Ferret)", "ชินชิลล่า (Chinchilla)", "บุชเบบี้ (Bushbaby)"],
 };
 
-const COLOR_DATA: Record<string, string[]> = {
-  cat: ["ดำ (Black)", "บลู / เทา (Blue / Grey)", "ช็อกโกแลต (Chocolate)", "ไลแลค (Lilac / Lavender)", "ซินนามอน (Cinnamon)", "ฟอว์น (Fawn)", "แดง / ส้ม (Red / Orange)", "ครีม (Cream)", "ขาว (White)", "ทอร์ตี้ / สีเปรอะ (Tortoiseshell)", "อื่นๆ"],
-  dog: ["ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate / Liver)", "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น / น้ำตาลอ่อน (Fawn)", "สามสี (Tricolor)", "ลายหินอ่อน (Merle / Dapple)", "ลายเสือ (Brindle)", "อื่นๆ"],
-  other: ["ดำ (Black)", "ขาว (White)", "น้ำตาล (Brown)", "เทา (Grey)", "ครีม (Cream)", "หลายสี (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
-};
-
-const PATTERN_DATA: Record<string, string[]> = {
-  cat: ["สีเดียวล้วน (Solid / Self)", "ลายสลิด-แมคเคอเรล (Mackerel Tabby)", "ลายสลิด-คลาสสิก (Classic Tabby)", "ลายจุด (Spotted Tabby)", "ลายทิคต์ (Ticked Tabby)", "สีแต้ม / พ้อยท์ (Colorpoint)", "สองสี / ขาวแต้ม (Bicolor / Tuxedo)", "ทอร์ตี้ / สีเปรอะ (Tortie)", "สามสี / แคลิโค (Calico)", "ทิปปิ้ง-ชินชิลล่า (Chinchilla / Shell)", "ทิปปิ้ง-เฉดเดด (Shaded)", "ทิปปิ้ง-สโมก (Smoke)", "อื่นๆ"],
-  default: ["สีเดียวล้วน (Solid Color)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
-};
-
-const EYE_OPTIONS = ["เขียว (Green)", "เฮเซล (Hazel)", "ทอง (Gold)", "เหลือง (Yellow)", "อำพัน (Amber)", "ส้ม (Orange)", "คอปเปอร์ (Copper)", "ฟ้า (Blue)", "ตาสองสี (Odd-eyed)", "ตาหลายสีในดวงเดียว (Dichroic)", "อื่นๆ"];
+const CAT_EYE_OPTIONS = ["เขียว", "เหลือง", "ส้ม/คอปเปอร์", "ฟ้า", "ตาสองสี", "อื่นๆ"];
 const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
 const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
 const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
-
-const colorOptionsFor = (species: string) => COLOR_DATA[species] || COLOR_DATA.other;
-const patternOptionsFor = (species: string) => PATTERN_DATA[species] || PATTERN_DATA.default;
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -78,7 +64,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<Blob | n
 type FormData = {
   name: string; breed: string; customBreed: string;
   gender: PetGender; birthDate: string; status: PetStatus; price: string;
-  color: string; pattern: string; ear: string; leg: string; coat: string; eye_color: string;
+  color: string; ear: string; leg: string; coat: string; eye_color: string; custom_eye_color: string;
   sire_id: string; dam_id: string; note: string;
 };
 
@@ -103,7 +89,7 @@ export default function CreateFarmPetPage() {
   const [form, setForm] = useState<FormData>({
     name: '', breed: '', customBreed: '', gender: PET_GENDER.MALE, birthDate: '',
     status: PET_STATUS.UNSPECIFIED, price: '',
-    color: '', pattern: '', ear: '', leg: '', coat: '', eye_color: '',
+    color: '', ear: '', leg: '', coat: '', eye_color: '', custom_eye_color: '',
     sire_id: '', dam_id: '', note: '',
   });
 
@@ -176,9 +162,9 @@ export default function CreateFarmPetPage() {
         name: form.name.trim(), breed: finalBreed, gender: form.gender,
         birth_date: form.birthDate || null, status: form.status || null,
         price: form.price ? parseInt(form.price) : null, image_url: imageUrl,
-        color: form.color || null, pattern: form.pattern || null,
+        color: form.color || null, pattern: null,
         ear: form.ear || null, leg: form.leg || null, coat: form.coat || null,
-        eye_color: form.eye_color || null,
+        eye_color: (form.eye_color === 'อื่นๆ' ? form.custom_eye_color : form.eye_color) || null,
         sire_id: form.sire_id || null, dam_id: form.dam_id || null,
         note: form.note.trim() || null, is_public: true,
       }]);
@@ -346,21 +332,9 @@ export default function CreateFarmPetPage() {
           <div className="fpc-card">
             <p className="fpc-card-title">ลักษณะภายนอก</p>
             <div className="fpc-stack">
-              <div className="fpc-grid2">
-                <div className="fpc-field">
-                  <label className="fpc-label">สี</label>
-                  <select className="fpc-select" value={form.color} onChange={e => set('color', e.target.value)}>
-                    <option value="">เลือกสี</option>
-                    {colorOptionsFor(farm.species).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="fpc-field">
-                  <label className="fpc-label">ลาย</label>
-                  <select className="fpc-select" value={form.pattern} onChange={e => set('pattern', e.target.value)}>
-                    <option value="">เลือกลาย</option>
-                    {patternOptionsFor(farm.species).map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
+              <div className="fpc-field">
+                <label className="fpc-label">สี</label>
+                <input type="text" className="fpc-input" placeholder="เช่น ดำ, ขาว, ส้ม, สามสี..." value={form.color} onChange={e => set('color', e.target.value)} />
               </div>
               <div className="fpc-grid3">
                 <div className="fpc-field">
@@ -387,10 +361,19 @@ export default function CreateFarmPetPage() {
               </div>
               <div className="fpc-field">
                 <label className="fpc-label">สีตา</label>
-                <select className="fpc-select" value={form.eye_color} onChange={e => set('eye_color', e.target.value)}>
-                  <option value="">เลือกสีตา</option>
-                  {EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
+                {farm.species === 'cat' ? (
+                  <>
+                    <select className="fpc-select" value={form.eye_color} onChange={e => { set('eye_color', e.target.value); if (e.target.value !== 'อื่นๆ') set('custom_eye_color', ''); }}>
+                      <option value="">เลือกสีตา</option>
+                      {CAT_EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    {form.eye_color === 'อื่นๆ' && (
+                      <input type="text" className="fpc-input" style={{ marginTop: 8 }} placeholder="ระบุสีตา..." value={form.custom_eye_color} onChange={e => set('custom_eye_color', e.target.value)} />
+                    )}
+                  </>
+                ) : (
+                  <input type="text" className="fpc-input" placeholder="เช่น ดำ, น้ำตาล, เหลือง..." value={form.eye_color} onChange={e => set('eye_color', e.target.value)} />
+                )}
               </div>
             </div>
           </div>
