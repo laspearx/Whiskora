@@ -18,6 +18,7 @@ const QUICK_TYPES = [
   { label: "กรูมมิ่ง",       icon: "/icons/icon-bath.png" },
   { label: "ฉีดวัคซีน",      icon: "/icons/icon-vaccine.png" },
   { label: "นัดกับลูกค้า",   icon: "/icons/icon-partner.png" },
+  { label: "ประกวด",          icon: "/icons/icon-award.png" },
   { label: "อื่นๆ",           icon: "/icons/icon-calendar.png" },
 ];
 
@@ -76,6 +77,18 @@ function AppointmentCreateContent() {
         pet_ids:   selectedPetIds.length > 0 ? selectedPetIds : null,
       });
       if (err) throw err;
+
+      if (selectedPetIds.length > 0) {
+        const activities = selectedPetIds.map(petId => ({
+          pet_id:        petId,
+          activity_date: apptDate,
+          activity_type: "นัดหมาย",
+          title:         title.trim(),
+          description:   notes.trim() || null,
+        }));
+        await supabase.from("pet_activities").insert(activities);
+      }
+
       router.push(`/farm-dashboard/${farmId}`);
     } catch (e: any) {
       setError(e.message || "บันทึกไม่สำเร็จ");
@@ -92,7 +105,7 @@ function AppointmentCreateContent() {
         .apc-back { width: 38px; height: 38px; border-radius: 11px; background: white; border: 1px solid ${F.line}; display: flex; align-items: center; justify-content: center; cursor: pointer; color: ${F.inkSoft}; flex-shrink: 0; }
         .apc-title { font-size: 20px; font-weight: 700; color: ${F.ink}; margin: 0; }
         .apc-label { font-size: 12px; font-weight: 600; color: ${F.inkSoft}; margin-bottom: 8px; margin-top: 18px; }
-        .apc-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+        .apc-quick { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 4px; }
         .apc-quick-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid ${F.line}; background: white; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; color: ${F.ink}; text-align: left; transition: all .15s; }
         .apc-quick-btn:hover, .apc-quick-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pink}; }
         .apc-quick-btn img { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
