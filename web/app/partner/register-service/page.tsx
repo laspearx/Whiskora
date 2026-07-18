@@ -131,7 +131,7 @@ export default function RegisterServicePage() {
         .sv-species-btn .emoji { font-size: 20px; }
         .sv-species-btn .lbl { font-size: 10px; font-weight: 700; color: ${F.inkSoft}; }
         .sv-species-btn.active .lbl { color: ${F.blue}; }
-        .sv-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .sv-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
         .sv-savebar-inner { max-width: 600px; margin: 0 auto; }
         .sv-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.blue}; color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
         .sv-btn:hover { background: #1D4FD7; }

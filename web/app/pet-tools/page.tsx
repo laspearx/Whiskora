@@ -323,38 +323,34 @@ function WeightChecker() {
 const TOOLS = [
   {
     id: 'age',
-    emoji: '🎂',
+    icon: '/icons/icon-my-pets.png',
     title: 'Pet Age Calculator',
     titleTh: 'คำนวณอายุเทียบมนุษย์',
     desc: 'แปลงอายุสัตว์เลี้ยงเป็นปีมนุษย์',
-    color: '#FFF0F5',
     component: <AgeCalculator />,
   },
   {
     id: 'gestation',
-    emoji: '🐣',
+    icon: '/icons/icon-breeding.png',
     title: 'Gestation Calculator',
     titleTh: 'คำนวณวันกำหนดคลอด',
     desc: 'คาดการณ์วันคลอดจากวันผสมพันธุ์',
-    color: '#F0FFF4',
     component: <GestationCalculator />,
   },
   {
     id: 'calorie',
-    emoji: '🍽️',
+    icon: '/icons/icon-feeding.png',
     title: 'Daily Feeding Calculator',
     titleTh: 'คำนวณปริมาณอาหารต่อวัน',
     desc: 'คำนวณ kcal และปริมาณอาหารที่เหมาะสม',
-    color: '#FFFBF0',
     component: <CalorieCalculator />,
   },
   {
     id: 'weight',
-    emoji: '⚖️',
+    icon: '/icons/icon-health.png',
     title: 'Weight Status Checker',
     titleTh: 'ตรวจสอบน้ำหนักมาตรฐาน',
     desc: 'เช็คว่าน้ำหนักสัตว์เลี้ยงอยู่ในเกณฑ์ปกติหรือไม่',
-    color: '#F0F4FF',
     component: <WeightChecker />,
   },
 ];
@@ -382,7 +378,8 @@ export default function PetToolsPage() {
         .pt-tool { background: white; border: 1.5px solid ${F.line}; border-radius: 20px; overflow: hidden; transition: border-color .18s; }
         .pt-tool.is-open { border-color: #FBCFE8; box-shadow: 0 4px 16px rgba(232,70,119,0.1); }
         .pt-tool-header { display: flex; align-items: center; gap: 14px; padding: 16px 18px; cursor: pointer; }
-        .pt-tool-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .pt-tool-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pt-tool-icon img { width: 40px; height: 40px; object-fit: contain; }
         .pt-tool-info { flex: 1; min-width: 0; }
         .pt-tool-title { font-size: 15px; font-weight: 800; color: ${F.ink}; }
         .pt-tool-title-th { font-size: 12px; font-weight: 600; color: ${F.pink}; margin-top: 1px; }
@@ -443,7 +440,7 @@ export default function PetToolsPage() {
             {TOOLS.map(tool => (
               <div key={tool.id} className={`pt-tool ${open === tool.id ? 'is-open' : ''}`}>
                 <div className="pt-tool-header" onClick={() => setOpen(open === tool.id ? null : tool.id)}>
-                  <div className="pt-tool-icon" style={{ background: tool.color }}>{tool.emoji}</div>
+                  <div className="pt-tool-icon"><img src={tool.icon} alt="" /></div>
                   <div className="pt-tool-info">
                     <div className="pt-tool-title">{tool.title}</div>
                     <div className="pt-tool-title-th">{tool.titleTh}</div>

@@ -334,7 +334,7 @@ export default function EditPetPage() {
         .ep-confirm-ok:disabled { opacity: .6; }
 
         /* Save bar */
-        .ep-save-bar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom,0px)); left: 0; right: 0; padding: 12px 16px; background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-top: 1px solid ${F.line}; z-index: 49; }
+        .ep-save-bar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom,0px)); left: 0; right: 0; padding: 12px 16px; background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-top: 1px solid ${F.line}; z-index: 60; }
         @media (min-width: 768px) { .ep-save-bar { bottom: 0; padding-bottom: 16px; } }
         .ep-save-btn { width: 100%; max-width: 560px; margin: 0 auto; display: block; padding: 14px; border-radius: 14px; background: ${F.pink}; color: white; font-family: inherit; font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: opacity .15s; }
         .ep-save-btn:disabled { opacity: .6; cursor: not-allowed; }

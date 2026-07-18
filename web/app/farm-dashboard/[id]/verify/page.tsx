@@ -207,7 +207,7 @@ export default function VerifyFarmPage() {
         .vf-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
 
         /* Save bar */
-        .vf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
+        .vf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
         .vf-savebar-inner { max-width: 560px; margin: 0 auto; }
         .vf-submit-btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
         .vf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }

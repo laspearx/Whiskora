@@ -64,9 +64,9 @@ function ServiceDashboardContent() {
     { label: 'รายได้สะสม', value: 0, unit: 'บาท', color: F.green, icon: '💰' },
   ];
   const tools = [
-    { href: `/service-dashboard/${serviceId}/manage-services?from=${fromPage}`, icon: '✂️', title: 'รายการบริการ', desc: 'ตั้งราคาและประเภทบริการ' },
-    { href: `/service-dashboard/${serviceId}/finance?from=${fromPage}`, icon: '📊', title: 'สรุปรายได้', desc: 'รายงานรายได้งานบริการ' },
-    { href: `/service-dashboard/${serviceId}/settings?from=${fromPage}`, icon: '🏥', title: 'ข้อมูลสถานบริการ', desc: 'ที่อยู่และเวลาเปิด-ปิด' },
+    { href: `/service-dashboard/${serviceId}/manage-services?from=${fromPage}`, icon: '/icons/icon-vet-care.png', title: 'รายการบริการ', desc: 'ตั้งราคาและประเภทบริการ' },
+    { href: `/service-dashboard/${serviceId}/finance?from=${fromPage}`, icon: '/icons/icon-wallet.png', title: 'สรุปรายได้', desc: 'รายงานรายได้งานบริการ' },
+    { href: `/service-dashboard/${serviceId}/settings?from=${fromPage}`, icon: '/icons/icon-setting.png', title: 'ข้อมูลสถานบริการ', desc: 'ที่อยู่และเวลาเปิด-ปิด' },
   ];
   const statusLabel = (s: string) => s === 'confirmed' ? 'ยืนยันแล้ว' : s === 'pending' ? 'รอดำเนินการ' : 'เสร็จสิ้น';
   const statusClass = (s: string) => s === 'confirmed' ? 'ok' : s === 'pending' ? 'pending' : 'done';
@@ -115,7 +115,8 @@ function ServiceDashboardContent() {
         .svd-tools { display: flex; flex-direction: column; gap: 12px; }
         .svd-tool { display: flex; align-items: center; gap: 13px; background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 16px; text-decoration: none; transition: all .15s; }
         .svd-tool:hover { border-color: ${F.blueBorder}; }
-        .svd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.blueSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .svd-tool-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .svd-tool-icon img { width: 38px; height: 38px; object-fit: contain; }
         .svd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .svd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         @media (max-width: 720px) { .svd-stats { grid-template-columns: 1fr 1fr; } .svd-cols { grid-template-columns: 1fr; } }
@@ -185,7 +186,7 @@ function ServiceDashboardContent() {
                 <div className="svd-tools">
                   {tools.map((t, i) => (
                     <Link key={i} href={t.href} className="svd-tool">
-                      <div className="svd-tool-icon">{t.icon}</div>
+                      <div className="svd-tool-icon"><img src={t.icon} alt="" /></div>
                       <div style={{ flex: 1 }}>
                         <div className="svd-tool-title">{t.title}</div>
                         <div className="svd-tool-desc">{t.desc}</div>

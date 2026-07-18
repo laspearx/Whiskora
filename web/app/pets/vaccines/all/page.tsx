@@ -105,7 +105,8 @@ function AppointmentsList() {
         /* group card */
         .ap-group { background: white; border: 1px solid ${F.line}; border-radius: 22px; padding: 22px; margin-bottom: 18px; }
         .ap-group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid ${F.line}; }
-        .ap-group-icon { width: 42px; height: 42px; border-radius: 13px; background: ${F.pinkSoft}; border: 1px solid ${F.pinkBorder}; color: ${F.pink}; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+        .ap-group-icon { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ap-group-icon img { width: 36px; height: 36px; object-fit: contain; }
         .ap-group-title { font-family: inherit; font-size: 17px; font-weight: 700; color: ${F.ink}; letter-spacing: -0.2px; }
         .ap-group-count { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 1px; }
         /* pet items */
@@ -143,7 +144,7 @@ function AppointmentsList() {
             groupedAppointments.map((group, gi) => (
               <div key={gi} className="ap-group">
                 <div className="ap-group-head">
-                  <div className="ap-group-icon">{group.emoji}</div>
+                  <div className="ap-group-icon"><img src="/icons/icon-vaccine.png" alt="" /></div>
                   <div>
                     <div className="ap-group-title">{group.vaccineName}</div>
                     <div className="ap-group-count">{group.items.length} ตัว</div>

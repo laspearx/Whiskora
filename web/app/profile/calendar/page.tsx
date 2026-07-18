@@ -153,8 +153,8 @@ export default function CalendarPage() {
         .event-text span { display: block; font-size: 12px; color: ${F.muted}; }
         .appt-list { display: grid; gap: 8px; }
         .appt-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid ${F.line}; border-radius: 14px; background: white; }
-        .appt-icon { width: 44px; height: 44px; border-radius: 12px; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .appt-icon img { width: 28px; height: 28px; object-fit: contain; }
+        .appt-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .appt-icon img { width: 36px; height: 36px; object-fit: contain; }
         .appt-name { font-size: 14px; font-weight: 600; color: ${F.ink}; display: block; }
         .appt-meta { font-size: 12px; color: ${F.muted}; display: block; margin-top: 2px; }
         .appt-badge { margin-left: auto; border-radius: 999px; padding: 3px 9px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 600; white-space: nowrap; }

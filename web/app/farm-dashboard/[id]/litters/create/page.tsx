@@ -146,7 +146,7 @@ export default function CreateLitterPage() {
         .lc-warn { margin-top: 8px; font-size: 11px; font-weight: 700; color: ${F.orange}; background: #FFF7ED; padding: 8px 12px; border-radius: 10px; }
         .lc-note { margin-top: 8px; font-size: 11px; font-weight: 600; color: ${F.pink}; margin-left: 2px; }
         .lc-hint-sm { font-size: 10px; color: ${F.muted}; margin-top: 6px; font-weight: 500; line-height: 1.4; }
-        .lc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .lc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
         .lc-savebar-inner { max-width: 600px; margin: 0 auto; }
         .lc-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .lc-btn:hover { background: #D63F6A; }

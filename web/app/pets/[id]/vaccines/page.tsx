@@ -100,12 +100,13 @@ function VaccineTimeline() {
         .vh-rec-date b { color: ${F.inkSoft}; font-weight: 700; }
         .vh-badge { flex-shrink: 0; background: ${F.tealSoft}; color: ${F.teal}; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 11px; border-radius: 9px; border: 1px solid ${F.tealBorder}; white-space: nowrap; }
         .vh-next { background: #FAFAFA; border: 1px solid ${F.line}; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 11px; }
-        .vh-next-icon { width: 34px; height: 34px; border-radius: 10px; background: white; border: 1px solid ${F.line}; display: flex; align-items: center; justify-content: center; color: ${F.orange}; flex-shrink: 0; }
+        .vh-next-icon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .vh-next-icon img { width: 30px; height: 30px; object-fit: contain; }
         .vh-next-label { font-size: 10px; font-weight: 700; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.04em; }
         .vh-next-val { font-size: 13px; font-weight: 700; color: ${F.orange}; margin-top: 1px; }
         .vh-next-val.none { color: ${F.muted}; }
         /* fab add */
-        .vh-fab { position: fixed; bottom: 20px; right: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; background: ${F.teal}; color: white; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(13,148,136,0.4); transition: all .18s; border: none; cursor: pointer; }
+        .vh-fab { position: fixed; bottom: 20px; right: 20px; z-index: 60; display: inline-flex; align-items: center; gap: 8px; background: ${F.teal}; color: white; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(13,148,136,0.4); transition: all .18s; border: none; cursor: pointer; }
         .vh-fab:hover { background: #0B7E74; transform: translateY(-1px); }
       `}</style>
 
@@ -151,7 +152,7 @@ function VaccineTimeline() {
                           {index === 0 && <span className="vh-badge">ล่าสุด ✨</span>}
                         </div>
                         <div className="vh-next">
-                          <div className="vh-next-icon"><Icon.Calendar /></div>
+                          <div className="vh-next-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
                           <div>
                             <div className="vh-next-label">วันนัดครั้งถัดไป</div>
                             {record.next_due
