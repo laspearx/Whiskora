@@ -21,7 +21,7 @@ const Icon = {
 };
 
 const STEPS = [
-  { id: 'id_card',    label: 'บัตรประชาชน',       sub: 'ถ่ายหน้า-หลัง ให้เห็นชื่อชัดเจน' },
+  { id: 'id_card',    label: 'บัตรประชาชน',       sub: 'ถ่ายด้านหน้า ให้เห็นชื่อและเลขบัตรชัดเจน' },
   { id: 'bank_book',  label: 'สมุดบัญชีธนาคาร',   sub: 'ถ่ายหน้าแรก ชื่อต้องตรงกับบัตร' },
   { id: 'farm_photos',label: 'รูปถ่ายฟาร์ม',       sub: 'อย่างน้อย 2 รูป แสดงพื้นที่เลี้ยงจริง' },
   { id: 'house_reg',  label: 'ทะเบียนบ้าน',        sub: 'หน้าแรกที่มีชื่อเจ้าบ้าน' },
@@ -29,7 +29,6 @@ const STEPS = [
 
 interface Uploads {
   id_card_front: File | null;
-  id_card_back: File | null;
   bank_book: File | null;
   farm_photos: File[];
   house_reg: File | null;
@@ -46,7 +45,7 @@ export default function VerifyFarmPage() {
   const [farm, setFarm] = useState<any>(null);
   const [phone, setPhone] = useState('');
   const [uploads, setUploads] = useState<Uploads>({
-    id_card_front: null, id_card_back: null,
+    id_card_front: null,
     bank_book: null, farm_photos: [], house_reg: null,
   });
   const [previews, setPreviews] = useState<Record<string, string | string[]>>({});
@@ -54,7 +53,6 @@ export default function VerifyFarmPage() {
 
   const refs = {
     id_card_front: useRef<HTMLInputElement>(null),
-    id_card_back:  useRef<HTMLInputElement>(null),
     bank_book:     useRef<HTMLInputElement>(null),
     farm_photos:   useRef<HTMLInputElement>(null),
     house_reg:     useRef<HTMLInputElement>(null),
@@ -104,7 +102,7 @@ export default function VerifyFarmPage() {
   };
 
   const isStepDone = (stepId: string) => {
-    if (stepId === 'id_card')     return !!(uploads.id_card_front && uploads.id_card_back);
+    if (stepId === 'id_card')     return !!uploads.id_card_front;
     if (stepId === 'bank_book')   return !!uploads.bank_book;
     if (stepId === 'farm_photos') return uploads.farm_photos.length >= 2;
     if (stepId === 'house_reg')   return !!uploads.house_reg;
@@ -118,9 +116,8 @@ export default function VerifyFarmPage() {
     setSubmitting(true);
     try {
       const base = `${userId}/${farmId}`;
-      const [frontUrl, backUrl, bankUrl, houseUrl] = await Promise.all([
+      const [frontUrl, bankUrl, houseUrl] = await Promise.all([
         uploadFile(uploads.id_card_front!, `${base}/id_card_front.${uploads.id_card_front!.name.split('.').pop()}`),
-        uploadFile(uploads.id_card_back!, `${base}/id_card_back.${uploads.id_card_back!.name.split('.').pop()}`),
         uploadFile(uploads.bank_book!, `${base}/bank_book.${uploads.bank_book!.name.split('.').pop()}`),
         uploadFile(uploads.house_reg!, `${base}/house_reg.${uploads.house_reg!.name.split('.').pop()}`),
       ]);
@@ -136,7 +133,6 @@ export default function VerifyFarmPage() {
         farm_id: parseInt(farmId),
         user_id: userId,
         id_card_front_url: frontUrl,
-        id_card_back_url: backUrl,
         bank_book_url: bankUrl,
         farm_photo_urls: farmPhotoUrls,
         house_registration_url: houseUrl,
@@ -200,7 +196,6 @@ export default function VerifyFarmPage() {
         .vf-preview img { width: 100%; height: 100%; object-fit: cover; }
         .vf-preview-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,.55); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .vf-photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
-        .vf-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         /* Phone */
         .vf-input { width: 100%; padding: 11px 14px; border: 1.5px solid ${F.lineMid}; border-radius: 11px; font-size: 15px; font-weight: 500; color: ${F.ink}; outline: none; font-family: inherit; background: white; }
@@ -284,28 +279,22 @@ export default function VerifyFarmPage() {
                   {open && (
                     <div className="vf-step-body">
                       {step.id === 'id_card' && (
-                        <div className="vf-two-col">
-                          {(['id_card_front', 'id_card_back'] as const).map(key => (
-                            <div key={key}>
-                              <div style={{ fontSize: 11, fontWeight: 600, color: F.muted, marginBottom: 6 }}>
-                                {key === 'id_card_front' ? 'ด้านหน้า' : 'ด้านหลัง'}
-                              </div>
-                              {(previews[key] as string) ? (
-                                <div className="vf-preview">
-                                  <img src={previews[key] as string} alt="" />
-                                  <button className="vf-preview-remove" onClick={() => setFile(key, null)}><Icon.X /></button>
-                                </div>
-                              ) : (
-                                <div className="vf-upload-zone" onClick={() => refs[key].current?.click()}>
-                                  <div className="vf-upload-zone-icon"><Icon.Camera /></div>
-                                  <div className="vf-upload-zone-text">อัพโหลด</div>
-                                </div>
-                              )}
-                              <input ref={refs[key]} type="file" accept="image/*" style={{ display: 'none' }}
-                                onChange={e => setFile(key, e.target.files?.[0] || null)} />
+                        <>
+                          {(previews.id_card_front as string) ? (
+                            <div className="vf-preview">
+                              <img src={previews.id_card_front as string} alt="" />
+                              <button className="vf-preview-remove" onClick={() => setFile('id_card_front', null)}><Icon.X /></button>
                             </div>
-                          ))}
-                        </div>
+                          ) : (
+                            <div className="vf-upload-zone" onClick={() => refs.id_card_front.current?.click()}>
+                              <div className="vf-upload-zone-icon"><Icon.Camera /></div>
+                              <div className="vf-upload-zone-text">ถ่ายรูปด้านหน้าบัตรประชาชน</div>
+                              <div className="vf-upload-zone-sub">ให้เห็นชื่อและเลขบัตรชัดเจน</div>
+                            </div>
+                          )}
+                          <input ref={refs.id_card_front} type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => setFile('id_card_front', e.target.files?.[0] || null)} />
+                        </>
                       )}
 
                       {step.id === 'bank_book' && (
