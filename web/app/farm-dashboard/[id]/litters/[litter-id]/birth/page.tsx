@@ -119,9 +119,6 @@ export default function RecordBirthPage() {
         .rb-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .rb-btn:hover { background: #D63F6A; }
         .rb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .rb-submit-inline { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid ${F.pink}; transition: all .18s; font-family: inherit; background: white; color: ${F.pink}; margin-top: 8px; }
-        .rb-submit-inline:hover { background: ${F.pinkSoft}; }
-        .rb-submit-inline:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
 
       {isFetching ? (
@@ -176,9 +173,6 @@ export default function RecordBirthPage() {
               ))}
 
               <button type="button" className="rb-add" onClick={addKitten}><Icon.Plus /> เพิ่มเด็กๆ อีกตัว</button>
-              <button type="submit" className="rb-submit-inline" disabled={isLoading}>
-                <Icon.Save /> {isLoading ? 'กำลังบันทึก...' : `บันทึกข้อมูลแรกเกิด ${kittens.length} ตัว`}
-              </button>
             </form>
           </div>
 
