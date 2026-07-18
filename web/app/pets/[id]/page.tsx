@@ -88,6 +88,7 @@ export default function PetDetailPage() {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
+  const [docSignedUrls, setDocSignedUrls] = useState<Record<string | number, string>>({});
   const [coOwners, setCoOwners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -319,7 +320,20 @@ export default function PetDetailPage() {
       ]);
       if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
-      if (docRes.data) setDocuments(docRes.data as PetDocument[]);
+      if (docRes.data) {
+        const docs = docRes.data as PetDocument[];
+        setDocuments(docs);
+        // สร้าง signed URLs สำหรับทุก document (private bucket)
+        const urlMap: Record<string | number, string> = {};
+        await Promise.all(docs.map(async (doc) => {
+          const storagePrefix = '/object/public/pet-documents/';
+          const idx = doc.file_url.indexOf(storagePrefix);
+          const path = idx !== -1 ? doc.file_url.slice(idx + storagePrefix.length) : doc.file_url;
+          const { data } = await supabase.storage.from('pet-documents').createSignedUrl(path, 3600);
+          if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+        }));
+        setDocSignedUrls(urlMap);
+      }
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
 
     } catch (error) {
@@ -500,9 +514,8 @@ export default function PetDetailPage() {
         const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from('pet-documents').upload(path, file);
         if (upErr) { console.error(upErr); continue; }
-        const { data: { publicUrl } } = supabase.storage.from('pet-documents').getPublicUrl(path);
         await supabase.from('pet_documents').insert({
-          pet_id: pet.id, name: file.name, file_url: publicUrl,
+          pet_id: pet.id, name: file.name, file_url: path,
           doc_type: 'other', file_size: file.size,
         });
       }
@@ -1134,7 +1147,7 @@ export default function PetDetailPage() {
                         <div className="doc-icon" style={{ background: '#DBEAFE', fontSize: '18px' }}>📄</div>
                         <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                         <div className="doc-actions">
-                          <a className="doc-download" href={doc.file_url} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
+                          <a className="doc-download" href={docSignedUrls[doc.id] || '#'} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
                           <button className="doc-download del" onClick={() => handleDeleteDoc(doc.id)}><Icon.Trash /></button>
                         </div>
                       </div>
