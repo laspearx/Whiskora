@@ -97,8 +97,8 @@ function CreatePetContent() {
 
   const pickSpecies = (s: string) => {
     setSpecies(s);
-    setBreed(""); setCustomBreed(""); setColor(""); setCustomColor("");
-    setPattern(""); setEar(""); setLeg(""); setCoat(""); setEyeColor(""); setCustomEyeColor("");
+    setBreed(""); setCustomBreed(""); setColor("");
+    setEar(""); setLeg(""); setCoat(""); setEyeColor(""); setCustomEyeColor("");
   };
 
   // ── รูป ──
