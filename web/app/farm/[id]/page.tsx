@@ -132,8 +132,8 @@ export default function PublicFarmProfile() {
   if (isLoading) return <PageLoader />;
   if (!farm) return null;
 
-  const ownerName = owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
-  const farmLocation = owner?.address || null;
+  const ownerName = farm?.owner_name || owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
+  const farmLocation = farm?.address || owner?.address || null;
   const uniqueBreeds = [...new Set(pets.map(p => extractThai(p.breed)).filter(Boolean))].slice(0, 4);
   const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
   const bioIsLong = bioText.length > 120;
@@ -369,7 +369,7 @@ export default function PublicFarmProfile() {
                   </a>
                 )}
                 {farmLocation && (
-                  <a className="fp-info-row fp-info-row-link" href={`https://maps.google.com/?q=${encodeURIComponent(farmLocation)}`} target="_blank" rel="noopener noreferrer">
+                  <a className="fp-info-row fp-info-row-link" href={`https://maps.google.com/?q=${farm?.lat && farm?.lng ? `${farm.lat},${farm.lng}` : encodeURIComponent(farmLocation)}`} target="_blank" rel="noopener noreferrer">
                     <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">ที่อยู่</span>
                     <span className="fp-info-val" style={{ color: F.pink }}>{farmLocation}</span>
