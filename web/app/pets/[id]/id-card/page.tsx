@@ -181,7 +181,7 @@ export default function PetIdCardPage() {
         .idc-stage { display: flex; justify-content: center; margin-bottom: 20px; }
         .idc-card-scaler { position: relative; overflow: hidden; }
 
-        /* ── CARD — pure CSS, no bg image ── */
+        /* ── CARD — smooth gradient, no zone bands ── */
         .pet-card {
           width: 360px; height: 580px;
           border-radius: 22px;
@@ -189,22 +189,21 @@ export default function PetIdCardPage() {
           position: relative;
           display: flex; flex-direction: column;
           font-family: inherit;
-          background: white;
+          background: linear-gradient(180deg, ${T.soft} 0%, #ffffff 48%, ${T.soft} 100%);
           border: 2px solid ${T.border};
           box-shadow: ${T.shadow};
           animation: card-in .45s ease both;
-          transition: border-color .35s, box-shadow .35s;
+          transition: background .35s, border-color .35s, box-shadow .35s;
         }
 
-        /* ── HEADER — gradient band, centered logo ── */
+        /* ── HEADER — transparent, logo original color ── */
         .pc-header {
           flex-shrink: 0;
-          background: ${T.petIdBg};
-          padding: 14px 18px 10px;
-          display: flex; flex-direction: column; align-items: center; gap: 4px;
+          padding: 16px 18px 12px;
+          display: flex; flex-direction: column; align-items: center; gap: 5px;
         }
-        .pc-wordmark { height: 28px; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
-        .pc-card-title { font-size: 8px; font-weight: 800; color: rgba(255,255,255,.82); letter-spacing: 0.24em; }
+        .pc-wordmark { height: 30px; width: auto; object-fit: contain; }
+        .pc-card-title { font-size: 10px; font-weight: 800; color: ${T.accent}; letter-spacing: 0.22em; opacity: .85; }
 
         /* ── BODY (photo 1:1 left, info right) ── */
         .pc-body {
@@ -233,14 +232,11 @@ export default function PetIdCardPage() {
         .pc-pill-ok { background: #DCFCE7; color: #15803D; }
         .pc-pill-no { background: ${T.soft}; color: ${F.muted}; border: 1px solid ${T.border}; }
 
-        /* ── QR SECTION — flex:1, QR slightly smaller ── */
+        /* ── QR SECTION — flex:1, no zone separation ── */
         .pc-qr-section {
           flex: 1; min-height: 0;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           gap: 6px; padding: 6px 20px;
-          background: ${T.soft};
-          border-top: 1px solid ${T.border};
-          border-bottom: 1px solid ${T.border};
         }
         .pc-qr-box {
           position: relative;
@@ -319,7 +315,7 @@ export default function PetIdCardPage() {
 
                 {/* Header */}
                 <div className="pc-header">
-                  <img src="/logo-wordmark.png" alt="Whiskora" className="pc-wordmark" />
+                  <img src="/logo-wordmark.png" alt="Whiskora" className="pc-wordmark" style={{ display: 'block' }} />
                   <span className="pc-card-title">PET IDENTIFICATION CARD</span>
                 </div>
 
