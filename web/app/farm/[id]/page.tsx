@@ -448,6 +448,8 @@ export default function PublicFarmProfile() {
           </div>
         )}
 
+        {isOwner && <style>{`nav[aria-label="เมนูหลัก"] { display: none !important; }`}</style>}
+
         {isOwner ? (
           <div className="fp-owner-bar">
             <div className="fp-owner-inner">
