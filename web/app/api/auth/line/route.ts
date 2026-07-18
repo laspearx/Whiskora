@@ -52,6 +52,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent('LINE_CONFIG_MISSING')}`)
   }
 
+  // ใช้ NEXT_PUBLIC_SITE_URL เป็น base URL ของ redirect_uri เสมอ
+  // เพื่อให้ตรงกับที่ลงทะเบียนใน LINE Developers ไม่ว่า Vercel จะใช้ URL ไหน
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || origin).replace(/\/$/, '')
+
   const state = crypto.randomBytes(16).toString('hex')
   const cookieStore = await cookies()
 
@@ -67,16 +71,16 @@ export async function GET(request: Request) {
   }
 
   const opts = { httpOnly: true, secure: true, sameSite: 'lax' as const, maxAge: 600, path: '/' }
-  cookieStore.set('line_state',  state,  opts)
-  cookieStore.set('line_next',   next,   opts)
-  cookieStore.set('line_origin', origin, opts)
-  cookieStore.set('line_mode',   mode,   opts)
-  cookieStore.set('line_uid',    uid,    opts)
+  cookieStore.set('line_state',  state,   opts)
+  cookieStore.set('line_next',   next,    opts)
+  cookieStore.set('line_origin', siteUrl, opts)
+  cookieStore.set('line_mode',   mode,    opts)
+  cookieStore.set('line_uid',    uid,     opts)
 
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: process.env.LINE_CHANNEL_ID!,
-    redirect_uri: `${origin}/api/auth/line/callback`,
+    client_id:     process.env.LINE_CHANNEL_ID!,
+    redirect_uri:  `${siteUrl}/api/auth/line/callback`,
     state,
     scope: 'profile openid email',
   })
