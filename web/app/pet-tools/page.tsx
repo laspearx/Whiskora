@@ -51,10 +51,10 @@ function AgeCalculator() {
       <div className="tool-row">
         <label className="tool-label">ประเภทสัตว์เลี้ยง</label>
         <select className="tool-select" value={type} onChange={e => setType(e.target.value as any)}>
-          <option value="cat">🐱 แมว</option>
-          <option value="dog_small">🐶 สุนัขตัวเล็ก (&lt;10kg)</option>
-          <option value="dog_medium">🐕 สุนัขตัวกลาง (10–25kg)</option>
-          <option value="dog_large">🐕‍🦺 สุนัขตัวใหญ่ (&gt;25kg)</option>
+          <option value="cat">แมว</option>
+          <option value="dog_small">สุนัขตัวเล็ก (&lt;10kg)</option>
+          <option value="dog_medium">สุนัขตัวกลาง (10–25kg)</option>
+          <option value="dog_large">สุนัขตัวใหญ่ (&gt;25kg)</option>
         </select>
       </div>
       <div className="tool-row">
@@ -75,10 +75,10 @@ function AgeCalculator() {
           <div className="tool-result-label">เทียบเท่าอายุมนุษย์</div>
           <div className="tool-result-value">{human} <span>ปี</span></div>
           <div className="tool-result-note">
-            {human < 18 ? '🧒 วัยเด็กและวัยรุ่น — ยังต้องการการดูแลใกล้ชิด'
-              : human < 40 ? '🧑 วัยหนุ่มสาว — แข็งแรงและกระฉับกระเฉง'
-              : human < 60 ? '🧔 วัยกลางคน — เริ่มตรวจสุขภาพประจำปี'
-              : '👴 วัยชรา — ควรพบสัตวแพทย์บ่อยขึ้น'}
+            {human < 18 ? 'วัยเด็กและวัยรุ่น — ยังต้องการการดูแลใกล้ชิด'
+              : human < 40 ? 'วัยหนุ่มสาว — แข็งแรงและกระฉับกระเฉง'
+              : human < 60 ? 'วัยกลางคน — เริ่มตรวจสุขภาพประจำปี'
+              : 'วัยชรา — ควรพบสัตวแพทย์บ่อยขึ้น'}
           </div>
         </div>
       )}
@@ -138,8 +138,8 @@ function GestationCalculator() {
           {daysLeft !== null && (
             <div className="tool-result-note">
               {daysLeft > 0
-                ? `🗓️ อีก ${daysLeft} วัน — เตรียมกล่องคลอดและติดต่อสัตวแพทย์ล่วงหน้า`
-                : '🐣 ถึงกำหนดคลอดแล้ว! เฝ้าสังเกตอาการอย่างใกล้ชิด'}
+                ? `อีก ${daysLeft} วัน — เตรียมกล่องคลอดและติดต่อสัตวแพทย์ล่วงหน้า`
+                : 'ถึงกำหนดคลอดแล้ว! เฝ้าสังเกตอาการอย่างใกล้ชิด'}
             </div>
           )}
         </div>
@@ -181,8 +181,8 @@ function CalorieCalculator() {
       <div className="tool-row">
         <label className="tool-label">ชนิด</label>
         <div className="tool-toggle">
-          <button className={`tool-toggle-btn ${species === 'cat' ? 'active' : ''}`} onClick={() => setSpecies('cat')}>🐱 แมว</button>
-          <button className={`tool-toggle-btn ${species === 'dog' ? 'active' : ''}`} onClick={() => setSpecies('dog')}>🐶 สุนัข</button>
+          <button className={`tool-toggle-btn ${species === 'cat' ? 'active' : ''}`} onClick={() => setSpecies('cat')}><img src="/icons/icon-species-cat.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> แมว</button>
+          <button className={`tool-toggle-btn ${species === 'dog' ? 'active' : ''}`} onClick={() => setSpecies('dog')}><img src="/icons/icon-species-dog.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> สุนัข</button>
         </div>
       </div>
       <div className="tool-row">
@@ -201,10 +201,10 @@ function CalorieCalculator() {
       <div className="tool-row">
         <label className="tool-label">ระดับกิจกรรม</label>
         <select className="tool-select" value={activity} onChange={e => setActivity(e.target.value as any)}>
-          <option value="kitten">🍼 ลูกสัตว์ / กำลังเติบโต</option>
-          <option value="low">🛋️ นอนบ้านเป็นหลัก (ออกกำลังน้อย)</option>
-          <option value="normal">🚶 ปกติทั่วไป</option>
-          <option value="high">🏃 กระฉับกระเฉง / ออกกำลังสม่ำเสมอ</option>
+          <option value="kitten">ลูกสัตว์ / กำลังเติบโต</option>
+          <option value="low">นอนบ้านเป็นหลัก (ออกกำลังน้อย)</option>
+          <option value="normal">ปกติทั่วไป</option>
+          <option value="high">กระฉับกระเฉง / ออกกำลังสม่ำเสมอ</option>
         </select>
       </div>
       <div className="tool-row">
@@ -220,19 +220,19 @@ function CalorieCalculator() {
           <div className="tool-result-value">{result.kcal} <span>kcal/วัน</span></div>
           <div className="tool-result-grid">
             <div className="tool-result-card">
-              <div className="tool-result-card-icon">🥣</div>
+              <div className="tool-result-card-icon"><img src="/icons/icon-feeding.png" alt="" style={{width:24,height:24,objectFit:'contain'}} /></div>
               <div className="tool-result-card-label">อาหารเม็ด (Dry)</div>
               <div className="tool-result-card-val">{result.dryGram} <span>กรัม/วัน</span></div>
               <div className="tool-result-card-note">~3.5 kcal/g</div>
             </div>
             <div className="tool-result-card">
-              <div className="tool-result-card-icon">🥫</div>
+              <div className="tool-result-card-icon"><img src="/icons/icon-feeding.png" alt="" style={{width:24,height:24,objectFit:'contain'}} /></div>
               <div className="tool-result-card-label">อาหารเปียก (Wet)</div>
               <div className="tool-result-card-val">{result.wetGram} <span>กรัม/วัน</span></div>
               <div className="tool-result-card-note">~1.0 kcal/g</div>
             </div>
           </div>
-          <div className="tool-result-note">⚠️ ค่านี้เป็นการประมาณการ ควรปรึกษาสัตวแพทย์เพื่อคำแนะนำที่เหมาะสมกับสัตว์เลี้ยงของคุณ</div>
+          <div className="tool-result-note">ค่านี้เป็นการประมาณการ ควรปรึกษาสัตวแพทย์เพื่อคำแนะนำที่เหมาะสมกับสัตว์เลี้ยงของคุณ</div>
         </div>
       )}
     </div>
@@ -279,8 +279,8 @@ function WeightChecker() {
       <div className="tool-row">
         <label className="tool-label">ชนิด</label>
         <div className="tool-toggle">
-          <button className={`tool-toggle-btn ${species === 'cat' ? 'active' : ''}`} onClick={() => { setSpecies('cat'); setBreed('mixed'); }}>🐱 แมว</button>
-          <button className={`tool-toggle-btn ${species === 'dog' ? 'active' : ''}`} onClick={() => { setSpecies('dog'); setBreed('mixed'); }}>🐶 สุนัข</button>
+          <button className={`tool-toggle-btn ${species === 'cat' ? 'active' : ''}`} onClick={() => { setSpecies('cat'); setBreed('mixed'); }}><img src="/icons/icon-species-cat.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> แมว</button>
+          <button className={`tool-toggle-btn ${species === 'dog' ? 'active' : ''}`} onClick={() => { setSpecies('dog'); setBreed('mixed'); }}><img src="/icons/icon-species-dog.png" alt="" style={{width:16,height:16,objectFit:'contain'}} /> สุนัข</button>
         </div>
       </div>
       <div className="tool-row">
@@ -396,7 +396,7 @@ export default function PetToolsPage() {
         .tool-input { width: 100%; background: #F9FAFB; border: 1.5px solid ${F.line}; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-family: inherit; color: ${F.ink}; outline: none; transition: border-color .18s; }
         .tool-input:focus { border-color: #FBCFE8; background: white; }
         .tool-toggle { display: flex; background: #F3F4F6; border-radius: 12px; padding: 3px; gap: 3px; }
-        .tool-toggle-btn { flex: 1; padding: 8px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .18s; font-family: inherit; background: transparent; color: ${F.muted}; }
+        .tool-toggle-btn { flex: 1; padding: 8px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .18s; font-family: inherit; background: transparent; color: ${F.muted}; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
         .tool-toggle-btn.active { background: white; color: ${F.pink}; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 
         /* result */
@@ -407,7 +407,7 @@ export default function PetToolsPage() {
         .tool-result-note { font-size: 12px; font-weight: 500; color: ${F.inkSoft}; line-height: 1.6; }
         .tool-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
         .tool-result-card { background: white; border-radius: 12px; padding: 12px; text-align: center; }
-        .tool-result-card-icon { font-size: 20px; margin-bottom: 4px; }
+        .tool-result-card-icon { display: flex; justify-content: center; margin-bottom: 4px; }
         .tool-result-card-label { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-bottom: 4px; }
         .tool-result-card-val { font-size: 18px; font-weight: 900; color: ${F.ink}; }
         .tool-result-card-val span { font-size: 11px; font-weight: 600; color: ${F.muted}; }
@@ -432,7 +432,7 @@ export default function PetToolsPage() {
           </div>
 
           <div className="pt-intro">
-            🧮 รวมเครื่องมือคำนวณที่ช่วยให้การดูแลสัตว์เลี้ยงง่ายขึ้น
+            รวมเครื่องมือคำนวณที่ช่วยให้การดูแลสัตว์เลี้ยงง่ายขึ้น
             ตั้งแต่คำนวณอายุ วางแผนการผสมพันธุ์ ไปจนถึงจัดการโภชนาการรายวัน
           </div>
 
