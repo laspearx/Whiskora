@@ -54,7 +54,10 @@ export async function GET(request: Request) {
 
   // ใช้ NEXT_PUBLIC_SITE_URL เป็น base URL ของ redirect_uri เสมอ
   // เพื่อให้ตรงกับที่ลงทะเบียนใน LINE Developers ไม่ว่า Vercel จะใช้ URL ไหน
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || origin).replace(/\/$/, '')
+  // ห้ามใช้ `origin` จาก request.url เป็น fallback เพราะบน Vercel มันอาจเป็น
+  // internal compute-instance URL (เช่น whiskora-f74p5-...vercel.app) ที่หมดอายุ
+  // ก่อนที่ browser จะ follow redirect → DEPLOYMENT_NOT_FOUND
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://whiskora.vercel.app').replace(/\/$/, '')
 
   const state = crypto.randomBytes(16).toString('hex')
   const cookieStore = await cookies()

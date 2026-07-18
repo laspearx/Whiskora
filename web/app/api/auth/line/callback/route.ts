@@ -18,7 +18,12 @@ export async function GET(request: Request) {
 
   // ── resolve origin from cookie (saved when user clicked the LINE button) ──
   const cookieStore = await cookies()
-  const siteUrl = cookieStore.get('line_origin')?.value || 'https://whiskora.vercel.app'
+  const PRODUCTION_URL = 'https://whiskora.vercel.app'
+  const rawOrigin = cookieStore.get('line_origin')?.value || ''
+  // Vercel internal compute-instance URLs look like "whiskora-f74p5-laspearxs-projects.vercel.app"
+  // (short alphanumeric segment after project name). Reject these and fall back to production.
+  const isVercelInternal = /vercel\.app$/.test(rawOrigin) && !/whiskora\.vercel\.app$/.test(rawOrigin) && !/whiskora-git-/.test(rawOrigin)
+  const siteUrl = (rawOrigin && !isVercelInternal) ? rawOrigin.replace(/\/$/, '') : PRODUCTION_URL
 
   const fail = (msg: string) =>
     NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
