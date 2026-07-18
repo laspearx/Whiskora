@@ -61,7 +61,6 @@ const TABS = [
   { id: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
 ];
 
-const ACTIVITY_TYPES = ['หาหมอ', 'หยดเห็บหมัด', 'ถ่ายพยาธิ', 'อาหาร', 'นิสัย', 'ทั่วไป'];
 
 // จำนวนเจนสูงสุดที่แสดง (รวมตัวเอง) — ตัวเอง + พ่อแม่ + ปู่ย่าตายาย + ทวด + เทียด
 const MAX_GENERATIONS = 5;
@@ -107,14 +106,6 @@ export default function PetDetailPage() {
   const [copied, setCopied] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-
-  // Activity modal
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [savingActivity, setSavingActivity] = useState(false);
-  const [activityForm, setActivityForm] = useState({
-    activity_type: 'ทั่วไป', title: '', description: '',
-    activity_date: new Date().toISOString().split('T')[0],
-  });
 
   // Transfer modal
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -535,24 +526,6 @@ export default function PetDetailPage() {
     await fetchPetData();
   };
 
-  // ─── ปุ่ม: บันทึกโน้ต/กิจกรรม ───
-  const handleSaveActivity = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activityForm.title.trim()) return alert('กรุณากรอกหัวข้อ');
-    setSavingActivity(true);
-    const { error } = await supabase.from('pet_activities').insert({
-      pet_id: petId,
-      activity_type: activityForm.activity_type,
-      title: activityForm.title.trim(),
-      description: activityForm.description.trim() || null,
-      activity_date: activityForm.activity_date,
-    });
-    if (error) { alert('บันทึกไม่สำเร็จ'); setSavingActivity(false); return; }
-    setShowActivityModal(false);
-    setActivityForm({ activity_type: 'ทั่วไป', title: '', description: '', activity_date: new Date().toISOString().split('T')[0] });
-    setSavingActivity(false);
-    await fetchPetData();
-  };
 
   const calculateAge = (birthDate?: string | null) => {
     if (!birthDate) return '-';
@@ -1158,7 +1131,7 @@ export default function PetDetailPage() {
                 {/* Timeline preview */}
                 <div className="card">
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรม</div>
-                    <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
+                    <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มกิจกรรม</button>
                   </div>
                   <div className="card-body">
                     {combinedTimeline.length === 0 ? <div style={{ textAlign: 'center', padding: '24px 0', color: F.muted, fontSize: '12px' }}>ยังไม่มีกิจกรรม</div> : (
@@ -1334,7 +1307,7 @@ export default function PetDetailPage() {
           {activeTab === 'activities' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ color: '#D97706' }}><Icon.Doc /></div>โน้ต & พฤติกรรม</div>
-                <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มโน้ต</button>
+                <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มโน้ต</button>
               </div>
               <div className="card-body">
                 <div className="activity-tabs">
@@ -1386,7 +1359,7 @@ export default function PetDetailPage() {
           {activeTab === 'timeline' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรมทั้งหมด</div>
-                <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
+                <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มกิจกรรม</button>
               </div>
               <div className="card-body">
                 {combinedTimeline.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีกิจกรรม</div> : (
@@ -1415,28 +1388,6 @@ export default function PetDetailPage() {
       </div>
 
       {/* ─── Activity Modal ─── */}
-      {showActivityModal && (
-        <div className="modal-overlay" onClick={() => !savingActivity && setShowActivityModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-pad">
-              <div className="modal-title">เพิ่มกิจกรรม</div>
-              <div className="modal-sub">บันทึกเหตุการณ์ลงไทม์ไลน์ของ {pet.name}</div>
-              <form onSubmit={handleSaveActivity} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <div><label className="field-label">ประเภท</label><div className="chip-row">
-                  {ACTIVITY_TYPES.map(t => <button key={t} type="button" className={`chip-btn ${activityForm.activity_type === t ? 'active' : ''}`} onClick={() => setActivityForm({ ...activityForm, activity_type: t })}>{t}</button>)}
-                </div></div>
-                <div><label className="field-label">หัวข้อ</label><input className="field-input" type="text" value={activityForm.title} onChange={(e) => setActivityForm({ ...activityForm, title: e.target.value })} placeholder="เช่น พาไปตรวจสุขภาพประจำปี" required /></div>
-                <div><label className="field-label">วันที่</label><input className="field-input" type="date" value={activityForm.activity_date} onChange={(e) => setActivityForm({ ...activityForm, activity_date: e.target.value })} required /></div>
-                <div><label className="field-label">รายละเอียด (ถ้ามี)</label><textarea className="field-input" rows={3} value={activityForm.description} onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })} placeholder="บันทึกเพิ่มเติม..." style={{ resize: 'none' }} /></div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button type="button" onClick={() => setShowActivityModal(false)} disabled={savingActivity} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" disabled={savingActivity} style={{ flex: 2, padding: '14px', borderRadius: '12px', border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{savingActivity ? 'กำลังบันทึก...' : 'บันทึกกิจกรรม'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ─── QR Modal ─── */}
       {showQrModal && (

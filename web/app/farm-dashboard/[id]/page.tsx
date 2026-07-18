@@ -134,6 +134,7 @@ function FarmDashboardContent() {
   const [loading,      setLoading]      = useState(true);
 
   const [showAddAnimalSheet, setShowAddAnimalSheet] = useState(false);
+  const [showApptSheet, setShowApptSheet] = useState(false);
   const [showAllTasks,       setShowAllTasks]       = useState(false);
   const [uploadingCover,  setUploadingCover]  = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -982,6 +983,28 @@ function FarmDashboardContent() {
         </div>
       )}
 
+      {showApptSheet && (
+        <div className="fd-sheet-overlay" onClick={() => setShowApptSheet(false)}>
+          <div className="fd-add-sheet" onClick={e => e.stopPropagation()}>
+            <div className="fd-sheet-handle" />
+            <div className="fd-sheet-title">นัดหมาย / กิจกรรม</div>
+            <div className="fd-add-grid">
+              <Link href={`/farm-dashboard/${farmId}/appointments/create?from=${fromPage}`} className="fd-add-card" onClick={() => setShowApptSheet(false)}>
+                <img src="/icons/icon-calendar.png" alt="" />
+                <div className="fd-add-card-title">นัดหมาย</div>
+                <div className="fd-add-card-sub">บันทึกนัดหมาย วันส่งมอบ หรือนัดสำคัญ</div>
+              </Link>
+              <Link href={`/farm-dashboard/${farmId}/activities/create`} className="fd-add-card" onClick={() => setShowApptSheet(false)}>
+                <img src="/icons/icon-pet-records.png" alt="" />
+                <div className="fd-add-card-title">กิจกรรม</div>
+                <div className="fd-add-card-sub">บันทึกกิจกรรม สุขภาพ หรือประกวด</div>
+              </Link>
+            </div>
+            <button className="fd-sheet-close" onClick={() => setShowApptSheet(false)}>ปิด</button>
+          </div>
+        </div>
+      )}
+
       {/* ════════════════════════════════
           Bottom Navigation (Page tabs)
       ════════════════════════════════ */}
@@ -1003,10 +1026,10 @@ function FarmDashboardContent() {
             <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
             <span>รายรับรายจ่าย</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/appointments/create?from=${fromPage}`} className="fd-nav-tab">
+          <button className="fd-nav-tab" onClick={() => setShowApptSheet(true)}>
             <div className="fd-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
-            <span>นัดหมาย</span>
-          </Link>
+            <span>นัดหมาย/กิจกรรม</span>
+          </button>
         </div>
       </nav>
     </>
