@@ -57,13 +57,13 @@ export default function ServiceHubPage() {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      let query = supabase.from("services").select("*").order("created_at", { ascending: false });
+      let query = supabase.from("services").select("*").eq("is_published", true).order("created_at", { ascending: false });
 
       if (activeCategory !== "ทั้งหมด") {
         query = query.eq("category", activeCategory);
       }
       if (activePetType !== "ทั้งหมด") {
-        query = query.contains("pet_types", [activePetType]); 
+        query = query.contains("pet_types", [activePetType]);
       }
 
       const { data, error } = await query;
