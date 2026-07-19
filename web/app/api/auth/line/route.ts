@@ -3,7 +3,8 @@ import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams, origin: reqOrigin } = new URL(request.url)
+  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || reqOrigin
   const next = searchParams.get('next') || '/profile'
 
   const state = crypto.randomBytes(16).toString('hex')
