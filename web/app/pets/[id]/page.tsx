@@ -549,10 +549,10 @@ export default function PetDetailPage() {
   };
 
   const generateCombinedTimeline = () => {
-    const timeline: { id: string; date: string; title: string; description: string; type: string; color: string; tag?: string }[] = [];
+    const timeline: { id: string; date: string; title: string; description: string; type: string; color: string; tag?: string; image_url?: string | null }[] = [];
     if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'สมัครเข้าระบบ Whiskora', description: '', type: 'registration', color: '#E84677', tag: pet.microchip_number || '' });
     vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `อัปเดตวัคซีน ${v.vaccine_name}`, description: v.notes || '', type: 'vaccine', color: '#0D9488' }));
-    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type?.includes('หมอ') ? '#EF4444' : '#F59E0B' }));
+    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type === 'ความสำเร็จ' ? '#D97706' : '#9CA3AF', image_url: a.image_url || null }));
     return timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
@@ -822,6 +822,8 @@ export default function PetDetailPage() {
         .timeline-title { font-size: 13px; font-weight: 600; color: ${F.ink}; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .timeline-id-badge { font-size: 9px; font-weight: 700; background: #F3F4F6; color: ${F.muted}; padding: 2px 7px; border-radius: 6px; font-family: monospace; letter-spacing: 0.04em; }
         .timeline-desc { font-size: 11px; color: #6B7280; margin-top: 3px; line-height: 1.5; }
+        .timeline-img { margin-top: 7px; border-radius: 10px; overflow: hidden; max-width: 220px; aspect-ratio: 4/3; background: ${F.line}; }
+        .timeline-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
         .activity-tab-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; cursor: pointer; transition: all .15s; }
         .activity-tab-btn.active { background: ${F.ink}; border-color: ${F.ink}; color: white; }
@@ -1140,7 +1142,9 @@ export default function PetDetailPage() {
                           <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
                             <div className="timeline-date">{formatDate(item.date)}</div>
                             <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
-                            {item.description && <div className="timeline-desc">{item.description}</div>}</div>
+                            {item.description && <div className="timeline-desc">{item.description}</div>}
+                            {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1368,7 +1372,9 @@ export default function PetDetailPage() {
                       <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
                         <div className="timeline-date">{formatDate(item.date)}</div>
                         <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
-                        {item.description && <div className="timeline-desc">{item.description}</div>}</div>
+                        {item.description && <div className="timeline-desc">{item.description}</div>}
+                        {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}
+                      </div>
                     ))}
                   </div>
                 )}
