@@ -81,14 +81,30 @@ export default function RegisterServicePage() {
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับก่อน');
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('services').insert([{
+      const { data: svcData, error } = await supabase.from('services').insert([{
         user_id: userId, service_name: form.service_name, phone: form.phone,
         category: form.category, bio: form.bio,
         address: showAddressField ? form.address : null,
         image_url: imageUrl || null,
         supported_species: selectedSpecies.join(','),
-      }]);
+      }]).select('id').single();
       if (error) throw error;
+
+      const { data: wsData } = await supabase.from('workspaces').insert({
+        type: 'service',
+        name: form.service_name,
+        owner_id: userId,
+        entity_id: svcData.id,
+        avatar_url: imageUrl || null,
+      }).select('id').single();
+      if (wsData) {
+        await supabase.from('workspace_members').insert({
+          workspace_id: wsData.id,
+          user_id: userId,
+          role: 'owner',
+        });
+      }
+
       alert('🐾 บันทึกข้อมูลบริการเรียบร้อยแล้ว!');
       router.push('/profile');
     } catch (err: any) { alert('Error: ' + err.message); }

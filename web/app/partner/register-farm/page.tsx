@@ -65,15 +65,32 @@ export default function RegisterFarmPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner/register-farm')}`); return; }
-      const { error } = await supabase.from('farms').insert([{
+      const { data: farmData, error } = await supabase.from('farms').insert([{
         user_id: session.user.id,
         farm_name: form.farmName,
         species: finalSpecies,
         phone: form.phone,
         bio: form.bio,
         image_url: imageUrl || null,
-      }]);
+      }]).select('id').single();
       if (error) throw error;
+
+      // Create workspace for this farm
+      const { data: wsData } = await supabase.from('workspaces').insert({
+        type: 'farm',
+        name: form.farmName,
+        owner_id: session.user.id,
+        entity_id: farmData.id,
+        avatar_url: imageUrl || null,
+      }).select('id').single();
+      if (wsData) {
+        await supabase.from('workspace_members').insert({
+          workspace_id: wsData.id,
+          user_id: session.user.id,
+          role: 'owner',
+        });
+      }
+
       alert('🎉 ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
       router.push('/partner');
       router.refresh();

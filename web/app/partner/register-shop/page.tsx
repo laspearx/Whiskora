@@ -70,12 +70,28 @@ export default function RegisterShopPage() {
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่ร้านรองรับอย่างน้อย 1 ประเภทก่อน');
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('shops').insert([{
+      const { data: shopData, error } = await supabase.from('shops').insert([{
         user_id: userId, shop_name: form.shop_name, phone: form.phone, bio: form.bio,
         address: form.address || null,
         image_url: imageUrl || null, supported_species: selectedSpecies,
-      }]).select().single();
+      }]).select('id').single();
       if (error) throw error;
+
+      const { data: wsData } = await supabase.from('workspaces').insert({
+        type: 'shop',
+        name: form.shop_name,
+        owner_id: userId,
+        entity_id: shopData.id,
+        avatar_url: imageUrl || null,
+      }).select('id').single();
+      if (wsData) {
+        await supabase.from('workspace_members').insert({
+          workspace_id: wsData.id,
+          user_id: userId,
+          role: 'owner',
+        });
+      }
+
       alert('🛍️ เปิดร้าน Pet Shop สำเร็จ!');
       router.push('/profile');
     } catch (err: any) { alert('Error: ' + err.message); }
