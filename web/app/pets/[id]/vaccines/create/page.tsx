@@ -92,6 +92,14 @@ export default function CreateVaccinePage() {
       }]);
       if (error) throw error;
 
+      await supabase.from("pet_activities").insert({
+        pet_id: parseInt(petId),
+        activity_type: "วัคซีน",
+        title: `รับ${finalVaccineName}`,
+        activity_date: dateGiven,
+        description: nextDue ? `นัดครั้งถัดไป: ${nextDue}` : null,
+      });
+
       if (nextDue) {
         const wantToSync = confirm("💉 บันทึกวัคซีนสำเร็จ! 🐾 \n\nต้องการเพิ่มวันนัดถัดไปลงใน Google Calendar เพื่อแจ้งเตือนด้วยไหมครับ?");
         if (wantToSync) await addVaccineToGoogleCalendar(petName, finalVaccineName, nextDue);

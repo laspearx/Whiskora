@@ -62,6 +62,7 @@ export default function EditPetPage() {
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
   const [isNeutered, setIsNeutered] = useState(false);
+  const [initialIsNeutered, setInitialIsNeutered] = useState(false);
   const [bloodType, setBloodType] = useState("");
   const [microchip, setMicrochip] = useState("");
 
@@ -102,6 +103,7 @@ export default function EditPetPage() {
       setAllergies(data.allergies || "");
       setTraits(data.traits || "");
       setIsNeutered(!!data.is_neutered);
+      setInitialIsNeutered(!!data.is_neutered);
       setBloodType(data.blood_type || "");
       setMicrochip(data.microchip_number || "");
       setStatus(data.status || "");
@@ -215,6 +217,14 @@ export default function EditPetPage() {
       alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else {
+      if (isNeutered && !initialIsNeutered) {
+        await supabase.from("pet_activities").insert({
+          pet_id: parseInt(petId),
+          activity_type: "ทำหมัน",
+          title: "ทำหมัน",
+          activity_date: new Date().toISOString().split("T")[0],
+        });
+      }
       router.replace(`/pets/${petId}`);
       router.refresh();
     }

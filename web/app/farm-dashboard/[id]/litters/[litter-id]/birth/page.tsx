@@ -71,8 +71,30 @@ export default function RecordBirthPage() {
         species: litterInfo.dam?.species || litterInfo.sire?.species || null,
         breed: litterInfo.dam?.breed || litterInfo.sire?.breed || null,
       }));
-      const { error: petsError } = await supabase.from('pets').insert(petsData);
+      const { data: insertedPets, error: petsError } = await supabase.from('pets').insert(petsData).select('id, name');
       if (petsError) throw petsError;
+
+      const activityInserts: any[] = [];
+      if (litterInfo.dam_id) {
+        activityInserts.push({
+          pet_id: litterInfo.dam_id,
+          activity_type: 'คลอด',
+          title: `คลอดลูก ครอก ${litterInfo.litter_code} (${kittens.length} ตัว)`,
+          activity_date: actualBirthDate,
+        });
+      }
+      if (insertedPets) {
+        insertedPets.forEach((p: any) => {
+          activityInserts.push({
+            pet_id: p.id,
+            activity_type: 'เกิด',
+            title: `เกิดในครอก ${litterInfo.litter_code}`,
+            activity_date: actualBirthDate,
+          });
+        });
+      }
+      if (activityInserts.length > 0) await supabase.from('pet_activities').insert(activityInserts);
+
       alert(`🎉 บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {

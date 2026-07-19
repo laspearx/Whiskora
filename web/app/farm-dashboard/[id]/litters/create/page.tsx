@@ -110,6 +110,15 @@ export default function CreateLitterPage() {
         status: 'รอคลอด', user_id: userId, farm_id: farmId,
       }]);
       if (error) throw error;
+
+      const breedDate = formData.mating_date || new Date().toISOString().split('T')[0];
+      const breedTitle = `จับคู่บรีด ครอก ${finalLitterCode}`;
+      const activityInserts = [
+        { pet_id: parseInt(formData.sire_id), activity_type: 'บรีด', title: breedTitle, activity_date: breedDate },
+        { pet_id: parseInt(formData.dam_id), activity_type: 'บรีด', title: breedTitle, activity_date: breedDate },
+      ];
+      await supabase.from('pet_activities').insert(activityInserts);
+
       alert(`💕 บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {

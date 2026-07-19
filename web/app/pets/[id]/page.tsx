@@ -363,6 +363,12 @@ export default function PetDetailPage() {
         .update({ user_id: transferTarget.id, farm_id: null })
         .eq('id', pet.id);
       if (error) throw error;
+      await supabase.from('pet_activities').insert({
+        pet_id: pet.id,
+        activity_type: 'ย้ายบ้าน',
+        title: `ย้ายบ้านไปอยู่กับ ${transferTarget.full_name || 'เจ้าของใหม่'}`,
+        activity_date: new Date().toISOString().split('T')[0],
+      });
       router.push('/profile');
     } catch { setTransferError('โอนย้ายไม่สำเร็จ กรุณาลองใหม่'); setTransferring(false); }
   };
