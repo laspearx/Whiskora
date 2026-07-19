@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
+import ClientProviders from "@/app/components/ClientProviders";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whiskora.pet"),
@@ -80,7 +81,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <RootChrome>{children}</RootChrome>
+        <ClientProviders>
+          <RootChrome>{children}</RootChrome>
+        </ClientProviders>
       </body>
     </html>
   );

@@ -7,6 +7,8 @@ import { useLocale } from '@/i18n/context';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import PetQRSheet from '@/app/components/PetQRSheet';
+import { useWorkspace } from '@/app/contexts/WorkspaceContext';
+import type { Workspace } from '@/app/contexts/WorkspaceContext';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 type Href = string;
@@ -41,12 +43,15 @@ const ChevronDown = ({ open }: { open: boolean }) => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Navbar() {
-  const [session,     setSession]     = useState<Session | null>(null);
-  const [scrolled,    setScrolled]    = useState(false);
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [showQrSheet, setShowQrSheet] = useState(false);
-  const [exploreOpen, setExploreOpen] = useState(false);
-  const [userOpen,    setUserOpen]    = useState(false);
+  const [session,        setSession]        = useState<Session | null>(null);
+  const [scrolled,       setScrolled]       = useState(false);
+  const [mobileOpen,     setMobileOpen]     = useState(false);
+  const [showQrSheet,    setShowQrSheet]    = useState(false);
+  const [exploreOpen,    setExploreOpen]    = useState(false);
+  const [userOpen,       setUserOpen]       = useState(false);
+  const [workspaceOpen,  setWorkspaceOpen]  = useState(false);
+
+  const { workspaces, activeWorkspace, switchWorkspace } = useWorkspace();
 
   const locale   = useLocale();
   const pathname = usePathname();
@@ -77,6 +82,7 @@ export default function Navbar() {
         setMobileOpen(false);
         setExploreOpen(false);
         setUserOpen(false);
+        setWorkspaceOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -88,6 +94,7 @@ export default function Navbar() {
     setMobileOpen(false);
     setExploreOpen(false);
     setUserOpen(false);
+    setWorkspaceOpen(false);
   }, [pathname]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -98,6 +105,29 @@ export default function Navbar() {
   };
 
   const guarded = (href: Href) => go(session ? href : '/login');
+
+  const switchWs = (ws: Workspace) => {
+    switchWorkspace(ws.id);
+    setWorkspaceOpen(false);
+    setMobileOpen(false);
+    if (ws.type === 'personal') go('/profile');
+    else if (ws.entity_id) go(`/${ws.type}-dashboard/${ws.entity_id}` as Href);
+  };
+
+  const wsIconSrc = (type: Workspace['type']) => {
+    const map: Record<string, string> = {
+      personal: '/icons/icon-tab-profile.png',
+      farm: '/icons/icon-farm.png',
+      shop: '/icons/icon-shop.png',
+      service: '/icons/icon-service.png',
+    };
+    return map[type] ?? map.personal;
+  };
+
+  const wsLabel = (type: Workspace['type']) => {
+    const map: Record<string, string> = { personal: 'ส่วนตัว', farm: 'ฟาร์ม', shop: 'ร้านค้า', service: 'บริการ' };
+    return map[type] ?? type;
+  };
 
   const switchLocale = (next: 'th' | 'en') => {
     router.replace(pathname, { locale: next });
@@ -206,6 +236,51 @@ export default function Navbar() {
           {/* ── Desktop right side ────────────────────────────────────── */}
           <div className="hidden md:flex items-center gap-2.5 ml-auto">
 
+            {/* Workspace switcher (desktop) */}
+            {session && workspaces.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => { setWorkspaceOpen(o => !o); setExploreOpen(false); setUserOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-600 text-sm font-semibold hover:bg-gray-100 transition-colors"
+                  title="เปลี่ยนพื้นที่ใช้งาน"
+                >
+                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={18} height={18} style={{ objectFit: 'contain' }} />
+                  <span className="max-w-[110px] truncate">{activeWorkspace?.name ?? '—'}</span>
+                  <ChevronDown open={workspaceOpen} />
+                </button>
+
+                {workspaceOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
+                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">พื้นที่ใช้งาน</div>
+                      {workspaces.map((ws) => (
+                        <button key={ws.id} onClick={() => switchWs(ws)}
+                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
+                        >
+                          <img src={wsIconSrc(ws.type)} alt="" width={22} height={22} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold truncate leading-tight">{ws.name}</div>
+                            <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>
+                          </div>
+                          {ws.id === activeWorkspace?.id && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                          )}
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={() => { setWorkspaceOpen(false); go('/partner'); }}
+                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-500 hover:text-pink-500 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+                          เพิ่มพื้นที่ใหม่
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Language switcher */}
             <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-0.5">
               <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
@@ -252,8 +327,52 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile: hamburger only ───────────────────────────────── */}
+          {/* ── Mobile: workspace switcher + hamburger ───────────────── */}
           <div className="md:hidden flex items-center gap-2 ml-auto">
+
+            {/* Workspace switcher button (mobile) */}
+            {session && workspaces.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => { setWorkspaceOpen(o => !o); setMobileOpen(false); }}
+                  aria-label="เปลี่ยนพื้นที่ใช้งาน"
+                  className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={22} height={22} style={{ objectFit: 'contain' }} />
+                </button>
+
+                {workspaceOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
+                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">พื้นที่ใช้งาน</div>
+                      {workspaces.map((ws) => (
+                        <button key={ws.id} onClick={() => switchWs(ws)}
+                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
+                        >
+                          <img src={wsIconSrc(ws.type)} alt="" width={22} height={22} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold truncate leading-tight">{ws.name}</div>
+                            <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>
+                          </div>
+                          {ws.id === activeWorkspace?.id && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                          )}
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={() => { setWorkspaceOpen(false); go('/partner'); }}
+                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-500 hover:text-pink-500 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+                          เพิ่มพื้นที่ใหม่
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               onClick={() => setMobileOpen(o => !o)}
               aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
