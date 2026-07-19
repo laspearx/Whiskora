@@ -54,7 +54,7 @@ export default function FarmHubPage() {
     try {
       let query = supabase
         .from("pets")
-        .select("*, farms(farm_name, province, location)")
+        .select("*, farms(farm_name, address)")
         .eq("status", "พร้อมย้ายบ้าน")
         .order("created_at", { ascending: false });
 
@@ -76,7 +76,7 @@ export default function FarmHubPage() {
   const filteredPets = !q ? pets : pets.filter(p =>
     p.breed?.toLowerCase().includes(q) ||
     p.farms?.farm_name?.toLowerCase().includes(q) ||
-    p.farms?.province?.toLowerCase().includes(q) ||
+    p.farms?.address?.toLowerCase().includes(q) ||
     speciesTh(p.species)?.toLowerCase().includes(q)
   );
 
@@ -94,7 +94,7 @@ export default function FarmHubPage() {
   }
 
   function farmLocation(farm: any) {
-    return farm?.province || farm?.location || null;
+    return farm?.address || null;
   }
 
   return (
