@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Cropper from 'react-easy-crop';
 import PageLoader from '@/app/components/PageLoader';
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -67,7 +68,8 @@ export default function ServiceSettingsPage() {
   const onAvatarCropComplete = useCallback((_: any, px: any) => setAvatarAreaPx(px), []);
   const onCoverCropComplete = useCallback((_: any, px: any) => setCoverAreaPx(px), []);
 
-  const [form, setForm] = useState({ service_name: '', owner_name: '', phone: '', category: '', bio: '', address: '' });
+  const [form, setForm] = useState({ service_name: '', owner_name: '', phone: '', category: '', bio: '' });
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -90,7 +92,12 @@ export default function ServiceSettingsPage() {
         phone: data.phone || '',
         category: data.category || '',
         bio: data.bio || '',
-        address: data.address || '',
+      });
+      setAddr({
+        house_no: data.house_no || "", room_no: data.room_no || "",
+        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
+        sub_district: data.sub_district || "", district: data.district || "",
+        province: data.province || "", postal_code: data.postal_code || "",
       });
       setImageUrl(data.image_url || null);
       setCoverUrl(data.cover_url || null);
@@ -196,7 +203,7 @@ export default function ServiceSettingsPage() {
     if (!form.service_name.trim()) return alert('กรุณากรอกชื่อร้าน / ชื่อบริการ');
     if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!form.address.trim()) return alert('กรุณากรอกที่อยู่ / สถานที่ให้บริการ');
+    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ / สถานที่ให้บริการ (จังหวัด)');
     if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งบนแผนที่');
     if (!form.category) return alert('กรุณาเลือกประเภทบริการ');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับอย่างน้อย 1 ชนิด');
@@ -209,7 +216,11 @@ export default function ServiceSettingsPage() {
         phone: form.phone,
         category: form.category,
         bio: form.bio,
-        address: form.address,
+        address: composeAddress(addr),
+        house_no: addr.house_no || null, room_no: addr.room_no || null,
+        moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+        sub_district: addr.sub_district || null, district: addr.district || null,
+        province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
         image_url: imageUrl,
@@ -369,7 +380,7 @@ export default function ServiceSettingsPage() {
             </div>
             <div className="se-field">
               <label className="se-label">ที่อยู่ / สถานที่ให้บริการ <span className="se-req">*</span></label>
-              <textarea className="se-textarea" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
             <div className="se-field">
               <label className="se-label">รายละเอียดเพิ่มเติม</label>

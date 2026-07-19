@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { OTHER_SPECIES } from '@/lib/species';
 import Cropper from 'react-easy-crop';
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -46,8 +47,9 @@ export default function RegisterFarmPage() {
 
   const [form, setForm] = useState({
     farmName: '', ownerName: '', species: '', subSpecies: '', customSpecies: '',
-    phone: '', address: '', bio: '',
+    phone: '', bio: '',
   });
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
 
   // ── Map state ─────────────────────────────────────────────────────────────
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -152,7 +154,7 @@ export default function RegisterFarmPage() {
     if (!form.farmName.trim()) return alert('กรุณากรอกชื่อฟาร์ม');
     if (!form.ownerName.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของฟาร์ม');
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!form.address.trim()) return alert('กรุณากรอกที่อยู่');
+    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ฟาร์ม (จังหวัด)');
     if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งฟาร์มบนแผนที่');
     if (!form.species) return alert('กรุณาเลือกชนิดสัตว์ที่เพาะพันธุ์');
 
@@ -173,7 +175,11 @@ export default function RegisterFarmPage() {
         owner_name: form.ownerName,
         species: finalSpecies,
         phone: form.phone,
-        address: form.address,
+        address: composeAddress(addr),
+        house_no: addr.house_no || null, room_no: addr.room_no || null,
+        moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+        sub_district: addr.sub_district || null, district: addr.district || null,
+        province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
         bio: form.bio,
@@ -357,7 +363,7 @@ export default function RegisterFarmPage() {
 
             <div className="pf-field">
               <label className="pf-label">ที่อยู่ <span className="pf-req">*</span></label>
-              <textarea className="pf-textarea" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
           </div>
 

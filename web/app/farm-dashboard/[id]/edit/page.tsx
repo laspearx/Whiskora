@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import PageLoader from "@/app/components/PageLoader";
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -32,7 +33,7 @@ export default function EditFarmPage() {
   const [farmName, setFarmName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
   const [bio, setBio] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -70,7 +71,12 @@ export default function EditFarmPage() {
       setFarmName(data.farm_name || "");
       setOwnerName(data.owner_name || "");
       setPhone(data.phone || "");
-      setAddress(data.address || "");
+      setAddr({
+        house_no: data.house_no || "", room_no: data.room_no || "",
+        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
+        sub_district: data.sub_district || "", district: data.district || "",
+        province: data.province || "", postal_code: data.postal_code || "",
+      });
       setBio(data.bio || "");
       setImageUrl(data.image_url || null);
       setCoverUrl(data.cover_url || null);
@@ -174,13 +180,17 @@ export default function EditFarmPage() {
     if (!farmName.trim()) return alert("กรุณากรอกชื่อฟาร์ม");
     if (!ownerName.trim()) return alert("กรุณากรอกชื่อ-สกุลเจ้าของฟาร์ม");
     if (!phone.trim()) return alert("กรุณากรอกเบอร์โทรศัพท์");
-    if (!address.trim()) return alert("กรุณากรอกที่อยู่");
+    if (!addr.province.trim()) return alert("กรุณาระบุที่อยู่ฟาร์ม (จังหวัด)");
     setSaving(true);
     const { error } = await supabase.from("farms").update({
       farm_name: farmName.trim(),
       owner_name: ownerName.trim(),
       phone: phone.trim(),
-      address: address.trim(),
+      address: composeAddress(addr),
+      house_no: addr.house_no || null, room_no: addr.room_no || null,
+      moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+      sub_district: addr.sub_district || null, district: addr.district || null,
+      province: addr.province || null, postal_code: addr.postal_code || null,
       bio: bio.trim(),
       lat: mapLat,
       lng: mapLng,
@@ -333,7 +343,7 @@ export default function EditFarmPage() {
             </div>
             <div className="fe-field">
               <label className="fe-label">ที่อยู่ <span className="fe-req">*</span></label>
-              <textarea className="fe-textarea" rows={2} value={address} onChange={e => setAddress(e.target.value)} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
             <div className="fe-field">
               <label className="fe-label">รายละเอียดเพิ่มเติม</label>

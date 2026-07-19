@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Cropper from 'react-easy-crop';
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -54,7 +55,8 @@ export default function RegisterShopPage() {
   const onAvatarCropComplete = useCallback((_: any, px: any) => setAvatarAreaPx(px), []);
   const onCoverCropComplete = useCallback((_: any, px: any) => setCoverAreaPx(px), []);
 
-  const [form, setForm] = useState({ shop_name: '', owner_name: '', phone: '', bio: '', address: '' });
+  const [form, setForm] = useState({ shop_name: '', owner_name: '', phone: '', bio: '' });
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -163,7 +165,7 @@ export default function RegisterShopPage() {
     if (!form.shop_name.trim()) return alert('กรุณากรอกชื่อร้าน');
     if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!form.address.trim()) return alert('กรุณากรอกที่อยู่ร้าน');
+    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ร้าน (จังหวัด)');
     if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งร้านบนแผนที่');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่ร้านรองรับอย่างน้อย 1 ชนิด');
     if (!userId) return;
@@ -176,7 +178,11 @@ export default function RegisterShopPage() {
         owner_name: form.owner_name,
         phone: form.phone,
         bio: form.bio,
-        address: form.address,
+        address: composeAddress(addr),
+        house_no: addr.house_no || null, room_no: addr.room_no || null,
+        moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+        sub_district: addr.sub_district || null, district: addr.district || null,
+        province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
         image_url: imageUrl || null,
@@ -335,7 +341,7 @@ export default function RegisterShopPage() {
             </div>
             <div className="ps-field">
               <label className="ps-label">ที่อยู่ร้าน <span className="ps-req">*</span></label>
-              <textarea className="ps-textarea" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
             <div className="ps-field">
               <label className="ps-label">รายละเอียดเพิ่มเติม</label>

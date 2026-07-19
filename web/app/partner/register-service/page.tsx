@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import Cropper from 'react-easy-crop';
 
 const F = {
@@ -62,7 +63,8 @@ export default function RegisterServicePage() {
   const onAvatarCropComplete = useCallback((_: any, px: any) => setAvatarAreaPx(px), []);
   const onCoverCropComplete = useCallback((_: any, px: any) => setCoverAreaPx(px), []);
 
-  const [form, setForm] = useState({ service_name: '', owner_name: '', phone: '', category: '', bio: '', address: '' });
+  const [form, setForm] = useState({ service_name: '', owner_name: '', phone: '', category: '', bio: '' });
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -171,7 +173,7 @@ export default function RegisterServicePage() {
     if (!form.service_name.trim()) return alert('กรุณากรอกชื่อร้าน / ชื่อบริการ');
     if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!form.address.trim()) return alert('กรุณากรอกที่อยู่ / สถานที่ให้บริการ');
+    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ / สถานที่ให้บริการ (จังหวัด)');
     if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งบนแผนที่');
     if (!form.category) return alert('กรุณาเลือกประเภทบริการ');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับอย่างน้อย 1 ชนิด');
@@ -186,7 +188,11 @@ export default function RegisterServicePage() {
         phone: form.phone,
         category: form.category,
         bio: form.bio,
-        address: form.address,
+        address: composeAddress(addr),
+        house_no: addr.house_no || null, room_no: addr.room_no || null,
+        moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+        sub_district: addr.sub_district || null, district: addr.district || null,
+        province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
         image_url: imageUrl || null,
@@ -353,7 +359,7 @@ export default function RegisterServicePage() {
             </div>
             <div className="sv-field">
               <label className="sv-label">ที่อยู่ / สถานที่ให้บริการ <span className="sv-req">*</span></label>
-              <textarea className="sv-textarea" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
             <div className="sv-field">
               <label className="sv-label">รายละเอียดเพิ่มเติม</label>

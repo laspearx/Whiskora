@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Cropper from 'react-easy-crop';
 import PageLoader from '@/app/components/PageLoader';
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -59,7 +60,8 @@ export default function ShopEditPage() {
   const onAvatarCropComplete = useCallback((_: any, px: any) => setAvatarAreaPx(px), []);
   const onCoverCropComplete = useCallback((_: any, px: any) => setCoverAreaPx(px), []);
 
-  const [form, setForm] = useState({ shop_name: '', owner_name: '', phone: '', bio: '', address: '' });
+  const [form, setForm] = useState({ shop_name: '', owner_name: '', phone: '', bio: '' });
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -81,7 +83,12 @@ export default function ShopEditPage() {
         owner_name: data.owner_name || '',
         phone: data.phone || '',
         bio: data.bio || '',
-        address: data.address || '',
+      });
+      setAddr({
+        house_no: data.house_no || "", room_no: data.room_no || "",
+        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
+        sub_district: data.sub_district || "", district: data.district || "",
+        province: data.province || "", postal_code: data.postal_code || "",
       });
       setImageUrl(data.image_url || null);
       setCoverUrl(data.cover_url || null);
@@ -187,7 +194,7 @@ export default function ShopEditPage() {
     if (!form.shop_name.trim()) return alert('กรุณากรอกชื่อร้าน');
     if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!form.address.trim()) return alert('กรุณากรอกที่อยู่ร้าน');
+    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ร้าน (จังหวัด)');
     if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งร้านบนแผนที่');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่ร้านรองรับอย่างน้อย 1 ชนิด');
 
@@ -198,7 +205,11 @@ export default function ShopEditPage() {
         owner_name: form.owner_name,
         phone: form.phone,
         bio: form.bio,
-        address: form.address,
+        address: composeAddress(addr),
+        house_no: addr.house_no || null, room_no: addr.room_no || null,
+        moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+        sub_district: addr.sub_district || null, district: addr.district || null,
+        province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
         image_url: imageUrl,
@@ -350,7 +361,7 @@ export default function ShopEditPage() {
             </div>
             <div className="she-field">
               <label className="she-label">ที่อยู่ร้าน <span className="she-req">*</span></label>
-              <textarea className="she-textarea" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="เลขที่, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด..." />
+              <AddressFields value={addr} onChange={setAddr} required />
             </div>
             <div className="she-field">
               <label className="she-label">รายละเอียดเพิ่มเติม</label>
