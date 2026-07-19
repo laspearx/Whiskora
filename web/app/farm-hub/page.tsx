@@ -72,11 +72,12 @@ export default function FarmHubPage() {
     }
   };
 
-  const filteredPets = pets.filter(p =>
-    p.breed?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.farms?.farm_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.farms?.province?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    speciesTh(p.species)?.toLowerCase().includes(searchQuery.toLowerCase())
+  const q = searchQuery.toLowerCase().trim();
+  const filteredPets = !q ? pets : pets.filter(p =>
+    p.breed?.toLowerCase().includes(q) ||
+    p.farms?.farm_name?.toLowerCase().includes(q) ||
+    p.farms?.province?.toLowerCase().includes(q) ||
+    speciesTh(p.species)?.toLowerCase().includes(q)
   );
 
   function calcAge(birthDate: string | null) {
