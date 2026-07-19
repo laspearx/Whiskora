@@ -290,6 +290,35 @@ export default function EditFarmPage() {
           </div>
         </div>
 
+        {/* ── Members link ── */}
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "0 0 8px" }}>
+          <a
+            href={`/farm-dashboard/${farmId}/members`}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 16px", borderRadius: 14, border: `1px solid ${F.lineMid}`,
+              background: "white", textDecoration: "none", color: F.ink,
+              transition: "border-color .15s",
+            }}
+            onMouseOver={e => (e.currentTarget.style.borderColor = F.pink)}
+            onMouseOut={e => (e.currentTarget.style.borderColor = F.lineMid)}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: F.pinkSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>จัดการสมาชิก</div>
+                <div style={{ fontSize: 11, color: F.muted, marginTop: 1 }}>เพิ่ม / ลบ / เปลี่ยนสิทธิ์สมาชิกในฟาร์ม</div>
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={F.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+
         {/* ── Save bar ── */}
         <div className="fe-savebar">
           <div className="fe-savebar-inner">
