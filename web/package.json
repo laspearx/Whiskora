@@ -20,7 +20,8 @@
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-easy-crop": "^5.5.6"
+    "react-easy-crop": "^5.5.6",
+    "thai-address-database": "^0.0.31"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
