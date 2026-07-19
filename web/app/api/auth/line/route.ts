@@ -5,6 +5,15 @@ import crypto from 'crypto'
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || reqOrigin
+
+  // If user is on a deployment-specific URL, bounce to the stable branch URL first
+  // so that cookies and redirect_uri are on the same domain
+  if (reqOrigin !== origin) {
+    const stableUrl = new URL(`${origin}/api/auth/line`)
+    searchParams.forEach((v, k) => stableUrl.searchParams.set(k, v))
+    return NextResponse.redirect(stableUrl.toString())
+  }
+
   const next = searchParams.get('next') || '/profile'
 
   const state = crypto.randomBytes(16).toString('hex')
