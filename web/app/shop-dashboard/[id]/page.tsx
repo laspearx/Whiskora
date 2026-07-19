@@ -66,6 +66,7 @@ function ShopDashboardContent() {
     { href: `/shop-dashboard/${shopId}/orders?from=${fromPage}`, icon: '📜', title: 'รายการคำสั่งซื้อ', desc: 'จัดการออเดอร์จากลูกค้า' },
     { href: `/shop-dashboard/${shopId}/finance?from=${fromPage}`, icon: '💸', title: 'บัญชีร้านค้า', desc: 'สรุปรายรับ-รายจ่ายร้าน' },
     { href: `/shop-dashboard/${shopId}/edit?from=${fromPage}`, icon: '⚙️', title: 'ตั้งค่าหน้าร้าน', desc: 'ข้อมูลติดต่อและเวลาเปิด-ปิด' },
+    { href: `/shop-dashboard/${shopId}/members`, icon: '👥', title: 'จัดการสมาชิก', desc: 'เพิ่ม / ลบ / เปลี่ยนสิทธิ์สมาชิก' },
   ];
 
   return (

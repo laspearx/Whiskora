@@ -67,6 +67,7 @@ function ServiceDashboardContent() {
     { href: `/service-dashboard/${serviceId}/manage-services?from=${fromPage}`, icon: '✂️', title: 'รายการบริการ', desc: 'ตั้งราคาและประเภทบริการ' },
     { href: `/service-dashboard/${serviceId}/finance?from=${fromPage}`, icon: '📊', title: 'สรุปรายได้', desc: 'รายงานรายได้งานบริการ' },
     { href: `/service-dashboard/${serviceId}/settings?from=${fromPage}`, icon: '🏥', title: 'ข้อมูลสถานบริการ', desc: 'ที่อยู่และเวลาเปิด-ปิด' },
+    { href: `/service-dashboard/${serviceId}/members`, icon: '👥', title: 'จัดการสมาชิก', desc: 'เพิ่ม / ลบ / เปลี่ยนสิทธิ์สมาชิก' },
   ];
   const statusLabel = (s: string) => s === 'confirmed' ? 'ยืนยันแล้ว' : s === 'pending' ? 'รอดำเนินการ' : 'เสร็จสิ้น';
   const statusClass = (s: string) => s === 'confirmed' ? 'ok' : s === 'pending' ? 'pending' : 'done';
