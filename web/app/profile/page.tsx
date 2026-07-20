@@ -19,6 +19,7 @@ const F = {
 };
 
 const shortMonthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const thaiDayNames = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
 const CIRCUMFERENCE = 2 * Math.PI * 44;
 
 type VaccineRow = { next_due: string | null; vaccine_name: string | null; pet_id: string | null };
@@ -188,6 +189,35 @@ export default function ProfilePage() {
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
   }, [appointments, pets]);
 
+  const calendarData = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayKey = today.toISOString().split("T")[0];
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      const key = d.toISOString().split("T")[0];
+      const events = appointments
+        .filter((a) => a.next_due && String(a.next_due).split("T")[0] === key)
+        .map((a) => ({ ...a, petName: pets.find((p) => p.id === a.pet_id)?.name || "สัตว์เลี้ยง" }));
+      return { date: d, dateKey: key, dayName: thaiDayNames[d.getDay()], events };
+    });
+    return { todayKey, days };
+  }, [appointments, pets]);
+
+  const upcomingEvents = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const limit = new Date(today); limit.setDate(limit.getDate() + 30);
+    return appointments
+      .filter((a) => a.next_due)
+      .map((a) => ({
+        ...a,
+        dueDate: new Date(String(a.next_due).split("T")[0]),
+        petName: pets.find((p) => p.id === a.pet_id)?.name || "สัตว์เลี้ยง",
+      }))
+      .filter((a) => a.dueDate >= today && a.dueDate < limit)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+      .slice(0, 6);
+  }, [appointments, pets]);
+
   if (loading) return <PageLoader />;
 
   const { vaccineOk, weightOk, healthOk, score } = petCareChecks;
@@ -280,12 +310,33 @@ export default function ProfilePage() {
         .pp-task-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; background: ${F.pinkSoft}; color: ${F.pinkDeep}; }
         .pp-task-badge.today { background: #fef3c7; color: #d97706; }
 
-        /* ── Quick menu ── */
-        .pp-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .pp-quick-item { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 8px 12px; border: 1px solid ${F.line}; border-radius: 14px; background: white; text-decoration: none; color: ${F.ink}; transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease; }
-        .pp-quick-item:hover { transform: translateY(-2px); border-color: #e0b8c8; box-shadow: 0 6px 18px rgba(232,70,119,.08); }
-        .pp-quick-icon { width: 36px; height: 36px; object-fit: contain; }
-        .pp-quick-label { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.35; color: ${F.ink}; }
+        /* ── Calendar strip ── */
+        .pp-cal-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; }
+        .pp-cal-strip::-webkit-scrollbar { display: none; }
+        .pp-cal-day { flex-shrink: 0; width: 46px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px 8px; border-radius: 14px; border: 1.5px solid ${F.line}; background: white; }
+        .pp-cal-day.today { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .pp-cal-day-name { font-size: 10px; font-weight: 600; color: ${F.muted}; }
+        .pp-cal-day.today .pp-cal-day-name { color: ${F.pinkDeep}; }
+        .pp-cal-date { font-size: 17px; font-weight: 750; color: ${F.ink}; line-height: 1.1; }
+        .pp-cal-day.today .pp-cal-date { color: ${F.pink}; }
+        .pp-cal-icons { min-height: 16px; display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; }
+        .pp-cal-icon { width: 14px; height: 14px; object-fit: contain; }
+
+        /* ── Upcoming events ── */
+        .pp-upcoming-list { display: grid; gap: 8px; margin-top: 12px; }
+        .pp-upcoming-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: white; border: 1px solid ${F.line}; border-radius: 14px; }
+        .pp-upcoming-date { flex-shrink: 0; text-align: center; width: 36px; }
+        .pp-upcoming-date-num { display: block; font-size: 18px; font-weight: 750; color: ${F.pink}; line-height: 1; }
+        .pp-upcoming-date-mon { display: block; font-size: 10px; font-weight: 600; color: ${F.muted}; }
+        .pp-upcoming-divider { width: 1px; height: 30px; background: ${F.line}; flex-shrink: 0; }
+        .pp-upcoming-icon { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+        .pp-upcoming-text { flex: 1; min-width: 0; }
+        .pp-upcoming-title { display: block; font-size: 13px; font-weight: 650; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pp-upcoming-pet { display: block; font-size: 11px; color: ${F.muted}; }
+        .pp-upcoming-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+        .pp-upcoming-badge.today { background: #fef3c7; color: #d97706; }
+        .pp-upcoming-badge.soon { background: ${F.pinkSoft}; color: ${F.pinkDeep}; }
+        .pp-cal-empty { text-align: center; color: ${F.muted}; font-size: 13px; padding: 16px 0; line-height: 1.6; }
 
         /* ── Activities ── */
         .pp-act-list { border: 1px solid ${F.line}; border-radius: 14px; overflow: hidden; }
@@ -295,15 +346,6 @@ export default function ProfilePage() {
         .pp-act-title { display: block; font-size: 13px; font-weight: 600; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-act-meta { display: block; font-size: 11px; color: ${F.muted}; }
         .pp-act-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; white-space: nowrap; }
-
-        /* ── Pet ID Promo ── */
-        .pp-id-promo { margin-bottom: 14px; border-radius: 18px; overflow: hidden; background: linear-gradient(135deg, ${F.pink} 0%, #b5305a 100%); padding: 20px; display: flex; align-items: center; gap: 16px; }
-        .pp-id-promo-text { flex: 1; min-width: 0; }
-        .pp-id-promo-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-        .pp-id-promo-title { font-size: 18px; font-weight: 750; color: white; margin: 0 0 5px; }
-        .pp-id-promo-desc { font-size: 12px; color: rgba(255,255,255,.78); line-height: 1.5; margin: 0; }
-        .pp-id-promo-hint { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.28); color: white; font-size: 12px; font-weight: 600; }
-        .pp-id-promo-qr { flex-shrink: 0; opacity: .88; }
 
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
@@ -495,27 +537,62 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Quick Menu */}
-        <section className="pp-section">
-          <div className="pp-section-head">
-            <span className="pp-section-title">เมนูลัด</span>
-          </div>
-          <div className="pp-quick-grid">
-            {[
-              { href: "/profile/pets", icon: "/icons/icon-my-pets.png", label: "สัตว์เลี้ยง\nของฉัน" },
-              { href: "/pets/vaccines/bulk-add", icon: "/icons/icon-vaccine.png", label: "บันทึก\nวัคซีน" },
-              { href: "/pets/vaccines/all", icon: "/icons/icon-health.png", label: "ประวัติ\nสุขภาพ" },
-              { href: "/profile/calendar", icon: "/icons/icon-calendar.png", label: "ปฏิทิน" },
-              { href: "/service-hub", icon: "/icons/icon-partner.png", label: "ร้านค้า\nบริการ" },
-              { href: "/profile/finance", icon: "/icons/icon-wallet.png", label: "รายรับ\nรายจ่าย" },
-            ].map((item) => (
-              <Link key={item.href} href={item.href} className="pp-quick-item">
-                <img src={item.icon} alt="" className="pp-quick-icon" />
-                <span className="pp-quick-label" style={{ whiteSpace: "pre-line" }}>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        {/* 7-Day Calendar + Upcoming Events */}
+        {pets.length > 0 && (
+          <section className="pp-section">
+            <div className="pp-section-head">
+              <span className="pp-section-title">ปฏิทินดูแลสัตว์เลี้ยง</span>
+              <Link href="/profile/calendar" className="pp-see-all">ดูทั้งหมด ›</Link>
+            </div>
+            <div className="pp-card" style={{ padding: "12px 10px" }}>
+              <div className="pp-cal-strip">
+                {calendarData.days.map(({ date, dateKey, dayName, events }) => (
+                  <div
+                    key={dateKey}
+                    className={`pp-cal-day${dateKey === calendarData.todayKey ? " today" : ""}`}
+                  >
+                    <span className="pp-cal-day-name">{dayName}</span>
+                    <span className="pp-cal-date">{date.getDate()}</span>
+                    <div className="pp-cal-icons">
+                      {events.slice(0, 2).map((ev, i) => (
+                        <img key={i} src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-cal-icon" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="pp-upcoming-list">
+                {upcomingEvents.map((ev, i) => {
+                  const isToday = ev.dueDate.toDateString() === new Date().toDateString();
+                  const isTomorrow = ev.dueDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                  return (
+                    <div key={i} className="pp-upcoming-item">
+                      <div className="pp-upcoming-date">
+                        <span className="pp-upcoming-date-num">{ev.dueDate.getDate()}</span>
+                        <span className="pp-upcoming-date-mon">{shortMonthNames[ev.dueDate.getMonth()]}</span>
+                      </div>
+                      <div className="pp-upcoming-divider" />
+                      <img src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-upcoming-icon" />
+                      <div className="pp-upcoming-text">
+                        <span className="pp-upcoming-title">{ev.vaccine_name || "ดูแลสุขภาพ"}</span>
+                        <span className="pp-upcoming-pet">{ev.petName}</span>
+                      </div>
+                      {(isToday || isTomorrow) && (
+                        <span className={`pp-upcoming-badge ${isToday ? "today" : "soon"}`}>
+                          {isToday ? "วันนี้" : "พรุ่งนี้"}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="pp-cal-empty">ไม่มีกำหนดการวัคซีนใน 30 วันข้างหน้า</div>
+            )}
+          </section>
+        )}
 
         {/* Recent Activities */}
         {activities.length > 0 && (
@@ -541,22 +618,6 @@ export default function ProfilePage() {
             </div>
           </section>
         )}
-
-        {/* Pet ID Card Promo */}
-        <div className="pp-id-promo">
-          <div className="pp-id-promo-text">
-            <div className="pp-id-promo-label">Whiskora</div>
-            <h2 className="pp-id-promo-title">Pet ID Card</h2>
-            <p className="pp-id-promo-desc">แสดง QR Code ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยงของคุณ</p>
-            <div className="pp-id-promo-hint">
-              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
-              กดปุ่ม QR ที่แถบเมนูด้านล่าง
-            </div>
-          </div>
-          <div className="pp-id-promo-qr">
-            <img src="/icons/icon-scan.png" alt="" style={{ width: 130, height: 130, objectFit: 'contain' }} />
-          </div>
-        </div>
 
         {/* Admin */}
         {profile?.role === "admin" && (
