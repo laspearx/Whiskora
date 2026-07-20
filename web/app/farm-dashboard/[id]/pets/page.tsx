@@ -155,7 +155,7 @@ export default function FarmPetsPage() {
                   const isFemale = pet.gender === 'female' || pet.gender === 'ตัวเมีย';
                   const st = pet.status ? statusStyle(pet.status) : null;
                   return (
-                    <Link key={pet.id} href={`/pets/${pet.id}`} className="fpl-card">
+                    <Link key={pet.id} href={`/pets/${pet.id}?from=${encodeURIComponent(`/farm-dashboard/${farmId}`)}`} className="fpl-card">
                       <div className="fpl-photo">
                         {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
                       </div>

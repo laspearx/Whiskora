@@ -357,7 +357,7 @@ export default function MyPetsPage() {
               {personalPets.length === 0 ? (
                 <div className="empty-state">ยังไม่มีสัตว์เลี้ยง</div>
               ) : (
-                personalPets.map(pet => <PetRow key={pet.id} pet={pet} />)
+                personalPets.map(pet => <PetRow key={pet.id} pet={pet} from="/profile/pets" />)
               )}
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function MyPetsPage() {
                 {farm.pets.length === 0 ? (
                   <div className="empty-state">ยังไม่มีสมาชิกในฟาร์มนี้</div>
                 ) : (
-                  farm.pets.map(pet => <PetRow key={pet.id} pet={pet} />)
+                  farm.pets.map(pet => <PetRow key={pet.id} pet={pet} from={`/farm-dashboard/${farmId}`} />)
                 )}
               </div>
             </div>
@@ -390,12 +390,12 @@ export default function MyPetsPage() {
   );
 }
 
-function PetRow({ pet }: { pet: any }) {
+function PetRow({ pet, from }: { pet: any; from: string }) {
   const isMale = pet.gender === "male" || pet.gender === "ตัวผู้";
   const breed = pet.breed || speciesTh(pet.species) || "ไม่ระบุสายพันธุ์";
 
   return (
-    <Link href={`/pets/${pet.id}`} className="pet-row">
+    <Link href={`/pets/${pet.id}?from=${encodeURIComponent(from)}`} className="pet-row">
       <div className="pet-avatar">
         {pet.image_url ? (
           <img src={pet.image_url} alt={pet.name} />

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { speciesTh } from '@/lib/species';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
@@ -79,7 +79,9 @@ type PedigreeNode = {
 export default function PetDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const petId = params.id as string;
+  const from = searchParams.get('from');
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
@@ -968,7 +970,7 @@ export default function PetDetailPage() {
 
         {/* ─── Topbar ─── */}
         <div className="topbar">
-          <button className="topbar-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+          <button className="topbar-back" onClick={() => from ? router.push(from) : router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
           <div className="topbar-titles">
             <div className="topbar-title">โปรไฟล์สัตว์เลี้ยง</div>
             <div className="topbar-sub">{pet.name}</div>
@@ -993,7 +995,7 @@ export default function PetDetailPage() {
                 <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
               </div>
               {isOwner && (
-                <Link href={`/pets/${pet.id}/edit`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
+                <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
                   <img src="/icons/icon-edit.png" alt="แก้ไข" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                 </Link>
               )}
