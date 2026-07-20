@@ -74,12 +74,28 @@ export default function RegisterServicePage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
+  const [profileData, setProfileData] = useState<any>(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent('/partner/register-service')}`);
       setUserId(session.user.id);
+      supabase.from('profiles').select('full_name,phone,house_no,room_no,moo,soi,road,sub_district,district,province,postal_code').eq('id', session.user.id).single().then(({ data }) => {
+        if (data) setProfileData(data);
+      });
     });
   }, [router]);
+
+  const fillFromProfile = () => {
+    if (!profileData) return;
+    setForm(f => ({ ...f, owner_name: profileData.full_name || '', phone: profileData.phone || '' }));
+    setAddr({
+      house_no: profileData.house_no || '', room_no: profileData.room_no || '',
+      moo: profileData.moo || '', soi: profileData.soi || '', road: profileData.road || '',
+      sub_district: profileData.sub_district || '', district: profileData.district || '',
+      province: profileData.province || '', postal_code: profileData.postal_code || '',
+    });
+  };
 
   useEffect(() => {
     if (!mapVisible) return;
@@ -286,6 +302,8 @@ export default function RegisterServicePage() {
         .sv-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.blue}; color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
         .sv-btn:hover { background: #1D4FD7; }
         .sv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .sv-autofill-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid ${F.blueBorder}; background: ${F.blueSoft}; color: ${F.blue}; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; margin-bottom: 14px; }
+        .sv-autofill-btn:hover { background: #DBEAFE; }
 
         .sv-modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
         .sv-modal-card { background: white; width: 100%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -353,6 +371,12 @@ export default function RegisterServicePage() {
               <label className="sv-label">ชื่อร้าน / ชื่อบริการ <span className="sv-req">*</span></label>
               <input className="sv-input" value={form.service_name} onChange={e => setForm({ ...form, service_name: e.target.value })} placeholder="ชื่อบริการของคุณ" />
             </div>
+            {profileData && (
+              <button type="button" className="sv-autofill-btn" onClick={fillFromProfile}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ใช้ข้อมูลจากโปรไฟล์ของฉัน
+              </button>
+            )}
             <div className="sv-field">
               <label className="sv-label">ชื่อ-สกุลเจ้าของ <span className="sv-req">*</span></label>
               <input className="sv-input" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} placeholder="ชื่อจริง นามสกุล" />
