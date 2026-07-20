@@ -531,6 +531,63 @@ export default function ProfilePage() {
           )}
         </section>
 
+        {/* 7-Day Calendar + Upcoming Events */}
+        {pets.length > 0 && (
+          <section className="pp-section">
+            <div className="pp-section-head">
+              <span className="pp-section-title">ปฏิทินดูแลสัตว์เลี้ยง</span>
+              <Link href="/profile/calendar" className="pp-see-all">ดูทั้งหมด ›</Link>
+            </div>
+            <div className="pp-card" style={{ padding: "12px 10px" }}>
+              <div className="pp-cal-strip">
+                {calendarData.days.map(({ date, dateKey, dayName, events }) => (
+                  <div
+                    key={dateKey}
+                    className={`pp-cal-day${dateKey === calendarData.todayKey ? " today" : ""}`}
+                  >
+                    <span className="pp-cal-day-name">{dayName}</span>
+                    <span className="pp-cal-date">{date.getDate()}</span>
+                    <div className="pp-cal-icons">
+                      {events.slice(0, 2).map((ev, i) => (
+                        <img key={i} src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-cal-icon" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="pp-upcoming-list">
+                {upcomingEvents.map((ev, i) => {
+                  const isToday = ev.dueDate.toDateString() === new Date().toDateString();
+                  const isTomorrow = ev.dueDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                  return (
+                    <div key={i} className="pp-upcoming-item">
+                      <div className="pp-upcoming-date">
+                        <span className="pp-upcoming-date-num">{ev.dueDate.getDate()}</span>
+                        <span className="pp-upcoming-date-mon">{shortMonthNames[ev.dueDate.getMonth()]}</span>
+                      </div>
+                      <div className="pp-upcoming-divider" />
+                      <img src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-upcoming-icon" />
+                      <div className="pp-upcoming-text">
+                        <span className="pp-upcoming-title">{ev.vaccine_name || "ดูแลสุขภาพ"}</span>
+                        <span className="pp-upcoming-pet">{ev.petName}</span>
+                      </div>
+                      {(isToday || isTomorrow) && (
+                        <span className={`pp-upcoming-badge ${isToday ? "today" : "soon"}`}>
+                          {isToday ? "วันนี้" : "พรุ่งนี้"}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="pp-cal-empty">ไม่มีกำหนดการวัคซีนใน 30 วันข้างหน้า</div>
+            )}
+          </section>
+        )}
+
         {/* Pet Care Score + Tasks */}
         {pets.length > 0 && (
           <div className="pp-2col">
@@ -590,63 +647,6 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-        )}
-
-        {/* 7-Day Calendar + Upcoming Events */}
-        {pets.length > 0 && (
-          <section className="pp-section">
-            <div className="pp-section-head">
-              <span className="pp-section-title">ปฏิทินดูแลสัตว์เลี้ยง</span>
-              <Link href="/profile/calendar" className="pp-see-all">ดูทั้งหมด ›</Link>
-            </div>
-            <div className="pp-card" style={{ padding: "12px 10px" }}>
-              <div className="pp-cal-strip">
-                {calendarData.days.map(({ date, dateKey, dayName, events }) => (
-                  <div
-                    key={dateKey}
-                    className={`pp-cal-day${dateKey === calendarData.todayKey ? " today" : ""}`}
-                  >
-                    <span className="pp-cal-day-name">{dayName}</span>
-                    <span className="pp-cal-date">{date.getDate()}</span>
-                    <div className="pp-cal-icons">
-                      {events.slice(0, 2).map((ev, i) => (
-                        <img key={i} src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-cal-icon" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {upcomingEvents.length > 0 ? (
-              <div className="pp-upcoming-list">
-                {upcomingEvents.map((ev, i) => {
-                  const isToday = ev.dueDate.toDateString() === new Date().toDateString();
-                  const isTomorrow = ev.dueDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
-                  return (
-                    <div key={i} className="pp-upcoming-item">
-                      <div className="pp-upcoming-date">
-                        <span className="pp-upcoming-date-num">{ev.dueDate.getDate()}</span>
-                        <span className="pp-upcoming-date-mon">{shortMonthNames[ev.dueDate.getMonth()]}</span>
-                      </div>
-                      <div className="pp-upcoming-divider" />
-                      <img src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-upcoming-icon" />
-                      <div className="pp-upcoming-text">
-                        <span className="pp-upcoming-title">{ev.vaccine_name || "ดูแลสุขภาพ"}</span>
-                        <span className="pp-upcoming-pet">{ev.petName}</span>
-                      </div>
-                      {(isToday || isTomorrow) && (
-                        <span className={`pp-upcoming-badge ${isToday ? "today" : "soon"}`}>
-                          {isToday ? "วันนี้" : "พรุ่งนี้"}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="pp-cal-empty">ไม่มีกำหนดการวัคซีนใน 30 วันข้างหน้า</div>
-            )}
-          </section>
         )}
 
         {/* Recent Activities */}
