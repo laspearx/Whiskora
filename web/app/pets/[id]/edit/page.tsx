@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { speciesToId, speciesIcon } from "@/lib/species";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { PET_GENDER, PET_STATUS, type PetGender } from "@/lib/constants";
 import PageLoader from "@/app/components/PageLoader";
@@ -53,7 +53,9 @@ const BLOOD_TYPES = ["A","B","AB","Unknown"];
 export default function EditPetPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const petId = params.id as string;
+  const from = searchParams.get('from');
 
   const [isFetching, setIsFetching] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -221,7 +223,7 @@ export default function EditPetPage() {
       alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else {
-      router.replace(`/pets/${petId}`);
+      router.back();
       router.refresh();
     }
   };

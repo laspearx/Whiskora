@@ -767,14 +767,13 @@ function FarmDashboardContent() {
                 {activeLitters.length > 0 && <span className="fd-sec-badge" style={{ background: F.pinkSoft, color: F.pink }}>{activeLitters.length}</span>}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {activeLitters.length > 2 && <Link href={`/farm-dashboard/${farmId}/litters`} className="fd-link-sm">ดูทั้งหมด</Link>}
                 <Link href={`/farm-dashboard/${farmId}/litters/create`} className="fd-link-pill" style={{ fontSize: 10, padding: '3px 10px' }}>+ บันทึกการผสม</Link>
               </div>
             </div>
 
             {activeLitters.length === 0 ? (
               <div className="fd-empty-sm">ยังไม่มีครอกที่กำลังดำเนิน</div>
-            ) : activeLitters.slice(0, 2).map(litter => {
+            ) : activeLitters.map(litter => {
               const species = litter.dam?.species || farm?.pet_type;
               const si = deriveLitterStatus(litter, species);
               const { status, daysPregnant, daysUntilWindowStart, daysOverdue, minDueDate, maxDueDate } = si;
