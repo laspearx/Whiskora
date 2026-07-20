@@ -263,7 +263,7 @@ function BulkCreateContent() {
         .bc-add-row { width: 100%; margin-top: 16px; padding: 16px; border-radius: 16px; border: 1.5px dashed ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s; font-family: inherit; }
         .bc-add-row:hover { background: #FDE7EF; border-color: ${F.pink}; }
         /* sticky save bar */
-        .bc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .bc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .bc-savebar-inner { max-width: 920px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .bc-savebar-count { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
         .bc-savebar-count b { color: ${F.pink}; font-family: inherit; font-size: 16px; }

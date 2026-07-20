@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
 import PageLoader from '@/app/components/PageLoader';
-import { useWorkspace } from "@/app/contexts/WorkspaceContext";
+import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -23,7 +23,6 @@ const Icon = {
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { refreshWorkspaces } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -31,7 +30,7 @@ export default function EditProfilePage() {
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [addr, setAddr] = useState<AddressValue>(emptyAddress());
 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -50,7 +49,12 @@ export default function EditProfilePage() {
         setFullName(data.full_name || "");
         setAvatarUrl(data.avatar_url || null);
         setPhone(data.phone || "");
-        setAddress(data.address || "");
+        setAddr({
+          house_no: data.house_no || "", room_no: data.room_no || "",
+          moo: data.moo || "", soi: data.soi || "", road: data.road || "",
+          sub_district: data.sub_district || "", district: data.district || "",
+          province: data.province || "", postal_code: data.postal_code || "",
+        });
       }
       setLoading(false);
     };
@@ -103,14 +107,18 @@ export default function EditProfilePage() {
     const { data: { session } } = await supabase.auth.getSession();
     const { error } = await supabase.from("profiles").upsert({
       id: session?.user.id,
-      username, full_name: fullName, avatar_url: avatarUrl, phone, address,
+      username, full_name: fullName, avatar_url: avatarUrl, phone,
+      address: composeAddress(addr),
+      house_no: addr.house_no || null, room_no: addr.room_no || null,
+      moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
+      sub_district: addr.sub_district || null, district: addr.district || null,
+      province: addr.province || null, postal_code: addr.postal_code || null,
       updated_at: new Date(),
     });
     if (error) {
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
     } else {
-      await refreshWorkspaces();
       router.replace("/profile");
       router.refresh();
     }
@@ -144,7 +152,7 @@ export default function EditProfilePage() {
         .pe-input, .pe-textarea { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
         .pe-input:focus, .pe-textarea:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .pe-textarea { resize: none; }
-        .pe-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .pe-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
         .pe-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
         .pe-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .pe-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
@@ -201,8 +209,8 @@ export default function EditProfilePage() {
                   <input type="tel" className="pe-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08X-XXX-XXXX" />
                 </div>
                 <div className="pe-field">
-                  <label className="pe-label">ที่อยู่ <span className="opt">(จังหวัด/พื้นที่)</span></label>
-                  <textarea className="pe-textarea" rows={2} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="เช่น กรุงเทพมหานคร" />
+                  <label className="pe-label">ที่อยู่</label>
+                  <AddressFields value={addr} onChange={setAddr} />
                 </div>
               </div>
             </form>
