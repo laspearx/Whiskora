@@ -1,0 +1,89 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    # ข้าม ถ้า commit นี้คือ version bump เอง (กันลูป)
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine bump type from commit messages
+        id: bump_type
+        run: |
+          # ดึง commits ตั้งแต่ tag ล่าสุด (ถ้าไม่มี tag ใช้ 20 commits ล่าสุด)
+          if git describe --tags --abbrev=0 2>/dev/null; then
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s %b")
+          else
+            COMMITS=$(git log --pretty=format:"%s %b" -30)
+          fi
+
+          echo "=== Commits analysed ==="
+          echo "$COMMITS"
+          echo "========================"
+
+          if echo "$COMMITS" | grep -qiE "BREAKING[[:space:]]CHANGE|^[a-z]+(\(.+\))?!:"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?[!]?:"; then
+            BUMP="minor"
+          else
+            BUMP="patch"
+          fi
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "Bump type: $BUMP"
+
+      - name: Calculate new version
+        id: new_ver
+        run: |
+          CURRENT=$(node -p "require('./web/package.json').version")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          BUMP="${{ steps.bump_type.outputs.bump }}"
+
+          case "$BUMP" in
+            major) NEW="$((MAJOR + 1)).0.0" ;;
+            minor) NEW="${MAJOR}.$((MINOR + 1)).0" ;;
+            patch) NEW="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
+          esac
+
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "New version: $NEW ($BUMP)"
+
+      - name: Update web/package.json
+        run: |
+          V="${{ steps.new_ver.outputs.version }}"
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('web/package.json', 'utf8'));
+            p.version = '$V';
+            fs.writeFileSync('web/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+
+      - name: Update web/lib/version.ts
+        run: |
+          V="${{ steps.new_ver.outputs.version }}"
+          echo "export const APP_VERSION = \"$V\";" > web/lib/version.ts
+
+      - name: Commit and tag
+        run: |
+          V="${{ steps.new_ver.outputs.version }}"
+          BUMP="${{ steps.new_ver.outputs.bump }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/package.json web/lib/version.ts
+          git commit -m "chore: bump version to v${V} (${BUMP})"
+          git tag "v${V}"
+          git push origin main --tags
