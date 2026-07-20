@@ -528,7 +528,7 @@ export default function ProfilePage() {
             {[
               { href: "/profile/pets", icon: "/icons/icon-my-pets.png", label: "สัตว์เลี้ยง\nของฉัน" },
               { href: "/pets/vaccines/bulk-add", icon: "/icons/icon-vaccine.png", label: "บันทึก\nวัคซีน" },
-              { href: "/health", icon: "/icons/icon-health.png", label: "ประวัติ\nสุขภาพ" },
+              { href: "/pets/vaccines/all", icon: "/icons/icon-health.png", label: "ประวัติ\nสุขภาพ" },
               { href: "/profile/calendar", icon: "/icons/icon-calendar.png", label: "ปฏิทิน" },
               { href: "/service-hub", icon: "/icons/icon-partner.png", label: "ร้านค้า\nบริการ" },
               { href: "/profile/finance", icon: "/icons/icon-wallet.png", label: "รายรับ\nรายจ่าย" },
