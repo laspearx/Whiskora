@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,7 +23,6 @@ const CIRCUMFERENCE = 2 * Math.PI * 44;
 
 type VaccineRow = { next_due: string | null; vaccine_name: string | null; pet_id: string | null };
 type ActivityRow = { id: string; pet_id: string; activity_type: string | null; title: string; activity_date: string };
-type BusinessLinkProps = { href: string; label: string; type: string; icon: ReactNode; verified?: boolean };
 type CropType = "avatar" | "cover";
 
 function formatMemberSince(dateStr: string): string {
@@ -61,9 +59,6 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
-  const [myFarms, setMyFarms] = useState<any[]>([]);
-  const [myShops, setMyShops] = useState<any[]>([]);
-  const [myServices, setMyServices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<VaccineRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [vaccinatedPetIds, setVaccinatedPetIds] = useState<Set<string>>(new Set());
@@ -89,18 +84,12 @@ export default function ProfilePage() {
         setUser(session.user);
         const uid = session.user.id;
 
-        const [profRes, farmRes, shopRes, svcRes, petsRes] = await Promise.all([
+        const [profRes, petsRes] = await Promise.all([
           supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-          supabase.from("farms").select("*").eq("user_id", uid),
-          supabase.from("shops").select("*").eq("user_id", uid),
-          supabase.from("services").select("*").eq("user_id", uid),
           supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 
         if (profRes.data) setProfile(profRes.data);
-        if (farmRes.data) setMyFarms(farmRes.data);
-        if (shopRes.data) setMyShops(shopRes.data);
-        if (svcRes.data) setMyServices(svcRes.data);
         if (petsRes.data) setPets(petsRes.data);
 
         if (petsRes.data?.length) {
@@ -175,7 +164,6 @@ export default function ProfilePage() {
   const displayName = profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Whiskora User";
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
   const coverUrl = profile?.cover_url;
-  const isPartner = myFarms.length > 0 || myShops.length > 0 || myServices.length > 0;
 
   const petCareChecks = useMemo(() => {
     if (!pets.length) return { vaccineOk: false, weightOk: false, healthOk: false, score: 0 };
@@ -316,18 +304,6 @@ export default function ProfilePage() {
         .pp-id-promo-desc { font-size: 12px; color: rgba(255,255,255,.78); line-height: 1.5; margin: 0; }
         .pp-id-promo-hint { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.28); color: white; font-size: 12px; font-weight: 600; }
         .pp-id-promo-qr { flex-shrink: 0; opacity: .88; }
-
-        /* ── Business ── */
-        .pp-biz-list { display: grid; gap: 8px; }
-        .pp-biz-link { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid ${F.line}; border-radius: 14px; background: white; text-decoration: none; color: ${F.ink}; transition: transform .14s ease, border-color .14s ease; }
-        .pp-biz-link:hover { transform: translateY(-2px); border-color: #e0b8c8; }
-        .pp-biz-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .pp-biz-icon img { width: 48px; height: 48px; object-fit: contain; }
-        .pp-biz-name { font-size: 15px; font-weight: 600; color: ${F.ink}; display: block; }
-        .pp-biz-badges { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
-        .pp-biz-type { padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; }
-        .pp-biz-verified { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 500; }
-        .pp-biz-verified img { width: 10px; height: 10px; object-fit: contain; }
 
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
@@ -582,26 +558,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Business */}
-        {isPartner && (
-          <section className="pp-section">
-            <div className="pp-section-head">
-              <span className="pp-section-title">ธุรกิจที่ดูแล</span>
-            </div>
-            <div className="pp-biz-list">
-              {myFarms.map((farm) => (
-                <BizLink key={farm.id} href={`/farm-dashboard/${farm.id}`} label={farm.farm_name} type="ฟาร์ม" icon={<img src="/icons/icon-farm.png" alt="" />} verified={farm.is_verified} />
-              ))}
-              {myShops.map((shop) => (
-                <BizLink key={shop.id} href={`/shop-dashboard/${shop.id}`} label={shop.shop_name} type="ร้านค้า" icon={<img src="/icons/icon-shop.png" alt="" />} verified={shop.is_verified} />
-              ))}
-              {myServices.map((svc) => (
-                <BizLink key={svc.id} href={`/service-dashboard/${svc.id}`} label={svc.service_name} type="บริการ" icon={<img src="/icons/icon-service.png" alt="" />} verified={svc.is_verified} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Admin */}
         {profile?.role === "admin" && (
           <section className="pp-section">
@@ -627,22 +583,3 @@ export default function ProfilePage() {
   );
 }
 
-function BizLink({ href, label, type, icon, verified }: BusinessLinkProps) {
-  return (
-    <Link className="pp-biz-link" href={href}>
-      <span className="pp-biz-icon">{icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <span className="pp-biz-name">{label}</span>
-        <div className="pp-biz-badges">
-          <span className="pp-biz-type">{type}</span>
-          {verified && (
-            <span className="pp-biz-verified">
-              <img src="/icons/icon-verified.png" alt="" />
-              ยืนยันแล้ว
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
