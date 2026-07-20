@@ -49,16 +49,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setWorkspaces([]); setActiveId(null); setLoading(false); return; }
 
-    const { data, error } = await supabase
+    const { data: memberships, error: err1 } = await supabase
       .from("workspace_members")
-      .select("role, workspaces(*)")
+      .select("workspace_id, role")
       .eq("user_id", session.user.id);
 
-    if (error || !data) { setLoading(false); return; }
+    if (err1 || !memberships?.length) { setLoading(false); return; }
 
-    const ws: Workspace[] = (data as any[])
-      .filter((row) => row.workspaces)
-      .map((row) => ({ ...(row.workspaces as any), myRole: row.role as MemberRole }));
+    const wsIds = memberships.map((m: any) => m.workspace_id);
+    const { data: wsData, error: err2 } = await supabase
+      .from("workspaces")
+      .select("*")
+      .in("id", wsIds);
+
+    if (err2 || !wsData) { setLoading(false); return; }
+
+    const ws: Workspace[] = wsData.map((w: any) => ({
+      ...w,
+      myRole: (memberships.find((m: any) => m.workspace_id === w.id)?.role ?? "viewer") as MemberRole,
+    }));
 
     ws.sort((a, b) => {
       if (a.type === "personal") return -1;
