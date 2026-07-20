@@ -315,7 +315,6 @@ function ServiceDashboardContent() {
                 </div>
               </div>
             </div>
-          </div>
         </div>{/* end svd-identity */}
 
         <div className="svd-body">

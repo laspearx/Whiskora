@@ -312,7 +312,6 @@ function ShopDashboardContent() {
                 </div>
               </div>
             </div>
-          </div>
         </div>{/* end sd-identity */}
 
         <div className="sd-body">
