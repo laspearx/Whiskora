@@ -244,7 +244,7 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-600 text-sm font-semibold hover:bg-gray-100 transition-colors"
                   title="เปลี่ยนพื้นที่ใช้งาน"
                 >
-                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={18} height={18} style={{ objectFit: 'contain' }} />
+                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={36} height={36} style={{ objectFit: 'contain' }} />
                   <span className="max-w-[110px] truncate">{activeWorkspace?.name ?? '—'}</span>
                   <ChevronDown open={workspaceOpen} />
                 </button>
@@ -257,7 +257,7 @@ export default function Navbar() {
                         <button key={ws.id} onClick={() => switchWs(ws)}
                           className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
                         >
-                          <img src={wsIconSrc(ws.type)} alt="" width={22} height={22} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                          <img src={wsIconSrc(ws.type)} alt="" width={44} height={44} style={{ objectFit: 'contain', flexShrink: 0 }} />
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold truncate leading-tight">{ws.name}</div>
                             <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>
@@ -338,7 +338,7 @@ export default function Navbar() {
                   aria-label="เปลี่ยนพื้นที่ใช้งาน"
                   className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
-                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={22} height={22} style={{ objectFit: 'contain' }} />
+                  <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={44} height={44} style={{ objectFit: 'contain' }} />
                 </button>
 
                 {workspaceOpen && (
@@ -349,7 +349,7 @@ export default function Navbar() {
                         <button key={ws.id} onClick={() => switchWs(ws)}
                           className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
                         >
-                          <img src={wsIconSrc(ws.type)} alt="" width={22} height={22} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                          <img src={wsIconSrc(ws.type)} alt="" width={44} height={44} style={{ objectFit: 'contain', flexShrink: 0 }} />
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold truncate leading-tight">{ws.name}</div>
                             <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>

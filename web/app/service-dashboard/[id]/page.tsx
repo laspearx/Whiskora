@@ -81,9 +81,7 @@ function ServiceDashboardContent() {
         .svd-body { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
         .svd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
         .svd-top-left { display: flex; align-items: center; gap: 14px; }
-        .svd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
-        .svd-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
-        .svd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
+.svd-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.3px; }
         .svd-sub { font-size: 12px; font-weight: 700; color: ${F.blue}; margin-top: 2px; }
         .svd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.blue}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.25); transition: all .15s; white-space: nowrap; }
         .svd-add:hover { background: #1D4FD7; }
@@ -129,8 +127,7 @@ function ServiceDashboardContent() {
           <div className="svd-body">
             <div className="svd-top">
               <div className="svd-top-left">
-                <button className="svd-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-                <div>
+<div>
                   <h1 className="svd-title">{service?.service_name}</h1>
                   <p className="svd-sub">แดชบอร์ดจัดการบริการ</p>
                 </div>
