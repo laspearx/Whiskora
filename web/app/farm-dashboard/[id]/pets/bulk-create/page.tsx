@@ -33,6 +33,7 @@ const breedData: Record<string, string[]> = {
 
 const STATUS_OPTIONS = ["พ่อพันธุ์ / แม่พันธุ์", "เด็ก", "พร้อมย้ายบ้าน", "ติดจอง", "ทำหมัน / ปลดระวาง"];
 
+const EYE_OPTIONS = ["เขียว", "เหลือง", "ส้ม/ค็อปเปอร์", "ฟ้า", "ตาสองสี", "อื่นๆ"];
 const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
 const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
 const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
@@ -59,6 +60,7 @@ type PetRow = {
   leg: string;
   coat: string;
   eye_color: string;
+  custom_eye_color: string;
   price: string;
   status: string;
   sire_id: string;
@@ -68,7 +70,7 @@ type PetRow = {
 const blankRow = (): PetRow => ({
   key: Math.random().toString(36).slice(2),
   name: '', gender: '', birth_date: '', breed: '', color: '',
-  ear: '', leg: '', coat: '', eye_color: '', price: '',
+  ear: '', leg: '', coat: '', eye_color: '', custom_eye_color: '', price: '',
   status: 'พ่อพันธุ์ / แม่พันธุ์', sire_id: '', dam_id: '',
 });
 
@@ -153,7 +155,7 @@ function BulkCreateContent() {
         ear: r.ear || null,
         leg: r.leg || null,
         coat: r.coat || null,
-        eye_color: r.eye_color || null,
+        eye_color: (r.eye_color === 'อื่นๆ' ? r.custom_eye_color : r.eye_color) || null,
         price: r.price ? Number(r.price) : null,
         status: r.status || null,
         sire_id: r.sire_id || null,
@@ -328,7 +330,13 @@ function BulkCreateContent() {
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">สีตา</label>
-                    <input className="bc-input" type="text" value={row.eye_color} onChange={e => updateRow(row.key, 'eye_color', e.target.value)} placeholder="เช่น ดำ, น้ำตาล, เหลือง..." />
+                    <select className="bc-select" value={row.eye_color} onChange={e => updateRow(row.key, 'eye_color', e.target.value)}>
+                      <option value="">เลือกสีตา</option>
+                      {EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    {row.eye_color === 'อื่นๆ' && (
+                      <input className="bc-input" type="text" style={{ marginTop: 6 }} placeholder="ระบุสีตา..." value={row.custom_eye_color} onChange={e => updateRow(row.key, 'custom_eye_color', e.target.value)} />
+                    )}
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">ราคา (บาท)</label>
