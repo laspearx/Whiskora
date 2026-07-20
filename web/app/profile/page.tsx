@@ -7,6 +7,7 @@ import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { getNotifPermission, getOrCreateSubscription, type NotifPermission } from "@/lib/push-client";
 
 const F = {
   ink: "#1f1a1c",
@@ -66,6 +67,10 @@ export default function ProfilePage() {
   const [hasHealthActivities, setHasHealthActivities] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Notification state
+  const [notifPerm, setNotifPerm] = useState<NotifPermission>("default");
+  const [notifLoading, setNotifLoading] = useState(false);
+
   // Crop state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropType, setCropType] = useState<CropType | null>(null);
@@ -110,6 +115,7 @@ export default function ProfilePage() {
             ));
           }
         }
+      setNotifPerm(getNotifPermission());
       } catch (err) {
         console.error("Profile load error:", err);
       } finally {
@@ -118,6 +124,30 @@ export default function ProfilePage() {
     };
     load();
   }, [router]);
+
+  const handleEnableNotifications = async () => {
+    if (!user) return;
+    setNotifLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      setNotifPerm(permission as NotifPermission);
+      if (permission !== "granted") return;
+      const sub = await getOrCreateSubscription();
+      if (!sub) return;
+      const json = sub.toJSON();
+      await supabase.from("push_subscriptions").upsert({
+        user_id: user.id,
+        endpoint: json.endpoint!,
+        p256dh: (json.keys as Record<string, string>).p256dh,
+        auth: (json.keys as Record<string, string>).auth,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "endpoint" });
+    } catch (err) {
+      console.error("Push setup error:", err);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
 
   // Crop helpers
   const openCrop = (file: File, type: CropType) => {
@@ -347,6 +377,13 @@ export default function ProfilePage() {
         .pp-act-meta { display: block; font-size: 11px; color: ${F.muted}; }
         .pp-act-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; white-space: nowrap; }
 
+        /* ── Notification button ── */
+        .pp-notif-btn { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; border: 1.5px solid ${F.line}; background: white; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; cursor: pointer; white-space: nowrap; transition: border-color .15s, background .15s; }
+        .pp-notif-btn:hover { border-color: ${F.pink}; }
+        .pp-notif-btn.on { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pinkDeep}; }
+        .pp-notif-btn.denied { opacity: .55; cursor: not-allowed; }
+        .pp-notif-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
         .pp-admin-link { display: flex; align-items: center; gap: 14px; text-decoration: none; color: ${F.ink}; }
@@ -435,9 +472,27 @@ export default function ProfilePage() {
                 <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
               )}
             </div>
-            <Link href="/profile/edit" className="pp-edit-btn" aria-label="แก้ไขโปรไฟล์">
-              <img src="/icons/icon-setting.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {notifPerm !== "unsupported" && (
+                <button
+                  type="button"
+                  className={`pp-notif-btn${notifPerm === "granted" ? " on" : ""}${notifPerm === "denied" ? " denied" : ""}`}
+                  onClick={notifPerm !== "denied" ? handleEnableNotifications : undefined}
+                  disabled={notifLoading || notifPerm === "denied"}
+                  title={notifPerm === "denied" ? "บล็อกการแจ้งเตือนในเบราว์เซอร์แล้ว" : undefined}
+                >
+                  {notifPerm === "granted" ? (
+                    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  )}
+                  {notifLoading ? "..." : notifPerm === "granted" ? "เปิดอยู่" : notifPerm === "denied" ? "ถูกบล็อก" : "แจ้งเตือน"}
+                </button>
+              )}
+              <Link href="/profile/edit" className="pp-edit-btn" aria-label="แก้ไขโปรไฟล์">
+                <img src="/icons/icon-setting.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              </Link>
+            </div>
           </div>
         </div>
 
