@@ -156,7 +156,7 @@ export default function SettingsPage() {
 
           {/* Header */}
           <div className="ps-header">
-            <button className="ps-back" onClick={() => router.back()} type="button" aria-label="ย้อนกลับ">
+            <button className="ps-back" onClick={() => router.push('/profile')} type="button" aria-label="ย้อนกลับ">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <div>
