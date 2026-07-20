@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
 import PageLoader from '@/app/components/PageLoader';
+import { useWorkspace } from "@/app/contexts/WorkspaceContext";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -22,6 +23,7 @@ const Icon = {
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { refreshWorkspaces } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -108,6 +110,7 @@ export default function EditProfilePage() {
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
     } else {
+      await refreshWorkspaces();
       router.replace("/profile");
       router.refresh();
     }

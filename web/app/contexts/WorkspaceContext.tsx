@@ -79,7 +79,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     loadWorkspaces();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") { setWorkspaces([]); setActiveId(null); setLoading(false); }
-      else if (event === "SIGNED_IN") { loadWorkspaces(); }
+      else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") { loadWorkspaces(); }
     });
     return () => subscription.unsubscribe();
   }, [loadWorkspaces]);
