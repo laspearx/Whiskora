@@ -178,21 +178,21 @@ function ServiceDashboardContent() {
         .svd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:600; color:${F.blue}; }
 
         .svd-identity { padding:0 0 14px; }
-        .svd-id-row { position:relative; z-index:1; display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
+        .svd-id-row { display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
         .svd-avatar-wrap { position:relative; flex-shrink:0; }
-        .svd-avatar { width:86px; height:86px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.blueSoft}; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
+        .svd-avatar { width:80px; height:80px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.blueSoft}; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
         .svd-avatar img { width:100%; height:100%; object-fit:cover; }
-        .svd-avatar-edit { position:absolute; bottom:2px; right:0px; width:26px; height:26px; background:white; border-radius:999px; border:2px solid ${F.line}; color:${F.blue}; display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.1); z-index:2; }
+        .svd-avatar-edit { position:absolute; bottom:2px; right:0px; width:24px; height:24px; background:white; border-radius:999px; border:2px solid ${F.line}; color:${F.blue}; display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.1); z-index:2; }
         .svd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:1; }
         .svd-id-main { flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
         .svd-id-text { flex:1; min-width:0; }
-        .svd-name { font-size:20px; font-weight:700; color:${F.ink}; line-height:1.2; margin:0 0 2px; }
-        .svd-tagline { font-size:13px; color:${F.muted}; font-weight:400; }
-        .svd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:500; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; }
+        .svd-name { font-size:18px; font-weight:700; color:${F.ink}; line-height:1.25; margin:0 0 2px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .svd-tagline { font-size:12px; color:${F.muted}; font-weight:400; }
+        .svd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:500; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; white-space:nowrap; }
         .svd-view-btn:hover { background:#E5E7EB; }
         .svd-edit-icon { flex-shrink:0; display:flex; align-items:center; justify-content:center; text-decoration:none; }
 
-        .svd-body { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+        .svd-body { max-width: 960px; margin: 0 auto; }
         .svd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.blue}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.25); transition: all .15s; white-space: nowrap; }
         .svd-add:hover { background: #1D4FD7; }
         .svd-top-action { display:flex; justify-content:flex-end; margin-bottom:22px; }
@@ -274,9 +274,8 @@ function ServiceDashboardContent() {
           )}
         </div>
 
-        {/* Identity */}
-        <div className="svd-body">
-          <div className="svd-identity">
+        {/* Identity — outside svd-body so it inherits main's px-4 padding */}
+        <div className="svd-identity">
             <div className="svd-id-row">
               <div className="svd-avatar-wrap">
                 <div className="svd-avatar" onClick={() => canEdit && avatarInputRef.current?.click()} style={{ cursor: canEdit ? 'pointer' : 'default' }}>
@@ -317,7 +316,9 @@ function ServiceDashboardContent() {
               </div>
             </div>
           </div>
+        </div>{/* end svd-identity */}
 
+        <div className="svd-body">
           <div className="svd-top-action">
             {canEdit && (
               <Link href={`/service-dashboard/${serviceId}/manage-services?from=${fromPage}`} className="svd-add"><Icon.Plus /> จัดการบริการ</Link>

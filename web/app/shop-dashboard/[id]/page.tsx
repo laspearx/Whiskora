@@ -175,21 +175,21 @@ function ShopDashboardContent() {
         .sd-cover-spin { position:absolute; inset:0; background:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:center; z-index:3; font-size:13px; font-weight:600; color:${F.teal}; }
 
         .sd-identity { padding:0 0 14px; }
-        .sd-id-row { position:relative; z-index:1; display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
+        .sd-id-row { display:flex; align-items:center; gap:12px; margin-top:8px; padding-bottom:12px; }
         .sd-avatar-wrap { position:relative; flex-shrink:0; }
-        .sd-avatar { width:86px; height:86px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.tealSoft}; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
+        .sd-avatar { width:80px; height:80px; border-radius:50%; border:3.5px solid white; overflow:hidden; background:${F.tealSoft}; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.13); cursor:pointer; position:relative; }
         .sd-avatar img { width:100%; height:100%; object-fit:cover; }
-        .sd-avatar-edit { position:absolute; bottom:2px; right:0px; width:26px; height:26px; background:white; border-radius:999px; border:2px solid ${F.line}; color:${F.teal}; display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.1); z-index:2; }
+        .sd-avatar-edit { position:absolute; bottom:2px; right:0px; width:24px; height:24px; background:white; border-radius:999px; border:2px solid ${F.line}; color:${F.teal}; display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.1); z-index:2; }
         .sd-avatar-spin { position:absolute; inset:0; background:rgba(255,255,255,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:1; }
         .sd-id-main { flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
         .sd-id-text { flex:1; min-width:0; }
-        .sd-name { font-size:20px; font-weight:700; color:${F.ink}; line-height:1.2; margin:0 0 2px; }
-        .sd-tagline { font-size:13px; color:${F.muted}; font-weight:400; }
-        .sd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:500; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; }
+        .sd-name { font-size:18px; font-weight:700; color:${F.ink}; line-height:1.25; margin:0 0 2px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .sd-tagline { font-size:12px; color:${F.muted}; font-weight:400; }
+        .sd-view-btn { display:inline-flex; align-items:center; gap:4px; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:500; background:#F3F4F6; color:${F.inkSoft}; text-decoration:none; transition:background .15s; white-space:nowrap; }
         .sd-view-btn:hover { background:#E5E7EB; }
         .sd-edit-icon { flex-shrink:0; display:flex; align-items:center; justify-content:center; text-decoration:none; }
 
-        .sd-body { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+        .sd-body { max-width: 960px; margin: 0 auto; }
         .sd-add { display: inline-flex; align-items: center; gap: 6px; background: ${F.teal}; color: white; padding: 11px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(13,148,136,0.25); transition: all .15s; white-space: nowrap; }
         .sd-add:hover { background: #0B7E74; }
         .sd-top-action { display:flex; justify-content:flex-end; margin-bottom:22px; }
@@ -271,9 +271,8 @@ function ShopDashboardContent() {
           )}
         </div>
 
-        {/* Identity */}
-        <div className="sd-body">
-          <div className="sd-identity">
+        {/* Identity — outside sd-body so it inherits main's px-4 padding */}
+        <div className="sd-identity">
             <div className="sd-id-row">
               <div className="sd-avatar-wrap">
                 <div className="sd-avatar" onClick={() => canEdit && avatarInputRef.current?.click()} style={{ cursor: canEdit ? 'pointer' : 'default' }}>
@@ -314,7 +313,9 @@ function ShopDashboardContent() {
               </div>
             </div>
           </div>
+        </div>{/* end sd-identity */}
 
+        <div className="sd-body">
           <div className="sd-top-action">
             {canEdit && (
               <Link href={`/shop-dashboard/${shopId}/products/create?from=${fromPage}`} className="sd-add"><Icon.Plus /> เพิ่มสินค้า</Link>
