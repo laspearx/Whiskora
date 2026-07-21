@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import DefaultBottomNav from "@/app/components/DefaultBottomNav";
 
 export type ServiceRole = "owner" | "admin" | "staff" | "viewer";
 
@@ -64,6 +65,7 @@ export default function ServiceDashboardLayout({ children }: { children: ReactNo
   return (
     <ServiceAccessContext.Provider value={{ serviceId, myRole: role! }}>
       {children}
+      <DefaultBottomNav />
     </ServiceAccessContext.Provider>
   );
 }

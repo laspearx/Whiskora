@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import DefaultBottomNav from "@/app/components/DefaultBottomNav";
 
 export type ShopRole = "owner" | "admin" | "staff" | "viewer";
 
@@ -64,6 +65,7 @@ export default function ShopDashboardLayout({ children }: { children: ReactNode 
   return (
     <ShopAccessContext.Provider value={{ shopId, myRole: role! }}>
       {children}
+      <DefaultBottomNav />
     </ShopAccessContext.Provider>
   );
 }

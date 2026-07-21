@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import FarmBottomNav from "@/app/components/FarmBottomNav";
 
 export type FarmRole = "owner" | "admin" | "staff" | "viewer";
 
@@ -80,6 +81,7 @@ export default function FarmDashboardLayout({ children }: { children: ReactNode 
   return (
     <FarmAccessContext.Provider value={{ farmId, myRole: role! }}>
       {children}
+      <FarmBottomNav farmId={farmId} />
     </FarmAccessContext.Provider>
   );
 }
