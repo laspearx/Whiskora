@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import Cropper from 'react-easy-crop';
+import { SPECIES_LIST } from '@/lib/species';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -20,15 +21,6 @@ const SERVICE_CATEGORIES = [
   { id: 'clinic', label: 'คลินิก / โรงพยาบาลสัตว์', emoji: '🏥' },
 ];
 
-const SPECIES = [
-  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
-  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
-  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
-  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
-  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
-  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
-  { id: 'raccoon', label: 'แรคคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
-];
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -283,7 +275,7 @@ export default function RegisterServicePage() {
         .sv-species-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .sv-species-btn { padding: 12px 4px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all .15s; font-family: inherit; }
         .sv-species-btn.active { border-color: ${F.blue}; background: ${F.blueSoft}; }
-        .sv-species-btn .emoji { font-size: 20px; }
+        .sv-species-btn .emoji { width: 28px; height: 28px; object-fit: contain; }
         .sv-species-btn .lbl { font-size: 10px; font-weight: 700; color: ${F.inkSoft}; }
         .sv-species-btn.active .lbl { color: ${F.blue}; }
 
@@ -385,7 +377,7 @@ export default function RegisterServicePage() {
               <label className="sv-label">ประเภทบริการ <span className="sv-req">*</span></label>
               <select className="sv-select" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
                 <option value="" disabled>เลือกประเภทบริการ</option>
-                {SERVICE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                {SERVICE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
             </div>
             <div className="sv-field">
@@ -425,9 +417,9 @@ export default function RegisterServicePage() {
           <div className="sv-card">
             <div className="sv-card-title">บริการที่รองรับสัตว์ชนิดใดบ้าง? <span className="sv-req">*</span></div>
             <div className="sv-species-grid">
-              {SPECIES.map(s => (
+              {SPECIES_LIST.map(s => (
                 <button key={s.id} type="button" className={`sv-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
-                  <span className="emoji">{s.emoji}</span><span className="lbl">{s.label}</span>
+                  <img className="emoji" src={s.icon} alt={s.th} /><span className="lbl">{s.th}</span>
                 </button>
               ))}
             </div>

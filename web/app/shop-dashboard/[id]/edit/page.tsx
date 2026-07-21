@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
+import { SPECIES_LIST } from '@/lib/species';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -12,15 +13,6 @@ const F = {
   line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF',
 };
 
-const SPECIES = [
-  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
-  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
-  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
-  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
-  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
-  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
-  { id: 'raccoon', label: 'แรคคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
-];
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -215,7 +207,7 @@ export default function ShopEditPage() {
         .she-species-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .she-species-btn { padding: 12px 4px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all .15s; font-family: inherit; }
         .she-species-btn.active { border-color: ${F.teal}; background: ${F.tealSoft}; }
-        .she-species-btn .emoji { font-size: 20px; }
+        .she-species-btn .emoji { width: 28px; height: 28px; object-fit: contain; }
         .she-species-btn .lbl { font-size: 10px; font-weight: 700; color: ${F.inkSoft}; }
         .she-species-btn.active .lbl { color: ${F.teal}; }
         .she-map-toggle { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 14px; border: 1.5px dashed ${F.lineMid}; background: white; cursor: pointer; width: 100%; font-family: inherit; font-size: 14px; font-weight: 600; color: ${F.inkSoft}; transition: all .15s; }
@@ -296,9 +288,9 @@ export default function ShopEditPage() {
           <div className="she-card">
             <div className="she-card-title">ร้านของคุณมีของสำหรับสัตว์ชนิดใดบ้าง? <span className="she-req">*</span></div>
             <div className="she-species-grid">
-              {SPECIES.map(s => (
+              {SPECIES_LIST.map(s => (
                 <button key={s.id} type="button" className={`she-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
-                  <span className="emoji">{s.emoji}</span><span className="lbl">{s.label}</span>
+                  <img className="emoji" src={s.icon} alt={s.th} /><span className="lbl">{s.th}</span>
                 </button>
               ))}
             </div>

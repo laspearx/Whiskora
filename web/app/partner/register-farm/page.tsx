@@ -280,13 +280,13 @@ export default function RegisterFarmPage() {
         .pf-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .pf-species-btn { padding: 14px 8px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
         .pf-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .pf-species-btn .emoji { font-size: 24px; }
+        .pf-species-btn .emoji { width: 32px; height: 32px; object-fit: contain; }
         .pf-species-btn .lbl { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
         .pf-species-btn.active .lbl { color: ${F.pink}; }
         .pf-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
         .pf-other-btn { padding: 10px 4px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
         .pf-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .pf-other-btn .emoji { font-size: 20px; }
+        .pf-other-btn .emoji { width: 28px; height: 28px; object-fit: contain; }
         .pf-other-btn .lbl { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.2; }
         .pf-other-btn.active .lbl { color: ${F.pink}; }
 
@@ -440,10 +440,10 @@ export default function RegisterFarmPage() {
             <div className="pf-field">
               <label className="pf-label">ชนิดสัตว์ที่เพาะพันธุ์ <span className="pf-req">*</span></label>
               <div className="pf-species">
-                {[{ id: 'cat', emoji: '🐱', lbl: 'แมว' }, { id: 'dog', emoji: '🐶', lbl: 'สุนัข' }, { id: 'other', emoji: '🐾', lbl: 'อื่นๆ' }].map(t => (
+                {[{ id: 'cat', icon: '/icons/icon-species-cat.png', lbl: 'แมว' }, { id: 'dog', icon: '/icons/icon-species-dog.png', lbl: 'สุนัข' }, { id: 'other', icon: '/icons/icon-paw-pink.png', lbl: 'อื่นๆ' }].map(t => (
                   <button key={t.id} type="button" className={`pf-species-btn ${form.species === t.id ? 'active' : ''}`}
                     onClick={() => setForm({ ...form, species: t.id, subSpecies: '', customSpecies: '' })}>
-                    <span className="emoji">{t.emoji}</span><span className="lbl">{t.lbl}</span>
+                    <img className="emoji" src={t.icon} alt={t.lbl} /><span className="lbl">{t.lbl}</span>
                   </button>
                 ))}
               </div>
@@ -452,7 +452,7 @@ export default function RegisterFarmPage() {
                   {OTHER_SPECIES.map(o => (
                     <button key={o.id} type="button" className={`pf-other-btn ${form.subSpecies === o.id ? 'active' : ''}`}
                       onClick={() => setForm({ ...form, subSpecies: o.id, customSpecies: '' })}>
-                      <span className="emoji">{o.emoji}</span><span className="lbl">{o.th}</span>
+                      <img className="emoji" src={o.icon} alt={o.th} /><span className="lbl">{o.th}</span>
                     </button>
                   ))}
                 </div>
