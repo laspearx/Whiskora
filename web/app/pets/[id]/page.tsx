@@ -133,6 +133,8 @@ export default function PetDetailPage() {
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const mainPhotoRef = useRef<HTMLInputElement>(null);
+  const [uploadingMainPhoto, setUploadingMainPhoto] = useState(false);
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/p/${petId}` : '';
 
@@ -483,6 +485,28 @@ export default function PetDetailPage() {
     }
   };
 
+  // ─── ปุ่ม: อัปโหลดรูปหลัก ───
+  const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pet) return;
+    setUploadingMainPhoto(true);
+    try {
+      const resized = await resizeImage(file, 1200, 0.85);
+      const path = `${pet.id}/main.jpg`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
+      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', pet.id);
+      setPet(p => p ? { ...p, image_url: publicUrl } : p);
+      setSelectedImage(publicUrl);
+    } catch (err) {
+      console.error(err); alert('อัปโหลดรูปไม่สำเร็จ');
+    } finally {
+      setUploadingMainPhoto(false);
+      if (mainPhotoRef.current) mainPhotoRef.current.value = '';
+    }
+  };
+
   // ─── ปุ่ม: ลบรูปจากแกลลอรี่ ───
   const handleDeleteGalleryImage = async (url: string) => {
     if (!pet || !confirm('ลบรูปนี้?')) return;
@@ -688,6 +712,10 @@ export default function PetDetailPage() {
         .gallery-thumb-more img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
         .gallery-thumb-more span { position: relative; z-index: 1; }
         .hero-main-image { flex-shrink: 0; width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 1px solid ${F.pinkBorder}; box-shadow: 0 4px 24px rgba(232,70,119,.08); cursor: zoom-in; }
+        .hero-photo-placeholder { background: ${F.pinkSoft}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-style: dashed; transition: background .18s; }
+        .hero-photo-placeholder:hover { background: #fbd5e3; }
+        .hero-photo-placeholder-icon { width: 56px; height: 56px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(232,70,119,.15); }
+        .hero-photo-placeholder-text { font-size: 13px; font-weight: 600; color: ${F.pink}; }
         .hero-main-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
@@ -997,14 +1025,27 @@ export default function PetDetailPage() {
               </div>
             )}
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
-                <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
-              </div>
-              {isOwner && (
+              {(!selectedImage && !pet.image_url && isOwner) ? (
+                <div className="hero-main-image hero-photo-placeholder" onClick={() => mainPhotoRef.current?.click()}>
+                  <div className="hero-photo-placeholder-icon">
+                    {uploadingMainPhoto
+                      ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                      : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    }
+                  </div>
+                  <span className="hero-photo-placeholder-text">{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพ'}</span>
+                </div>
+              ) : (
+                <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
+                  <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
+                </div>
+              )}
+              {isOwner && (selectedImage || pet.image_url) && (
                 <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
                   <img src="/icons/icon-edit.png" alt="แก้ไข" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                 </Link>
               )}
+              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
             </div>
             <div className="hero-info">
               <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
