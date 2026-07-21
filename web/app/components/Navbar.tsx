@@ -434,7 +434,7 @@ export default function Navbar() {
     </nav>
 
     {/* ── Floating Bottom Tab Bar (mobile only, hidden on farm dashboard) ── */}
-    {!pathname.startsWith('/farm-dashboard') && <nav
+    {!pathname.includes('/farm-dashboard') && <nav
       aria-label="เมนูหลัก"
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{

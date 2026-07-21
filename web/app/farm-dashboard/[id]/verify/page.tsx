@@ -222,7 +222,7 @@ export default function VerifyFarmPage() {
         .vf-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
 
         /* Save bar */
-        .vf-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .vf-actions { display: flex; gap: 12px; margin-top: 24px; padding: 0 20px; }
         .vf-cancel-btn { flex: 0 0 auto; padding: 15px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .vf-cancel-btn:hover { background: #F9FAFB; }
         .vf-submit-btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
