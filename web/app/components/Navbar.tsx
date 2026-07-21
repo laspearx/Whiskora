@@ -308,11 +308,6 @@ export default function Navbar() {
                       <button onClick={() => go('/profile')} className={dropItem(active('/profile'))}>
                         โปรไฟล์ของฉัน
                       </button>
-                      <div className="border-t border-gray-100 mt-1 pt-1">
-                        <button onClick={logout} className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium">
-                          ออกจากระบบ
-                        </button>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -421,11 +416,7 @@ export default function Navbar() {
                 <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
                 <button onClick={() => switchLocale('en')} className={langBtn(locale === 'en')}>EN</button>
               </div>
-              {session ? (
-                <button onClick={logout} className="text-sm font-bold text-red-500 hover:text-red-600 px-3 py-1.5">
-                  ออกจากระบบ
-                </button>
-              ) : (
+              {!session && (
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
