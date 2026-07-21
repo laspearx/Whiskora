@@ -32,23 +32,10 @@ const breedData: Record<string, string[]> = {
   other: ["เมียร์แคต (Meerkat)", "เฟอร์เรท (Ferret)", "ชินชิลล่า (Chinchilla)", "บุชเบบี้ (Bushbaby)", "อื่นๆ"],
 };
 
-// ─── สี (สีพื้น) / ลาย / หู / ขา / ขน / สีตา (อ้างอิงชาร์ต Housecat) ───
-const COLOR_DATA: Record<string, string[]> = {
-  cat: ["ดำ (Black)", "บลู / เทา (Blue / Grey)", "ช็อกโกแลต (Chocolate)", "ไลแลค (Lilac)", "ซินนามอน (Cinnamon)", "ฟอว์น (Fawn)", "แดง / ส้ม (Red / Orange)", "ครีม (Cream)", "ขาว (White)", "ทอร์ตี้ / สีเปรอะ (Tortoiseshell)", "อื่นๆ"],
-  dog: ["ดำ (Black)", "ขาว (White)", "น้ำตาล / ช็อกโกแลต (Brown / Chocolate)", "ทอง / เหลือง (Golden / Yellow)", "ครีม (Cream)", "แดง / น้ำตาลแดง (Red)", "เทา / บลู (Grey / Blue)", "ฟอว์น (Fawn)", "สามสี (Tricolor)", "ลายหินอ่อน (Merle)", "ลายเสือ (Brindle)", "อื่นๆ"],
-  other: ["ดำ (Black)", "ขาว (White)", "น้ำตาล (Brown)", "เทา (Grey)", "ครีม (Cream)", "หลายสี (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
-};
-const PATTERN_DATA: Record<string, string[]> = {
-  cat: ["สีเดียวล้วน (Solid)", "ลายสลิด-แมคเคอเรล (Mackerel Tabby)", "ลายสลิด-คลาสสิก (Classic Tabby)", "ลายจุด (Spotted Tabby)", "ลายทิคต์ (Ticked Tabby)", "สีแต้ม / พ้อยท์ (Colorpoint)", "สองสี / ขาวแต้ม (Bicolor)", "ทอร์ตี้ (Tortie)", "สามสี / แคลิโค (Calico)", "ทิปปิ้ง-ชินชิลล่า (Chinchilla)", "ทิปปิ้ง-เฉดเดด (Shaded)", "ทิปปิ้ง-สโมก (Smoke)", "อื่นๆ"],
-  default: ["สีเดียวล้วน (Solid)", "สองสี (Bicolor)", "หลายสี / ลวดลายผสม (Multi-color)", "เผือก (Albino)", "อื่นๆ"],
-};
-const EYE_OPTIONS = ["เขียว (Green)", "เฮเซล (Hazel)", "ทอง (Gold)", "เหลือง (Yellow)", "อำพัน (Amber)", "ส้ม (Orange)", "คอปเปอร์ (Copper)", "ฟ้า (Blue)", "ตาสองสี (Odd-eyed)", "ตาหลายสีในดวงเดียว (Dichroic)", "อื่นๆ"];
+const CAT_EYE_OPTIONS = ["เขียว", "เหลือง", "ส้ม/คอปเปอร์", "ฟ้า", "ตาสองสี", "อื่นๆ"];
 const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
 const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
 const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
-
-const colorOptionsFor = (s: string) => COLOR_DATA[s] || COLOR_DATA.other;
-const patternOptionsFor = (s: string) => PATTERN_DATA[s] || PATTERN_DATA.default;
 
 
 // ─── Icons ───
@@ -73,8 +60,8 @@ function CreatePetContent() {
   const [breed, setBreed] = useState("");
   const [customBreed, setCustomBreed] = useState("");
   const [color, setColor] = useState("");
-  const [customColor, setCustomColor] = useState("");
   const [pattern, setPattern] = useState("");
+  const [customEyeColor, setCustomEyeColor] = useState("");
   const [ear, setEar] = useState("");
   const [leg, setLeg] = useState("");
   const [coat, setCoat] = useState("");
@@ -110,8 +97,8 @@ function CreatePetContent() {
 
   const pickSpecies = (s: string) => {
     setSpecies(s);
-    setBreed(""); setCustomBreed(""); setColor(""); setCustomColor("");
-    setPattern(""); setEar(""); setLeg(""); setCoat(""); setEyeColor("");
+    setBreed(""); setCustomBreed(""); setColor("");
+    setEar(""); setLeg(""); setCoat(""); setEyeColor(""); setCustomEyeColor("");
   };
 
   // ── รูป ──
@@ -159,7 +146,8 @@ function CreatePetContent() {
 
     const finalSpecies = species;
     const finalBreed = breed === 'อื่นๆ' ? customBreed : breed;
-    const finalColor = color === 'อื่นๆ' ? customColor : color;
+    const finalColor = color;
+    const finalEyeColor = eyeColor === 'อื่นๆ' ? customEyeColor : eyeColor;
 
     const { data, error } = await supabase.from("pets").insert({
       user_id: userId,
@@ -167,11 +155,11 @@ function CreatePetContent() {
       species: finalSpecies,
       breed: finalBreed || null,
       color: finalColor || null,
-      pattern: pattern || null,
+      pattern: null,
       ear: ear || null,
       leg: leg || null,
       coat: coat || null,
-      eye_color: eyeColor || null,
+      eye_color: finalEyeColor || null,
       gender,
       birth_date: birthdate || null,
       weight: weight ? Number(weight) : null,
@@ -246,7 +234,7 @@ function CreatePetContent() {
         .cp-gender-btn.female.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-weight: 500; }
 
         /* ── save bar ── */
-        .cp-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); border-top: 1px solid ${F.line}; padding: 12px 20px; }
+        .cp-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); border-top: 1px solid ${F.line}; padding: 12px 20px; }
         .cp-savebar-inner { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
         .cp-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 14px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: inherit; text-decoration: none; }
         .cp-btn-cancel { flex: 0 0 auto; padding: 13px 20px; background: white; color: ${F.muted}; border: 1px solid ${F.line}; }
@@ -364,25 +352,10 @@ function CreatePetContent() {
                 </div>
               )}
 
-              <div className="cp-grid2">
-                <div className="cp-field">
-                  <label className="cp-label">สี (สีพื้น)</label>
-                  <select className="cp-select" value={color} onChange={(e) => setColor(e.target.value)}>
-                    <option value="">เลือกสี...</option>
-                    {colorOptionsFor(colorKey).map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="cp-field">
-                  <label className="cp-label">ลาย / ลวดลาย</label>
-                  <select className="cp-select" value={pattern} onChange={(e) => setPattern(e.target.value)}>
-                    <option value="">เลือกลาย...</option>
-                    {patternOptionsFor(speciesKey === 'cat' ? 'cat' : 'default').map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
+              <div className="cp-field">
+                <label className="cp-label">สี (สีพื้น)</label>
+                <input className="cp-input" value={color} onChange={(e) => setColor(e.target.value)} placeholder="เช่น ดำ, ขาว, ส้ม, สามสี..." />
               </div>
-              {color === 'อื่นๆ' && (
-                <input className="cp-input" style={{ marginTop: -6, marginBottom: 16 }} value={customColor} onChange={(e) => setCustomColor(e.target.value)} placeholder="ระบุสีด้วยตนเอง..." />
-              )}
 
               {isCat && (
                 <div className="cp-grid3" style={{ marginTop: 16 }}>
@@ -413,10 +386,19 @@ function CreatePetContent() {
               <div className="cp-grid2" style={{ marginTop: 16 }}>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
                   <label className="cp-label">สีตา</label>
-                  <select className="cp-select" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)}>
-                    <option value="">เลือกสีตา...</option>
-                    {EYE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  {isCat ? (
+                    <>
+                      <select className="cp-select" value={eyeColor} onChange={(e) => { setEyeColor(e.target.value); if (e.target.value !== 'อื่นๆ') setCustomEyeColor(''); }}>
+                        <option value="">เลือกสีตา...</option>
+                        {CAT_EYE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                      {eyeColor === 'อื่นๆ' && (
+                        <input className="cp-input" style={{ marginTop: 8 }} value={customEyeColor} onChange={(e) => setCustomEyeColor(e.target.value)} placeholder="ระบุสีตา..." />
+                      )}
+                    </>
+                  ) : (
+                    <input className="cp-input" value={eyeColor} onChange={(e) => setEyeColor(e.target.value)} placeholder="เช่น ดำ, น้ำตาล, เหลือง..." />
+                  )}
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
                   <label className="cp-label">น้ำหนัก (กก.) <span className="opt">(ถ้าทราบ)</span></label>

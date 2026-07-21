@@ -280,9 +280,10 @@ export default function ShopEditPage() {
         .she-geo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.lineMid}; background: white; font-size: 12px; font-weight: 700; color: ${F.ink}; cursor: pointer; font-family: inherit; transition: all .15s; }
         .she-geo-btn:hover { background: ${F.tealSoft}; border-color: ${F.teal}; color: ${F.teal}; }
         .she-pin-coords { font-size: 11px; color: ${F.muted}; }
-        .she-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .she-savebar-inner { max-width: 600px; margin: 0 auto; }
-        .she-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.teal}; color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
+        .she-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .she-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
+        .she-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .she-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.teal}; color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
         .she-btn:hover { background: #0B7E74; }
         .she-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .she-modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
@@ -403,8 +404,9 @@ export default function ShopEditPage() {
 
         <div className="she-savebar">
           <div className="she-savebar-inner">
+            <button type="button" className="she-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="she-btn" onClick={handleSave} disabled={!canSave}>
-              {isSaving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
+              {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
           </div>
         </div>

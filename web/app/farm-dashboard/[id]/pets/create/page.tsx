@@ -222,9 +222,10 @@ export default function CreateFarmPetPage() {
         .fpc-hint { font-size: 10px; color: ${F.muted}; line-height: 1.5; }
 
         /* Save bar */
-        .fpc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .fpc-savebar-inner { max-width: 640px; margin: 0 auto; }
-        .fpc-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .fpc-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .fpc-savebar-inner { max-width: 640px; margin: 0 auto; display: flex; gap: 12px; }
+        .fpc-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .fpc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .fpc-btn:hover { background: #D63F6A; }
         .fpc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -415,8 +416,9 @@ export default function CreateFarmPetPage() {
 
         <div className="fpc-savebar">
           <div className="fpc-savebar-inner">
+            <button type="button" className="fpc-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="fpc-btn" onClick={handleSubmit} disabled={saving}>
-              <Icon.Save /> {saving ? "กำลังบันทึกข้อมูล..." : "เพิ่มเข้าสู่ฟาร์ม"}
+              <Icon.Save /> {saving ? "กำลังบันทึกข้อมูล..." : "บันทึก"}
             </button>
           </div>
         </div>
