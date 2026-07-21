@@ -19,6 +19,14 @@ const F = {
   line: "#F3F4F6", lineMid: "#E5E7EB", paper: "#FFFFFF", bg: "#FDF6F8",
 };
 
+function isIosNonPwa(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent;
+  const isIos = /iPhone|iPad|iPod/.test(ua);
+  const isPwa = (window.navigator as any).standalone === true;
+  return isIos && !isPwa;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -27,12 +35,14 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [iosNonPwa, setIosNonPwa] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/login?redirect=/profile/settings"); return; }
       setUser(session.user);
+      setIosNonPwa(isIosNonPwa());
       await registerSW();
       const perm = getNotifPermission();
       setNotifPerm(perm);
@@ -145,6 +155,12 @@ export default function SettingsPage() {
         .ps-toggle input:checked + .ps-toggle-track::after { transform: translateX(22px); }
         .ps-toggle input:disabled + .ps-toggle-track { opacity: .5; cursor: not-allowed; }
 
+        /* iOS PWA hint */
+        .ps-ios-hint { display: flex; gap: 12px; align-items: flex-start; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 14px; padding: 14px 16px; margin-top: 10px; }
+        .ps-ios-hint-icon { width: 34px; height: 34px; border-radius: 10px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ps-ios-hint-title { font-size: 13px; font-weight: 700; color: #9A3412; }
+        .ps-ios-hint-desc { font-size: 12px; color: #C2410C; margin-top: 3px; line-height: 1.6; }
+
         /* Sign out */
         .ps-signout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: white; border: 1.5px solid #FECACA; border-radius: 14px; color: #EF4444; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all .18s; margin-top: 8px; }
         .ps-signout-btn:hover { background: #FEF2F2; }
@@ -168,57 +184,74 @@ export default function SettingsPage() {
           {/* Notifications */}
           <div className="ps-section">
             <div className="ps-section-label">การแจ้งเตือน</div>
-            <div className="ps-card">
-              <div className="ps-row">
-                <div className={`ps-row-icon ${pushEnabled ? "pink" : "gray"}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {pushEnabled
-                      ? <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>
-                      : <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></>
+
+            {iosNonPwa ? (
+              <div className="ps-ios-hint">
+                <div className="ps-ios-hint-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div>
+                  <div className="ps-ios-hint-title">เปิดใช้งานการแจ้งเตือนบน iPhone</div>
+                  <div className="ps-ios-hint-desc">
+                    กด <strong>แชร์</strong> (
+                    <svg style={{ display: 'inline', verticalAlign: 'middle' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                    ) แล้วเลือก <strong>"เพิ่มไปยังหน้าจอโฮม"</strong> เพื่อติดตั้งแอป จากนั้นเปิดแอปจากไอคอนบนหน้าจอโฮมแล้วกลับมาตั้งค่าแจ้งเตือนได้เลย
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="ps-card">
+                <div className="ps-row">
+                  <div className={`ps-row-icon ${pushEnabled ? "pink" : "gray"}`}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {pushEnabled
+                        ? <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>
+                        : <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></>
+                      }
+                    </svg>
+                  </div>
+                  <div className="ps-row-text">
+                    <span className="ps-row-title">การแจ้งเตือน Push</span>
+                    {pushBlocked
+                      ? <span className="ps-row-desc warn">ถูกบล็อกในเบราว์เซอร์ — แก้ที่ไอคอนแม่กุญแจใน address bar</span>
+                      : pushUnsupported
+                      ? <span className="ps-row-desc">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน</span>
+                      : <span className="ps-row-desc">{pushEnabled ? "รับการแจ้งเตือนจาก Whiskora" : "ไม่ได้รับการแจ้งเตือน"}</span>
                     }
-                  </svg>
+                  </div>
+                  {!pushBlocked && !pushUnsupported && (
+                    <label className="ps-toggle" aria-label="เปิด/ปิดการแจ้งเตือน">
+                      <input
+                        type="checkbox"
+                        checked={pushEnabled}
+                        disabled={pushLoading}
+                        onChange={handleTogglePush}
+                      />
+                      <span className="ps-toggle-track" />
+                    </label>
+                  )}
                 </div>
-                <div className="ps-row-text">
-                  <span className="ps-row-title">การแจ้งเตือน Push</span>
-                  {pushBlocked
-                    ? <span className="ps-row-desc warn">ถูกบล็อกในเบราว์เซอร์ — แก้ที่ไอคอนแม่กุญแจใน address bar</span>
-                    : pushUnsupported
-                    ? <span className="ps-row-desc">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน</span>
-                    : <span className="ps-row-desc">{pushEnabled ? "รับการแจ้งเตือนจาก Whiskora" : "ไม่ได้รับการแจ้งเตือน"}</span>
-                  }
-                </div>
-                {!pushBlocked && !pushUnsupported && (
-                  <label className="ps-toggle" aria-label="เปิด/ปิดการแจ้งเตือน">
+
+                <div className="ps-row" style={{ opacity: pushEnabled ? 1 : 0.45 }}>
+                  <div className="ps-row-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
+                  </div>
+                  <div className="ps-row-text">
+                    <span className="ps-row-title">เตือนวัคซีนล่วงหน้า 1 วัน</span>
+                    <span className="ps-row-desc">แจ้งเตือนทุกเช้า 8:00 น.</span>
+                  </div>
+                  <label className="ps-toggle" aria-label="เตือนวัคซีน">
                     <input
                       type="checkbox"
                       checked={pushEnabled}
-                      disabled={pushLoading}
+                      disabled={!pushEnabled || pushLoading}
                       onChange={handleTogglePush}
                     />
                     <span className="ps-toggle-track" />
                   </label>
-                )}
-              </div>
-
-              <div className="ps-row" style={{ opacity: pushEnabled ? 1 : 0.45 }}>
-                <div className="ps-row-icon green">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
                 </div>
-                <div className="ps-row-text">
-                  <span className="ps-row-title">เตือนวัคซีนล่วงหน้า 1 วัน</span>
-                  <span className="ps-row-desc">แจ้งเตือนทุกเช้า 8:00 น.</span>
-                </div>
-                <label className="ps-toggle" aria-label="เตือนวัคซีน">
-                  <input
-                    type="checkbox"
-                    checked={pushEnabled}
-                    disabled={!pushEnabled || pushLoading}
-                    onChange={handleTogglePush}
-                  />
-                  <span className="ps-toggle-track" />
-                </label>
               </div>
-            </div>
+            )}
 
             {pushBlocked && (
               <p style={{ fontSize: 12, color: "#D97706", marginTop: 8, paddingLeft: 4, lineHeight: 1.6 }}>
