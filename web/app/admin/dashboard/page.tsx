@@ -70,33 +70,42 @@ export default function AdminDashboardPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const [statsRes, usersRes] = await Promise.all([
-        supabase.rpc('admin_get_stats'),
-        supabase.rpc('admin_get_users'),
+      // Direct queries — profiles/farms/shops/services have public SELECT policy,
+      // pets now has an admin policy added via migration.
+      const [profilesRes, petsRes, farmsRes, shopsRes, servicesRes] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, username, email, avatar_url, created_at').order('created_at', { ascending: false }),
+        supabase.from('pets').select('id, user_id'),
+        supabase.from('farms').select('id, user_id, farm_name'),
+        supabase.from('shops').select('id, user_id, shop_name'),
+        supabase.from('services').select('id, user_id, service_name'),
       ]);
 
-      if (statsRes.data) {
-        setTotalUsers(Number(statsRes.data.users) || 0);
-        setTotalPets(Number(statsRes.data.pets) || 0);
-        setTotalFarms(Number(statsRes.data.farms) || 0);
-        setTotalShops(Number(statsRes.data.shops) || 0);
-        setTotalServices(Number(statsRes.data.services) || 0);
-      }
+      const allProfiles = profilesRes.data || [];
+      const allPets     = petsRes.data     || [];
+      const allFarms    = farmsRes.data    || [];
+      const allShops    = shopsRes.data    || [];
+      const allServices = servicesRes.data || [];
 
-      const rows: UserRow[] = (usersRes.data || []).map((p: any) => ({
+      setTotalUsers(allProfiles.length);
+      setTotalPets(allPets.length);
+      setTotalFarms(allFarms.length);
+      setTotalShops(allShops.length);
+      setTotalServices(allServices.length);
+
+      const rows: UserRow[] = allProfiles.map((p: any) => ({
         id:           p.id,
         full_name:    p.full_name,
         username:     p.username,
         email:        p.email,
         avatar_url:   p.avatar_url,
         created_at:   p.created_at,
-        petCount:     Number(p.pet_count)     || 0,
-        farmCount:    Number(p.farm_count)    || 0,
-        shopCount:    Number(p.shop_count)    || 0,
-        serviceCount: Number(p.service_count) || 0,
-        farmNames:    p.farm_names    || [],
-        shopNames:    p.shop_names    || [],
-        serviceNames: p.service_names || [],
+        petCount:     allPets.filter((x: any) => String(x.user_id) === String(p.id)).length,
+        farmCount:    allFarms.filter((x: any) => x.user_id === p.id).length,
+        shopCount:    allShops.filter((x: any) => x.user_id === p.id).length,
+        serviceCount: allServices.filter((x: any) => x.user_id === p.id).length,
+        farmNames:    allFarms.filter((x: any) => x.user_id === p.id).map((x: any) => x.farm_name).filter(Boolean),
+        shopNames:    allShops.filter((x: any) => x.user_id === p.id).map((x: any) => x.shop_name).filter(Boolean),
+        serviceNames: allServices.filter((x: any) => x.user_id === p.id).map((x: any) => x.service_name).filter(Boolean),
       }));
 
       setUsers(rows);
