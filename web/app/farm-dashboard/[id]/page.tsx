@@ -1012,7 +1012,7 @@ function FarmDashboardContent() {
             <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
             <span>จับคู่บรีด</span>
           </Link>
-          <Link href={`/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('เด็ก')}`} className="fd-nav-tab">
+          <Link href={`/farm-dashboard/${farmId}/babies`} className="fd-nav-tab">
             <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
             <span>เบบี๋</span>
           </Link>

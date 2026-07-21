@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -33,7 +33,10 @@ export default function LitterDetailPage() {
   const [sire, setSire] = useState<any>(null);
   const [dam, setDam] = useState<any>(null);
   const [babies, setBabies] = useState<any[]>([]);
+  const [petWeights, setPetWeights] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   useEffect(() => {
     const fetchLitterDetails = async () => {
@@ -49,7 +52,17 @@ export default function LitterDetailPage() {
           setDam(parentsData.find((p) => p.id === litterData.dam_id));
         }
         const { data: babiesData } = await supabase.from('pets').select('*').eq('litter_id', litterId).order('id', { ascending: true });
-        if (babiesData) setBabies(babiesData);
+        if (babiesData) {
+          setBabies(babiesData);
+          if (babiesData.length > 0) {
+            const { data: wData } = await supabase
+              .from('pet_weights')
+              .select('pet_id, weight, recorded_date')
+              .in('pet_id', babiesData.map(b => b.id))
+              .order('recorded_date', { ascending: true });
+            if (wData) setPetWeights(wData);
+          }
+        }
       } catch (error) {
         console.error('Error:', error);
         router.push(`/farm-dashboard/${farmId}`);
@@ -59,6 +72,69 @@ export default function LitterDetailPage() {
   }, [litterId, farmId, router]);
 
   const born = litter?.status === 'คลอดแล้ว';
+
+  const handlePhotoUpload = async (baby: any, file: File) => {
+    setUploadingId(baby.id);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${farmId}/${baby.id}/photo.${ext}`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(filePath, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(filePath);
+      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', baby.id);
+      setBabies(prev => prev.map(b => b.id === baby.id ? { ...b, image_url: publicUrl } : b));
+    } catch (e: any) {
+      alert('อัพโหลดไม่สำเร็จ: ' + e.message);
+    } finally { setUploadingId(null); }
+  };
+
+  // Build daily average weight trend from petWeights
+  const weightTrendData = (() => {
+    if (petWeights.length < 2) return [];
+    const byDate: Record<string, number[]> = {};
+    for (const w of petWeights) {
+      if (!byDate[w.recorded_date]) byDate[w.recorded_date] = [];
+      byDate[w.recorded_date].push(w.weight);
+    }
+    return Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, vals]) => ({
+        date,
+        avg: vals.reduce((s, v) => s + v, 0) / vals.length,
+      }));
+  })();
+
+  function WeightSparkline({ data }: { data: { date: string; avg: number }[] }) {
+    if (data.length < 2) return null;
+    const W = 300, H = 64, pad = 8;
+    const values = data.map(d => d.avg);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 0.001;
+    const x = (i: number) => pad + (i / (data.length - 1)) * (W - pad * 2);
+    const y = (v: number) => H - pad - ((v - min) / range) * (H - pad * 2);
+    const rising = values[values.length - 1] >= values[values.length - 2];
+    const color = rising ? '#16A34A' : '#EF4444';
+    const pts = data.map((d, i) => `${x(i)},${y(d.avg)}`).join(' ');
+    const last = data[data.length - 1];
+    return (
+      <div style={{ position: 'relative' }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+          <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {data.map((d, i) => (
+            <circle key={i} cx={x(i)} cy={y(d.avg)} r={i === data.length - 1 ? 5 : 3} fill={color} opacity={i === data.length - 1 ? 1 : 0.5} />
+          ))}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{data[0].date}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color }}>
+            {rising ? '▲' : '▼'} เฉลี่ย {last.avg.toFixed(3)} กก.
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{last.date}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -108,7 +184,7 @@ export default function LitterDetailPage() {
         .ld-add-baby-btn:hover { background: #D63F6A; }
         .ld-empty { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 32px; text-align: center; font-size: 13px; font-weight: 600; color: ${F.muted}; }
         .ld-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-        .ld-baby { background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 8px; text-decoration: none; transition: all .15s; display: flex; flex-direction: column; }
+        .ld-baby { background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 8px; text-decoration: none; transition: all .15s; display: flex; flex-direction: column; position: relative; }
         .ld-baby:hover { border-color: ${F.pinkBorder}; }
         .ld-baby-photo { aspect-ratio: 1; border-radius: 11px; overflow: hidden; background: ${F.bg}; position: relative; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
         .ld-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -119,6 +195,17 @@ export default function LitterDetailPage() {
         .ld-baby-gender.m { background: #EFF6FF; color: ${F.blue}; }
         .ld-baby-gender.f { background: ${F.pinkSoft}; color: ${F.pink}; }
         .ld-baby-status { font-size: 9px; font-weight: 600; color: ${F.muted}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* weight trend */
+        .ld-trend { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+        .ld-trend-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .ld-trend-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .ld-trend-empty { font-size: 12px; color: ${F.muted}; font-weight: 600; }
+
+        /* photo upload overlay */
+        .ld-baby-upload { position: absolute; bottom: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
+        .ld-baby-upload:hover { background: ${F.pinkSoft}; }
+        .ld-baby-uploading { opacity: 0.5; pointer-events: none; }
       `}</style>
 
       {isLoading || !litter ? (
@@ -162,6 +249,22 @@ export default function LitterDetailPage() {
               )}
             </div>
 
+            {/* Weight trend chart */}
+            {born && (
+              <div className="ld-trend">
+                <div className="ld-trend-head">
+                  <span className="ld-trend-title">เทรนน้ำหนักเฉลี่ยทั้งครอก</span>
+                  <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/weights`} className="ld-weight-btn" style={{ marginTop: 0 }}>
+                    <Icon.Weight /> บันทึกวันนี้
+                  </Link>
+                </div>
+                {weightTrendData.length >= 2
+                  ? <WeightSparkline data={weightTrendData} />
+                  : <div className="ld-trend-empty">ยังไม่มีข้อมูลน้ำหนัก — กด "บันทึกวันนี้" เพื่อเริ่มแทร็ก</div>
+                }
+              </div>
+            )}
+
             <div className="ld-parents">
               <Link href={`/pets/${sire?.id}`} className="ld-parent sire">
                 <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : '♂'}</div>
@@ -195,17 +298,41 @@ export default function LitterDetailPage() {
                 {babies.map((baby) => {
                   const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
                   return (
-                    <Link key={baby.id} href={`/pets/${baby.id}`} className="ld-baby">
-                      <div className="ld-baby-photo">
-                        {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : '🐾'}
-                        <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
+                    <div key={baby.id} className="ld-baby">
+                      <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className="ld-baby-photo">
+                          {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : '🐾'}
+                          <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
+                        </div>
+                      </Link>
+                      {/* Photo upload button */}
+                      <div
+                        className={`ld-baby-upload ${uploadingId === baby.id ? 'ld-baby-uploading' : ''}`}
+                        onClick={() => fileRefs.current[baby.id]?.click()}
+                        title="อัพโหลดรูป"
+                        style={{ position: 'absolute', bottom: 34, left: 4 }}
+                      >
+                        {uploadingId === baby.id
+                          ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
+                          : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        }
                       </div>
-                      <div className="ld-baby-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
-                      <div className="ld-baby-foot">
-                        <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
-                        <span className="ld-baby-status">{baby.status || 'เด็ก'}</span>
-                      </div>
-                    </Link>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        ref={el => { fileRefs.current[baby.id] = el; }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); }}
+                      />
+                      <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className="ld-baby-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
+                        <div className="ld-baby-foot">
+                          <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
+                          <span className="ld-baby-status">{baby.status || 'เด็ก'}</span>
+                        </div>
+                      </Link>
+                    </div>
                   );
                 })}
               </div>
