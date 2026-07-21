@@ -277,10 +277,12 @@ function FarmDashboardContent() {
   const visibleTasks = showAllTasks ? allTasks : allTasks.slice(0, TASK_LIMIT);
 
   /* ── Farm Overview stats ── */
-  const breeders      = pets.filter(p => ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'].includes(p.status)).length;
-  const pregnant      = activeLitters.filter(l => l.dam_id).length;
-  const babies        = pets.filter(p => p.status === 'เด็ก').length;
-  const readyToMove   = pets.filter(p => p.status === 'พร้อมย้ายบ้าน').length;
+  const pregnantDamIds = new Set(activeLitters.map((l: any) => l.dam_id).filter(Boolean));
+  const sires    = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'male' || p.gender === 'ตัวผู้')).length;
+  const dams     = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'female' || p.gender === 'ตัวเมีย') && !pregnantDamIds.has(p.id)).length;
+  const pregnant = pregnantDamIds.size;
+  const forSale  = pets.filter(p => ['เด็ก', 'ยังไม่เปิดจอง', 'เปิดจอง', 'พร้อมย้ายบ้าน'].includes(p.status)).length;
+  const reserved = pets.filter(p => p.status === 'ติดจอง').length;
 
   /* ── Finance ── */
   const today = new Date();
@@ -451,8 +453,10 @@ function FarmDashboardContent() {
         .fd-show-more { margin-top:8px; font-size:11px; font-weight:500; color:${F.pink}; background:none; border:none; cursor:pointer; font-family:inherit; padding:4px 0; }
 
         /* ─── 3. Farm Overview ─── */
-        .fd-ov-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-        @media (max-width:360px) { .fd-ov-grid { grid-template-columns:repeat(2,1fr); } }
+        .fd-ov-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+        .fd-ov-stat { flex:0 0 calc((100% - 16px) / 3); }
+        @media (max-width:360px) { .fd-ov-stat { flex-basis:calc((100% - 8px) / 2); } }
+        @media (min-width:600px) { .fd-ov-stat { flex-basis:calc((100% - 32px) / 5); } }
         .fd-ov-stat { border-radius:10px; padding:12px 8px 10px; cursor:pointer; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .15s; border:1.5px solid transparent; }
         .fd-ov-stat:hover { border-color:rgba(232,70,119,.2); transform:translateY(-1px); }
         .fd-ov-count { font-size:22px; font-weight:700; line-height:1; }
@@ -731,14 +735,15 @@ function FarmDashboardContent() {
             ) : (
               <div className="fd-ov-grid">
                 {[
-                  { label: 'พ่อแม่พันธุ์', count: breeders, color: F.purple, bg: '#F3E8FF', icon: '/icons/icon-my-pets.png', status: 'พ่อพันธุ์ / แม่พันธุ์' },
-                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.pink, bg: F.pinkSoft, icon: '/icons/icon-foster-home.png', status: null },
-                  { label: 'เบบี๋', count: babies, color: F.amber, bg: F.amberSoft, icon: '/icons/icon-feeding.png', status: 'เด็ก' },
-                  { label: 'รอส่งมอบ', count: readyToMove, color: F.green, bg: F.greenSoft, icon: '/icons/icon-pet-carrier.png', status: 'พร้อมย้ายบ้าน' },
+                  { label: 'พ่อพันธุ์',       count: sires,    color: '#2563EB', bg: '#EFF6FF',   icon: '/icons/icon-my-pets.png',     href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
+                  { label: 'แม่พันธุ์',       count: dams,     color: F.pink,    bg: F.pinkSoft,  icon: '/icons/icon-foster-home.png', href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
+                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.purple,  bg: '#F3E8FF',   icon: '/icons/icon-breeding.png',    href: `#active-litters` },
+                  { label: 'พร้อมขาย',        count: forSale,  color: F.amber,   bg: F.amberSoft, icon: '/icons/icon-feeding.png',     href: `/farm-dashboard/${farmId}/babies` },
+                  { label: 'รอส่งมอบ',        count: reserved, color: F.green,   bg: F.greenSoft, icon: '/icons/icon-pet-carrier.png', href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('ติดจอง')}` },
                 ].map(stat => (
                   <Link
                     key={stat.label}
-                    href={stat.status ? `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent(stat.status)}` : `#active-litters`}
+                    href={stat.href}
                     className="fd-ov-stat"
                     style={{ background: stat.bg }}
                   >

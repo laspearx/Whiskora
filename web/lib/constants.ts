@@ -10,6 +10,8 @@ export type PetGender = typeof PET_GENDER[keyof typeof PET_GENDER];
 export const PET_STATUS = {
   UNSPECIFIED: '',
   KID: 'เด็ก',
+  NOT_OPEN: 'ยังไม่เปิดจอง',
+  KEEP: 'เก็บ',
   BREEDER: 'พ่อพันธุ์ / แม่พันธุ์',
   AVAILABLE: 'พร้อมย้ายบ้าน',
   OPEN_RESERVE: 'เปิดจอง',
