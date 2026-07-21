@@ -26,8 +26,8 @@ const Icon = {
   Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
   ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Farm: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Male: () => <img src="/icons/icon-men.png" alt="male" style={{width:16,height:16,objectFit:'contain'}} />,
-  Female: () => <img src="/icons/icon-women.png" alt="female" style={{width:16,height:16,objectFit:'contain'}} />,
+  Male: () => <img src="/icons/icon-men.png" alt="male" style={{width:22,height:22,objectFit:'contain'}} />,
+  Female: () => <img src="/icons/icon-women.png" alt="female" style={{width:22,height:22,objectFit:'contain'}} />,
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
@@ -56,7 +56,7 @@ export default function FarmHubPage() {
     try {
       let query = supabase
         .from("pets")
-        .select("*, farms(farm_name, address)")
+        .select("*, farms(farm_name, district, province)")
         .in("status", ["พร้อมย้ายบ้าน", "เปิดจอง"])
         .order("created_at", { ascending: false });
 
@@ -95,8 +95,26 @@ export default function FarmHubPage() {
     return days > 0 ? `${days} วัน` : null;
   }
 
-  function farmLocation(farm: any) {
-    return farm?.address || null;
+  function farmLocation(farm: any): string {
+    if (!farm) return '';
+    const { province, district } = farm;
+    if (province === 'กรุงเทพมหานคร') return district ? `เขต${district}` : 'กรุงเทพฯ';
+    return province || '';
+  }
+
+  function thaiBreedName(breed: string | null, species?: string): string {
+    if (!breed) return speciesTh(species) || '—';
+    const hasThai = /[฀-๿]/.test(breed);
+    if (!hasThai) return breed;
+    const parts = breed.split('(');
+    if (parts.length > 1) {
+      const first = parts[0].trim();
+      const inParens = parts[1].replace(')', '').trim();
+      if (/[฀-๿]/.test(first)) return first;
+      if (/[฀-๿]/.test(inParens)) return inParens;
+      return first;
+    }
+    return breed;
   }
 
   return (
@@ -213,9 +231,9 @@ export default function FarmHubPage() {
                 {/* Pet Details */}
                 <div className="p-3 md:p-4 flex flex-col flex-1">
                   {/* Breed + gender */}
-                  <div className="flex items-center justify-between gap-1 mb-1">
+                  <div className="flex items-center justify-between gap-2 mb-1">
                     <h3 className="text-sm font-bold text-gray-900 truncate leading-snug group-hover:text-pink-600 transition-colors">
-                      {pet.breed || speciesTh(pet.species) || "—"}
+                      {thaiBreedName(pet.breed, pet.species)}
                     </h3>
                     <span className="flex-shrink-0">
                       {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? <Icon.Male /> : <Icon.Female />}
@@ -229,12 +247,12 @@ export default function FarmHubPage() {
 
                   <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-1.5">
                     {/* Farm + location */}
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 truncate">
+                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400">
                       <Icon.Farm />
-                      <span className="truncate">
-                        {pet.farms?.farm_name}
-                        {farmLocation(pet.farms) ? ` · ${farmLocation(pet.farms)}` : ""}
-                      </span>
+                      <span className="truncate font-semibold text-gray-600">{pet.farms?.farm_name}</span>
+                      {farmLocation(pet.farms) && (
+                        <span className="flex-shrink-0 text-gray-400">· {farmLocation(pet.farms)}</span>
+                      )}
                     </div>
                     {/* Price */}
                     <div className="text-base md:text-lg font-extrabold tracking-tight" style={{ color: F.ink }}>
