@@ -36,9 +36,7 @@ export default function LitterDetailPage() {
   const [petWeights, setPetWeights] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
-  const [photoMenuId, setPhotoMenuId] = useState<number | null>(null);
-  const cameraRefs = useRef<Record<number, HTMLInputElement | null>>({});
-  const galleryRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   useEffect(() => {
     const fetchLitterDetails = async () => {
@@ -74,13 +72,6 @@ export default function LitterDetailPage() {
   }, [litterId, farmId, router]);
 
   const born = litter?.status === 'คลอดแล้ว';
-
-  useEffect(() => {
-    if (photoMenuId === null) return;
-    const close = () => setPhotoMenuId(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [photoMenuId]);
 
   const handlePhotoUpload = async (baby: any, file: File) => {
     setUploadingId(baby.id);
@@ -215,11 +206,6 @@ export default function LitterDetailPage() {
         .ld-baby-upload { position: absolute; bottom: 34px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .ld-baby-upload:hover { background: ${F.pinkSoft}; }
         .ld-baby-uploading { opacity: 0.5; pointer-events: none; }
-        /* photo choice popover */
-        .ld-photo-menu { position: absolute; bottom: 60px; left: 0; z-index: 20; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; min-width: 130px; }
-        .ld-photo-opt { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; color: ${F.ink}; cursor: pointer; transition: background .12s; white-space: nowrap; border: none; background: none; font-family: inherit; width: 100%; text-align: left; }
-        .ld-photo-opt:hover { background: ${F.pinkSoft}; color: ${F.pink}; }
-        .ld-photo-opt + .ld-photo-opt { border-top: 1px solid ${F.line}; }
       `}</style>
 
       {isLoading || !litter ? (
@@ -322,33 +308,15 @@ export default function LitterDetailPage() {
                       {/* Photo upload button */}
                       <div
                         className={`ld-baby-upload ${uploadingId === baby.id ? 'ld-baby-uploading' : ''}`}
-                        onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoMenuId(photoMenuId === baby.id ? null : baby.id); }}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
                       >
                         {uploadingId === baby.id
                           ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
                           : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                         }
                       </div>
-                      {/* Photo choice popover */}
-                      {photoMenuId === baby.id && (
-                        <div className="ld-photo-menu">
-                          <button className="ld-photo-opt" onClick={e => { e.stopPropagation(); setPhotoMenuId(null); cameraRefs.current[baby.id]?.click(); }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            ถ่ายรูป
-                          </button>
-                          <button className="ld-photo-opt" onClick={e => { e.stopPropagation(); setPhotoMenuId(null); galleryRefs.current[baby.id]?.click(); }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            อัพโหลดจากอัลบั้ม
-                          </button>
-                        </div>
-                      )}
-                      {/* Hidden inputs: camera + gallery */}
-                      <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
-                        ref={el => { cameraRefs.current[baby.id] = el; }}
-                        onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
-                      />
                       <input type="file" accept="image/*" style={{ display: 'none' }}
-                        ref={el => { galleryRefs.current[baby.id] = el; }}
+                        ref={el => { fileRefs.current[baby.id] = el; }}
                         onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
                       />
                       <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
