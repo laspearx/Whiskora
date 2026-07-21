@@ -405,7 +405,6 @@ export default function RegisterShopPage() {
               ))}
             </div>
           </div>
-        </div>
 
           <div className="ps-actions">
             <button type="button" className="ps-btn" onClick={handleSubmit} disabled={!canSubmit}>

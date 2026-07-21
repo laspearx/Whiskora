@@ -412,7 +412,6 @@ export default function CreateFarmPetPage() {
               <textarea className="fpc-textarea" rows={3} placeholder="บันทึกเพิ่มเติม เช่น ประวัติสุขภาพ, ลักษณะนิสัย..." value={form.note} onChange={e => set('note', e.target.value)} />
             </div>
           </div>
-        </div>
 
           <div className="fpc-actions">
             <button type="button" className="fpc-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>

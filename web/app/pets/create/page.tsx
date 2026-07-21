@@ -419,7 +419,6 @@ function CreatePetContent() {
               </div>
             </div>
           </form>
-        </div>
 
           <div className="cp-actions">
             <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push(fromRedirect && fromRedirect.startsWith('/') ? fromRedirect : '/profile')}>ยกเลิก</button>

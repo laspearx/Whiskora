@@ -313,7 +313,6 @@ export default function ServiceSettingsPage() {
               ))}
             </div>
           </div>
-        </div>
 
           <div className="se-actions">
             <button type="button" className="se-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>

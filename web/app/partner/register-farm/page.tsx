@@ -470,7 +470,6 @@ export default function RegisterFarmPage() {
               <textarea className="pf-textarea" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="บอกเล่าประสบการณ์ ความตั้งใจ หรือสายพันธุ์ที่เพาะ..." />
             </div>
           </div>
-        </div>
 
           <div className="pf-actions">
             <button type="button" className="pf-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>

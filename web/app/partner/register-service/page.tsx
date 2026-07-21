@@ -423,7 +423,6 @@ export default function RegisterServicePage() {
               ))}
             </div>
           </div>
-        </div>
 
           <div className="sv-actions">
             <button type="button" className="sv-btn" onClick={handleSubmit} disabled={!canSubmit}>

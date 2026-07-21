@@ -294,7 +294,6 @@ export default function ShopEditPage() {
               ))}
             </div>
           </div>
-        </div>
 
           <div className="she-actions">
             <button type="button" className="she-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
