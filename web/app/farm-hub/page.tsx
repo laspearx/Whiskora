@@ -54,7 +54,7 @@ export default function FarmHubPage() {
     try {
       let query = supabase
         .from("pets")
-        .select("*, farms(farm_name)")
+        .select("*, farms(farm_name, address)")
         .eq("status", "พร้อมย้ายบ้าน")
         .order("created_at", { ascending: false });
 
@@ -72,11 +72,30 @@ export default function FarmHubPage() {
     }
   };
 
-  const filteredPets = pets.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.breed?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.farms?.farm_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const q = searchQuery.toLowerCase().trim();
+  const filteredPets = !q ? pets : pets.filter(p =>
+    p.breed?.toLowerCase().includes(q) ||
+    p.farms?.farm_name?.toLowerCase().includes(q) ||
+    p.farms?.address?.toLowerCase().includes(q) ||
+    speciesTh(p.species)?.toLowerCase().includes(q)
   );
+
+  function calcAge(birthDate: string | null) {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    if (months < 0) { years--; months += 12; }
+    if (years > 0) return `${years} ปี${months > 0 ? ` ${months} เดือน` : ''}`;
+    if (months > 0) return `${months} เดือน`;
+    const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
+    return days > 0 ? `${days} วัน` : null;
+  }
+
+  function farmLocation(farm: any) {
+    return farm?.address || null;
+  }
 
   return (
     <>
@@ -113,7 +132,7 @@ export default function FarmHubPage() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
               <input 
                 type="text" 
-                placeholder="ค้นหาชื่อน้อง, สายพันธุ์ หรือฟาร์ม..."
+                placeholder="ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -187,26 +206,33 @@ export default function FarmHubPage() {
                 </div>
 
                 {/* Pet Details */}
-                <div className="p-4 md:p-5 flex flex-col flex-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-pink-600 transition-colors">
-                      {pet.name}
+                <div className="p-3 md:p-4 flex flex-col flex-1">
+                  {/* Breed + gender */}
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <h3 className="text-sm font-bold text-gray-900 truncate leading-snug group-hover:text-pink-600 transition-colors">
+                      {pet.breed || speciesTh(pet.species) || "—"}
                     </h3>
-                    <span className="mt-1">
+                    <span className="flex-shrink-0">
                       {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? <Icon.Male /> : <Icon.Female />}
                     </span>
                   </div>
-                  
-                  <p className="text-xs font-medium text-gray-500 mb-4">
-                    {pet.breed || speciesTh(pet.species)}
+
+                  {/* Age */}
+                  <p className="text-[11px] font-medium text-gray-400 mb-2 leading-tight">
+                    {calcAge(pet.birth_date) ? `อายุ ${calcAge(pet.birth_date)}` : "ไม่ระบุอายุ"}
                   </p>
 
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-1.5">
+                    {/* Farm + location */}
+                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 truncate">
                       <Icon.Farm />
-                      <span className="truncate">{pet.farms?.farm_name}</span>
+                      <span className="truncate">
+                        {pet.farms?.farm_name}
+                        {farmLocation(pet.farms) ? ` · ${farmLocation(pet.farms)}` : ""}
+                      </span>
                     </div>
-                    <div className="text-xl font-extrabold tracking-tight" style={{ color: F.ink }}>
+                    {/* Price */}
+                    <div className="text-base md:text-lg font-extrabold tracking-tight" style={{ color: F.ink }}>
                       {pet.price ? `฿${pet.price.toLocaleString()}` : "สอบถามราคา"}
                     </div>
                   </div>
