@@ -28,23 +28,28 @@ export default function BabyDashboardPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push(`/login?redirect=/farm-dashboard/${farmId}/babies`); return; }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { router.push(`/login?redirect=/farm-dashboard/${farmId}/babies`); return; }
 
-      const [{ data: babiesData }, { data: littersData }] = await Promise.all([
-        supabase.from('pets')
-          .select('id, name, image_url, gender, litter_id')
-          .eq('farm_id', farmId)
-          .eq('status', 'เด็ก')
-          .order('litter_id', { ascending: true, nullsFirst: false }),
-        supabase.from('litters')
-          .select('id, litter_code, status, actual_birth_date, expected_birth_date')
-          .eq('farm_id', farmId),
-      ]);
+        const [{ data: babiesData }, { data: littersData }] = await Promise.all([
+          supabase.from('pets')
+            .select('id, name, image_url, gender, litter_id')
+            .eq('farm_id', farmId)
+            .eq('status', 'เด็ก')
+            .order('id', { ascending: true }),
+          supabase.from('litters')
+            .select('id, litter_code, status, actual_birth_date, expected_birth_date')
+            .eq('farm_id', farmId),
+        ]);
 
-      setBabies(babiesData || []);
-      setLitters(littersData || []);
-      setIsLoading(false);
+        setBabies(babiesData || []);
+        setLitters(littersData || []);
+      } catch (e) {
+        console.error('babies load error:', e);
+      } finally {
+        setIsLoading(false);
+      }
     };
     load();
   }, [farmId, router]);
