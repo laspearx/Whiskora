@@ -19,7 +19,7 @@ const Icon = {
   Save:  () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
 };
 
-interface BabyForm { tempId: number; name: string; gender: string; weight: string; }
+interface BabyForm { tempId: number; name: string; gender: string; weight: string; plan: 'ยังไม่เปิดจอง' | 'เก็บ'; }
 
 export default function AddBabyPage() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function AddBabyPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [litterInfo, setLitterInfo] = useState<any>(null);
   const [birthDate, setBirthDate] = useState('');
-  const [babies, setBabies] = useState<BabyForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const [babies, setBabies] = useState<BabyForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
 
   useEffect(() => {
     const load = async () => {
@@ -52,9 +52,9 @@ export default function AddBabyPage() {
     load();
   }, [litterId, farmId, router]);
 
-  const addRow = () => setBabies(b => [...b, { tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const addRow = () => setBabies(b => [...b, { tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
   const removeRow = (id: number) => setBabies(b => b.filter(r => r.tempId !== id));
-  const updateRow = (id: number, field: keyof BabyForm, value: string) =>
+  const updateRow = (id: number, field: string, value: string) =>
     setBabies(b => b.map(r => r.tempId === id ? { ...r, [field]: value } : r));
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -68,7 +68,7 @@ export default function AddBabyPage() {
         litter_id: parseInt(litterId),
         name: b.name || `ลูก${litterInfo.dam?.name || ''} (${litterInfo.litter_code}) #${i + 1}`,
         gender: b.gender,
-        status: 'เด็ก',
+        status: b.plan,
         birth_date: birthDate,
         weight: b.weight ? parseFloat(b.weight) : null,
         species: litterInfo.dam?.species || null,
@@ -113,6 +113,10 @@ export default function AddBabyPage() {
         .ab-gender-btn { flex: 1; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; }
         .ab-gender-btn.m.active { border-color: ${F.blue}; background: ${F.blue}; color: white; }
         .ab-gender-btn.f.active { border-color: ${F.pink}; background: ${F.pink}; color: white; }
+        .ab-plan { display: flex; gap: 8px; }
+        .ab-plan-btn { flex: 1; padding: 10px 8px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 12px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; line-height: 1.3; }
+        .ab-plan-btn.sell.active { border-color: #D97706; background: #FFFBEB; color: #D97706; }
+        .ab-plan-btn.keep.active { border-color: #7C3AED; background: #F5F3FF; color: #7C3AED; }
         .ab-add { width: 100%; border: 2px dashed ${F.lineMid}; color: ${F.muted}; background: none; padding: 14px; border-radius: 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
         .ab-add:hover { border-color: ${F.pinkBorder}; color: ${F.pink}; background: ${F.pinkSoft}; }
         .ab-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
@@ -172,6 +176,13 @@ export default function AddBabyPage() {
                   <div className="ab-field">
                     <label className="ab-flabel">น้ำหนักแรกเกิด (กรัม) — ไม่บังคับ</label>
                     <input type="number" className="ab-input" placeholder="เช่น 85" value={baby.weight} onChange={e => updateRow(baby.tempId, 'weight', e.target.value)} />
+                  </div>
+                  <div className="ab-field">
+                    <label className="ab-flabel">วางแผนไว้</label>
+                    <div className="ab-plan">
+                      <button type="button" className={`ab-plan-btn sell ${baby.plan === 'ยังไม่เปิดจอง' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'plan', 'ยังไม่เปิดจอง')}>ยังไม่เปิดจอง</button>
+                      <button type="button" className={`ab-plan-btn keep ${baby.plan === 'เก็บ' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'plan', 'เก็บ')}>เก็บไว้เป็นพ่อแม่พันธุ์</button>
+                    </div>
                   </div>
                 </div>
               ))}

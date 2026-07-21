@@ -12,7 +12,7 @@ const F = {
   line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
 };
 
-interface KittenForm { tempId: number; name: string; gender: string; weight: string; }
+interface KittenForm { tempId: number; name: string; gender: string; weight: string; plan: 'ยังไม่เปิดจอง' | 'เก็บ'; }
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -32,7 +32,7 @@ export default function RecordBirthPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [litterInfo, setLitterInfo] = useState<any>(null);
   const [actualBirthDate, setActualBirthDate] = useState(new Date().toISOString().split('T')[0]);
-  const [kittens, setKittens] = useState<KittenForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const [kittens, setKittens] = useState<KittenForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
 
   useEffect(() => {
     const fetchLitter = async () => {
@@ -51,9 +51,9 @@ export default function RecordBirthPage() {
     if (litterId) fetchLitter();
   }, [litterId, farmId, router]);
 
-  const addKitten = () => setKittens([...kittens, { tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const addKitten = () => setKittens([...kittens, { tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
   const removeKitten = (id: number) => setKittens(kittens.filter((k) => k.tempId !== id));
-  const updateKitten = (id: number, field: keyof KittenForm, value: string) =>
+  const updateKitten = (id: number, field: string, value: string) =>
     setKittens(kittens.map((k) => (k.tempId === id ? { ...k, [field]: value } : k)));
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -66,7 +66,7 @@ export default function RecordBirthPage() {
       const petsData = kittens.map((k, index) => ({
         user_id: userId, farm_id: farmId, litter_id: parseInt(litterId),
         name: k.name || `ลูก${litterInfo.dam?.name || ''} (${litterInfo.litter_code}) #${index + 1}`,
-        gender: k.gender, status: 'เด็ก', birth_date: actualBirthDate,
+        gender: k.gender, status: k.plan, birth_date: actualBirthDate,
         weight: k.weight ? parseFloat(k.weight) : null,
         species: litterInfo.dam?.species || litterInfo.sire?.species || null,
         breed: litterInfo.dam?.breed || litterInfo.sire?.breed || null,
@@ -112,6 +112,10 @@ export default function RecordBirthPage() {
         .rb-gender-btn { flex: 1; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; }
         .rb-gender-btn.m.active { border-color: ${F.blue}; background: ${F.blue}; color: white; }
         .rb-gender-btn.f.active { border-color: ${F.pink}; background: ${F.pink}; color: white; }
+        .rb-plan { display: flex; gap: 8px; }
+        .rb-plan-btn { flex: 1; padding: 10px 8px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 12px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; line-height: 1.3; }
+        .rb-plan-btn.sell.active { border-color: #D97706; background: #FFFBEB; color: #D97706; }
+        .rb-plan-btn.keep.active { border-color: #7C3AED; background: #F5F3FF; color: #7C3AED; }
         .rb-add { width: 100%; border: 2px dashed ${F.lineMid}; color: ${F.muted}; background: none; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
         .rb-add:hover { border-color: ${F.pinkBorder}; color: ${F.pink}; background: ${F.pinkSoft}; }
         .rb-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px)); }
@@ -171,6 +175,13 @@ export default function RecordBirthPage() {
                   <div className="rb-field">
                     <label className="rb-flabel">น้ำหนักแรกเกิด (กรัม)</label>
                     <input type="number" className="rb-input" placeholder="เช่น 50" value={kitten.weight} onChange={(e) => updateKitten(kitten.tempId, 'weight', e.target.value)} />
+                  </div>
+                  <div className="rb-field">
+                    <label className="rb-flabel">วางแผนไว้</label>
+                    <div className="rb-plan">
+                      <button type="button" className={`rb-plan-btn sell ${kitten.plan === 'ยังไม่เปิดจอง' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'plan', 'ยังไม่เปิดจอง')}>ยังไม่เปิดจอง</button>
+                      <button type="button" className={`rb-plan-btn keep ${kitten.plan === 'เก็บ' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'plan', 'เก็บ')}>เก็บไว้เป็นพ่อแม่พันธุ์</button>
+                    </div>
                   </div>
                 </div>
               ))}

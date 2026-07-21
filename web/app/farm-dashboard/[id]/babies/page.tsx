@@ -36,7 +36,7 @@ export default function BabyDashboardPage() {
           supabase.from('pets')
             .select('id, name, image_url, gender, litter_id')
             .eq('farm_id', farmId)
-            .eq('status', 'เด็ก')
+            .in('status', ['เด็ก', 'ยังไม่เปิดจอง', 'เก็บ', 'เปิดจอง', 'พร้อมย้ายบ้าน'])
             .order('id', { ascending: true }),
           supabase.from('litters')
             .select('id, litter_code, status, actual_birth_date, expected_birth_date')
