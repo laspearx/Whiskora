@@ -735,9 +735,9 @@ function FarmDashboardContent() {
             ) : (
               <div className="fd-ov-grid">
                 {[
-                  { label: 'พ่อพันธุ์',       count: sires,    color: '#2563EB', bg: '#EFF6FF',   icon: '/icons/icon-my-pets.png',     href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
-                  { label: 'แม่พันธุ์',       count: dams,     color: F.pink,    bg: F.pinkSoft,  icon: '/icons/icon-foster-home.png', href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
-                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.purple,  bg: '#F3E8FF',   icon: '/icons/icon-breeding.png',    href: `#active-litters` },
+                  { label: 'พ่อพันธุ์',       count: sires,    color: '#2563EB', bg: '#EFF6FF',   icon: '/icons/icon-men.png',         href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
+                  { label: 'แม่พันธุ์',       count: dams,     color: F.pink,    bg: F.pinkSoft,  icon: '/icons/icon-women.png',       href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}` },
+                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.purple,  bg: '#F3E8FF',   icon: '/icons/icon-foster-home.png', href: `#active-litters` },
                   { label: 'พร้อมขาย',        count: forSale,  color: F.amber,   bg: F.amberSoft, icon: '/icons/icon-feeding.png',     href: `/farm-dashboard/${farmId}/babies` },
                   { label: 'รอส่งมอบ',        count: reserved, color: F.green,   bg: F.greenSoft, icon: '/icons/icon-pet-carrier.png', href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('ติดจอง')}` },
                 ].map(stat => (
