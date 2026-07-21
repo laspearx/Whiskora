@@ -15,8 +15,10 @@ const F = {
   pinkSoft: '#FDF2F5',
   line: '#E5E7EB',
   paper: '#FFFFFF',
-  gold: '#D97706',    // สีทองสำหรับสถานะพร้อมย้ายบ้าน (ดูพรีเมียมขึ้น)
+  gold: '#D97706',
   goldSoft: '#FEF3C7',
+  teal: '#0D9488',
+  tealSoft: '#F0FDFA',
 };
 
 // ─── Elegant Minimal Icons ──────────────────────────────────────────────────
@@ -55,7 +57,7 @@ export default function FarmHubPage() {
       let query = supabase
         .from("pets")
         .select("*, farms(farm_name, address)")
-        .eq("status", "พร้อมย้ายบ้าน")
+        .in("status", ["พร้อมย้ายบ้าน", "เปิดจอง"])
         .order("created_at", { ascending: false });
 
       if (activePetType !== "ทั้งหมด") {
@@ -196,12 +198,15 @@ export default function FarmHubPage() {
                     </div>
                   )}
                   
-                  {/* Premium Gold Status Badge */}
-                  <div 
-                    className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm"
-                    style={{ background: F.goldSoft, color: F.gold }}
+                  {/* Status Badge */}
+                  <div
+                    className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md tracking-wider shadow-sm"
+                    style={pet.status === 'เปิดจอง'
+                      ? { background: F.tealSoft, color: F.teal }
+                      : { background: F.goldSoft, color: F.gold }
+                    }
                   >
-                    พร้อมย้ายบ้าน
+                    {pet.status === 'เปิดจอง' ? 'เปิดจอง' : 'พร้อมย้ายเลย'}
                   </div>
                 </div>
 

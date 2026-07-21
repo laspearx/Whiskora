@@ -565,12 +565,13 @@ export default function EditPetPage() {
                   <option value={PET_STATUS.KID}>เด็ก</option>
                   <option value={PET_STATUS.BREEDER}>พ่อพันธุ์ / แม่พันธุ์</option>
                   <option value={PET_STATUS.AVAILABLE}>พร้อมย้ายบ้าน</option>
+                  <option value={PET_STATUS.OPEN_RESERVE}>เปิดจอง</option>
                   <option value={PET_STATUS.RESERVED}>ติดจอง</option>
                   <option value={PET_STATUS.RETIRED}>ทำหมัน / ปลดระวาง</option>
                 </select>
               </div>
 
-              {(status === PET_STATUS.AVAILABLE || status === PET_STATUS.RESERVED) && (
+              {(status === PET_STATUS.AVAILABLE || status === PET_STATUS.OPEN_RESERVE || status === PET_STATUS.RESERVED) && (
                 <div className="ep-field" style={{ marginBottom: 0 }}>
                   <label className="ep-label" style={{ color: F.pink }}>ค่าตัว / สินสอด (บาท)</label>
                   <input className="ep-input ep-price-input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="เช่น 15000" />

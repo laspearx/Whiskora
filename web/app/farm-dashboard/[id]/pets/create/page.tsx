@@ -317,6 +317,7 @@ export default function CreateFarmPetPage() {
                     <option value={PET_STATUS.KID}>เด็ก</option>
                     <option value={PET_STATUS.BREEDER}>พ่อพันธุ์ / แม่พันธุ์</option>
                     <option value={PET_STATUS.AVAILABLE}>พร้อมย้ายบ้าน</option>
+                    <option value={PET_STATUS.OPEN_RESERVE}>เปิดจอง</option>
                     <option value={PET_STATUS.RESERVED}>ติดจอง</option>
                     <option value={PET_STATUS.RETIRED}>ทำหมัน / ปลดระวาง</option>
                   </select>

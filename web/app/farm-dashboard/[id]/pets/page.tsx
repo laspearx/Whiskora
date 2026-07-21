@@ -71,6 +71,7 @@ export default function FarmPetsPage() {
 
   const statusStyle = (s: string) => {
     if (s === 'พร้อมย้ายบ้าน') return { bg: '#F0FDF4', color: F.green, border: '#BBF7D0' };
+    if (s === 'เปิดจอง') return { bg: '#F0FDFA', color: '#0D9488', border: '#99F6E4' };
     if (s === 'จองแล้ว') return { bg: '#FFF7ED', color: F.orange, border: '#FED7AA' };
     return { bg: F.pinkSoft, color: F.pink, border: F.pinkBorder };
   };
