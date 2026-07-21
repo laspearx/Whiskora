@@ -86,7 +86,7 @@ export default function RecordBirthPage() {
 
         * { box-sizing: border-box; }
         .rb-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px calc(140px + env(safe-area-inset-bottom,0px)); }
+        .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 32px; }
         .rb-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .rb-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .rb-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -118,12 +118,12 @@ export default function RecordBirthPage() {
         .rb-plan-btn.keep.active { border-color: #7C3AED; background: #F5F3FF; color: #7C3AED; }
         .rb-add { width: 100%; border: 2px dashed ${F.lineMid}; color: ${F.muted}; background: none; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
         .rb-add:hover { border-color: ${F.pinkBorder}; color: ${F.pink}; background: ${F.pinkSoft}; }
-        .rb-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px)); }
-        .rb-savebar-inner { max-width: 640px; margin: 0 auto; }
         .rb-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .rb-btn:hover { background: #D63F6A; }
         .rb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .rb-submit-inline { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid ${F.pink}; transition: all .18s; font-family: inherit; background: white; color: ${F.pink}; margin-top: 8px; }
+        .rb-inline-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .rb-cancel-btn { flex: 0 0 auto; padding: 14px 18px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .rb-submit-inline { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid ${F.pink}; transition: all .18s; font-family: inherit; background: white; color: ${F.pink}; }
         .rb-submit-inline:hover { background: ${F.pinkSoft}; }
         .rb-submit-inline:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
@@ -187,19 +187,15 @@ export default function RecordBirthPage() {
               ))}
 
               <button type="button" className="rb-add" onClick={addKitten}><Icon.Plus /> เพิ่มเด็กๆ อีกตัว</button>
-              <button type="submit" className="rb-submit-inline" disabled={isLoading}>
-                <Icon.Save /> {isLoading ? 'กำลังบันทึก...' : `บันทึกข้อมูลแรกเกิด ${kittens.length} ตัว`}
-              </button>
+              <div className="rb-inline-actions">
+                <button type="button" className="rb-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
+                <button type="submit" className="rb-submit-inline" disabled={isLoading}>
+                  <Icon.Save /> {isLoading ? 'กำลังบันทึก...' : `บันทึกข้อมูลแรกเกิด ${kittens.length} ตัว`}
+                </button>
+              </div>
             </form>
           </div>
 
-          <div className="rb-savebar">
-            <div className="rb-savebar-inner">
-              <button type="button" className="rb-btn" onClick={handleSubmit} disabled={isLoading}>
-                <Icon.Save /> {isLoading ? "กำลังเซฟข้อมูล..." : `ยืนยันบันทึกเด็กๆ ทั้ง ${kittens.length} ตัว`}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </>

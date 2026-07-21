@@ -186,7 +186,7 @@ export default function CreateFarmPetPage() {
       <style>{`
         * { box-sizing: border-box; }
         .fpc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
-        .fpc-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 120px; }
+        .fpc-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 32px; }
         .fpc-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .fpc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .fpc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -222,8 +222,7 @@ export default function CreateFarmPetPage() {
         .fpc-hint { font-size: 10px; color: ${F.muted}; line-height: 1.5; }
 
         /* Save bar */
-        .fpc-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .fpc-savebar-inner { max-width: 640px; margin: 0 auto; display: flex; gap: 12px; }
+        .fpc-actions { display: flex; gap: 12px; margin-top: 24px; }
         .fpc-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .fpc-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .fpc-btn:hover { background: #D63F6A; }
@@ -415,8 +414,7 @@ export default function CreateFarmPetPage() {
           </div>
         </div>
 
-        <div className="fpc-savebar">
-          <div className="fpc-savebar-inner">
+          <div className="fpc-actions">
             <button type="button" className="fpc-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="fpc-btn" onClick={handleSubmit} disabled={saving}>
               <Icon.Save /> {saving ? "กำลังบันทึกข้อมูล..." : "บันทึก"}

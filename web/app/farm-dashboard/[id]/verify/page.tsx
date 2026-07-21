@@ -177,7 +177,7 @@ export default function VerifyFarmPage() {
       <style>{`
         * { box-sizing: border-box; }
         .vf-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; overflow-x: clip; }
-        .vf-body { max-width: 560px; margin: 0 auto; padding: 0 0 120px; }
+        .vf-body { max-width: 560px; margin: 0 auto; padding: 0 0 32px; }
 
         /* Top bar */
         .vf-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: white; border-bottom: 1px solid ${F.line}; position: sticky; top: 0; z-index: 10; }
@@ -222,9 +222,10 @@ export default function VerifyFarmPage() {
         .vf-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
 
         /* Save bar */
-        .vf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
-        .vf-savebar-inner { max-width: 560px; margin: 0 auto; }
-        .vf-submit-btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
+        .vf-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .vf-cancel-btn { flex: 0 0 auto; padding: 15px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .vf-cancel-btn:hover { background: #F9FAFB; }
+        .vf-submit-btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
         .vf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .vf-submit-btn.not-ready { background: ${F.lineMid}; color: ${F.muted}; box-shadow: none; }
         .vf-reuse-badge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: ${F.greenSoft}; border: 1px solid #BBF7D0; border-radius: 10px; font-size: 12px; font-weight: 600; color: ${F.green}; }
@@ -404,11 +405,8 @@ export default function VerifyFarmPage() {
             })}
           </div>
 
-        </div>
-
-        {/* Save bar */}
-        <div className="vf-savebar">
-          <div className="vf-savebar-inner">
+          <div className="vf-actions">
+            <button type="button" className="vf-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button
               className={`vf-submit-btn ${!allDone ? 'not-ready' : ''}`}
               onClick={handleSubmit}

@@ -171,7 +171,7 @@ export default function EditFarmPage() {
       <style>{`
         * { box-sizing: border-box; }
         .fe-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: #FDF6F8; }
-        .fe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .fe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .fe-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
         .fe-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s; flex-shrink: 0; }
         .fe-back:hover { background: ${F.line}; color: ${F.ink}; transform: translateX(-1px); }
@@ -198,8 +198,7 @@ export default function EditFarmPage() {
         .fe-geo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.lineMid}; background: white; font-size: 12px; font-weight: 700; color: ${F.ink}; cursor: pointer; font-family: inherit; transition: all .15s; }
         .fe-geo-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; color: ${F.pink}; }
         .fe-pin-coords { font-size: 11px; color: ${F.muted}; }
-        .fe-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .fe-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
+        .fe-actions { display: flex; gap: 12px; margin-top: 24px; }
         .fe-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .fe-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
         .fe-btn-cancel:hover { background: ${F.line}; }
@@ -265,10 +264,8 @@ export default function EditFarmPage() {
               </>
             )}
           </div>
-        </div>
 
-        <div className="fe-savebar">
-          <div className="fe-savebar-inner">
+          <div className="fe-actions">
             <button type="button" className="fe-btn fe-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="fe-btn fe-btn-save" onClick={handleSave} disabled={saving}>
               <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}

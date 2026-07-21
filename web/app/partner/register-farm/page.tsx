@@ -234,7 +234,7 @@ export default function RegisterFarmPage() {
       <style>{`
         * { box-sizing: border-box; }
         .pf-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
-        .pf-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .pf-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .pf-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
         .pf-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .pf-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -300,9 +300,8 @@ export default function RegisterFarmPage() {
         .pf-geo-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; color: ${F.pink}; }
         .pf-pin-coords { font-size: 11px; color: ${F.muted}; font-weight: 500; }
 
-        .pf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .pf-savebar-inner { max-width: 600px; margin: 0 auto; }
-        .pf-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .pf-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .pf-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .pf-btn:hover { background: #D63F6A; }
         .pf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .pf-autofill-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; margin-bottom: 14px; }
@@ -473,8 +472,8 @@ export default function RegisterFarmPage() {
           </div>
         </div>
 
-        <div className="pf-savebar">
-          <div className="pf-savebar-inner">
+          <div className="pf-actions">
+            <button type="button" className="pf-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="pf-btn" onClick={handleSubmit} disabled={!canSubmit}>
               {loading ? 'กำลังบันทึก...' : 'ยืนยันการเปิดฟาร์ม'}
             </button>

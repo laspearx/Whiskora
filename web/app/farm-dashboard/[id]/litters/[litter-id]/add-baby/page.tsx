@@ -87,7 +87,7 @@ export default function AddBabyPage() {
       <style>{`
         * { box-sizing: border-box; }
         .ab-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; }
-        .ab-body { max-width: 640px; margin: 0 auto; padding: 24px 20px calc(100px + env(safe-area-inset-bottom,0px)); }
+        .ab-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 32px; }
         .ab-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .ab-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s; flex-shrink: 0; margin-top: 2px; }
         .ab-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -119,8 +119,7 @@ export default function AddBabyPage() {
         .ab-plan-btn.keep.active { border-color: #7C3AED; background: #F5F3FF; color: #7C3AED; }
         .ab-add { width: 100%; border: 2px dashed ${F.lineMid}; color: ${F.muted}; background: none; padding: 14px; border-radius: 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
         .ab-add:hover { border-color: ${F.pinkBorder}; color: ${F.pink}; background: ${F.pinkSoft}; }
-        .ab-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .ab-savebar-inner { max-width: 640px; margin: 0 auto; display: flex; gap: 12px; }
+        .ab-actions { display: flex; gap: 12px; margin-top: 24px; }
         .ab-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .ab-save-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .ab-save-btn:hover { background: #D63F6A; }
@@ -191,13 +190,11 @@ export default function AddBabyPage() {
             </form>
           </div>
 
-          <div className="ab-savebar">
-            <div className="ab-savebar-inner">
-              <button type="button" className="ab-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
-              <button className="ab-save-btn" onClick={handleSubmit} disabled={isSaving}>
-                <Icon.Save /> {isSaving ? 'กำลังบันทึก...' : `บันทึกสมาชิกใหม่ ${babies.length} ตัว`}
-              </button>
-            </div>
+          <div className="ab-actions">
+            <button type="button" className="ab-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
+            <button className="ab-save-btn" onClick={handleSubmit} disabled={isSaving}>
+              <Icon.Save /> {isSaving ? 'กำลังบันทึก...' : `บันทึกสมาชิกใหม่ ${babies.length} ตัว`}
+            </button>
           </div>
         </div>
       )}

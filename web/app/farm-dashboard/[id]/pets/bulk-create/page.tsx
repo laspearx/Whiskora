@@ -227,7 +227,7 @@ function BulkCreateContent() {
 
         * { box-sizing: border-box; }
         .bc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
-        .bc-body { max-width: 920px; margin: 0 auto; padding: 28px 20px 140px; }
+        .bc-body { max-width: 920px; margin: 0 auto; padding: 28px 20px 32px; }
         .bc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
         .bc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .bc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -262,20 +262,19 @@ function BulkCreateContent() {
         /* add row button */
         .bc-add-row { width: 100%; margin-top: 16px; padding: 16px; border-radius: 16px; border: 1.5px dashed ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s; font-family: inherit; }
         .bc-add-row:hover { background: #FDE7EF; border-color: ${F.pink}; }
-        /* sticky save bar */
-        .bc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .bc-savebar-inner { max-width: 920px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .bc-savebar-count { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
-        .bc-savebar-count b { color: ${F.pink}; font-family: inherit; font-size: 16px; }
+        .bc-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 24px; }
+        .bc-cancel-btn { padding: 13px 18px; border-radius: 26px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .bc-actions-count { font-size: 13px; font-weight: 600; color: ${F.inkSoft}; }
+        .bc-actions-count b { color: ${F.pink}; font-family: inherit; font-size: 16px; }
         .bc-save-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 26px; background: ${F.pink}; color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .18s ease; }
         .bc-save-btn:hover { background: #D63F6A; box-shadow: 0 6px 20px rgba(232,70,119,0.4); }
         .bc-save-btn:active { transform: scale(0.97); }
         .bc-save-btn:disabled { opacity: .6; cursor: wait; }
         @media (max-width: 600px) {
-          .bc-body { padding: 18px 14px 140px; }
+          .bc-body { padding: 18px 14px 32px; }
           .bc-title { font-size: 21px; }
           .bc-row-body { grid-template-columns: 1fr; gap: 12px; }
-          .bc-savebar-count { font-size: 12px; }
+          .bc-actions-count { font-size: 12px; }
           .bc-save-btn { padding: 12px 20px; font-size: 14px; }
         }
       `}</style>
@@ -412,10 +411,10 @@ function BulkCreateContent() {
           <button className="bc-add-row" onClick={addRow}><Icon.Plus /> เพิ่มอีกตัว</button>
         </div>
 
-        {/* Sticky save bar */}
-        <div className="bc-savebar">
-          <div className="bc-savebar-inner">
-            <div className="bc-savebar-count">พร้อมบันทึก <b>{filledCount}</b> ตัว</div>
+        <div className="bc-actions">
+          <div className="bc-actions-count">พร้อมบันทึก <b>{filledCount}</b> ตัว</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="bc-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button className="bc-save-btn" onClick={handleSaveAll} disabled={saving || filledCount === 0}>
               <Icon.Save /> {saving ? 'กำลังบันทึก...' : `บันทึกทั้งหมด (${filledCount})`}
             </button>

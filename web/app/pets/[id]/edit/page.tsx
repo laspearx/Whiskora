@@ -254,7 +254,7 @@ export default function EditPetPage() {
       <style>{`
         * { box-sizing: border-box; }
         .ep-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; }
-        .ep-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 160px; }
+        .ep-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 32px; }
 
         .ep-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
         .ep-back { width: 38px; height: 38px; border-radius: 11px; background: white; border: 1px solid ${F.line}; display: flex; align-items: center; justify-content: center; cursor: pointer; color: ${F.inkSoft}; flex-shrink: 0; }
@@ -340,9 +340,10 @@ export default function EditPetPage() {
         .ep-confirm-ok:disabled { opacity: .6; }
 
         /* Save bar */
-        .ep-save-bar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom,0px)); left: 0; right: 0; padding: 12px 16px; background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-top: 1px solid ${F.line}; z-index: 60; }
-        @media (min-width: 768px) { .ep-save-bar { bottom: 0; padding-bottom: 16px; } }
-        .ep-save-btn { width: 100%; max-width: 560px; margin: 0 auto; display: block; padding: 14px; border-radius: 14px; background: ${F.pink}; color: white; font-family: inherit; font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: opacity .15s; }
+        .ep-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .ep-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .ep-cancel-btn:hover { background: #F9FAFB; }
+        .ep-save-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 14px; border-radius: 14px; background: ${F.pink}; color: white; font-family: inherit; font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: opacity .15s; }
         .ep-save-btn:disabled { opacity: .6; cursor: not-allowed; }
 
         @media (max-width: 480px) { .ep-grid4 { grid-template-columns: 1fr 1fr; } }
@@ -588,14 +589,14 @@ export default function EditPetPage() {
             </div>
 
           </form>
-        </div>
-      </div>
 
-      {/* Fixed Save Bar */}
-      <div className="ep-save-bar">
-        <button className="ep-save-btn" onClick={handleSave as any} disabled={saving || isDeleting}>
-          {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
-        </button>
+          <div className="ep-actions">
+            <button type="button" className="ep-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
+            <button className="ep-save-btn" onClick={handleSave as any} disabled={saving || isDeleting}>
+              {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Delete Confirm Sheet */}

@@ -184,7 +184,7 @@ function CreatePetContent() {
         @keyframes cp-rise { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
         * { box-sizing: border-box; }
         .cp-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .cp-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 120px; animation: cp-rise .4s ease both; }
+        .cp-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 32px; animation: cp-rise .4s ease both; }
 
         /* ── header ── */
         .cp-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
@@ -234,8 +234,7 @@ function CreatePetContent() {
         .cp-gender-btn.female.active { border-color: ${F.pink}; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-weight: 500; }
 
         /* ── save bar ── */
-        .cp-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); border-top: 1px solid ${F.line}; padding: 12px 20px; }
-        .cp-savebar-inner { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
+        .cp-actions { display: flex; gap: 10px; margin-top: 24px; }
         .cp-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 14px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: inherit; text-decoration: none; }
         .cp-btn-cancel { flex: 0 0 auto; padding: 13px 20px; background: white; color: ${F.muted}; border: 1px solid ${F.line}; }
         .cp-btn-cancel:hover { background: ${F.paper}; color: ${F.ink}; }
@@ -422,9 +421,7 @@ function CreatePetContent() {
           </form>
         </div>
 
-        {/* Save bar */}
-        <div className="cp-savebar">
-          <div className="cp-savebar-inner">
+          <div className="cp-actions">
             <button type="button" className="cp-btn cp-btn-cancel" onClick={() => router.push(fromRedirect && fromRedirect.startsWith('/') ? fromRedirect : '/profile')}>ยกเลิก</button>
             <button type="button" className="cp-btn cp-btn-save" onClick={handleSave} disabled={saving}>
               <Icon.Save /> {saving ? "กำลังบันทึก..." : "เพิ่มสัตว์เลี้ยง"}

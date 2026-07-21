@@ -90,7 +90,7 @@ export default function LitterWeightsPage() {
       <style>{`
         * { box-sizing: border-box; }
         .lw-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; }
-        .lw-body { max-width: 640px; margin: 0 auto; padding: 24px 20px calc(100px + env(safe-area-inset-bottom,0px)); }
+        .lw-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 32px; }
         .lw-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .lw-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s; flex-shrink: 0; margin-top: 2px; }
         .lw-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -116,8 +116,7 @@ export default function LitterWeightsPage() {
         .lw-weight-input { width: 90px; padding: 9px 10px; border: 1.5px solid ${F.lineMid}; border-radius: 10px; font-size: 15px; font-weight: 700; color: ${F.ink}; text-align: center; outline: none; font-family: inherit; transition: all .15s; }
         .lw-weight-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .lw-weight-unit { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; margin-top: 2px; }
-        .lw-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px)); }
-        .lw-savebar-inner { max-width: 640px; margin: 0 auto; }
+        .lw-actions { display: flex; gap: 12px; margin-top: 24px; }
         .lw-save-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .lw-save-btn:hover { background: #D63F6A; }
         .lw-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -182,12 +181,10 @@ export default function LitterWeightsPage() {
             })}
           </div>
 
-          <div className="lw-savebar">
-            <div className="lw-savebar-inner">
-              <button className="lw-save-btn" onClick={handleSave} disabled={isSaving || filledCount === 0}>
-                <Icon.Save /> {isSaving ? 'กำลังบันทึก...' : `บันทึกน้ำหนัก ${filledCount > 0 ? filledCount : babies.length} ตัว`}
-              </button>
-            </div>
+          <div className="lw-actions">
+            <button className="lw-save-btn" onClick={handleSave} disabled={isSaving || filledCount === 0}>
+              <Icon.Save /> {isSaving ? 'กำลังบันทึก...' : `บันทึกน้ำหนัก ${filledCount > 0 ? filledCount : babies.length} ตัว`}
+            </button>
           </div>
         </div>
       )}

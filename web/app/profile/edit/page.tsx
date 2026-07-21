@@ -129,7 +129,7 @@ export default function EditProfilePage() {
       <style>{`
         * { box-sizing: border-box; }
         .pe-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .pe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .pe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .pe-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .pe-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .pe-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -152,8 +152,7 @@ export default function EditProfilePage() {
         .pe-input, .pe-textarea { width: 100%; padding: 12px 14px; background: white; border: 1px solid ${F.lineMid}; border-radius: 12px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; }
         .pe-input:focus, .pe-textarea:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .pe-textarea { resize: none; }
-        .pe-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .pe-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
+        .pe-actions { display: flex; gap: 12px; margin-top: 24px; }
         .pe-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .pe-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
         .pe-btn-cancel:hover { background: ${F.line}; }
@@ -244,13 +243,11 @@ export default function EditProfilePage() {
             </form>
           </div>
 
-          <div className="pe-savebar">
-            <div className="pe-savebar-inner">
-              <button type="button" className="pe-btn pe-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
-              <button type="button" className="pe-btn pe-btn-save" onClick={handleSave} disabled={saving}>
-                <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-              </button>
-            </div>
+          <div className="pe-actions">
+            <button type="button" className="pe-btn pe-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
+            <button type="button" className="pe-btn pe-btn-save" onClick={handleSave} disabled={saving}>
+              <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            </button>
           </div>
         </div>
       )}

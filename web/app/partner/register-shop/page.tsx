@@ -222,7 +222,7 @@ export default function RegisterShopPage() {
       <style>{`
         * { box-sizing: border-box; }
         .ps-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .ps-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .ps-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .ps-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .ps-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .ps-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -278,8 +278,7 @@ export default function RegisterShopPage() {
         .ps-geo-btn:hover { background: ${F.tealSoft}; border-color: ${F.teal}; color: ${F.teal}; }
         .ps-pin-coords { font-size: 11px; color: ${F.muted}; }
 
-        .ps-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .ps-savebar-inner { max-width: 600px; margin: 0 auto; }
+        .ps-actions { display: flex; gap: 12px; margin-top: 24px; }
         .ps-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.teal}; color: white; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
         .ps-btn:hover { background: #0B7E74; }
         .ps-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -408,8 +407,7 @@ export default function RegisterShopPage() {
           </div>
         </div>
 
-        <div className="ps-savebar">
-          <div className="ps-savebar-inner">
+          <div className="ps-actions">
             <button type="button" className="ps-btn" onClick={handleSubmit} disabled={!canSubmit}>
               {isLoading ? 'กำลังบันทึก...' : 'ยืนยันการเปิดร้าน'}
             </button>

@@ -153,7 +153,7 @@ export default function EditLitterPage() {
       <style>{`
         * { box-sizing: border-box; }
         .le-page { font-family: inherit; min-height: 100vh; color: #111827; }
-        .le-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 100px; }
+        .le-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 32px; }
         .le-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
         .le-back { width: 40px; height: 40px; border-radius: 12px; background: white; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .15s; }
         .le-back:hover { background: #F9FAFB; color: #111827; }
@@ -174,8 +174,7 @@ export default function EditLitterPage() {
         .le-delete-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; border: 1px solid #FCA5A5; background: white; color: #DC2626; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
         .le-delete-btn:hover { background: #FEF2F2; }
         .le-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
-        .le-savebar { position: fixed; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid #E5E7EB; padding: 14px 20px; }
-        .le-savebar-inner { max-width: 560px; margin: 0 auto; display: flex; gap: 12px; }
+        .le-actions { display: flex; gap: 12px; margin-top: 24px; }
         .le-cancel-btn { flex: 0 0 auto; padding: 14px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .le-save-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; background: #E84677; color: white; font-size: 15px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: background .15s; }
         .le-save-btn:hover { background: #D63F6A; }
@@ -236,10 +235,8 @@ export default function EditLitterPage() {
               ยกเลิกการจับคู่บรีดนี้
             </button>
           </div>
-        </div>
 
-        <div className="le-savebar">
-          <div className="le-savebar-inner">
+          <div className="le-actions">
             <button type="button" className="le-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="le-save-btn" onClick={handleSubmit} disabled={isSaving}>
               {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
