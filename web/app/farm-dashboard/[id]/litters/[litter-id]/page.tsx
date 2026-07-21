@@ -188,7 +188,7 @@ export default function LitterDetailPage() {
         .ld-baby:hover { border-color: ${F.pinkBorder}; }
         .ld-baby-photo { aspect-ratio: 1; border-radius: 11px; overflow: hidden; background: ${F.bg}; position: relative; margin-bottom: 7px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
         .ld-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .ld-baby-weight { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.92); border-radius: 6px; padding: 1px 5px; font-size: 9px; font-weight: 700; color: ${F.inkSoft}; }
+        .ld-baby-weight { position: absolute; top: 4px; left: 4px; background: rgba(255,255,255,0.92); border-radius: 6px; padding: 1px 5px; font-size: 9px; font-weight: 700; color: ${F.inkSoft}; }
         .ld-baby-name { font-family: inherit; font-size: 12px; font-weight: 700; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
         .ld-baby-foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: auto; }
         .ld-baby-gender { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
@@ -203,7 +203,7 @@ export default function LitterDetailPage() {
         .ld-trend-empty { font-size: 12px; color: ${F.muted}; font-weight: 600; }
 
         /* photo upload overlay */
-        .ld-baby-upload { position: absolute; bottom: 34px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .ld-baby-upload { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .ld-baby-upload:hover { background: ${F.pinkSoft}; }
         .ld-baby-uploading { opacity: 0.5; pointer-events: none; }
       `}</style>
