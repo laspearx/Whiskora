@@ -629,17 +629,30 @@ export default function ProfilePage() {
           <section className="pp-section">
             <div className="pp-section-head">
               <span className="pp-section-title" style={{ color: "#dc2626" }}>ผู้ดูแลระบบ</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: '#fee2e2', color: '#dc2626' }}>Admin</span>
             </div>
-            <div className="pp-card pp-admin-card">
+            <div className="pp-card pp-admin-card" style={{ marginBottom: 10 }}>
               <Link href="/admin/verifications" className="pp-admin-link">
                 <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
                 <div>
                   <strong>คำขอยืนยันตัวตน</strong>
-                  <span>จัดการ farm verifications</span>
+                  <span>ตรวจสอบและอนุมัติฟาร์ม</span>
                 </div>
-                <span className="pp-admin-badge">Admin</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+              </Link>
+            </div>
+            <div className="pp-card pp-admin-card">
+              <Link href="/admin/dashboard" className="pp-admin-link">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <div>
+                  <strong>แดชบอร์ดหลังบ้าน</strong>
+                  <span>สถิติผู้ใช้ สัตว์ และพาร์ทเนอร์ทั้งหมด</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
               </Link>
             </div>
           </section>
