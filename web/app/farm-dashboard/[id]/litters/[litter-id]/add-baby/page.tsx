@@ -169,8 +169,8 @@ export default function AddBabyPage() {
                   <div className="ab-field">
                     <label className="ab-flabel">เพศ</label>
                     <div className="ab-gender">
-                      <button type="button" className={`ab-gender-btn m ${baby.gender === 'male' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'gender', 'male')}>♂ ตัวผู้</button>
-                      <button type="button" className={`ab-gender-btn f ${baby.gender === 'female' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'gender', 'female')}>♀ ตัวเมีย</button>
+                      <button type="button" className={`ab-gender-btn m ${baby.gender === 'male' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'gender', 'male')}><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวผู้</button>
+                      <button type="button" className={`ab-gender-btn f ${baby.gender === 'female' ? 'active' : ''}`} onClick={() => updateRow(baby.tempId, 'gender', 'female')}><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวเมีย</button>
                     </div>
                   </div>
                   <div className="ab-field">

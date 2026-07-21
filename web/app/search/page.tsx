@@ -82,7 +82,7 @@ function SearchResults() {
             <PageLoader />
           ) : farms.length === 0 ? (
             <div className="sr-empty">
-              <div className="sr-empty-emoji">🕵️</div>
+              <div className="sr-empty-emoji"><img src="/icons/icon-scan.png" alt="" style={{width:52,height:52,objectFit:'contain',opacity:0.3}} /></div>
               <h2 className="sr-empty-title">ไม่พบฟาร์มที่คุณค้นหา</h2>
               <p className="sr-empty-text">ลองใช้คำค้นหาอื่นดูอีกครั้งนะครับ</p>
             </div>

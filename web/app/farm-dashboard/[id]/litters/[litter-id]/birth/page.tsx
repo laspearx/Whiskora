@@ -73,7 +73,7 @@ export default function RecordBirthPage() {
       }));
       const { error: petsError } = await supabase.from('pets').insert(petsData);
       if (petsError) throw petsError;
-      alert(`🎉 บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
+      alert(`บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {
       alert('เกิดข้อผิดพลาด: ' + error.message);
@@ -143,7 +143,7 @@ export default function RecordBirthPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="rb-card">
-                <label className="rb-date-label">📅 วันที่คลอดจริง</label>
+                <label className="rb-date-label">วันที่คลอดจริง</label>
                 <input type="date" className="rb-input" value={actualBirthDate} onChange={(e) => setActualBirthDate(e.target.value)} required />
               </div>
 
@@ -168,8 +168,8 @@ export default function RecordBirthPage() {
                   <div className="rb-field">
                     <label className="rb-flabel">เพศ</label>
                     <div className="rb-gender">
-                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}>♂ ตัวผู้</button>
-                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}>♀ ตัวเมีย</button>
+                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวผู้</button>
+                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวเมีย</button>
                     </div>
                   </div>
                   <div className="rb-field">

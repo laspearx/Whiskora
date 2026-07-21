@@ -1100,7 +1100,7 @@ export default function PetDetailPage() {
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
                     { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
-                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
+                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
                   ] as any[]).filter(Boolean).map((row: any, i: number) => (
                     <div key={i} className="pet-info-row">
@@ -1224,7 +1224,7 @@ export default function PetDetailPage() {
                       <div style={{ textAlign: 'center', padding: '20px 0', color: F.muted, fontSize: '12px' }}>ยังไม่มีเอกสาร — กดเพิ่มเอกสารเพื่ออัปโหลด</div>
                     ) : documents.map(doc => (
                       <div key={doc.id} className="doc-row">
-                        <div className="doc-icon" style={{ background: '#DBEAFE', fontSize: '18px' }}>📄</div>
+                        <div className="doc-icon" style={{ background: '#DBEAFE' }}><img src="/icons/icon-documents.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>
                         <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                         <div className="doc-actions">
                           <a className="doc-download" href={doc.file_url} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
@@ -1288,7 +1288,7 @@ export default function PetDetailPage() {
                     </div>
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</div>
                       </div>
                     )}
@@ -1360,7 +1360,7 @@ export default function PetDetailPage() {
                     )}
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
                       </div>
                     )}
@@ -1427,8 +1427,8 @@ export default function PetDetailPage() {
                     {filteredActivities.map(a => (
                       <tr key={a.id}>
                         <td style={{ width: 36, paddingLeft: 0 }}>
-                          <div className="activity-type-icon" style={{ background: a.activity_type?.includes('อาหาร') ? '#FEF9C3' : a.activity_type?.includes('หมอ') ? '#FEE2E2' : '#F0FDF4', fontSize: '14px' }}>
-                            {a.activity_type?.includes('อาหาร') ? '🍗' : a.activity_type?.includes('หมอ') ? '🏥' : a.activity_type?.includes('พยาธิ') ? '💊' : '📝'}
+                          <div className="activity-type-icon" style={{ background: a.activity_type?.includes('อาหาร') ? '#FEF9C3' : a.activity_type?.includes('หมอ') ? '#FEE2E2' : '#F0FDF4' }}>
+                            <img src={a.activity_type?.includes('อาหาร') ? '/icons/icon-feeding.png' : a.activity_type?.includes('หมอ') ? '/icons/icon-vet-care.png' : a.activity_type?.includes('พยาธิ') ? '/icons/icon-vaccine.png' : '/icons/icon-documents.png'} alt="" style={{width:16,height:16,objectFit:'contain'}} />
                           </div>
                         </td>
                         <td><div style={{ fontSize: '12px', fontWeight: 600, color: F.ink }}>{a.title}</div><div style={{ fontSize: '11px', color: F.muted, marginTop: '2px' }}>{a.description}</div></td>
@@ -1450,7 +1450,7 @@ export default function PetDetailPage() {
               <div className="card-body">
                 {documents.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีเอกสาร</div> : documents.map(doc => (
                   <div key={doc.id} className="doc-row">
-                    <div className="doc-icon" style={{ background: '#DBEAFE', fontSize: '18px' }}>📄</div>
+                    <div className="doc-icon" style={{ background: '#DBEAFE' }}><img src="/icons/icon-documents.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>
                     <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                     <div className="doc-actions">
                       <a className="doc-download" href={doc.file_url} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
@@ -1488,7 +1488,7 @@ export default function PetDetailPage() {
             <div className="share-footer-left"><div className="share-paw"><img src="/icons/icon-paw-sparkle.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <div><div className="share-title">แชร์โปรไฟล์ {pet.name}</div><div className="share-subtitle">ให้เพื่อนหรือครอบครัวดูได้ง่าย ๆ</div></div>
             </div>
-            <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว ✓' : 'คัดลอก'}</button></div>
+            <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</button></div>
             <button className="btn-pink" onClick={handleShare}><img src="/icons/icon-share.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> แชร์</button>
           </div>
         </div>
@@ -1599,7 +1599,7 @@ export default function PetDetailPage() {
                     </div>
                   </div>
                   <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#DC2626', lineHeight: 1.6 }}>
-                    ⚠ เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
+                    เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
                   </div>
                   {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
@@ -1699,7 +1699,7 @@ export default function PetDetailPage() {
       )}
 
       {/* ─── Toast ─── */}
-      {copied && <div className="toast">คัดลอกลิงก์แล้ว ✓</div>}
+      {copied && <div className="toast">คัดลอกลิงก์แล้ว</div>}
     </>
   );
 }

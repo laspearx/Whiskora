@@ -147,7 +147,7 @@ export default function PetWeightPage() {
 
             <div className="pw-summary">
               <div className="pw-pet-photo">
-                {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src="/icons/icon-paw-pink.png" alt="" style={{width:'55%',height:'55%',objectFit:'contain',opacity:0.35}} />}
               </div>
               <div>
                 <div className="pw-pet-name">{pet.name}</div>

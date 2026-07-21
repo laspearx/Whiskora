@@ -117,7 +117,7 @@ export default function AppointmentsPage() {
 
           {list.length === 0 ? (
             <div className="ap-empty">
-              <div className="ap-empty-icon">{tab === 'upcoming' ? '📅' : '✅'}</div>
+              <div className="ap-empty-icon">{tab === 'upcoming' ? <img src="/icons/icon-calendar.png" alt="" style={{width:36,height:36,objectFit:'contain',opacity:0.35}} /> : <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"><polyline points="20 6 9 17 4 12"/></svg>}</div>
               <div className="ap-empty-text">{tab === 'upcoming' ? 'ยังไม่มีนัดหมายที่ค้างอยู่' : 'ยังไม่มีรายการที่เสร็จแล้ว'}</div>
             </div>
           ) : (

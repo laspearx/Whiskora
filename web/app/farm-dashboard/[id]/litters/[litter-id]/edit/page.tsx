@@ -204,13 +204,13 @@ export default function EditLitterPage() {
 
               <div className="le-grid2">
                 <div className="le-field">
-                  <label className="le-label">♂ พ่อพันธุ์</label>
+                  <label className="le-label"><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />พ่อพันธุ์</label>
                   <select name="sire_id" value={formData.sire_id} onChange={handleChange} className="le-select">
                     {maleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="le-field">
-                  <label className="le-label">♀ แม่พันธุ์</label>
+                  <label className="le-label"><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />แม่พันธุ์</label>
                   <select name="dam_id" value={formData.dam_id} onChange={handleChange} className="le-select">
                     {femaleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>

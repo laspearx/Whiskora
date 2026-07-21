@@ -215,12 +215,15 @@ export default function LitterDetailPage() {
           <div className="ld-body">
             <div className="ld-top">
               <button className="ld-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-              <h1 className="ld-title">🐾 ครอก <span className="code">{litter.litter_code || 'ไม่ระบุ'}</span></h1>
+              <h1 className="ld-title">ครอก <span className="code">{litter.litter_code || 'ไม่ระบุ'}</span></h1>
             </div>
 
             <div className="ld-status">
               <div className="ld-status-icon" style={born ? { background: '#F0FDF4', borderColor: '#BBF7D0', color: F.green } : { background: '#FFF7ED', borderColor: '#FED7AA', color: F.orange }}>
-                {born ? '🎉' : '⏳'}
+                {born
+                  ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                }
               </div>
               <div className="ld-status-info">
                 <span className="ld-status-badge" style={born ? { background: '#F0FDF4', color: F.green, borderColor: '#BBF7D0' } : { background: '#FFF7ED', color: F.orange, borderColor: '#FED7AA' }}>
@@ -267,13 +270,13 @@ export default function LitterDetailPage() {
 
             <div className="ld-parents">
               <Link href={`/pets/${sire?.id}`} className="ld-parent sire">
-                <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : '♂'}</div>
+                <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : <img src="/icons/icon-men.png" alt="พ่อพันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
                 <span className="ld-parent-name">{sire?.name || 'ไม่ระบุ'}</span>
                 <span className="ld-parent-role">SIRE</span>
               </Link>
               <span className="ld-heart"><Icon.Heart /></span>
               <Link href={`/pets/${dam?.id}`} className="ld-parent dam">
-                <div className="ld-parent-photo">{dam?.image_url ? <img src={dam.image_url} alt={dam.name} /> : '♀'}</div>
+                <div className="ld-parent-photo">{dam?.image_url ? <img src={dam.image_url} alt={dam.name} /> : <img src="/icons/icon-women.png" alt="แม่พันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
                 <span className="ld-parent-name">{dam?.name || 'ไม่ระบุ'}</span>
                 <span className="ld-parent-role">DAM</span>
               </Link>
@@ -301,7 +304,7 @@ export default function LitterDetailPage() {
                     <div key={baby.id} className="ld-baby">
                       <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="ld-baby-photo">
-                          {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : '🐾'}
+                          {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:36,height:36,objectFit:'contain',opacity:0.45}} />}
                           <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
                         </div>
                       </Link>

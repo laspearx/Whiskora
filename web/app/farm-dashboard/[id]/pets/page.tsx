@@ -140,7 +140,7 @@ export default function FarmPetsPage() {
 
             {pets.length === 0 ? (
               <div className="fpl-empty">
-                <div className="fpl-empty-emoji">🐾</div>
+                <div className="fpl-empty-emoji"><img src="/icons/icon-paw-pink.png" alt="" style={{width:56,height:56,objectFit:'contain',opacity:0.3}} /></div>
                 <h3 className="fpl-empty-title">{statusFilter ? `ไม่พบสมาชิกสถานะ "${statusFilter}"` : 'ฟาร์มของคุณยังไม่มีสัตว์เลี้ยง'}</h3>
                 {!statusFilter && (
                   <>
@@ -158,7 +158,7 @@ export default function FarmPetsPage() {
                   return (
                     <Link key={pet.id} href={`/pets/${pet.id}?from=${encodeURIComponent(`/farm-dashboard/${farmId}`)}`} className="fpl-card">
                       <div className="fpl-photo">
-                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src={isFemale ? '/icons/icon-women.png' : '/icons/icon-men.png'} alt="" style={{width:44,height:44,objectFit:'contain',opacity:0.45}} />}
                       </div>
                       <div className="fpl-info">
                         <div className="fpl-name-row">

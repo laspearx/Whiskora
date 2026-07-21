@@ -119,7 +119,7 @@ export default function CreateLitterPage() {
       ];
       await supabase.from('pet_activities').insert(activityInserts);
 
-      alert(`💕 บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
+      alert(`บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {
       alert('เกิดข้อผิดพลาด: ' + error.message);
@@ -174,7 +174,7 @@ export default function CreateLitterPage() {
           </div>
 
           <div className="lc-card">
-            <div className="lc-hero-emoji">💗</div>
+            <div className="lc-hero-emoji"><img src="/icons/icon-breeding.png" alt="" style={{width:48,height:48,objectFit:'contain'}} /></div>
             <form onSubmit={handleSubmit}>
               <div className="lc-field">
                 <label className="lc-label">รหัสครอก (Litter Code) <span className="hint">เว้นว่างเพื่อรันอัตโนมัติ (A, B...)</span></label>
@@ -214,7 +214,7 @@ export default function CreateLitterPage() {
                   <input type="date" name="mating_date" className="lc-input" value={formData.mating_date} onChange={handleMatingDateChange} required />
                 </div>
                 <div className="lc-field" style={{ marginBottom: 0 }}>
-                  <label className="lc-label">📅 กำหนดคลอด (65 วัน)</label>
+                  <label className="lc-label">กำหนดคลอด (65 วัน)</label>
                   <input type="date" name="expected_birth_date" className="lc-input" value={formData.expected_birth_date} onChange={handleChange} required />
                 </div>
               </div>

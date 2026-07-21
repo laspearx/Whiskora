@@ -69,7 +69,7 @@ export default function BulkAddVaccinePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType) return alert("กรุณาเลือกประเภทบริการด้วยครับ");
-    if (selectedPetIds.length === 0) return alert("กรุณาเลือกเด็กๆ อย่างน้อย 1 ตัวครับ 🐾");
+    if (selectedPetIds.length === 0) return alert("กรุณาเลือกเด็กๆ อย่างน้อย 1 ตัวครับ");
     const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
     if (!finalVaccineName || !dateGiven) return alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
 
@@ -210,7 +210,7 @@ export default function BulkAddVaccinePage() {
                 </div>
 
                 {pets.length === 0 ? (
-                  <div className="bv-empty">ยังไม่มีสัตว์เลี้ยง — เพิ่มสัตว์เลี้ยงก่อนนะครับ 🐾</div>
+                  <div className="bv-empty">ยังไม่มีสัตว์เลี้ยง — เพิ่มสัตว์เลี้ยงก่อนนะครับ</div>
                 ) : (
                   <div className="bv-pets-grid">
                     {pets.map((pet) => {
@@ -219,7 +219,7 @@ export default function BulkAddVaccinePage() {
                         <div key={pet.id} className={`bv-pet ${isSelected ? 'sel' : ''}`} onClick={() => togglePetSelection(pet.id)}>
                           <div className="bv-pet-avatar-wrap">
                             <div className="bv-pet-avatar">
-                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src="/icons/icon-paw-pink.png" alt="" style={{width:'55%',height:'55%',objectFit:'contain',opacity:0.35}} />}
                             </div>
                             <div className="bv-pet-check"><Icon.Check /></div>
                           </div>

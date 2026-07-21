@@ -161,7 +161,7 @@ export default function BabyDashboardPage() {
 
           {babies.length === 0 ? (
             <div className="bd-empty">
-              <div className="bd-empty-icon">🐣</div>
+              <div className="bd-empty-icon"><img src="/icons/icon-paw-pink.png" alt="" style={{width:40,height:40,objectFit:'contain',opacity:0.3}} /></div>
               <div className="bd-empty-text">ยังไม่มีเบบี๋ในฟาร์ม</div>
               <div className="bd-empty-sub">สัตว์ที่มีสถานะ "เด็ก" จะแสดงที่นี่</div>
             </div>

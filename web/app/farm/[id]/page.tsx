@@ -280,7 +280,7 @@ export default function PublicFarmProfile() {
           {/* ── Identity ── */}
           <div className="fp-identity">
             <div className="fp-id-row">
-              <div className="fp-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : (farm.species === 'cat' ? '🐱' : farm.species === 'dog' ? '🐶' : '🏡')}</div>
+              <div className="fp-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : <img src={`/icons/icon-species-${farm.species || 'other'}.png`} alt="" style={{width:'65%',height:'65%',objectFit:'contain',opacity:0.5}} onError={e => { (e.target as HTMLImageElement).src = '/icons/icon-farm.png'; }} />}</div>
               <div className="fp-id-main">
                 <h1 className="fp-name">
                   {farm.farm_name}
@@ -396,13 +396,13 @@ export default function PublicFarmProfile() {
                 <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> สัตว์เลี้ยงพร้อมย้ายบ้าน</div>
               </div>
               {readyPets.length === 0 ? (
-                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
+                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
               ) : (
                 <div className="fp-pets-grid">
                   {readyPets.map(pet => (
                     <Link key={pet.id} href={`/p/${pet.id}`} className="fp-pet-card">
                       <div className="fp-pet-img">
-                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src={isMale(pet.gender) ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:'60%',height:'60%',objectFit:'contain',opacity:0.4}} />}
                         <span className="fp-pet-ready-tag">พร้อมย้าย</span>
                       </div>
                       <div className="fp-pet-info">
@@ -484,7 +484,7 @@ export default function PublicFarmProfile() {
           </div>
         )}
 
-        {copied && <div className="fp-toast">✅ คัดลอกลิงก์แล้ว</div>}
+        {copied && <div className="fp-toast">คัดลอกลิงก์แล้ว</div>}
       </div>
     </>
   );
