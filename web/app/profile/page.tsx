@@ -193,8 +193,12 @@ export default function ProfilePage() {
   const calendarData = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const todayKey = today.toISOString().split("T")[0];
+    // Find Monday of the current week (Thai week Mon–Sun)
+    const dow = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
     const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today); d.setDate(d.getDate() + i);
+      const d = new Date(monday); d.setDate(monday.getDate() + i);
       const key = d.toISOString().split("T")[0];
       const events = appointments
         .filter((a) => a.next_due && String(a.next_due).split("T")[0] === key)
