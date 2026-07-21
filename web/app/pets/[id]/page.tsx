@@ -136,6 +136,10 @@ export default function PetDetailPage() {
   const mainPhotoRef = useRef<HTMLInputElement>(null);
   const [uploadingMainPhoto, setUploadingMainPhoto] = useState(false);
 
+  // Status action
+  const [showStatusSheet, setShowStatusSheet] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/p/${petId}` : '';
 
   const displayVal = (val: string | number | null | undefined, suffix = '') =>
@@ -398,6 +402,18 @@ export default function PetDetailPage() {
     if (!confirm('ลบเจ้าของร่วมคนนี้?')) return;
     await supabase.from('pet_co_owners').delete().eq('id', coOwnerId);
     await fetchPetData();
+  };
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (!pet) return;
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase.from('pets').update({ status: newStatus }).eq('id', pet.id);
+      if (error) throw error;
+      setPet(p => p ? { ...p, status: newStatus } : p);
+      setShowStatusSheet(false);
+    } catch { alert('เปลี่ยนสถานะไม่สำเร็จ'); }
+    finally { setUpdatingStatus(false); }
   };
 
   // ─── ปุ่ม: แชร์ ───
@@ -895,6 +911,28 @@ export default function PetDetailPage() {
         .btn-owner-action:hover { border-color: ${F.pink}; color: ${F.pink}; background: ${F.pinkSoft}; }
         .btn-owner-action img { width: 30px; height: 30px; object-fit: contain; }
         .btn-owner-action.danger:hover { border-color: #EF4444; color: #EF4444; background: #FEF2F2; }
+        /* ─── Status Action Buttons ─── */
+        .btn-status-open { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #FDE68A; background: #FFFBEB; font-family: inherit; font-size: 13px; font-weight: 700; color: #D97706; cursor: pointer; transition: all .15s; }
+        .btn-status-open:hover { background: #FEF3C7; border-color: #D97706; }
+        .btn-status-open:disabled { opacity: .6; cursor: wait; }
+        .btn-status-adjust { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #99F6E4; background: #F0FDFA; font-family: inherit; font-size: 13px; font-weight: 700; color: #0D9488; cursor: pointer; transition: all .15s; }
+        .btn-status-adjust:hover { background: #CCFBF1; border-color: #0D9488; }
+        /* ─── Status Sheet ─── */
+        .status-sheet-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(31,26,28,.45); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
+        .status-sheet { background: white; border-radius: 20px 20px 0 0; padding: 22px 20px calc(env(safe-area-inset-bottom,0px)+24px); width: 100%; max-width: 480px; }
+        @keyframes sheet-up { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .status-sheet { animation: sheet-up .2s ease; }
+        .status-sheet-handle { width: 36px; height: 3px; border-radius: 2px; background: #E5E7EB; margin: 0 auto 18px; }
+        .status-sheet-title { font-size: 16px; font-weight: 700; color: ${F.ink}; margin-bottom: 6px; }
+        .status-sheet-sub { font-size: 12px; color: ${F.muted}; margin-bottom: 20px; }
+        .status-sheet-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+        .status-option-btn { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-family: inherit; text-align: left; transition: all .15s; }
+        .status-option-btn:hover { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .status-option-btn:disabled { opacity: .6; cursor: wait; }
+        .status-option-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .status-option-label { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .status-option-desc { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
+        .status-sheet-cancel { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #F3F4F6; color: ${F.inkSoft}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
         /* ─── Co-owner list ─── */
         .co-owner-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
         .co-owner-row:last-child { border-bottom: none; }
@@ -1093,6 +1131,18 @@ export default function PetDetailPage() {
               </div>
               {isOwner && (
                 <div className="owner-actions">
+                  {pet.farm_id && pet.status === 'ยังไม่เปิดจอง' && (
+                    <button className="btn-status-open" onClick={() => handleStatusUpdate('เปิดจอง')} disabled={updatingStatus}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                      {updatingStatus ? 'กำลังอัปเดต...' : 'เปิดให้จอง'}
+                    </button>
+                  )}
+                  {pet.farm_id && pet.status === 'เปิดจอง' && (
+                    <button className="btn-status-adjust" onClick={() => setShowStatusSheet(true)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                      ปรับสถานะ
+                    </button>
+                  )}
                   <button className="btn-owner-action" onClick={() => { setShowCoOwnerModal(true); setCoOwnerError(''); setCoOwnerEmail(''); }}>
                     <img src="/icons/icon-co-owner.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
@@ -1608,6 +1658,34 @@ export default function PetDetailPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Status Sheet ─── */}
+      {showStatusSheet && (
+        <div className="status-sheet-overlay" onClick={() => !updatingStatus && setShowStatusSheet(false)}>
+          <div className="status-sheet" onClick={e => e.stopPropagation()}>
+            <div className="status-sheet-handle" />
+            <div className="status-sheet-title">ปรับสถานะ {pet.name}</div>
+            <div className="status-sheet-sub">เลือกสถานะที่ต้องการเปลี่ยน</div>
+            <div className="status-sheet-options">
+              <button className="status-option-btn" onClick={() => handleStatusUpdate('ติดจอง')} disabled={updatingStatus}>
+                <div className="status-option-dot" style={{ background: '#F59E0B' }} />
+                <div>
+                  <div className="status-option-label">ติดจอง</div>
+                  <div className="status-option-desc">มีผู้จองแล้ว รอนัดส่งมอบ</div>
+                </div>
+              </button>
+              <button className="status-option-btn" onClick={() => handleStatusUpdate('พร้อมย้ายบ้าน')} disabled={updatingStatus}>
+                <div className="status-option-dot" style={{ background: '#16A34A' }} />
+                <div>
+                  <div className="status-option-label">พร้อมย้ายบ้าน</div>
+                  <div className="status-option-desc">พร้อมส่งมอบให้เจ้าของใหม่ได้ทันที</div>
+                </div>
+              </button>
+            </div>
+            <button className="status-sheet-cancel" onClick={() => setShowStatusSheet(false)} disabled={updatingStatus}>ยกเลิก</button>
           </div>
         </div>
       )}
