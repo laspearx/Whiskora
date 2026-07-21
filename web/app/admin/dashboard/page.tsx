@@ -32,7 +32,7 @@ const Icon = {
 interface UserRow {
   id: string;
   full_name: string | null;
-  display_name: string | null;
+  username: string | null;
   email: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -55,6 +55,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [totalPets, setTotalPets] = useState(0);
   const [totalFarms, setTotalFarms] = useState(0);
   const [totalShops, setTotalShops] = useState(0);
@@ -69,38 +70,33 @@ export default function AdminDashboardPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const [profilesRes, petsRes, farmsRes, shopsRes, servicesRes] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, display_name, email, avatar_url, created_at').order('created_at', { ascending: false }),
-        supabase.from('pets').select('id, user_id'),
-        supabase.from('farms').select('id, user_id, farm_name'),
-        supabase.from('shops').select('id, user_id, shop_name'),
-        supabase.from('services').select('id, user_id, service_name'),
+      const [statsRes, usersRes] = await Promise.all([
+        supabase.rpc('admin_get_stats'),
+        supabase.rpc('admin_get_users'),
       ]);
 
-      const allPets     = petsRes.data     || [];
-      const allFarms    = farmsRes.data    || [];
-      const allShops    = shopsRes.data    || [];
-      const allServices = servicesRes.data || [];
+      if (statsRes.data) {
+        setTotalUsers(Number(statsRes.data.users) || 0);
+        setTotalPets(Number(statsRes.data.pets) || 0);
+        setTotalFarms(Number(statsRes.data.farms) || 0);
+        setTotalShops(Number(statsRes.data.shops) || 0);
+        setTotalServices(Number(statsRes.data.services) || 0);
+      }
 
-      setTotalPets(allPets.length);
-      setTotalFarms(allFarms.length);
-      setTotalShops(allShops.length);
-      setTotalServices(allServices.length);
-
-      const rows: UserRow[] = (profilesRes.data || []).map((p: any) => ({
+      const rows: UserRow[] = (usersRes.data || []).map((p: any) => ({
         id:           p.id,
         full_name:    p.full_name,
-        display_name: p.display_name,
+        username:     p.username,
         email:        p.email,
         avatar_url:   p.avatar_url,
         created_at:   p.created_at,
-        petCount:     allPets.filter((x: any) => x.user_id === p.id).length,
-        farmCount:    allFarms.filter((x: any) => x.user_id === p.id).length,
-        shopCount:    allShops.filter((x: any) => x.user_id === p.id).length,
-        serviceCount: allServices.filter((x: any) => x.user_id === p.id).length,
-        farmNames:    allFarms.filter((x: any) => x.user_id === p.id).map((x: any) => x.farm_name).filter(Boolean),
-        shopNames:    allShops.filter((x: any) => x.user_id === p.id).map((x: any) => x.shop_name).filter(Boolean),
-        serviceNames: allServices.filter((x: any) => x.user_id === p.id).map((x: any) => x.service_name).filter(Boolean),
+        petCount:     Number(p.pet_count)     || 0,
+        farmCount:    Number(p.farm_count)    || 0,
+        shopCount:    Number(p.shop_count)    || 0,
+        serviceCount: Number(p.service_count) || 0,
+        farmNames:    p.farm_names    || [],
+        shopNames:    p.shop_names    || [],
+        serviceNames: p.service_names || [],
       }));
 
       setUsers(rows);
@@ -114,7 +110,7 @@ export default function AdminDashboardPage() {
     if (!q) return users;
     return users.filter(u =>
       u.full_name?.toLowerCase().includes(q) ||
-      u.display_name?.toLowerCase().includes(q) ||
+      u.username?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
       u.farmNames.some(n => n.toLowerCase().includes(q)) ||
       u.shopNames.some(n => n.toLowerCase().includes(q)) ||
@@ -123,9 +119,6 @@ export default function AdminDashboardPage() {
   }, [users, search]);
 
   if (loading) return <PageLoader />;
-
-  const totalUsers    = users.length;
-  const totalPartners = users.filter(u => u.farmCount + u.shopCount + u.serviceCount > 0).length;
 
   return (
     <>
@@ -237,7 +230,7 @@ export default function AdminDashboardPage() {
             <div className="ad-empty">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</div>
           ) : (
             filtered.map(u => {
-              const name = u.full_name || u.display_name || u.email?.split('@')[0] || 'ไม่ระบุชื่อ';
+              const name = u.full_name || u.username || u.email?.split('@')[0] || 'ไม่ระบุชื่อ';
               const initial = name[0]?.toUpperCase() || '?';
               const isOpen = expandedUser === u.id;
               const bizCount = u.farmCount + u.shopCount + u.serviceCount;
