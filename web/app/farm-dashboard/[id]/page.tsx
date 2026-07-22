@@ -727,11 +727,8 @@ function FarmDashboardContent() {
               <div className="fd-sec-title">
                 <img src="/icons/icon-breeding.png" alt="" />
                 <h2 className="fd-sec-h">ครอกที่กำลังดำเนินการ</h2>
-                {activeLitters.length > 0 && <span className="fd-sec-badge" style={{ background: F.pinkSoft, color: F.pink }}>{activeLitters.length}</span>}
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Link href={`/farm-dashboard/${farmId}/litters/create`} className="fd-link-pill" style={{ fontSize: 10, padding: '3px 10px' }}>+ บันทึกการผสม</Link>
-              </div>
+              {activeLitters.length > 0 && <span className="fd-sec-badge" style={{ background: F.pinkSoft, color: F.pink }}>{activeLitters.length}</span>}
             </div>
 
             {activeLitters.length === 0 ? (
