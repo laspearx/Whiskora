@@ -132,9 +132,9 @@ export default function LitterDetailPage() {
         .ld-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .ld-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; flex: 1; }
         .ld-title .code { color: ${F.pink}; }
-        .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer; text-decoration: none; flex-shrink: 0; opacity: .85; transition: opacity .15s; }
+        .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; cursor: pointer; text-decoration: none; flex-shrink: 0; opacity: .85; transition: opacity .15s; }
         .ld-title-edit:hover { opacity: 1; }
-        .ld-title-edit img { width: 26px; height: 26px; object-fit: contain; }
+        .ld-title-edit img { width: 36px; height: 36px; object-fit: contain; }
         .ld-birth-btn { background: ${F.pink}; color: white; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; white-space: nowrap; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .ld-birth-btn:hover { background: #D63F6A; }
         /* parents */
