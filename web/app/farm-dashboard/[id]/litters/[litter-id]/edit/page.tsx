@@ -29,7 +29,7 @@ export default function EditLitterPage() {
     sire_id: '',
     dam_id: '',
     mating_date: '',
-    expected_birth_date: ''
+    actual_birth_date: ''
   });
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function EditLitterPage() {
             sire_id: litterData.sire_id.toString(),
             dam_id: litterData.dam_id.toString(),
             mating_date: litterData.mating_date,
-            expected_birth_date: litterData.expected_birth_date
+            actual_birth_date: litterData.actual_birth_date || ''
           });
         }
 
@@ -84,16 +84,6 @@ export default function EditLitterPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMatingDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateVal = e.target.value;
-    if (dateVal) {
-      const matingDate = new Date(dateVal);
-      matingDate.setDate(matingDate.getDate() + 65);
-      const expectedDate = matingDate.toISOString().split('T')[0];
-      setFormData(prev => ({ ...prev, mating_date: dateVal, expected_birth_date: expectedDate }));
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -106,7 +96,7 @@ export default function EditLitterPage() {
           sire_id: parseInt(formData.sire_id),
           dam_id: parseInt(formData.dam_id),
           mating_date: formData.mating_date,
-          expected_birth_date: formData.expected_birth_date
+          actual_birth_date: formData.actual_birth_date || null
         })
         .eq('id', litterId);
 
@@ -219,11 +209,11 @@ export default function EditLitterPage() {
               <div className="le-grid2">
                 <div className="le-field">
                   <label className="le-label">วันที่บรีด</label>
-                  <input type="date" name="mating_date" value={formData.mating_date} onChange={handleMatingDateChange} className="le-date" />
+                  <input type="date" name="mating_date" value={formData.mating_date} onChange={handleChange} className="le-date" />
                 </div>
                 <div className="le-field" style={{ marginBottom: 0 }}>
-                  <label className="le-label">กำหนดคลอด</label>
-                  <input type="date" name="expected_birth_date" value={formData.expected_birth_date} onChange={handleChange} className="le-date" />
+                  <label className="le-label">วันที่คลอดจริง</label>
+                  <input type="date" name="actual_birth_date" value={formData.actual_birth_date} onChange={handleChange} className="le-date" />
                 </div>
               </div>
             </form>

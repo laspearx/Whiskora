@@ -61,7 +61,7 @@ export default function RecordBirthPage() {
     if (!userId || !litterInfo) return;
     setIsLoading(true);
     try {
-      const { error: litterError } = await supabase.from('litters').update({ status: 'คลอดแล้ว' }).eq('id', litterId);
+      const { error: litterError } = await supabase.from('litters').update({ status: 'คลอดแล้ว', actual_birth_date: actualBirthDate }).eq('id', litterId);
       if (litterError) throw litterError;
       const petsData = kittens.map((k, index) => ({
         user_id: userId, farm_id: farmId, litter_id: parseInt(litterId),

@@ -102,12 +102,19 @@ export default function LitterDetailPage() {
         .filter((w) => w.pet_id === baby.id)
         .sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
       if (records.length === 0) return null;
-      const original = records[0].weight;
       const latest = records[records.length - 1].weight;
-      return { baby, original, latest, delta: latest - original, isNew: records.length === 1 };
+      if (records.length >= 2) {
+        const original = records[0].weight;
+        return { baby, original, latest, delta: latest - original, isNew: false };
+      }
+      // only one tracked weigh-in so far — compare against the recorded birth weight if it differs
+      if (baby.weight != null && baby.weight !== latest) {
+        return { baby, original: baby.weight, latest, delta: latest - baby.weight, isNew: false };
+      }
+      return { baby, original: latest, latest, delta: 0, isNew: true };
     })
     .filter((s): s is BabyWeightSummary => s !== null)
-    .sort((a, b) => a.delta - b.delta); // biggest decline first, biggest gain last
+    .sort((a, b) => b.delta - a.delta); // fastest-growing first, biggest decline last
   const maxGain = Math.max(0, ...weightSummaries.map((s) => s.delta));
   const topGainerId = maxGain > 0 ? weightSummaries.find((s) => s.delta === maxGain)?.baby.id : null;
   const noDataBabies = babies.filter((baby) => !petWeights.some((w) => w.pet_id === baby.id));
@@ -125,9 +132,9 @@ export default function LitterDetailPage() {
         .ld-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
         .ld-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; flex: 1; }
         .ld-title .code { color: ${F.pink}; }
-        .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 11px; background: white; border: 1px solid ${F.lineMid}; cursor: pointer; text-decoration: none; flex-shrink: 0; transition: all .15s; }
-        .ld-title-edit:hover { background: #F9FAFB; border-color: #D1D5DB; }
-        .ld-title-edit img { width: 18px; height: 18px; object-fit: contain; }
+        .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer; text-decoration: none; flex-shrink: 0; opacity: .85; transition: opacity .15s; }
+        .ld-title-edit:hover { opacity: 1; }
+        .ld-title-edit img { width: 26px; height: 26px; object-fit: contain; }
         .ld-birth-btn { background: ${F.pink}; color: white; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; white-space: nowrap; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .ld-birth-btn:hover { background: #D63F6A; }
         /* parents */
@@ -259,7 +266,7 @@ export default function LitterDetailPage() {
                       return (
                         <div key={s.baby.id} className={`ld-wsum-row ${s.delta < 0 ? 'down' : ''} ${isTop ? 'top' : ''}`}>
                           <div className="ld-wsum-photo">
-                            {s.baby.image_url ? <img src={s.baby.image_url} alt={s.baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:16,height:16,objectFit:'contain',opacity:0.45}} />}
+                            {s.baby.image_url ? <img src={s.baby.image_url} alt={s.baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:18,height:18,objectFit:'contain'}} />}
                           </div>
                           <div className="ld-wsum-info">
                             <div className="ld-wsum-name">

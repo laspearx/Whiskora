@@ -31,6 +31,7 @@ export default function LitterWeightsPage() {
 
   const [litter, setLitter] = useState<any>(null);
   const [babies, setBabies] = useState<any[]>([]);
+  const [petWeights, setPetWeights] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [recordedDate, setRecordedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -55,10 +56,26 @@ export default function LitterWeightsPage() {
 
       setLitter(litterData);
       setBabies(babiesData || []);
+
+      if (babiesData && babiesData.length > 0) {
+        const { data: wData } = await supabase
+          .from('pet_weights')
+          .select('pet_id, weight, recorded_date')
+          .in('pet_id', babiesData.map(b => b.id))
+          .order('recorded_date', { ascending: true });
+        if (wData) setPetWeights(wData);
+      }
+
       setIsLoading(false);
     };
     load();
   }, [litterId, farmId, router]);
+
+  const latestWeightByPet = new Map<number, number>();
+  for (const baby of babies) {
+    const records = petWeights.filter(w => w.pet_id === baby.id);
+    if (records.length > 0) latestWeightByPet.set(baby.id, records[records.length - 1].weight);
+  }
 
   const handleSave = async () => {
     if (!userId) return;
@@ -75,11 +92,6 @@ export default function LitterWeightsPage() {
       }));
       const { error } = await supabase.from('pet_weights').insert(inserts);
       if (error) throw error;
-
-      // keep pets.weight in sync so the litter detail page badge reflects the latest recorded weight
-      await Promise.all(entries.map(([petId, w]) =>
-        supabase.from('pets').update({ weight: parseFloat(w) }).eq('id', parseInt(petId))
-      ));
 
       setSavedIds(new Set(entries.map(([id]) => parseInt(id))));
       alert(`บันทึกน้ำหนัก ${entries.length} ตัวเรียบร้อยแล้ว`);
@@ -160,6 +172,7 @@ export default function LitterWeightsPage() {
             {babies.map(baby => {
               const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
               const val = weights[baby.id] ?? '';
+              const latestWeight = latestWeightByPet.get(baby.id) ?? baby.weight;
               return (
                 <div key={baby.id} className={`lw-pet-row ${val.trim() ? 'filled' : ''}`}>
                   <div className="lw-pet-photo">
@@ -168,7 +181,7 @@ export default function LitterWeightsPage() {
                   <div className="lw-pet-info">
                     <div className="lw-pet-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
                     <span className={`lw-pet-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
-                    {baby.weight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {baby.weight} กรัม</div>}
+                    {latestWeight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {latestWeight} กรัม</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <input
