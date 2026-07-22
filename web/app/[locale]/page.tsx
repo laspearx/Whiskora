@@ -1871,7 +1871,7 @@ export default function Home() {
                 eyebrow="VERIFIED FARM DIRECTORY"
                 title="ฟาร์มคุณภาพควรถูกค้นเจอ"
                 highlight="ด้วยข้อมูลที่ตรวจสอบได้"
-                copy="หน้าแนะนำฟาร์มของ Whiskora ควรให้ความรู้สึกเหมือนพื้นที่คัดกรองที่ไว้ใจได้ ไม่ใช่แค่หน้ารวมโพสต์ขายสัตว์เลี้ยง"
+                copy="ทุกฟาร์มในไดเรกทอรีผ่านการตรวจสอบข้อมูลก่อนขึ้นแสดง เป็นพื้นที่คัดกรองที่ไว้ใจได้ ไม่ใช่แค่หน้ารวมโพสต์ขายสัตว์เลี้ยงทั่วไป"
               />
               <div className="farm-story-proof">
                 {farmHighlights.map((item) => (
@@ -1926,7 +1926,7 @@ export default function Home() {
               eyebrow="EVERY STAGE OF PET LIFE"
               title="ระบบเดียวที่เดินไปพร้อม"
               highlight="ทุกช่วงชีวิตของสัตว์เลี้ยง"
-              copy="หน้าแรกต้องทำให้ผู้ใช้รู้สึกว่า Whiskora ไม่ใช่งานเอกสารครั้งเดียว แต่เป็นโครงสร้างข้อมูลที่ช่วยให้การดูแลต่อเนื่องและน่าเชื่อถือขึ้น"
+              copy="Whiskora ไม่ใช่แค่การกรอกข้อมูลครั้งเดียว แต่เป็นโครงสร้างข้อมูลที่ติดตามการดูแลสัตว์เลี้ยงต่อเนื่องในทุกช่วงชีวิต ทั้งน่าเชื่อถือและใช้งานได้จริง"
             />
           </div>
           <div className="lifecycle-grid">
@@ -1947,7 +1947,7 @@ export default function Home() {
               eyebrow="BUILT FOR THE PET ECOSYSTEM"
               title="ไม่ใช่แค่เจ้าของสัตว์เลี้ยง"
               highlight="แต่เชื่อมทั้งระบบรอบตัวสัตว์"
-              copy="Whiskora ช่วยให้แต่ละกลุ่มใช้ข้อมูลเดียวกันในบริบทของตัวเอง โดยไม่ทำให้หน้าจอกลายเป็น dashboard แข็ง ๆ หรือ persona cards แบบทั่วไป"
+              copy="เจ้าของสัตว์เลี้ยง ฟาร์ม และผู้ให้บริการ ต่างเข้าถึงข้อมูลชุดเดียวกันได้ในมุมมองที่เหมาะกับงานของตัวเอง"
             />
             <div className="audience-grid">
               {userGroups.map((group) => (
@@ -2059,7 +2059,7 @@ export default function Home() {
               eyebrow="PET KNOWLEDGE CENTER"
               title="ความรู้สัตว์เลี้ยงที่พาคนใช้ข้อมูลจริง"
               highlight="ไม่ใช่บทความลอย ๆ"
-              copy="Reference ชุดใหม่ให้จังหวะเหมือนนิตยสารพรีเมียม บัดดี้จึงวาง Knowledge Center ให้เป็น editorial section ที่โยงกลับไปยัง Pet ID, วัคซีน, ฟาร์ม และการดูแลต่อเนื่องอย่างเป็นธรรมชาติ"
+              copy="บทความแต่ละชิ้นโยงกลับไปยัง Pet ID วัคซีน ฟาร์ม และการดูแลต่อเนื่อง ให้ความรู้ที่อ่านแล้วใช้ได้จริงกับสัตว์เลี้ยงของคุณ"
             />
             <div className="knowledge-layout">
               <article className="knowledge-featured" data-reveal="panel">
@@ -2095,7 +2095,7 @@ export default function Home() {
             eyebrow="ANSWERS FOR SEARCH AND AI"
             title="คำตอบสำคัญเกี่ยวกับ"
             highlight="Whiskora, Pet ID และ QR Profile"
-            copy="ส่วนนี้ช่วยให้ผู้ใช้เข้าใจเร็ว และช่วย SEO, AEO, GEO ด้วยคำถามที่ตอบตรงกับข้อมูลจริงบนหน้าเว็บ"
+            copy="รวมคำถามที่คนถามบ่อยเกี่ยวกับ Whiskora พร้อมคำตอบจากข้อมูลจริงในระบบ ให้เจอสิ่งที่ต้องการรู้ได้เร็วขึ้น"
           />
           <div className="intent-chips" aria-label="หัวข้อที่ผู้ใช้มักค้นหา">
             {searchIntents.map((intent) => (

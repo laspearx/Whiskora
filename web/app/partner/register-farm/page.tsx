@@ -50,6 +50,27 @@ export default function RegisterFarmPage() {
     phone: '', bio: '',
   });
   const [addr, setAddr] = useState<AddressValue>(emptyAddress());
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      supabase.from('profiles').select('full_name,phone,house_no,room_no,moo,soi,road,sub_district,district,province,postal_code').eq('id', session.user.id).single().then(({ data }) => {
+        if (data) setProfileData(data);
+      });
+    });
+  }, []);
+
+  const fillFromProfile = () => {
+    if (!profileData) return;
+    setForm(f => ({ ...f, ownerName: profileData.full_name || '', phone: profileData.phone || '' }));
+    setAddr({
+      house_no: profileData.house_no || '', room_no: profileData.room_no || '',
+      moo: profileData.moo || '', soi: profileData.soi || '', road: profileData.road || '',
+      sub_district: profileData.sub_district || '', district: profileData.district || '',
+      province: profileData.province || '', postal_code: profileData.postal_code || '',
+    });
+  };
 
   // ── Map state ─────────────────────────────────────────────────────────────
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -169,7 +190,7 @@ export default function RegisterFarmPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner/register-farm')}`); return; }
-      const { error } = await supabase.from('farms').insert([{
+      const { data: farmData, error } = await supabase.from('farms').insert([{
         user_id: session.user.id,
         farm_name: form.farmName,
         owner_name: form.ownerName,
@@ -185,8 +206,19 @@ export default function RegisterFarmPage() {
         bio: form.bio,
         image_url: imageUrl || null,
         cover_url: coverUrl || null,
-      }]);
+      }]).select('id').single();
       if (error) throw error;
+
+      const { data: wsData } = await supabase.from('workspaces').insert({
+        type: 'farm', name: form.farmName,
+        owner_id: session.user.id, entity_id: farmData.id, avatar_url: imageUrl || null,
+      }).select('id').single();
+      if (wsData) {
+        await supabase.from('workspace_members').insert({
+          workspace_id: wsData.id, user_id: session.user.id, role: 'owner',
+        });
+      }
+
       alert('ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
       router.push('/partner');
       router.refresh();
@@ -202,7 +234,7 @@ export default function RegisterFarmPage() {
       <style>{`
         * { box-sizing: border-box; }
         .pf-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
-        .pf-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .pf-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .pf-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
         .pf-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .pf-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -248,13 +280,13 @@ export default function RegisterFarmPage() {
         .pf-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .pf-species-btn { padding: 14px 8px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
         .pf-species-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .pf-species-btn .emoji { font-size: 24px; }
+        .pf-species-btn .emoji { width: 32px; height: 32px; object-fit: contain; }
         .pf-species-btn .lbl { font-size: 12px; font-weight: 700; color: ${F.inkSoft}; }
         .pf-species-btn.active .lbl { color: ${F.pink}; }
         .pf-other-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
         .pf-other-btn { padding: 10px 4px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; font-family: inherit; }
         .pf-other-btn.active { border-color: ${F.pink}; background: ${F.pinkSoft}; }
-        .pf-other-btn .emoji { font-size: 20px; }
+        .pf-other-btn .emoji { width: 28px; height: 28px; object-fit: contain; }
         .pf-other-btn .lbl { font-size: 9px; font-weight: 700; color: ${F.inkSoft}; text-align: center; line-height: 1.2; }
         .pf-other-btn.active .lbl { color: ${F.pink}; }
 
@@ -268,11 +300,12 @@ export default function RegisterFarmPage() {
         .pf-geo-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; color: ${F.pink}; }
         .pf-pin-coords { font-size: 11px; color: ${F.muted}; font-weight: 500; }
 
-        .pf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .pf-savebar-inner { max-width: 600px; margin: 0 auto; }
-        .pf-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .pf-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .pf-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .pf-btn:hover { background: #D63F6A; }
         .pf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pf-autofill-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; margin-bottom: 14px; }
+        .pf-autofill-btn:hover { background: #FCE7EF; }
 
         .pf-modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
         .pf-modal-card { background: white; width: 100%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -351,6 +384,13 @@ export default function RegisterFarmPage() {
               <input className="pf-input" value={form.farmName} onChange={e => setForm({ ...form, farmName: e.target.value })} placeholder="เช่น Happy Paw Cattery" />
             </div>
 
+            {profileData && (
+              <button type="button" className="pf-autofill-btn" onClick={fillFromProfile}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ใช้ข้อมูลจากโปรไฟล์ของฉัน
+              </button>
+            )}
+
             <div className="pf-field">
               <label className="pf-label">ชื่อ-สกุลเจ้าของฟาร์ม <span className="pf-req">*</span></label>
               <input className="pf-input" value={form.ownerName} onChange={e => setForm({ ...form, ownerName: e.target.value })} placeholder="ชื่อจริง นามสกุล" />
@@ -399,10 +439,10 @@ export default function RegisterFarmPage() {
             <div className="pf-field">
               <label className="pf-label">ชนิดสัตว์ที่เพาะพันธุ์ <span className="pf-req">*</span></label>
               <div className="pf-species">
-                {[{ id: 'cat', emoji: '🐱', lbl: 'แมว' }, { id: 'dog', emoji: '🐶', lbl: 'สุนัข' }, { id: 'other', emoji: '🐾', lbl: 'อื่นๆ' }].map(t => (
+                {[{ id: 'cat', icon: '/icons/icon-species-cat.png', lbl: 'แมว' }, { id: 'dog', icon: '/icons/icon-species-dog.png', lbl: 'สุนัข' }, { id: 'other', icon: '/icons/icon-paw-pink.png', lbl: 'อื่นๆ' }].map(t => (
                   <button key={t.id} type="button" className={`pf-species-btn ${form.species === t.id ? 'active' : ''}`}
                     onClick={() => setForm({ ...form, species: t.id, subSpecies: '', customSpecies: '' })}>
-                    <span className="emoji">{t.emoji}</span><span className="lbl">{t.lbl}</span>
+                    <img className="emoji" src={t.icon} alt={t.lbl} /><span className="lbl">{t.lbl}</span>
                   </button>
                 ))}
               </div>
@@ -411,7 +451,7 @@ export default function RegisterFarmPage() {
                   {OTHER_SPECIES.map(o => (
                     <button key={o.id} type="button" className={`pf-other-btn ${form.subSpecies === o.id ? 'active' : ''}`}
                       onClick={() => setForm({ ...form, subSpecies: o.id, customSpecies: '' })}>
-                      <span className="emoji">{o.emoji}</span><span className="lbl">{o.th}</span>
+                      <img className="emoji" src={o.icon} alt={o.th} /><span className="lbl">{o.th}</span>
                     </button>
                   ))}
                 </div>
@@ -430,10 +470,9 @@ export default function RegisterFarmPage() {
               <textarea className="pf-textarea" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="บอกเล่าประสบการณ์ ความตั้งใจ หรือสายพันธุ์ที่เพาะ..." />
             </div>
           </div>
-        </div>
 
-        <div className="pf-savebar">
-          <div className="pf-savebar-inner">
+          <div className="pf-actions">
+            <button type="button" className="pf-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
             <button type="button" className="pf-btn" onClick={handleSubmit} disabled={!canSubmit}>
               {loading ? 'กำลังบันทึก...' : 'ยืนยันการเปิดฟาร์ม'}
             </button>

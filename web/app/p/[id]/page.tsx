@@ -70,6 +70,7 @@ export default function PublicPetProfilePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [farm, setFarm] = useState<any>(null);
+  const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -221,6 +222,9 @@ export default function PublicPetProfilePage() {
       const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
       if (activityData) setActivities(activityData as Activity[]);
 
+      const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
+      if (weightData) setLatestWeight(weightData.weight);
+
     } catch (error) {
       console.error("Fetch Error:", error);
     } finally {
@@ -332,6 +336,9 @@ export default function PublicPetProfilePage() {
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
   const combinedTimeline = generateCombinedTimeline();
   const hasContact = farm && (farm.phone || farm.line_id || farm.facebook_link);
+  const latestWeightDisplay = latestWeight
+    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
+    : '-';
 
   return (
     <>
@@ -541,7 +548,7 @@ export default function PublicPetProfilePage() {
               </div>
               <div className="quick-stats">
                 <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{pet.weight ? `${pet.weight} กก.` : '-'}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{latestWeightDisplay}</div></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
               </div>
@@ -601,7 +608,7 @@ export default function PublicPetProfilePage() {
                       {[
                         { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
                         { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
-                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: displayVal(pet.weight, ' กก.') },
+                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: latestWeightDisplay },
                         { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {pet.status}</span> : '-' },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>
@@ -643,18 +650,18 @@ export default function PublicPetProfilePage() {
               {/* Side */}
               <div className="content-side">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
                   <div className="card-body">
                     {[
                       { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
-                      { label: 'ทำหมันแล้ว', val: pet.is_neutered ? '✓' : '-' },
+                      { label: 'ทำหมันแล้ว', val: pet.is_neutered ? 'ทำแล้ว' : '-' },
                       { label: 'โรคประจำตัว', val: pet.chronic_diseases || 'ไม่มี' },
                     ].map((item, i) => (
                       <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
                     ))}
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</div>
                       </div>
                     )}
@@ -702,18 +709,18 @@ export default function PublicPetProfilePage() {
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6', color: '#E11D48' }}>♥</div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
                   <div className="card-body">
                     {[
                       { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
-                      { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
+                      { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
                       { label: 'โรคประจำตัว', val: pet.chronic_diseases || 'ไม่มี' },
                     ].map((item, i) => (
                       <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
                     ))}
                     {pet.allergies && (
                       <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</p>
                       </div>
                     )}
@@ -764,20 +771,20 @@ export default function PublicPetProfilePage() {
         <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
           <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
             <div className="contact-modal-title">ติดต่อ{isFarmPet ? `ฟาร์ม ${farm?.farm_name || ''}` : 'เจ้าของ'}</div>
-            <div className="contact-modal-sub">เลือกช่องทางที่สะดวก แล้วทักได้เลย 🐾</div>
+            <div className="contact-modal-sub">เลือกช่องทางที่สะดวก แล้วทักได้เลย</div>
             {farm?.phone && (
               <button className="contact-channel contact-phone" onClick={() => logLeadAndOpen("phone", `tel:${farm.phone}`)}>
-                <span style={{ fontSize: '20px' }}>📞</span><span>โทรหา <span style={{ opacity: .7, fontWeight: 500 }}>{farm.phone}</span></span>
+                <img src="/icons/icon-phone.png" alt="" style={{width:22,height:22,objectFit:'contain'}} /><span>โทรหา <span style={{ opacity: .7, fontWeight: 500 }}>{farm.phone}</span></span>
               </button>
             )}
             {farm?.line_id && (
               <button className="contact-channel contact-line" onClick={() => logLeadAndOpen("line", `https://line.me/ti/p/~${farm.line_id}`)}>
-                <span style={{ fontSize: '20px' }}>💬</span><span>แชทผ่าน LINE</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>แชทผ่าน LINE</span>
               </button>
             )}
             {farm?.facebook_link && (
               <button className="contact-channel contact-fb" onClick={() => logLeadAndOpen("facebook", farm.facebook_link)}>
-                <span style={{ fontSize: '20px' }}>📘</span><span>ติดต่อผ่าน Facebook</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>ติดต่อผ่าน Facebook</span>
               </button>
             )}
             <button className="contact-close" onClick={() => setShowContactModal(false)}>ปิด</button>

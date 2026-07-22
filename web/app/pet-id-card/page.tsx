@@ -173,7 +173,7 @@ export default function PetIdCardLandingPage() {
 
           {!loading && (authed ? pets.length === 0 : true) && (
             <div className="pic-empty">
-              <div className="pic-empty-icon">🐾</div>
+              <div className="pic-empty-icon"><img src="/icons/icon-paw-pink.png" alt="" style={{width:56,height:56,objectFit:'contain',opacity:0.3}} /></div>
               <div className="pic-empty-title">
                 {authed ? 'ยังไม่มีสัตว์เลี้ยง' : 'เริ่มต้นด้วยการเพิ่มสัตว์เลี้ยง'}
               </div>
@@ -202,7 +202,7 @@ export default function PetIdCardLandingPage() {
                   <div className="pic-pet-photo">
                     {pet.image_url
                       ? <img src={pet.image_url} alt={pet.name} />
-                      : '🐾'}
+                      : <img src={(pet.gender === 'female' || pet.gender === 'ตัวเมีย') ? '/icons/icon-women.png' : '/icons/icon-men.png'} alt="" style={{width:'60%',height:'60%',objectFit:'contain',opacity:0.45}} />}
                   </div>
                   <div className="pic-pet-info">
                     <div className="pic-pet-name">{pet.name}</div>

@@ -379,7 +379,7 @@ export default function MyPetsPage() {
                 {farm.pets.length === 0 ? (
                   <div className="empty-state">ยังไม่มีสมาชิกในฟาร์มนี้</div>
                 ) : (
-                  farm.pets.map(pet => <PetRow key={pet.id} pet={pet} from={`/farm-dashboard/${farmId}`} />)
+                  farm.pets.map(pet => <PetRow key={pet.id} pet={pet} from="/profile/pets" />)
                 )}
               </div>
             </div>

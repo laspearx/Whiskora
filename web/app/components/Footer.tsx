@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useTranslations } from '@/i18n/context';
 import { Link } from '@/i18n/navigation';
+import { APP_VERSION } from '@/lib/version';
 
 const F = {
   ink: '#111827',
@@ -92,7 +93,7 @@ export default function Footer() {
         </div>
         <div className="flex items-center gap-6">
           <span>{t('pdpa')}</span>
-          <span className="opacity-50">V1.1.4</span>
+          <span className="opacity-50">V{APP_VERSION}</span>
         </div>
       </div>
     </footer>

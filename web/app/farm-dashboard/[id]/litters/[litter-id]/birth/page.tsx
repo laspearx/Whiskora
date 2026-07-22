@@ -9,10 +9,10 @@ const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
   blue: '#2563EB', teal: '#0D9488',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
-interface KittenForm { tempId: number; name: string; gender: string; weight: string; }
+interface KittenForm { tempId: number; name: string; gender: string; weight: string; plan: 'ยังไม่เปิดจอง' | 'เก็บ'; }
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -32,7 +32,7 @@ export default function RecordBirthPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [litterInfo, setLitterInfo] = useState<any>(null);
   const [actualBirthDate, setActualBirthDate] = useState(new Date().toISOString().split('T')[0]);
-  const [kittens, setKittens] = useState<KittenForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const [kittens, setKittens] = useState<KittenForm[]>([{ tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
 
   useEffect(() => {
     const fetchLitter = async () => {
@@ -51,9 +51,9 @@ export default function RecordBirthPage() {
     if (litterId) fetchLitter();
   }, [litterId, farmId, router]);
 
-  const addKitten = () => setKittens([...kittens, { tempId: Date.now(), name: '', gender: 'male', weight: '' }]);
+  const addKitten = () => setKittens([...kittens, { tempId: Date.now(), name: '', gender: 'male', weight: '', plan: 'ยังไม่เปิดจอง' }]);
   const removeKitten = (id: number) => setKittens(kittens.filter((k) => k.tempId !== id));
-  const updateKitten = (id: number, field: keyof KittenForm, value: string) =>
+  const updateKitten = (id: number, field: string, value: string) =>
     setKittens(kittens.map((k) => (k.tempId === id ? { ...k, [field]: value } : k)));
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -61,41 +61,32 @@ export default function RecordBirthPage() {
     if (!userId || !litterInfo) return;
     setIsLoading(true);
     try {
-      const { error: litterError } = await supabase.from('litters').update({ status: 'คลอดแล้ว' }).eq('id', litterId);
+      const { error: litterError } = await supabase.from('litters').update({ status: 'คลอดแล้ว', actual_birth_date: actualBirthDate }).eq('id', litterId);
       if (litterError) throw litterError;
       const petsData = kittens.map((k, index) => ({
         user_id: userId, farm_id: farmId, litter_id: parseInt(litterId),
         name: k.name || `ลูก${litterInfo.dam?.name || ''} (${litterInfo.litter_code}) #${index + 1}`,
-        gender: k.gender, status: 'เด็ก', birth_date: actualBirthDate,
-        weight: k.weight ? parseFloat(k.weight) : null,
+        gender: k.gender, status: k.plan, birth_date: actualBirthDate,
         species: litterInfo.dam?.species || litterInfo.sire?.species || null,
         breed: litterInfo.dam?.breed || litterInfo.sire?.breed || null,
       }));
-      const { data: insertedPets, error: petsError } = await supabase.from('pets').insert(petsData).select('id, name');
+      const { data: insertedPets, error: petsError } = await supabase.from('pets').insert(petsData).select('id');
       if (petsError) throw petsError;
 
-      const activityInserts: any[] = [];
-      if (litterInfo.dam_id) {
-        activityInserts.push({
-          pet_id: litterInfo.dam_id,
-          activity_type: 'คลอด',
-          title: `คลอดลูก ครอก ${litterInfo.litter_code} (${kittens.length} ตัว)`,
-          activity_date: actualBirthDate,
-        });
+      const weightInserts = (insertedPets || [])
+        .map((p, index) => ({ pet_id: p.id, weight: kittens[index].weight }))
+        .filter(w => w.weight.trim() !== '')
+        .map(w => ({
+          pet_id: w.pet_id,
+          weight: parseFloat(w.weight),
+          recorded_date: actualBirthDate,
+          user_id: userId,
+        }));
+      if (weightInserts.length > 0) {
+        await supabase.from('pet_weights').insert(weightInserts);
       }
-      if (insertedPets) {
-        insertedPets.forEach((p: any) => {
-          activityInserts.push({
-            pet_id: p.id,
-            activity_type: 'เกิด',
-            title: `เกิดในครอก ${litterInfo.litter_code}`,
-            activity_date: actualBirthDate,
-          });
-        });
-      }
-      if (activityInserts.length > 0) await supabase.from('pet_activities').insert(activityInserts);
 
-      alert(`🎉 บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
+      alert(`บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {
       alert('เกิดข้อผิดพลาด: ' + error.message);
@@ -107,8 +98,8 @@ export default function RecordBirthPage() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .rb-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px calc(140px + env(safe-area-inset-bottom,0px)); }
+        .rb-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .rb-body { max-width: 640px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .rb-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .rb-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .rb-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -131,16 +122,23 @@ export default function RecordBirthPage() {
         .rb-field:last-child { margin-bottom: 0; }
         .rb-flabel { display: block; font-size: 11px; font-weight: 700; color: ${F.muted}; margin-bottom: 5px; margin-left: 1px; }
         .rb-gender { display: flex; gap: 8px; }
-        .rb-gender-btn { flex: 1; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; }
+        .rb-gender-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; }
         .rb-gender-btn.m.active { border-color: ${F.blue}; background: ${F.blue}; color: white; }
         .rb-gender-btn.f.active { border-color: ${F.pink}; background: ${F.pink}; color: white; }
+        .rb-plan { display: flex; gap: 8px; }
+        .rb-plan-btn { flex: 1; padding: 10px 8px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 12px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; line-height: 1.3; }
+        .rb-plan-btn.sell.active { border-color: #D97706; background: #FFFBEB; color: #D97706; }
+        .rb-plan-btn.keep.active { border-color: #7C3AED; background: #F5F3FF; color: #7C3AED; }
         .rb-add { width: 100%; border: 2px dashed ${F.lineMid}; color: ${F.muted}; background: none; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
         .rb-add:hover { border-color: ${F.pinkBorder}; color: ${F.pink}; background: ${F.pinkSoft}; }
-        .rb-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px)); }
-        .rb-savebar-inner { max-width: 640px; margin: 0 auto; }
         .rb-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .rb-btn:hover { background: #D63F6A; }
         .rb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .rb-inline-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .rb-cancel-btn { flex: 0 0 auto; padding: 14px 18px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .rb-submit-inline { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid ${F.pink}; transition: all .18s; font-family: inherit; background: white; color: ${F.pink}; }
+        .rb-submit-inline:hover { background: ${F.pinkSoft}; }
+        .rb-submit-inline:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
 
       {isFetching ? (
@@ -158,7 +156,7 @@ export default function RecordBirthPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="rb-card">
-                <label className="rb-date-label">📅 วันที่คลอดจริง</label>
+                <label className="rb-date-label">วันที่คลอดจริง</label>
                 <input type="date" className="rb-input" value={actualBirthDate} onChange={(e) => setActualBirthDate(e.target.value)} required />
               </div>
 
@@ -183,28 +181,34 @@ export default function RecordBirthPage() {
                   <div className="rb-field">
                     <label className="rb-flabel">เพศ</label>
                     <div className="rb-gender">
-                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}>♂ ตัวผู้</button>
-                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}>♀ ตัวเมีย</button>
+                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',flexShrink:0,marginRight:4}} />ตัวผู้</button>
+                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',flexShrink:0,marginRight:4}} />ตัวเมีย</button>
                     </div>
                   </div>
                   <div className="rb-field">
                     <label className="rb-flabel">น้ำหนักแรกเกิด (กรัม)</label>
                     <input type="number" className="rb-input" placeholder="เช่น 50" value={kitten.weight} onChange={(e) => updateKitten(kitten.tempId, 'weight', e.target.value)} />
                   </div>
+                  <div className="rb-field">
+                    <label className="rb-flabel">วางแผนไว้</label>
+                    <div className="rb-plan">
+                      <button type="button" className={`rb-plan-btn sell ${kitten.plan === 'ยังไม่เปิดจอง' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'plan', 'ยังไม่เปิดจอง')}>ยังไม่เปิดจอง</button>
+                      <button type="button" className={`rb-plan-btn keep ${kitten.plan === 'เก็บ' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'plan', 'เก็บ')}>เก็บไว้เป็นพ่อแม่พันธุ์</button>
+                    </div>
+                  </div>
                 </div>
               ))}
 
               <button type="button" className="rb-add" onClick={addKitten}><Icon.Plus /> เพิ่มเด็กๆ อีกตัว</button>
+              <div className="rb-inline-actions">
+                <button type="button" className="rb-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
+                <button type="submit" className="rb-submit-inline" disabled={isLoading}>
+                  <Icon.Save /> {isLoading ? 'กำลังบันทึก...' : `บันทึกข้อมูลแรกเกิด ${kittens.length} ตัว`}
+                </button>
+              </div>
             </form>
           </div>
 
-          <div className="rb-savebar">
-            <div className="rb-savebar-inner">
-              <button type="button" className="rb-btn" onClick={handleSubmit} disabled={isLoading}>
-                <Icon.Save /> {isLoading ? "กำลังเซฟข้อมูล..." : `ยืนยันบันทึกเด็กๆ ทั้ง ${kittens.length} ตัว`}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </>

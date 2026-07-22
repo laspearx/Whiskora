@@ -11,7 +11,7 @@ const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
   blue: '#2563EB', green: '#16A34A', orange: '#F97316',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 const Icon = {
@@ -49,6 +49,9 @@ export default function FarmPetsPage() {
   const farmId = params.id as string;
   const statusFilter = searchParams.get("status");
 
+  const genderFilter = searchParams.get("gender");
+  const groupFilter  = searchParams.get("group");
+
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,8 +60,27 @@ export default function FarmPetsPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { router.push(`/login?redirect=${encodeURIComponent(`/farm-dashboard/${farmId}/pets`)}`); return; }
+
         let query = supabase.from("pets").select("*").eq("farm_id", farmId).eq("user_id", session.user.id).order("created_at", { ascending: false });
-        if (statusFilter) query = query.eq("status", statusFilter);
+
+        if (groupFilter === 'pregnant') {
+          const { data: littersData } = await supabase
+            .from('litters').select('dam_id').eq('farm_id', farmId).eq('status', 'รอคลอด');
+          const damIds = (littersData || []).map((l: any) => l.dam_id).filter(Boolean);
+          if (damIds.length === 0) { setPets([]); setLoading(false); return; }
+          query = query.in('id', damIds);
+        } else if (groupFilter === 'forsale') {
+          query = query.in('status', ['เด็ก', 'ยังไม่เปิดจอง', 'เปิดจอง', 'พร้อมย้ายบ้าน']);
+        } else if (statusFilter) {
+          query = query.eq("status", statusFilter);
+        }
+
+        if (genderFilter === 'male') {
+          query = query.or('gender.eq.male,gender.eq.ตัวผู้');
+        } else if (genderFilter === 'female') {
+          query = query.or('gender.eq.female,gender.eq.ตัวเมีย');
+        }
+
         const { data: petsData, error } = await query;
         if (error) throw error;
         if (petsData) setPets(petsData);
@@ -67,10 +89,11 @@ export default function FarmPetsPage() {
       } finally { setLoading(false); }
     };
     if (farmId) fetchFarmPets();
-  }, [farmId, statusFilter, router]);
+  }, [farmId, statusFilter, genderFilter, groupFilter, router]);
 
   const statusStyle = (s: string) => {
     if (s === 'พร้อมย้ายบ้าน') return { bg: '#F0FDF4', color: F.green, border: '#BBF7D0' };
+    if (s === 'เปิดจอง') return { bg: '#F0FDFA', color: '#0D9488', border: '#99F6E4' };
     if (s === 'จองแล้ว') return { bg: '#FFF7ED', color: F.orange, border: '#FED7AA' };
     return { bg: F.pinkSoft, color: F.pink, border: F.pinkBorder };
   };
@@ -80,8 +103,8 @@ export default function FarmPetsPage() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .fpl-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .fpl-body { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
+        .fpl-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .fpl-body { max-width: 900px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .fpl-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .fpl-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .fpl-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -125,12 +148,19 @@ export default function FarmPetsPage() {
           <div className="fpl-body">
             <div className="fpl-header">
               <button className="fpl-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
-              <h1 className="fpl-title">{statusFilter ? statusFilter : 'สมาชิกทั้งหมด'} <span className="count">({pets.length})</span></h1>
+              <h1 className="fpl-title">
+                {groupFilter === 'pregnant' ? 'กำลังตั้งท้อง'
+                  : groupFilter === 'forsale' ? 'พร้อมขาย'
+                  : (statusFilter === 'พ่อพันธุ์ / แม่พันธุ์' && genderFilter === 'male') ? 'พ่อพันธุ์'
+                  : (statusFilter === 'พ่อพันธุ์ / แม่พันธุ์' && genderFilter === 'female') ? 'แม่พันธุ์'
+                  : statusFilter || 'สมาชิกทั้งหมด'}
+                {' '}<span className="count">({pets.length})</span>
+              </h1>
             </div>
 
             <div className="fpl-bar">
               <div>
-                {statusFilter && (
+                {(statusFilter || genderFilter || groupFilter) && (
                   <Link href={`/farm-dashboard/${farmId}/pets`} className="fpl-clear"><Icon.X /> เลิกกรอง (ดูทั้งหมด)</Link>
                 )}
               </div>
@@ -139,9 +169,16 @@ export default function FarmPetsPage() {
 
             {pets.length === 0 ? (
               <div className="fpl-empty">
-                <div className="fpl-empty-emoji">🐾</div>
-                <h3 className="fpl-empty-title">{statusFilter ? `ไม่พบสมาชิกสถานะ "${statusFilter}"` : 'ฟาร์มของคุณยังไม่มีสัตว์เลี้ยง'}</h3>
-                {!statusFilter && (
+                <div className="fpl-empty-emoji"><img src="/icons/icon-paw-pink.png" alt="" style={{width:56,height:56,objectFit:'contain',opacity:0.3}} /></div>
+                <h3 className="fpl-empty-title">
+                  {groupFilter === 'pregnant' ? 'ไม่พบสัตว์ที่กำลังตั้งท้อง'
+                    : groupFilter === 'forsale' ? 'ไม่พบสัตว์ที่พร้อมขาย'
+                    : (statusFilter === 'พ่อพันธุ์ / แม่พันธุ์' && genderFilter === 'male') ? 'ไม่พบพ่อพันธุ์'
+                    : (statusFilter === 'พ่อพันธุ์ / แม่พันธุ์' && genderFilter === 'female') ? 'ไม่พบแม่พันธุ์'
+                    : statusFilter ? `ไม่พบสมาชิกสถานะ "${statusFilter}"`
+                    : 'ฟาร์มของคุณยังไม่มีสัตว์เลี้ยง'}
+                </h3>
+                {!statusFilter && !genderFilter && !groupFilter && (
                   <>
                     <p className="fpl-empty-text">เริ่มเพิ่มพ่อแม่พันธุ์หรือเด็กๆ ที่พร้อมย้ายบ้านได้เลย</p>
                     <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fpl-empty-btn">เพิ่มสัตว์เลี้ยงตัวแรก</Link>
@@ -157,7 +194,7 @@ export default function FarmPetsPage() {
                   return (
                     <Link key={pet.id} href={`/pets/${pet.id}?from=${encodeURIComponent(`/farm-dashboard/${farmId}`)}`} className="fpl-card">
                       <div className="fpl-photo">
-                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src={isFemale ? '/icons/icon-women.png' : '/icons/icon-men.png'} alt="" style={{width:44,height:44,objectFit:'contain',opacity:0.45}} />}
                       </div>
                       <div className="fpl-info">
                         <div className="fpl-name-row">

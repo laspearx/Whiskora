@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,11 +19,11 @@ const F = {
 };
 
 const shortMonthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const thaiDayNames = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
 const CIRCUMFERENCE = 2 * Math.PI * 44;
 
 type VaccineRow = { next_due: string | null; vaccine_name: string | null; pet_id: string | null };
 type ActivityRow = { id: string; pet_id: string; activity_type: string | null; title: string; activity_date: string };
-type BusinessLinkProps = { href: string; label: string; type: string; icon: ReactNode; verified?: boolean };
 type CropType = "avatar" | "cover";
 
 function formatMemberSince(dateStr: string): string {
@@ -61,13 +60,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
-  const [myFarms, setMyFarms] = useState<any[]>([]);
-  const [myShops, setMyShops] = useState<any[]>([]);
-  const [myServices, setMyServices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<VaccineRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [vaccinatedPetIds, setVaccinatedPetIds] = useState<Set<string>>(new Set());
   const [hasHealthActivities, setHasHealthActivities] = useState(false);
+  const [hasWeightRecords, setHasWeightRecords] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Crop state
@@ -89,25 +86,20 @@ export default function ProfilePage() {
         setUser(session.user);
         const uid = session.user.id;
 
-        const [profRes, farmRes, shopRes, svcRes, petsRes] = await Promise.all([
+        const [profRes, petsRes] = await Promise.all([
           supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-          supabase.from("farms").select("*").eq("user_id", uid),
-          supabase.from("shops").select("*").eq("user_id", uid),
-          supabase.from("services").select("*").eq("user_id", uid),
           supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 
         if (profRes.data) setProfile(profRes.data);
-        if (farmRes.data) setMyFarms(farmRes.data);
-        if (shopRes.data) setMyShops(shopRes.data);
-        if (svcRes.data) setMyServices(svcRes.data);
         if (petsRes.data) setPets(petsRes.data);
 
         if (petsRes.data?.length) {
           const ids = petsRes.data.map((p: any) => p.id);
-          const [vacRes, actRes] = await Promise.all([
+          const [vacRes, actRes, weightRes] = await Promise.all([
             supabase.from("vaccines").select("next_due, vaccine_name, pet_id").in("pet_id", ids).not("next_due", "is", null),
             supabase.from("pet_activities").select("id, pet_id, activity_type, title, activity_date").in("pet_id", ids).order("activity_date", { ascending: false }).limit(5),
+            supabase.from("pet_weights").select("id").in("pet_id", ids).limit(1),
           ]);
           if (vacRes.data) {
             setAppointments(vacRes.data as VaccineRow[]);
@@ -119,6 +111,7 @@ export default function ProfilePage() {
               a.activity_type?.includes("สุขภาพ") || a.activity_type?.includes("health") || a.activity_type === "ตรวจสุขภาพ"
             ));
           }
+          setHasWeightRecords(!!weightRes.data && weightRes.data.length > 0);
         }
       } catch (err) {
         console.error("Profile load error:", err);
@@ -128,6 +121,7 @@ export default function ProfilePage() {
     };
     load();
   }, [router]);
+
 
   // Crop helpers
   const openCrop = (file: File, type: CropType) => {
@@ -175,16 +169,24 @@ export default function ProfilePage() {
   const displayName = profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Whiskora User";
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
   const coverUrl = profile?.cover_url;
-  const isPartner = myFarms.length > 0 || myShops.length > 0 || myServices.length > 0;
+
+  const sortedPets = useMemo(() => {
+    return [...pets].sort((a, b) => {
+      if (!a.birth_date && !b.birth_date) return 0;
+      if (!a.birth_date) return 1;
+      if (!b.birth_date) return -1;
+      return new Date(b.birth_date).getTime() - new Date(a.birth_date).getTime();
+    });
+  }, [pets]);
 
   const petCareChecks = useMemo(() => {
     if (!pets.length) return { vaccineOk: false, weightOk: false, healthOk: false, score: 0 };
     const vaccineOk = vaccinatedPetIds.size > 0;
-    const weightOk = pets.some((p) => p.weight || p.current_weight || p.weight_kg);
+    const weightOk = hasWeightRecords;
     const healthOk = hasHealthActivities;
     const score = (vaccineOk ? 34 : 0) + (weightOk ? 33 : 0) + (healthOk ? 33 : 0);
     return { vaccineOk, weightOk, healthOk, score };
-  }, [pets, vaccinatedPetIds, hasHealthActivities]);
+  }, [pets, vaccinatedPetIds, hasHealthActivities, hasWeightRecords]);
 
   const tasksDue = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -198,6 +200,39 @@ export default function ProfilePage() {
       }))
       .filter((item) => item.dueDate >= today && item.dueDate < dayAfter)
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+  }, [appointments, pets]);
+
+  const calendarData = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayKey = today.toISOString().split("T")[0];
+    // Find Monday of the current week (Thai week Mon–Sun)
+    const dow = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday); d.setDate(monday.getDate() + i);
+      const key = d.toISOString().split("T")[0];
+      const events = appointments
+        .filter((a) => a.next_due && String(a.next_due).split("T")[0] === key)
+        .map((a) => ({ ...a, petName: pets.find((p) => p.id === a.pet_id)?.name || "สัตว์เลี้ยง" }));
+      return { date: d, dateKey: key, dayName: thaiDayNames[d.getDay()], events };
+    });
+    return { todayKey, days };
+  }, [appointments, pets]);
+
+  const upcomingEvents = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const limit = new Date(today); limit.setDate(limit.getDate() + 30);
+    return appointments
+      .filter((a) => a.next_due)
+      .map((a) => ({
+        ...a,
+        dueDate: new Date(String(a.next_due).split("T")[0]),
+        petName: pets.find((p) => p.id === a.pet_id)?.name || "สัตว์เลี้ยง",
+      }))
+      .filter((a) => a.dueDate >= today && a.dueDate < limit)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+      .slice(0, 6);
   }, [appointments, pets]);
 
   if (loading) return <PageLoader />;
@@ -292,12 +327,33 @@ export default function ProfilePage() {
         .pp-task-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; background: ${F.pinkSoft}; color: ${F.pinkDeep}; }
         .pp-task-badge.today { background: #fef3c7; color: #d97706; }
 
-        /* ── Quick menu ── */
-        .pp-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .pp-quick-item { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 8px 12px; border: 1px solid ${F.line}; border-radius: 14px; background: white; text-decoration: none; color: ${F.ink}; transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease; }
-        .pp-quick-item:hover { transform: translateY(-2px); border-color: #e0b8c8; box-shadow: 0 6px 18px rgba(232,70,119,.08); }
-        .pp-quick-icon { width: 36px; height: 36px; object-fit: contain; }
-        .pp-quick-label { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.35; color: ${F.ink}; }
+        /* ── Calendar strip ── */
+        .pp-cal-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; }
+        .pp-cal-strip::-webkit-scrollbar { display: none; }
+        .pp-cal-day { flex-shrink: 0; width: 46px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px 8px; border-radius: 14px; border: 1.5px solid ${F.line}; background: white; }
+        .pp-cal-day.today { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .pp-cal-day-name { font-size: 10px; font-weight: 600; color: ${F.muted}; }
+        .pp-cal-day.today .pp-cal-day-name { color: ${F.pinkDeep}; }
+        .pp-cal-date { font-size: 17px; font-weight: 750; color: ${F.ink}; line-height: 1.1; }
+        .pp-cal-day.today .pp-cal-date { color: ${F.pink}; }
+        .pp-cal-icons { min-height: 16px; display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; }
+        .pp-cal-icon { width: 14px; height: 14px; object-fit: contain; }
+
+        /* ── Upcoming events ── */
+        .pp-upcoming-list { display: grid; gap: 8px; margin-top: 12px; }
+        .pp-upcoming-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: white; border: 1px solid ${F.line}; border-radius: 14px; }
+        .pp-upcoming-date { flex-shrink: 0; text-align: center; width: 36px; }
+        .pp-upcoming-date-num { display: block; font-size: 18px; font-weight: 750; color: ${F.pink}; line-height: 1; }
+        .pp-upcoming-date-mon { display: block; font-size: 10px; font-weight: 600; color: ${F.muted}; }
+        .pp-upcoming-divider { width: 1px; height: 30px; background: ${F.line}; flex-shrink: 0; }
+        .pp-upcoming-icon { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+        .pp-upcoming-text { flex: 1; min-width: 0; }
+        .pp-upcoming-title { display: block; font-size: 13px; font-weight: 650; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pp-upcoming-pet { display: block; font-size: 11px; color: ${F.muted}; }
+        .pp-upcoming-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+        .pp-upcoming-badge.today { background: #fef3c7; color: #d97706; }
+        .pp-upcoming-badge.soon { background: ${F.pinkSoft}; color: ${F.pinkDeep}; }
+        .pp-cal-empty { text-align: center; color: ${F.muted}; font-size: 13px; padding: 16px 0; line-height: 1.6; }
 
         /* ── Activities ── */
         .pp-act-list { border: 1px solid ${F.line}; border-radius: 14px; overflow: hidden; }
@@ -307,27 +363,6 @@ export default function ProfilePage() {
         .pp-act-title { display: block; font-size: 13px; font-weight: 600; color: ${F.ink}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-act-meta { display: block; font-size: 11px; color: ${F.muted}; }
         .pp-act-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; white-space: nowrap; }
-
-        /* ── Pet ID Promo ── */
-        .pp-id-promo { margin-bottom: 14px; border-radius: 18px; overflow: hidden; background: linear-gradient(135deg, ${F.pink} 0%, #b5305a 100%); padding: 20px; display: flex; align-items: center; gap: 16px; }
-        .pp-id-promo-text { flex: 1; min-width: 0; }
-        .pp-id-promo-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-        .pp-id-promo-title { font-size: 18px; font-weight: 750; color: white; margin: 0 0 5px; }
-        .pp-id-promo-desc { font-size: 12px; color: rgba(255,255,255,.78); line-height: 1.5; margin: 0; }
-        .pp-id-promo-hint { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.28); color: white; font-size: 12px; font-weight: 600; }
-        .pp-id-promo-qr { flex-shrink: 0; opacity: .88; }
-
-        /* ── Business ── */
-        .pp-biz-list { display: grid; gap: 8px; }
-        .pp-biz-link { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid ${F.line}; border-radius: 14px; background: white; text-decoration: none; color: ${F.ink}; transition: transform .14s ease, border-color .14s ease; }
-        .pp-biz-link:hover { transform: translateY(-2px); border-color: #e0b8c8; }
-        .pp-biz-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .pp-biz-icon img { width: 48px; height: 48px; object-fit: contain; }
-        .pp-biz-name { font-size: 15px; font-weight: 600; color: ${F.ink}; display: block; }
-        .pp-biz-badges { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
-        .pp-biz-type { padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; }
-        .pp-biz-verified { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 500; }
-        .pp-biz-verified img { width: 10px; height: 10px; object-fit: contain; }
 
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
@@ -417,7 +452,7 @@ export default function ProfilePage() {
                 <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
               )}
             </div>
-            <Link href="/profile/edit" className="pp-edit-btn" aria-label="แก้ไขโปรไฟล์">
+            <Link href="/profile/settings" className="pp-edit-btn" aria-label="ตั้งค่า">
               <img src="/icons/icon-setting.png" alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
             </Link>
           </div>
@@ -433,7 +468,7 @@ export default function ProfilePage() {
           </div>
           {pets.length > 0 ? (
             <div className="pp-pet-scroll">
-              {pets.slice(0, 8).map((pet) => (
+              {sortedPets.map((pet) => (
                 <Link key={pet.id} href={`/pets/${pet.id}`} className="pp-pet-bubble">
                   <div className="pp-pet-circle">
                     {pet.image_url
@@ -457,6 +492,63 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+
+        {/* 7-Day Calendar + Upcoming Events */}
+        {pets.length > 0 && (
+          <section className="pp-section">
+            <div className="pp-section-head">
+              <span className="pp-section-title">ปฏิทินดูแลสัตว์เลี้ยง</span>
+              <Link href="/profile/calendar" className="pp-see-all">ดูทั้งหมด ›</Link>
+            </div>
+            <div className="pp-card" style={{ padding: "12px 10px" }}>
+              <div className="pp-cal-strip">
+                {calendarData.days.map(({ date, dateKey, dayName, events }) => (
+                  <div
+                    key={dateKey}
+                    className={`pp-cal-day${dateKey === calendarData.todayKey ? " today" : ""}`}
+                  >
+                    <span className="pp-cal-day-name">{dayName}</span>
+                    <span className="pp-cal-date">{date.getDate()}</span>
+                    <div className="pp-cal-icons">
+                      {events.slice(0, 2).map((ev, i) => (
+                        <img key={i} src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-cal-icon" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="pp-upcoming-list">
+                {upcomingEvents.map((ev, i) => {
+                  const isToday = ev.dueDate.toDateString() === new Date().toDateString();
+                  const isTomorrow = ev.dueDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                  return (
+                    <div key={i} className="pp-upcoming-item">
+                      <div className="pp-upcoming-date">
+                        <span className="pp-upcoming-date-num">{ev.dueDate.getDate()}</span>
+                        <span className="pp-upcoming-date-mon">{shortMonthNames[ev.dueDate.getMonth()]}</span>
+                      </div>
+                      <div className="pp-upcoming-divider" />
+                      <img src={getVaccineIcon(ev.vaccine_name)} alt="" className="pp-upcoming-icon" />
+                      <div className="pp-upcoming-text">
+                        <span className="pp-upcoming-title">{ev.vaccine_name || "ดูแลสุขภาพ"}</span>
+                        <span className="pp-upcoming-pet">{ev.petName}</span>
+                      </div>
+                      {(isToday || isTomorrow) && (
+                        <span className={`pp-upcoming-badge ${isToday ? "today" : "soon"}`}>
+                          {isToday ? "วันนี้" : "พรุ่งนี้"}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="pp-cal-empty">ไม่มีกำหนดการวัคซีนใน 30 วันข้างหน้า</div>
+            )}
+          </section>
+        )}
 
         {/* Pet Care Score + Tasks */}
         {pets.length > 0 && (
@@ -486,7 +578,7 @@ export default function ProfilePage() {
                     { ok: healthOk, label: "สุขภาพ" },
                   ].map(({ ok, label }) => (
                     <div key={label} className={`pp-check${ok ? " ok" : ""}`}>
-                      <span className="pp-check-icon">{ok ? "✓" : "✗"}</span>
+                      <span className="pp-check-icon">{ok ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}</span>
                       {label}
                     </div>
                   ))}
@@ -519,34 +611,11 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Quick Menu */}
-        <section className="pp-section">
-          <div className="pp-section-head">
-            <span className="pp-section-title">เมนูลัด</span>
-          </div>
-          <div className="pp-quick-grid">
-            {[
-              { href: "/profile/pets", icon: "/icons/icon-my-pets.png", label: "สัตว์เลี้ยง\nของฉัน" },
-              { href: "/pets/vaccines/bulk-add", icon: "/icons/icon-vaccine.png", label: "บันทึก\nวัคซีน" },
-              { href: "/pets/vaccines/all", icon: "/icons/icon-health.png", label: "ประวัติ\nสุขภาพ" },
-              { href: "/profile/calendar", icon: "/icons/icon-calendar.png", label: "ปฏิทิน" },
-              { href: "/service-hub", icon: "/icons/icon-partner.png", label: "ร้านค้า\nบริการ" },
-              { href: "/profile/finance", icon: "/icons/icon-wallet.png", label: "รายรับ\nรายจ่าย" },
-            ].map((item) => (
-              <Link key={item.href} href={item.href} className="pp-quick-item">
-                <img src={item.icon} alt="" className="pp-quick-icon" />
-                <span className="pp-quick-label" style={{ whiteSpace: "pre-line" }}>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* Recent Activities */}
         {activities.length > 0 && (
           <section className="pp-section">
             <div className="pp-section-head">
               <span className="pp-section-title">กิจกรรมล่าสุด</span>
-              <Link href="/pets" className="pp-see-all">ดูทั้งหมด ›</Link>
             </div>
             <div className="pp-act-list">
               {activities.map((act) => {
@@ -566,58 +635,35 @@ export default function ProfilePage() {
           </section>
         )}
 
-        {/* Pet ID Card Promo */}
-        <div className="pp-id-promo">
-          <div className="pp-id-promo-text">
-            <div className="pp-id-promo-label">Whiskora</div>
-            <h2 className="pp-id-promo-title">Pet ID Card</h2>
-            <p className="pp-id-promo-desc">แสดง QR Code ให้คนอื่นสแกนเพื่อดูข้อมูลสัตว์เลี้ยงของคุณ</p>
-            <div className="pp-id-promo-hint">
-              <img src="/icons/icon-qr-code.png" alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
-              กดปุ่ม QR ที่แถบเมนูด้านล่าง
-            </div>
-          </div>
-          <div className="pp-id-promo-qr">
-            <img src="/icons/icon-scan.png" alt="" style={{ width: 130, height: 130, objectFit: 'contain' }} />
-          </div>
-        </div>
-
-        {/* Business */}
-        {isPartner && (
-          <section className="pp-section">
-            <div className="pp-section-head">
-              <span className="pp-section-title">ธุรกิจที่ดูแล</span>
-            </div>
-            <div className="pp-biz-list">
-              {myFarms.map((farm) => (
-                <BizLink key={farm.id} href={`/farm-dashboard/${farm.id}`} label={farm.farm_name} type="ฟาร์ม" icon={<img src="/icons/icon-farm.png" alt="" />} verified={farm.is_verified} />
-              ))}
-              {myShops.map((shop) => (
-                <BizLink key={shop.id} href={`/shop-dashboard/${shop.id}`} label={shop.shop_name} type="ร้านค้า" icon={<img src="/icons/icon-shop.png" alt="" />} verified={shop.is_verified} />
-              ))}
-              {myServices.map((svc) => (
-                <BizLink key={svc.id} href={`/service-dashboard/${svc.id}`} label={svc.service_name} type="บริการ" icon={<img src="/icons/icon-service.png" alt="" />} verified={svc.is_verified} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Admin */}
         {profile?.role === "admin" && (
           <section className="pp-section">
             <div className="pp-section-head">
               <span className="pp-section-title" style={{ color: "#dc2626" }}>ผู้ดูแลระบบ</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: '#fee2e2', color: '#dc2626' }}>Admin</span>
             </div>
-            <div className="pp-card pp-admin-card">
+            <div className="pp-card pp-admin-card" style={{ marginBottom: 10 }}>
               <Link href="/admin/verifications" className="pp-admin-link">
                 <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
                 <div>
                   <strong>คำขอยืนยันตัวตน</strong>
-                  <span>จัดการ farm verifications</span>
+                  <span>ตรวจสอบและอนุมัติฟาร์ม</span>
                 </div>
-                <span className="pp-admin-badge">Admin</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+              </Link>
+            </div>
+            <div className="pp-card pp-admin-card">
+              <Link href="/admin/dashboard" className="pp-admin-link">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <div>
+                  <strong>แดชบอร์ดหลังบ้าน</strong>
+                  <span>สถิติผู้ใช้ สัตว์ และพาร์ทเนอร์ทั้งหมด</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
               </Link>
             </div>
           </section>
@@ -627,22 +673,3 @@ export default function ProfilePage() {
   );
 }
 
-function BizLink({ href, label, type, icon, verified }: BusinessLinkProps) {
-  return (
-    <Link className="pp-biz-link" href={href}>
-      <span className="pp-biz-icon">{icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <span className="pp-biz-name">{label}</span>
-        <div className="pp-biz-badges">
-          <span className="pp-biz-type">{type}</span>
-          {verified && (
-            <span className="pp-biz-verified">
-              <img src="/icons/icon-verified.png" alt="" />
-              ยืนยันแล้ว
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}

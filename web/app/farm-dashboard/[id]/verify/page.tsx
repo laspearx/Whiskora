@@ -8,7 +8,7 @@ import PageLoader from '@/app/components/PageLoader';
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
-  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#fffafc',
   green: '#16A34A', greenSoft: '#F0FDF4',
   amber: '#D97706', amberSoft: '#FFFBEB',
 };
@@ -44,6 +44,7 @@ export default function VerifyFarmPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [farm, setFarm] = useState<any>(null);
   const [phone, setPhone] = useState('');
+  const [existingKyc, setExistingKyc] = useState<{ id_card_front_url: string | null; bank_book_url: string | null; house_registration_url: string | null } | null>(null);
   const [uploads, setUploads] = useState<Uploads>({
     id_card_front: null,
     bank_book: null, farm_photos: [], house_reg: null,
@@ -71,6 +72,19 @@ export default function VerifyFarmPage() {
 
       setFarm(farmData);
       setPhone(farmData.phone || '');
+
+      // ตรวจว่าเคยยืนยัน KYC ไว้แล้วจากธุรกิจอื่น
+      const { data: kycData } = await supabase
+        .from('farm_verifications')
+        .select('id_card_front_url,bank_book_url,house_registration_url')
+        .eq('user_id', session.user.id)
+        .not('id_card_front_url', 'is', null)
+        .neq('farm_id', parseInt(farmId))
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (kycData?.id_card_front_url) setExistingKyc(kycData);
+
       setLoading(false);
     };
     load();
@@ -102,10 +116,10 @@ export default function VerifyFarmPage() {
   };
 
   const isStepDone = (stepId: string) => {
-    if (stepId === 'id_card')     return !!uploads.id_card_front;
-    if (stepId === 'bank_book')   return !!uploads.bank_book;
+    if (stepId === 'id_card')     return !!uploads.id_card_front || !!existingKyc?.id_card_front_url;
+    if (stepId === 'bank_book')   return !!uploads.bank_book    || !!existingKyc?.bank_book_url;
     if (stepId === 'farm_photos') return uploads.farm_photos.length >= 2;
-    if (stepId === 'house_reg')   return !!uploads.house_reg;
+    if (stepId === 'house_reg')   return !!uploads.house_reg    || !!existingKyc?.house_registration_url;
     return false;
   };
   const allDone = STEPS.every(s => isStepDone(s.id));
@@ -117,9 +131,15 @@ export default function VerifyFarmPage() {
     try {
       const base = `${userId}/${farmId}`;
       const [frontUrl, bankUrl, houseUrl] = await Promise.all([
-        uploadFile(uploads.id_card_front!, `${base}/id_card_front.${uploads.id_card_front!.name.split('.').pop()}`),
-        uploadFile(uploads.bank_book!, `${base}/bank_book.${uploads.bank_book!.name.split('.').pop()}`),
-        uploadFile(uploads.house_reg!, `${base}/house_reg.${uploads.house_reg!.name.split('.').pop()}`),
+        uploads.id_card_front
+          ? uploadFile(uploads.id_card_front, `${base}/id_card_front.${uploads.id_card_front.name.split('.').pop()}`)
+          : Promise.resolve(existingKyc?.id_card_front_url ?? null),
+        uploads.bank_book
+          ? uploadFile(uploads.bank_book, `${base}/bank_book.${uploads.bank_book.name.split('.').pop()}`)
+          : Promise.resolve(existingKyc?.bank_book_url ?? null),
+        uploads.house_reg
+          ? uploadFile(uploads.house_reg, `${base}/house_reg.${uploads.house_reg.name.split('.').pop()}`)
+          : Promise.resolve(existingKyc?.house_registration_url ?? null),
       ]);
 
       const farmPhotoUrls: string[] = [];
@@ -157,10 +177,10 @@ export default function VerifyFarmPage() {
       <style>{`
         * { box-sizing: border-box; }
         .vf-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; overflow-x: clip; }
-        .vf-body { max-width: 560px; margin: 0 auto; padding: 0 0 120px; }
+        .vf-body { max-width: 560px; margin: 0 auto; padding: 0 0 32px; }
 
         /* Top bar */
-        .vf-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: white; border-bottom: 1px solid ${F.line}; position: sticky; top: 0; z-index: 10; }
+        .vf-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: ${F.bg}; border-bottom: 1px solid ${F.line}; position: sticky; top: 0; z-index: 10; }
         .vf-back { width: 38px; height: 38px; border-radius: 11px; background: ${F.line}; color: ${F.ink}; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .vf-title { font-size: 17px; font-weight: 700; color: ${F.ink}; }
         .vf-sub { font-size: 12px; color: ${F.muted}; font-weight: 400; }
@@ -202,11 +222,13 @@ export default function VerifyFarmPage() {
         .vf-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
 
         /* Save bar */
-        .vf-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
-        .vf-savebar-inner { max-width: 560px; margin: 0 auto; }
-        .vf-submit-btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
+        .vf-actions { display: flex; gap: 12px; margin-top: 24px; padding: 0 20px; }
+        .vf-cancel-btn { flex: 0 0 auto; padding: 15px 22px; background: white; color: #4B5563; border: 1.5px solid #E5E7EB; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .vf-cancel-btn:hover { background: #F9FAFB; }
+        .vf-submit-btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,.3); }
         .vf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .vf-submit-btn.not-ready { background: ${F.lineMid}; color: ${F.muted}; box-shadow: none; }
+        .vf-reuse-badge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: ${F.greenSoft}; border: 1px solid #BBF7D0; border-radius: 10px; font-size: 12px; font-weight: 600; color: ${F.green}; }
       `}</style>
 
       <div className="vf-page">
@@ -280,7 +302,13 @@ export default function VerifyFarmPage() {
                     <div className="vf-step-body">
                       {step.id === 'id_card' && (
                         <>
-                          {(previews.id_card_front as string) ? (
+                          {existingKyc?.id_card_front_url && !uploads.id_card_front ? (
+                            <div className="vf-reuse-badge">
+                              <Icon.Check />
+                              ใช้เอกสารที่ยืนยันไว้แล้ว
+                              <button onClick={() => refs.id_card_front.current?.click()} style={{ marginLeft: 'auto', fontSize: 11, color: F.muted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>อัปโหลดใหม่</button>
+                            </div>
+                          ) : (previews.id_card_front as string) ? (
                             <div className="vf-preview">
                               <img src={previews.id_card_front as string} alt="" />
                               <button className="vf-preview-remove" onClick={() => setFile('id_card_front', null)}><Icon.X /></button>
@@ -299,7 +327,13 @@ export default function VerifyFarmPage() {
 
                       {step.id === 'bank_book' && (
                         <>
-                          {(previews.bank_book as string) ? (
+                          {existingKyc?.bank_book_url && !uploads.bank_book ? (
+                            <div className="vf-reuse-badge">
+                              <Icon.Check />
+                              ใช้เอกสารที่ยืนยันไว้แล้ว
+                              <button onClick={() => refs.bank_book.current?.click()} style={{ marginLeft: 'auto', fontSize: 11, color: F.muted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>อัปโหลดใหม่</button>
+                            </div>
+                          ) : (previews.bank_book as string) ? (
                             <div className="vf-preview">
                               <img src={previews.bank_book as string} alt="" />
                               <button className="vf-preview-remove" onClick={() => setFile('bank_book', null)}><Icon.X /></button>
@@ -343,7 +377,13 @@ export default function VerifyFarmPage() {
 
                       {step.id === 'house_reg' && (
                         <>
-                          {(previews.house_reg as string) ? (
+                          {existingKyc?.house_registration_url && !uploads.house_reg ? (
+                            <div className="vf-reuse-badge">
+                              <Icon.Check />
+                              ใช้เอกสารที่ยืนยันไว้แล้ว
+                              <button onClick={() => refs.house_reg.current?.click()} style={{ marginLeft: 'auto', fontSize: 11, color: F.muted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>อัปโหลดใหม่</button>
+                            </div>
+                          ) : (previews.house_reg as string) ? (
                             <div className="vf-preview">
                               <img src={previews.house_reg as string} alt="" />
                               <button className="vf-preview-remove" onClick={() => setFile('house_reg', null)}><Icon.X /></button>
@@ -365,11 +405,8 @@ export default function VerifyFarmPage() {
             })}
           </div>
 
-        </div>
-
-        {/* Save bar */}
-        <div className="vf-savebar">
-          <div className="vf-savebar-inner">
+          <div className="vf-actions">
+            <button type="button" className="vf-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
             <button
               className={`vf-submit-btn ${!allDone ? 'not-ready' : ''}`}
               onClick={handleSubmit}

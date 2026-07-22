@@ -134,7 +134,7 @@ function VaccineTimeline() {
             <div className="vh-card">
               {records.length === 0 ? (
                 <div className="vh-empty">
-                  <span className="vh-empty-emoji">📭</span>
+                  <span className="vh-empty-emoji"><img src="/icons/icon-vaccine.png" alt="" style={{width:48,height:48,objectFit:'contain',opacity:0.3}} /></span>
                   <p className="vh-empty-text">ยังไม่มีประวัติในหมวดหมู่นี้</p>
                   <Link href={`/pets/${petId}/vaccines/create`} className="vh-empty-btn"><Icon.Plus /> เพิ่มประวัติใหม่</Link>
                 </div>
@@ -149,7 +149,7 @@ function VaccineTimeline() {
                             <div className="vh-rec-name">{record.vaccine_name}</div>
                             <div className="vh-rec-date"><b>วันที่รับบริการ:</b> {fmtDate(record.date_given)}</div>
                           </div>
-                          {index === 0 && <span className="vh-badge">ล่าสุด ✨</span>}
+                          {index === 0 && <span className="vh-badge">ล่าสุด</span>}
                         </div>
                         <div className="vh-next">
                           <div className="vh-next-icon"><img src="/icons/icon-calendar.png" alt="" /></div>

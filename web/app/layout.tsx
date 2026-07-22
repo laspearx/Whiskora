@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
+import ClientProviders from "@/app/components/ClientProviders";
+import PushSetup from "@/app/components/PushSetup";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whiskora.pet"),
@@ -78,9 +80,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#e84677" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Whiskora" />
+        <link rel="apple-touch-icon" href="/mini-logo.png" />
       </head>
       <body>
-        <RootChrome>{children}</RootChrome>
+        <ClientProviders>
+          <PushSetup />
+          <RootChrome>{children}</RootChrome>
+        </ClientProviders>
       </body>
     </html>
   );

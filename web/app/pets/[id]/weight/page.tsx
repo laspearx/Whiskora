@@ -24,6 +24,13 @@ const Icon = {
 
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
+// Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
+const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightVal = (g: number) => useKgFor(g) ? (g / 1000).toFixed(2) : `${g}`;
+const fmtWeightUnit = (g: number) => useKgFor(g) ? 'กก.' : 'กรัม';
+const fmtWeightDiff = (deltaGrams: number, useKg: boolean) =>
+  useKg ? `${deltaGrams >= 0 ? '+' : ''}${(deltaGrams / 1000).toFixed(2)} กก.` : `${deltaGrams >= 0 ? '+' : ''}${deltaGrams} กรัม`;
+
 export default function PetWeightPage() {
   const router = useRouter();
   const params = useParams();
@@ -36,6 +43,7 @@ export default function PetWeightPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ weight: '', recorded_date: new Date().toISOString().split('T')[0], notes: '' });
   const [userId, setUserId] = useState<string | null>(null);
+  const [unitOverride, setUnitOverride] = useState<boolean | null>(null);
 
   const fetchData = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -43,7 +51,7 @@ export default function PetWeightPage() {
     setUserId(session.user.id);
 
     const [{ data: petData }, { data: weightData }] = await Promise.all([
-      supabase.from('pets').select('id, name, image_url, species, breed, weight').eq('id', petId).single(),
+      supabase.from('pets').select('id, name, image_url, species, breed').eq('id', petId).single(),
       supabase.from('pet_weights').select('*').eq('pet_id', petId).order('recorded_date', { ascending: false }),
     ]);
     if (petData) setPet(petData);
@@ -58,9 +66,10 @@ export default function PetWeightPage() {
     if (!form.weight || !userId) return;
     setIsSaving(true);
     try {
+      const weightInGrams = useKgForm ? Math.round(parseFloat(form.weight) * 1000) : parseFloat(form.weight);
       const { error } = await supabase.from('pet_weights').insert({
         pet_id: parseInt(petId),
-        weight: parseFloat(form.weight),
+        weight: weightInGrams,
         recorded_date: form.recorded_date,
         notes: form.notes || null,
         user_id: userId,
@@ -68,6 +77,7 @@ export default function PetWeightPage() {
       if (error) throw error;
       setForm({ weight: '', recorded_date: new Date().toISOString().split('T')[0], notes: '' });
       setShowForm(false);
+      setUnitOverride(null);
       await fetchData();
     } catch (err: any) {
       alert('เกิดข้อผิดพลาด: ' + err.message);
@@ -83,6 +93,7 @@ export default function PetWeightPage() {
   const latestWeight = weights[0]?.weight;
   const prevWeight = weights[1]?.weight;
   const weightDiff = latestWeight && prevWeight ? (latestWeight - prevWeight) : null;
+  const useKgForm = unitOverride ?? useKgFor(latestWeight);
 
   return (
     <>
@@ -110,6 +121,8 @@ export default function PetWeightPage() {
         .pw-form-title { font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 14px; }
         .pw-field { margin-bottom: 12px; }
         .pw-label { display: block; font-size: 11px; font-weight: 700; color: ${F.muted}; margin-bottom: 5px; }
+        .pw-unit-toggle { margin-left: 8px; font-size: 10px; font-weight: 700; color: ${F.pink}; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+        .pw-unit-toggle:hover { text-decoration: underline; }
         .pw-input { width: 100%; padding: 11px 14px; border: 1px solid ${F.lineMid}; border-radius: 11px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; background: white; }
         .pw-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
         .pw-form-row { display: flex; gap: 10px; }
@@ -147,16 +160,16 @@ export default function PetWeightPage() {
 
             <div className="pw-summary">
               <div className="pw-pet-photo">
-                {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src="/icons/icon-paw-pink.png" alt="" style={{width:'55%',height:'55%',objectFit:'contain',opacity:0.35}} />}
               </div>
               <div>
                 <div className="pw-pet-name">{pet.name}</div>
                 {latestWeight ? (
                   <>
-                    <div className="pw-weight-current">{latestWeight} <span className="pw-weight-unit">กก.</span></div>
+                    <div className="pw-weight-current">{fmtWeightVal(latestWeight)} <span className="pw-weight-unit">{fmtWeightUnit(latestWeight)}</span></div>
                     {weightDiff !== null && (
                       <span className={`pw-weight-diff ${weightDiff >= 0 ? 'up' : 'down'}`}>
-                        {weightDiff >= 0 ? '+' : ''}{weightDiff.toFixed(2)} กก. จากครั้งก่อน
+                        {fmtWeightDiff(weightDiff, useKgFor(latestWeight))} จากครั้งก่อน
                       </span>
                     )}
                   </>
@@ -176,8 +189,11 @@ export default function PetWeightPage() {
                 <form onSubmit={handleSave}>
                   <div className="pw-form-row">
                     <div className="pw-field">
-                      <label className="pw-label">น้ำหนัก (กก.)</label>
-                      <input type="number" step="0.01" min="0" className="pw-input" placeholder="เช่น 4.5" value={form.weight} onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} required autoFocus />
+                      <label className="pw-label">
+                        น้ำหนัก ({useKgForm ? 'กก.' : 'กรัม'})
+                        <button type="button" className="pw-unit-toggle" onClick={() => setUnitOverride(!useKgForm)}>สลับเป็น{useKgForm ? 'กรัม' : 'กก.'}</button>
+                      </label>
+                      <input type="number" step={useKgForm ? '0.01' : '1'} min="0" className="pw-input" placeholder={useKgForm ? 'เช่น 4.5' : 'เช่น 450'} value={form.weight} onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} required autoFocus />
                     </div>
                     <div className="pw-field">
                       <label className="pw-label">วันที่บันทึก</label>
@@ -211,11 +227,11 @@ export default function PetWeightPage() {
                     <div className="pw-entry-date">{fmtDate(w.recorded_date)}</div>
                     <div style={{ flex: 1 }}>
                       <div>
-                        <span className="pw-entry-weight">{w.weight}</span>
-                        <span className="pw-entry-unit"> กก.</span>
+                        <span className="pw-entry-weight">{fmtWeightVal(w.weight)}</span>
+                        <span className="pw-entry-unit"> {fmtWeightUnit(w.weight)}</span>
                         {diff !== null && (
                           <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: diff >= 0 ? F.green : '#EF4444' }}>
-                            {diff >= 0 ? '+' : ''}{diff.toFixed(2)}
+                            {fmtWeightDiff(diff, useKgFor(w.weight))}
                           </span>
                         )}
                       </div>

@@ -34,7 +34,6 @@ export interface Pet {
   gender?: string | null;
   status?: string | null;
   birth_date?: string | null;
-  weight?: number | null;
   color?: string | null;
   pattern?: string | null;
   coat?: string | null;

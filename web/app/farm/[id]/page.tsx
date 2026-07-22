@@ -40,7 +40,6 @@ export default function PublicFarmProfile() {
   const [farm, setFarm] = useState<any>(null);
   const [owner, setOwner] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
-  const [litters, setLitters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -62,7 +61,25 @@ export default function PublicFarmProfile() {
         setFarm(farmData);
 
         const { data: { session } } = await supabase.auth.getSession();
-        if (session && farmData.user_id === session.user.id) setIsOwner(true);
+        if (session) {
+          const uid = session.user.id;
+
+          // Check workspace membership first (new system) — any farm role counts
+          const { data: wsRow } = await supabase
+            .from('workspaces')
+            .select('id, workspace_members!inner(role)')
+            .eq('type', 'farm')
+            .eq('entity_id', parseInt(farmId))
+            .eq('workspace_members.user_id', uid)
+            .maybeSingle();
+
+          if (wsRow) {
+            setIsOwner(true);
+          } else if (farmData.user_id === uid) {
+            // Fallback: direct farm ownership (legacy, before workspace backfill)
+            setIsOwner(true);
+          }
+        }
 
         // เจ้าของฟาร์ม (ชื่อ/อีเมล/ที่อยู่)
         if (farmData.user_id) {
@@ -76,10 +93,6 @@ export default function PublicFarmProfile() {
           .from('pets').select('id, name, breed, image_url, gender, status, price, birth_date')
           .eq('farm_id', farmId);
         if (petsData) setPets(petsData);
-
-        const { data: littersData } = await supabase
-          .from('litters').select('id, status').eq('farm_id', farmId);
-        if (littersData) setLitters(littersData);
       } catch (error) {
         console.error("Error fetching farm:", error);
         alert("ไม่พบข้อมูลฟาร์มนี้ครับ");
@@ -96,15 +109,6 @@ export default function PublicFarmProfile() {
 
   // ─── สถานะการยืนยัน: verified = ฟาร์มคุณภาพ / ไม่ verified = โฮมบรีด ───
   const isVerified = !!farm?.is_verified;
-
-  // ─── สถิติ (คำนวณจากข้อมูลจริง) ───
-  const stats = {
-    total: pets.length,
-    ready: pets.filter(p => p.status === 'พร้อมย้ายบ้าน').length,
-    breeders: pets.filter(p => ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'].includes(p.status)).length,
-    neutered: pets.filter(p => p.status === 'ทำหมัน / ปลดระวาง').length,
-    litters: litters.length,
-  };
 
   const readyPets = pets.filter(p => p.status === 'พร้อมย้ายบ้าน');
 
@@ -175,13 +179,6 @@ export default function PublicFarmProfile() {
         .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .fp-quality-title { font-family: inherit; font-size: 13px; font-weight: 600; color: ${F.ink}; }
         .fp-quality-sub { font-size: 11px; font-weight: 400; color: ${F.inkSoft}; line-height: 1.5; margin-top: 2px; }
-        /* ── Stats ── */
-        .fp-stats-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; margin-top: 16px; }
-        .fp-stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .fp-stat { text-align: center; }
-        .fp-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: ${F.muted}; margin-bottom: 6px; }
-        .fp-stat-num { font-family: inherit; font-size: 28px; font-weight: 700; line-height: 1; }
-        .fp-stat-unit { font-size: 11px; color: ${F.muted}; font-weight: 400; margin-top: 3px; }
         /* ── Section ── */
         .fp-section { margin-top: 20px; padding: 0 24px; }
         .fp-section-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; }
@@ -246,11 +243,9 @@ export default function PublicFarmProfile() {
         @media (max-width: 720px) {
           .fp-bio-card { grid-template-columns: 1fr; }
           .fp-quality { border-left: none; border-top: 1px solid ${F.pinkBorder}; padding-left: 0; padding-top: 14px; }
-          .fp-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
           .fp-identity, .fp-section { padding-left: 16px; padding-right: 16px; }
         }
         @media (max-width: 420px) {
-          .fp-stats-grid { grid-template-columns: repeat(2, 1fr); }
           .fp-name { font-size: 22px; }
         }
       `}</style>
@@ -280,7 +275,7 @@ export default function PublicFarmProfile() {
           {/* ── Identity ── */}
           <div className="fp-identity">
             <div className="fp-id-row">
-              <div className="fp-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : (farm.species === 'cat' ? '🐱' : farm.species === 'dog' ? '🐶' : '🏡')}</div>
+              <div className="fp-avatar">{farm.image_url ? <img src={farm.image_url} alt={farm.farm_name} /> : <img src={`/icons/icon-species-${farm.species || 'other'}.png`} alt="" style={{width:'65%',height:'65%',objectFit:'contain',opacity:0.5}} onError={e => { (e.target as HTMLImageElement).src = '/icons/icon-farm.png'; }} />}</div>
               <div className="fp-id-main">
                 <h1 className="fp-name">
                   {farm.farm_name}
@@ -313,37 +308,6 @@ export default function PublicFarmProfile() {
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
                   <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="fp-stats-card">
-              <div className="fp-stats-grid">
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ทั้งหมด</div>
-                  <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">พร้อมย้ายบ้าน</div>
-                  <div className="fp-stat-num" style={{ color: '#16A34A' }}>{stats.ready}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">พ่อแม่พันธุ์</div>
-                  <div className="fp-stat-num" style={{ color: '#7C3AED' }}>{stats.breeders}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ทำหมันแล้ว</div>
-                  <div className="fp-stat-num" style={{ color: '#D97706' }}>{stats.neutered}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ครอกทั้งหมด</div>
-                  <div className="fp-stat-num" style={{ color: '#2563EB' }}>{stats.litters}</div>
-                  <div className="fp-stat-unit">ครอก</div>
                 </div>
               </div>
             </div>
@@ -396,13 +360,13 @@ export default function PublicFarmProfile() {
                 <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> สัตว์เลี้ยงพร้อมย้ายบ้าน</div>
               </div>
               {readyPets.length === 0 ? (
-                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน 🐾</div>
+                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
               ) : (
                 <div className="fp-pets-grid">
                   {readyPets.map(pet => (
                     <Link key={pet.id} href={`/p/${pet.id}`} className="fp-pet-card">
                       <div className="fp-pet-img">
-                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                        {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src={isMale(pet.gender) ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:'60%',height:'60%',objectFit:'contain',opacity:0.4}} />}
                         <span className="fp-pet-ready-tag">พร้อมย้าย</span>
                       </div>
                       <div className="fp-pet-info">
@@ -465,7 +429,7 @@ export default function PublicFarmProfile() {
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-feeding.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">ลูกแมว</span>
               </Link>
-              <Link href={`/profile/finance`} className="fp-owner-tab">
+              <Link href={`/profile/finance?farm_id=${farmId}`} className="fp-owner-tab">
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-wallet.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">รายรับรายจ่าย</span>
               </Link>
@@ -486,7 +450,7 @@ export default function PublicFarmProfile() {
           </div>
         )}
 
-        {copied && <div className="fp-toast">✅ คัดลอกลิงก์แล้ว</div>}
+        {copied && <div className="fp-toast">คัดลอกลิงก์แล้ว</div>}
       </div>
     </>
   );

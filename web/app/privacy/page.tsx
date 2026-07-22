@@ -37,7 +37,7 @@ export default function PrivacyPolicyPage() {
         .pv-p { font-size: 14px; color: ${F.inkSoft}; line-height: 1.75; margin-bottom: 10px; }
         .pv-ul { margin: 6px 0 12px; padding-left: 4px; list-style: none; }
         .pv-ul li { font-size: 14px; color: ${F.inkSoft}; line-height: 1.7; padding-left: 22px; position: relative; margin-bottom: 6px; }
-        .pv-ul li::before { content: '🐾'; position: absolute; left: 0; font-size: 11px; top: 3px; }
+        .pv-ul li::before { content: '•'; position: absolute; left: 0; font-size: 14px; top: 0; color: #E84677; }
         .pv-p b, .pv-ul b { color: ${F.ink}; font-weight: 700; }
         .pv-callout { background: white; border: 1px solid ${F.pinkBorder}; border-left: 4px solid ${F.pink}; border-radius: 12px; padding: 16px 18px; margin: 12px 0; }
         .pv-callout-title { font-family: inherit; font-size: 14px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }

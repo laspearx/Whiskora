@@ -12,7 +12,7 @@ const F = {
   green: "#16A34A", greenSoft: "#F0FDF4",
 };
 
-const QUICK_TYPES = [
+const APPT_TYPES = [
   { label: "นัดส่งมอบ",      icon: "/icons/icon-pet-carrier.png" },
   { label: "ตรวจสุขภาพ",     icon: "/icons/icon-pet-records.png" },
   { label: "กรูมมิ่ง",       icon: "/icons/icon-bath.png" },
@@ -22,6 +22,16 @@ const QUICK_TYPES = [
   { label: "อื่นๆ",           icon: "/icons/icon-calendar.png" },
 ];
 
+const ACTIVITY_TYPES = [
+  { label: "ชั่งน้ำหนัก",     icon: "/icons/icon-health.png" },
+  { label: "ออกกำลังกาย",     icon: "/icons/icon-my-pets.png" },
+  { label: "ฝึกพฤติกรรม",     icon: "/icons/icon-partner.png" },
+  { label: "อาบน้ำ",           icon: "/icons/icon-bath.png" },
+  { label: "ตัดเล็บ",          icon: "/icons/icon-pet-records.png" },
+  { label: "ให้อาหารพิเศษ",   icon: "/icons/icon-feeding.png" },
+  { label: "อื่นๆ",            icon: "/icons/icon-calendar.png" },
+];
+
 interface Pet { id: number; name: string; image_url: string | null; species: string | null; gender: string | null; }
 
 function AppointmentCreateContent() {
@@ -29,6 +39,8 @@ function AppointmentCreateContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const farmId = params.id as string;
+  const isActivity = searchParams.get("type") === "activity";
+  const QUICK_TYPES = isActivity ? ACTIVITY_TYPES : APPT_TYPES;
 
   const [title, setTitle]       = useState("");
   const [apptDate, setApptDate] = useState("");
@@ -59,8 +71,8 @@ function AppointmentCreateContent() {
   const handleQuick = (label: string) => setTitle(label);
 
   const handleSave = async () => {
-    if (!title.trim()) { setError("กรุณาระบุชื่อนัดหมาย"); return; }
-    if (!apptDate)      { setError("กรุณาเลือกวันที่นัดหมาย"); return; }
+    if (!title.trim()) { setError(isActivity ? "กรุณาระบุชื่อกิจกรรม" : "กรุณาระบุชื่อนัดหมาย"); return; }
+    if (!apptDate)      { setError(isActivity ? "กรุณาเลือกวันที่บันทึก" : "กรุณาเลือกวันที่นัดหมาย"); return; }
     setSaving(true); setError("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +82,7 @@ function AppointmentCreateContent() {
         user_id:   session.user.id,
         title:     title.trim(),
         appt_date: apptDate,
-        appt_type: "farm",
+        appt_type: isActivity ? "activity" : "farm",
         notes:     notes.trim() || null,
         is_done:   false,
         pet_id:    selectedPetIds.length === 1 ? selectedPetIds[0] : null,
@@ -82,7 +94,7 @@ function AppointmentCreateContent() {
         const activities = selectedPetIds.map(petId => ({
           pet_id:        petId,
           activity_date: apptDate,
-          activity_type: "นัดหมาย",
+          activity_type: isActivity ? "กิจกรรม" : "นัดหมาย",
           title:         title.trim(),
           description:   notes.trim() || null,
         }));
@@ -140,10 +152,10 @@ function AppointmentCreateContent() {
             <button className="apc-back" onClick={() => router.back()}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <h1 className="apc-title">เพิ่มนัดหมาย</h1>
+            <h1 className="apc-title">{isActivity ? "บันทึกกิจกรรม" : "เพิ่มนัดหมาย"}</h1>
           </div>
 
-          <div className="apc-label">ประเภทนัดหมาย</div>
+          <div className="apc-label">{isActivity ? "ประเภทกิจกรรม" : "ประเภทนัดหมาย"}</div>
           <div className="apc-quick">
             {QUICK_TYPES.map(t => (
               <button key={t.label} className={`apc-quick-btn ${title === t.label ? "active" : ""}`}
@@ -154,11 +166,11 @@ function AppointmentCreateContent() {
             ))}
           </div>
 
-          <div className="apc-label" style={{ marginTop: 16 }}>ชื่อนัดหมาย</div>
-          <input className="apc-input" placeholder="ระบุชื่อนัดหมาย..." value={title}
+          <div className="apc-label" style={{ marginTop: 16 }}>{isActivity ? "ชื่อกิจกรรม" : "ชื่อนัดหมาย"}</div>
+          <input className="apc-input" placeholder={isActivity ? "ระบุชื่อกิจกรรม..." : "ระบุชื่อนัดหมาย..."} value={title}
             onChange={e => setTitle(e.target.value)} />
 
-          <div className="apc-label">วันที่นัดหมาย</div>
+          <div className="apc-label">{isActivity ? "วันที่บันทึก" : "วันที่นัดหมาย"}</div>
           <input className="apc-input" type="date" value={apptDate}
             onChange={e => setApptDate(e.target.value)} />
 
@@ -205,7 +217,7 @@ function AppointmentCreateContent() {
 
       <div className="apc-save">
         <button className="apc-save-btn" onClick={handleSave} disabled={saving}>
-          {saving ? "กำลังบันทึก..." : "บันทึกนัดหมาย"}
+          {saving ? "กำลังบันทึก..." : isActivity ? "บันทึกกิจกรรม" : "บันทึกนัดหมาย"}
         </button>
       </div>
     </>

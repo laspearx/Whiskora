@@ -8,7 +8,7 @@ const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
   orange: '#F97316',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 interface Pet { id: number; name: string; gender: string; status: string; months_rested?: number | null; }
@@ -119,7 +119,7 @@ export default function CreateLitterPage() {
       ];
       await supabase.from('pet_activities').insert(activityInserts);
 
-      alert(`💕 บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
+      alert(`บันทึกการจับคู่ ครอก ${finalLitterCode} เรียบร้อย!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {
       alert('เกิดข้อผิดพลาด: ' + error.message);
@@ -134,8 +134,8 @@ export default function CreateLitterPage() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .lc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .lc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .lc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .lc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .lc-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .lc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .lc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -155,8 +155,7 @@ export default function CreateLitterPage() {
         .lc-warn { margin-top: 8px; font-size: 11px; font-weight: 700; color: ${F.orange}; background: #FFF7ED; padding: 8px 12px; border-radius: 10px; }
         .lc-note { margin-top: 8px; font-size: 11px; font-weight: 600; color: ${F.pink}; margin-left: 2px; }
         .lc-hint-sm { font-size: 10px; color: ${F.muted}; margin-top: 6px; font-weight: 500; line-height: 1.4; }
-        .lc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .lc-savebar-inner { max-width: 600px; margin: 0 auto; }
+        .lc-actions { display: flex; gap: 12px; margin-top: 24px; }
         .lc-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .lc-btn:hover { background: #D63F6A; }
         .lc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -174,7 +173,7 @@ export default function CreateLitterPage() {
           </div>
 
           <div className="lc-card">
-            <div className="lc-hero-emoji">💗</div>
+            <div className="lc-hero-emoji"><img src="/icons/icon-breeding.png" alt="" style={{width:48,height:48,objectFit:'contain'}} /></div>
             <form onSubmit={handleSubmit}>
               <div className="lc-field">
                 <label className="lc-label">รหัสครอก (Litter Code) <span className="hint">เว้นว่างเพื่อรันอัตโนมัติ (A, B...)</span></label>
@@ -214,17 +213,15 @@ export default function CreateLitterPage() {
                   <input type="date" name="mating_date" className="lc-input" value={formData.mating_date} onChange={handleMatingDateChange} required />
                 </div>
                 <div className="lc-field" style={{ marginBottom: 0 }}>
-                  <label className="lc-label">📅 กำหนดคลอด (65 วัน)</label>
+                  <label className="lc-label">กำหนดคลอด (65 วัน)</label>
                   <input type="date" name="expected_birth_date" className="lc-input" value={formData.expected_birth_date} onChange={handleChange} required />
                 </div>
               </div>
               <p className="lc-hint-sm">*แก้ได้หากหมอประเมินคลาดเคลื่อน (วันคลอดอาจ ± เป็น 62 - 68 วัน)</p>
             </form>
           </div>
-        </div>
 
-        <div className="lc-savebar">
-          <div className="lc-savebar-inner">
+          <div className="lc-actions">
             <button type="button" className="lc-btn" onClick={handleSubmit} disabled={isLoading}>
               <Icon.Save /> {isLoading ? "กำลังบันทึก..." : "ยืนยันบันทึกการจับคู่"}
             </button>

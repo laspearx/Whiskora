@@ -69,7 +69,7 @@ export default function BulkAddVaccinePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType) return alert("กรุณาเลือกประเภทบริการด้วยครับ");
-    if (selectedPetIds.length === 0) return alert("กรุณาเลือกเด็กๆ อย่างน้อย 1 ตัวครับ 🐾");
+    if (selectedPetIds.length === 0) return alert("กรุณาเลือกเด็กๆ อย่างน้อย 1 ตัวครับ");
     const finalVaccineName = selectedType === "วัคซีนเพิ่มเติม" ? customVaccineName : selectedType;
     if (!finalVaccineName || !dateGiven) return alert("กรุณากรอกชื่อบริการและวันที่รับบริการให้ครบถ้วนครับ");
 
@@ -97,7 +97,7 @@ export default function BulkAddVaccinePage() {
       <style>{`
         * { box-sizing: border-box; }
         .bv-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .bv-body { max-width: 720px; margin: 0 auto; padding: 24px 20px 120px; }
+        .bv-body { max-width: 720px; margin: 0 auto; padding: 24px 20px 32px; }
         /* header */
         .bv-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .bv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
@@ -134,8 +134,7 @@ export default function BulkAddVaccinePage() {
         .bv-pet.sel .bv-pet-name { color: ${F.ink}; }
         .bv-empty { text-align: center; padding: 32px; color: ${F.muted}; font-size: 13px; font-weight: 600; }
         /* save bar */
-        .bv-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .bv-savebar-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 12px; }
+        .bv-actions { display: flex; gap: 12px; margin-top: 24px; }
         .bv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .bv-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
         .bv-btn-cancel:hover { background: ${F.line}; }
@@ -210,7 +209,7 @@ export default function BulkAddVaccinePage() {
                 </div>
 
                 {pets.length === 0 ? (
-                  <div className="bv-empty">ยังไม่มีสัตว์เลี้ยง — เพิ่มสัตว์เลี้ยงก่อนนะครับ 🐾</div>
+                  <div className="bv-empty">ยังไม่มีสัตว์เลี้ยง — เพิ่มสัตว์เลี้ยงก่อนนะครับ</div>
                 ) : (
                   <div className="bv-pets-grid">
                     {pets.map((pet) => {
@@ -219,7 +218,7 @@ export default function BulkAddVaccinePage() {
                         <div key={pet.id} className={`bv-pet ${isSelected ? 'sel' : ''}`} onClick={() => togglePetSelection(pet.id)}>
                           <div className="bv-pet-avatar-wrap">
                             <div className="bv-pet-avatar">
-                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : '🐾'}
+                              {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src="/icons/icon-paw-pink.png" alt="" style={{width:'55%',height:'55%',objectFit:'contain',opacity:0.35}} />}
                             </div>
                             <div className="bv-pet-check"><Icon.Check /></div>
                           </div>
@@ -233,14 +232,11 @@ export default function BulkAddVaccinePage() {
             </form>
           </div>
 
-          {/* Save bar */}
-          <div className="bv-savebar">
-            <div className="bv-savebar-inner">
-              <button type="button" className="bv-btn bv-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
-              <button type="button" className="bv-btn bv-btn-save" onClick={handleSubmit} disabled={saving || selectedPetIds.length === 0}>
-                <Icon.Save /> {saving ? "กำลังบันทึก..." : `บันทึกประวัติ (${selectedPetIds.length} ตัว)`}
-              </button>
-            </div>
+          <div className="bv-actions">
+            <button type="button" className="bv-btn bv-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
+            <button type="button" className="bv-btn bv-btn-save" onClick={handleSubmit} disabled={saving || selectedPetIds.length === 0}>
+              <Icon.Save /> {saving ? "กำลังบันทึก..." : `บันทึกประวัติ (${selectedPetIds.length} ตัว)`}
+            </button>
           </div>
         </div>
       )}

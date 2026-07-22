@@ -121,7 +121,7 @@ export default function CreateVaccinePage() {
 
         * { box-sizing: border-box; }
         .vc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .vc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .vc-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .vc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .vc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .vc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -139,8 +139,7 @@ export default function CreateVaccinePage() {
         .vc-input:focus, .vc-select:focus { border-color: ${F.teal}; box-shadow: 0 0 0 3px ${F.tealSoft}; }
         .vc-select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 38px; cursor: pointer; }
         .vc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .vc-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .vc-savebar-inner { max-width: 600px; margin: 0 auto; display: flex; gap: 12px; }
+        .vc-actions { display: flex; gap: 12px; margin-top: 24px; }
         .vc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .vc-btn-cancel { flex: 0 0 auto; padding: 14px 22px; background: white; color: ${F.inkSoft}; border: 1px solid ${F.lineMid}; }
         .vc-btn-cancel:hover { background: ${F.line}; }
@@ -200,13 +199,11 @@ export default function CreateVaccinePage() {
             </form>
           </div>
 
-          <div className="vc-savebar">
-            <div className="vc-savebar-inner">
-              <button type="button" className="vc-btn vc-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
-              <button type="button" className="vc-btn vc-btn-save" onClick={handleSubmit} disabled={saving}>
-                <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกประวัติ"}
-              </button>
-            </div>
+          <div className="vc-actions">
+            <button type="button" className="vc-btn vc-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
+            <button type="button" className="vc-btn vc-btn-save" onClick={handleSubmit} disabled={saving}>
+              <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกประวัติ"}
+            </button>
           </div>
         </div>
       )}

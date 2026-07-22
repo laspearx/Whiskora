@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import Cropper from 'react-easy-crop';
+import { SPECIES_LIST } from '@/lib/species';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -20,15 +21,6 @@ const SERVICE_CATEGORIES = [
   { id: 'clinic', label: 'คลินิก / โรงพยาบาลสัตว์', emoji: '🏥' },
 ];
 
-const SPECIES = [
-  { id: 'cat', label: 'แมว', emoji: '🐱' }, { id: 'dog', label: 'สุนัข', emoji: '🐶' },
-  { id: 'rabbit', label: 'กระต่าย', emoji: '🐰' }, { id: 'hamster', label: 'แฮมสเตอร์', emoji: '🐹' },
-  { id: 'bird', label: 'นก', emoji: '🦜' }, { id: 'squirrel', label: 'กระรอก', emoji: '🐿️' },
-  { id: 'hedgehog', label: 'เม่นแคระ', emoji: '🦔' }, { id: 'fish', label: 'ปลา', emoji: '🐟' },
-  { id: 'turtle', label: 'เต่า', emoji: '🐢' }, { id: 'frog', label: 'กบ', emoji: '🐸' },
-  { id: 'lizard', label: 'กิ้งก่า', emoji: '🦎' }, { id: 'snake', label: 'งู', emoji: '🐍' },
-  { id: 'raccoon', label: 'แรคคูน', emoji: '🦝' }, { id: 'other', label: 'สัตว์อื่นๆ', emoji: '🐾' },
-];
 
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
@@ -74,12 +66,28 @@ export default function RegisterServicePage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
+  const [profileData, setProfileData] = useState<any>(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent('/partner/register-service')}`);
       setUserId(session.user.id);
+      supabase.from('profiles').select('full_name,phone,house_no,room_no,moo,soi,road,sub_district,district,province,postal_code').eq('id', session.user.id).single().then(({ data }) => {
+        if (data) setProfileData(data);
+      });
     });
   }, [router]);
+
+  const fillFromProfile = () => {
+    if (!profileData) return;
+    setForm(f => ({ ...f, owner_name: profileData.full_name || '', phone: profileData.phone || '' }));
+    setAddr({
+      house_no: profileData.house_no || '', room_no: profileData.room_no || '',
+      moo: profileData.moo || '', soi: profileData.soi || '', road: profileData.road || '',
+      sub_district: profileData.sub_district || '', district: profileData.district || '',
+      province: profileData.province || '', postal_code: profileData.postal_code || '',
+    });
+  };
 
   useEffect(() => {
     if (!mapVisible) return;
@@ -181,7 +189,7 @@ export default function RegisterServicePage() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('services').insert([{
+      const { data: svcData, error } = await supabase.from('services').insert([{
         user_id: userId,
         service_name: form.service_name,
         owner_name: form.owner_name,
@@ -198,8 +206,19 @@ export default function RegisterServicePage() {
         image_url: imageUrl || null,
         cover_url: coverUrl || null,
         supported_species: selectedSpecies.join(','),
-      }]);
+      }]).select('id').single();
       if (error) throw error;
+
+      const { data: wsData } = await supabase.from('workspaces').insert({
+        type: 'service', name: form.service_name,
+        owner_id: userId, entity_id: svcData.id, avatar_url: imageUrl || null,
+      }).select('id').single();
+      if (wsData) {
+        await supabase.from('workspace_members').insert({
+          workspace_id: wsData.id, user_id: userId, role: 'owner',
+        });
+      }
+
       alert('บันทึกข้อมูลบริการเรียบร้อยแล้ว');
       router.push('/profile');
     } catch (err: any) { alert('Error: ' + err.message); }
@@ -213,7 +232,7 @@ export default function RegisterServicePage() {
       <style>{`
         * { box-sizing: border-box; }
         .sv-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .sv-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 120px; }
+        .sv-body { max-width: 600px; margin: 0 auto; padding: 24px 20px 32px; }
         .sv-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
         .sv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .sv-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -256,7 +275,7 @@ export default function RegisterServicePage() {
         .sv-species-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .sv-species-btn { padding: 12px 4px; border-radius: 12px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all .15s; font-family: inherit; }
         .sv-species-btn.active { border-color: ${F.blue}; background: ${F.blueSoft}; }
-        .sv-species-btn .emoji { font-size: 20px; }
+        .sv-species-btn .emoji { width: 28px; height: 28px; object-fit: contain; }
         .sv-species-btn .lbl { font-size: 10px; font-weight: 700; color: ${F.inkSoft}; }
         .sv-species-btn.active .lbl { color: ${F.blue}; }
 
@@ -270,11 +289,12 @@ export default function RegisterServicePage() {
         .sv-geo-btn:hover { background: ${F.blueSoft}; border-color: ${F.blue}; color: ${F.blue}; }
         .sv-pin-coords { font-size: 11px; color: ${F.muted}; }
 
-        .sv-savebar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
-        .sv-savebar-inner { max-width: 600px; margin: 0 auto; }
+        .sv-actions { display: flex; gap: 12px; margin-top: 24px; }
         .sv-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.blue}; color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
         .sv-btn:hover { background: #1D4FD7; }
         .sv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .sv-autofill-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid ${F.blueBorder}; background: ${F.blueSoft}; color: ${F.blue}; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; margin-bottom: 14px; }
+        .sv-autofill-btn:hover { background: #DBEAFE; }
 
         .sv-modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 16px; }
         .sv-modal-card { background: white; width: 100%; max-width: 400px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -342,6 +362,12 @@ export default function RegisterServicePage() {
               <label className="sv-label">ชื่อร้าน / ชื่อบริการ <span className="sv-req">*</span></label>
               <input className="sv-input" value={form.service_name} onChange={e => setForm({ ...form, service_name: e.target.value })} placeholder="ชื่อบริการของคุณ" />
             </div>
+            {profileData && (
+              <button type="button" className="sv-autofill-btn" onClick={fillFromProfile}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ใช้ข้อมูลจากโปรไฟล์ของฉัน
+              </button>
+            )}
             <div className="sv-field">
               <label className="sv-label">ชื่อ-สกุลเจ้าของ <span className="sv-req">*</span></label>
               <input className="sv-input" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} placeholder="ชื่อจริง นามสกุล" />
@@ -350,7 +376,7 @@ export default function RegisterServicePage() {
               <label className="sv-label">ประเภทบริการ <span className="sv-req">*</span></label>
               <select className="sv-select" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
                 <option value="" disabled>เลือกประเภทบริการ</option>
-                {SERVICE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+                {SERVICE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
             </div>
             <div className="sv-field">
@@ -390,17 +416,15 @@ export default function RegisterServicePage() {
           <div className="sv-card">
             <div className="sv-card-title">บริการที่รองรับสัตว์ชนิดใดบ้าง? <span className="sv-req">*</span></div>
             <div className="sv-species-grid">
-              {SPECIES.map(s => (
+              {SPECIES_LIST.map(s => (
                 <button key={s.id} type="button" className={`sv-species-btn ${selectedSpecies.includes(s.id) ? 'active' : ''}`} onClick={() => toggleSpecies(s.id)}>
-                  <span className="emoji">{s.emoji}</span><span className="lbl">{s.label}</span>
+                  <img className="emoji" src={s.icon} alt={s.th} /><span className="lbl">{s.th}</span>
                 </button>
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="sv-savebar">
-          <div className="sv-savebar-inner">
+          <div className="sv-actions">
             <button type="button" className="sv-btn" onClick={handleSubmit} disabled={!canSubmit}>
               {isLoading ? 'กำลังบันทึก...' : 'ยืนยันการสมัครบริการ'}
             </button>

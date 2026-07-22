@@ -88,6 +88,7 @@ export default function PetDetailPage() {
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
   const [docSignedUrls, setDocSignedUrls] = useState<Record<string | number, string>>({});
   const [coOwners, setCoOwners] = useState<any[]>([]);
@@ -125,6 +126,12 @@ export default function PetDetailPage() {
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const mainPhotoRef = useRef<HTMLInputElement>(null);
+  const [uploadingMainPhoto, setUploadingMainPhoto] = useState(false);
+
+  // Status action
+  const [showStatusSheet, setShowStatusSheet] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/p/${petId}` : '';
 
@@ -305,11 +312,12 @@ export default function PetDetailPage() {
 
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
 
-      const [vaccineRes, activityRes, docRes, coOwnerRes] = await Promise.all([
+      const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
         supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
         supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false }),
         supabase.from('pet_documents').select('*').eq('pet_id', petId).order('created_at', { ascending: false }),
         supabase.from('pet_co_owners').select('*, profile:user_id(id, full_name, avatar_url)').eq('pet_id', petId),
+        supabase.from('pet_weights').select('weight, recorded_date').eq('pet_id', petId).order('recorded_date', { ascending: true }),
       ]);
       if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
@@ -328,6 +336,7 @@ export default function PetDetailPage() {
         setDocSignedUrls(urlMap);
       }
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
+      if (weightRes.data) setWeightHistory(weightRes.data as { weight: number; recorded_date: string }[]);
 
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -407,6 +416,18 @@ export default function PetDetailPage() {
     if (!confirm('ลบเจ้าของร่วมคนนี้?')) return;
     await supabase.from('pet_co_owners').delete().eq('id', coOwnerId);
     await fetchPetData();
+  };
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (!pet) return;
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase.from('pets').update({ status: newStatus }).eq('id', pet.id);
+      if (error) throw error;
+      setPet(p => p ? { ...p, status: newStatus } : p);
+      setShowStatusSheet(false);
+    } catch { alert('เปลี่ยนสถานะไม่สำเร็จ'); }
+    finally { setUpdatingStatus(false); }
   };
 
   // ─── ปุ่ม: แชร์ ───
@@ -491,6 +512,28 @@ export default function PetDetailPage() {
     } finally {
       setUploadingGallery(false);
       if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  // ─── ปุ่ม: อัปโหลดรูปหลัก ───
+  const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pet) return;
+    setUploadingMainPhoto(true);
+    try {
+      const resized = await resizeImage(file, 1200, 0.85);
+      const path = `${pet.id}/main.jpg`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
+      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', pet.id);
+      setPet(p => p ? { ...p, image_url: publicUrl } : p);
+      setSelectedImage(publicUrl);
+    } catch (err) {
+      console.error(err); alert('อัปโหลดรูปไม่สำเร็จ');
+    } finally {
+      setUploadingMainPhoto(false);
+      if (mainPhotoRef.current) mainPhotoRef.current.value = '';
     }
   };
 
@@ -650,6 +693,42 @@ export default function PetDetailPage() {
     ? activities
     : activities.filter(a => a.activity_type?.includes(activeActivityFilter));
 
+  const latestWeight = weightHistory[weightHistory.length - 1]?.weight;
+  const latestWeightDisplay = latestWeight
+    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
+    : '-';
+
+  function WeightSparkline({ data }: { data: { weight: number; recorded_date: string }[] }) {
+    if (data.length < 2) return null;
+    const W = 300, H = 72, pad = 10;
+    const values = data.map(d => d.weight);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const x = (i: number) => pad + (i / (data.length - 1)) * (W - pad * 2);
+    const y = (v: number) => H - pad - ((v - min) / range) * (H - pad * 2);
+    const rising = values[values.length - 1] >= values[values.length - 2];
+    const color = rising ? '#16A34A' : '#EF4444';
+    const pts = data.map((d, i) => `${x(i)},${y(d.weight)}`).join(' ');
+    const first = data[0];
+    const last = data[data.length - 1];
+    return (
+      <div>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+          <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {data.map((d, i) => (
+            <circle key={i} cx={x(i)} cy={y(d.weight)} r={i === data.length - 1 ? 5 : 3} fill={color} opacity={i === data.length - 1 ? 1 : 0.5} />
+          ))}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(first.recorded_date)} · {first.weight}g</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color }}>{rising ? '▲' : '▼'} {last.weight}g</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(last.recorded_date)}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -680,12 +759,19 @@ export default function PetDetailPage() {
         .gallery-thumb-more img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
         .gallery-thumb-more span { position: relative; z-index: 1; }
         .hero-main-image { flex-shrink: 0; width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 1px solid ${F.pinkBorder}; box-shadow: 0 4px 24px rgba(232,70,119,.08); cursor: zoom-in; }
+        .hero-photo-placeholder { background: ${F.pinkSoft}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-style: dashed; transition: background .18s; }
+        .hero-photo-placeholder:hover { background: #fbd5e3; }
+        .hero-photo-placeholder-icon { width: 56px; height: 56px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(232,70,119,.15); }
+        .hero-photo-placeholder-text { font-size: 13px; font-weight: 600; color: ${F.pink}; }
         .hero-main-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
         .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; }
+        .pet-name-edit { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: .8; transition: opacity .15s; }
+        .pet-name-edit:hover { opacity: 1; }
+        .pet-name-edit img { width: 34px; height: 34px; object-fit: contain; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
         .breed-tag-white { background: white; color: #6B7280; border: 1px solid ${F.lineMid}; }
@@ -861,6 +947,28 @@ export default function PetDetailPage() {
         .btn-owner-action:hover { border-color: ${F.pink}; color: ${F.pink}; background: ${F.pinkSoft}; }
         .btn-owner-action img { width: 30px; height: 30px; object-fit: contain; }
         .btn-owner-action.danger:hover { border-color: #EF4444; color: #EF4444; background: #FEF2F2; }
+        /* ─── Status Action Buttons ─── */
+        .btn-status-open { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #FDE68A; background: #FFFBEB; font-family: inherit; font-size: 13px; font-weight: 700; color: #D97706; cursor: pointer; transition: all .15s; }
+        .btn-status-open:hover { background: #FEF3C7; border-color: #D97706; }
+        .btn-status-open:disabled { opacity: .6; cursor: wait; }
+        .btn-status-adjust { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid #99F6E4; background: #F0FDFA; font-family: inherit; font-size: 13px; font-weight: 700; color: #0D9488; cursor: pointer; transition: all .15s; }
+        .btn-status-adjust:hover { background: #CCFBF1; border-color: #0D9488; }
+        /* ─── Status Sheet ─── */
+        .status-sheet-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(31,26,28,.45); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
+        .status-sheet { background: white; border-radius: 20px 20px 0 0; padding: 22px 20px calc(env(safe-area-inset-bottom,0px)+24px); width: 100%; max-width: 480px; }
+        @keyframes sheet-up { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .status-sheet { animation: sheet-up .2s ease; }
+        .status-sheet-handle { width: 36px; height: 3px; border-radius: 2px; background: #E5E7EB; margin: 0 auto 18px; }
+        .status-sheet-title { font-size: 16px; font-weight: 700; color: ${F.ink}; margin-bottom: 6px; }
+        .status-sheet-sub { font-size: 12px; color: ${F.muted}; margin-bottom: 20px; }
+        .status-sheet-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+        .status-option-btn { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-family: inherit; text-align: left; transition: all .15s; }
+        .status-option-btn:hover { border-color: ${F.pink}; background: ${F.pinkSoft}; }
+        .status-option-btn:disabled { opacity: .6; cursor: wait; }
+        .status-option-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .status-option-label { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .status-option-desc { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
+        .status-sheet-cancel { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #F3F4F6; color: ${F.inkSoft}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
         /* ─── Co-owner list ─── */
         .co-owner-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
         .co-owner-row:last-child { border-bottom: none; }
@@ -991,31 +1099,44 @@ export default function PetDetailPage() {
               </div>
             )}
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
-                <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
-              </div>
-              {isOwner && (
-                <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
-                  <img src="/icons/icon-edit.png" alt="แก้ไข" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-                </Link>
+              {(!selectedImage && !pet.image_url && isOwner) ? (
+                <div className="hero-main-image hero-photo-placeholder" onClick={() => mainPhotoRef.current?.click()}>
+                  <div className="hero-photo-placeholder-icon">
+                    {uploadingMainPhoto
+                      ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                      : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    }
+                  </div>
+                  <span className="hero-photo-placeholder-text">{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพ'}</span>
+                </div>
+              ) : (
+                <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
+                  <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
+                </div>
               )}
+              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
             </div>
             <div className="hero-info">
               <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
               <div className="pet-name">
                 <span>{pet.name}</span>
                 <div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div>
+                {isOwner && (
+                  <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} className="pet-name-edit" aria-label="แก้ไขข้อมูลสัตว์เลี้ยง">
+                    <img src="/icons/icon-edit.png" alt="" />
+                  </Link>
+                )}
               </div>
               <div style={{ background: 'white', border: `1px solid ${F.line}`, borderRadius: 18, padding: '4px 16px 8px', marginBottom: 14 }}>
                 <div className="pet-info-table" style={{ marginBottom: 0 }}>
                   {([
                     { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
                     { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
-                    { label: 'น้ำหนัก', val: pet.weight ? `${pet.weight} กก.` : '-', link: `/pets/${pet.id}/weight` },
+                    { label: 'น้ำหนัก', val: latestWeightDisplay, link: `/pets/${pet.id}/weight` },
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
                     { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
-                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว ✓' : 'ยังไม่ทำ' },
+                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
                   ] as any[]).filter(Boolean).map((row: any, i: number) => (
                     <div key={i} className="pet-info-row">
@@ -1046,6 +1167,18 @@ export default function PetDetailPage() {
               </div>
               {isOwner && (
                 <div className="owner-actions">
+                  {pet.farm_id && pet.status === 'ยังไม่เปิดจอง' && (
+                    <button className="btn-status-open" onClick={() => handleStatusUpdate('เปิดจอง')} disabled={updatingStatus}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                      {updatingStatus ? 'กำลังอัปเดต...' : 'เปิดให้จอง'}
+                    </button>
+                  )}
+                  {pet.farm_id && pet.status === 'เปิดจอง' && (
+                    <button className="btn-status-adjust" onClick={() => setShowStatusSheet(true)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                      ปรับสถานะ
+                    </button>
+                  )}
                   <button className="btn-owner-action" onClick={() => { setShowCoOwnerModal(true); setCoOwnerError(''); setCoOwnerEmail(''); }}>
                     <img src="/icons/icon-co-owner.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
@@ -1127,7 +1260,7 @@ export default function PetDetailPage() {
                       <div style={{ textAlign: 'center', padding: '20px 0', color: F.muted, fontSize: '12px' }}>ยังไม่มีเอกสาร — กดเพิ่มเอกสารเพื่ออัปโหลด</div>
                     ) : documents.map(doc => (
                       <div key={doc.id} className="doc-row">
-                        <div className="doc-icon" style={{ background: '#DBEAFE', fontSize: '18px' }}>📄</div>
+                        <div className="doc-icon" style={{ background: '#DBEAFE' }}><img src="/icons/icon-documents.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>
                         <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                         <div className="doc-actions">
                           <a className="doc-download" href={docSignedUrls[doc.id] || '#'} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
@@ -1193,7 +1326,7 @@ export default function PetDetailPage() {
                     </div>
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</div>
                       </div>
                     )}
@@ -1265,7 +1398,7 @@ export default function PetDetailPage() {
                     )}
                     {pet.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px' }}>⚠ สิ่งที่แพ้</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
                       </div>
                     )}
@@ -1306,11 +1439,24 @@ export default function PetDetailPage() {
                 <div className="card-title"><div className="card-title-icon" style={{ color: F.pink }}><Icon.Weight /></div>ประวัติน้ำหนัก</div>
                 <Link href={`/pets/${pet.id}/weight`} className="btn-pink" style={{ fontSize: '12px', padding: '6px 14px' }}><Icon.Plus /> บันทึกน้ำหนัก</Link>
               </div>
-              <div className="card-body" style={{ textAlign: 'center', padding: '32px 0' }}>
-                <div style={{ color: F.muted, fontSize: '13px', marginBottom: '12px' }}>ดูและบันทึกประวัติน้ำหนักทั้งหมดได้ในหน้าถัดไป</div>
-                <Link href={`/pets/${pet.id}/weight`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '12px', background: F.pink, color: 'white', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                  <Icon.Weight /> ไปหน้าบันทึกน้ำหนัก
-                </Link>
+              <div className="card-body">
+                {weightHistory.length >= 2 ? (
+                  <div style={{ padding: '8px 4px 4px' }}>
+                    <WeightSparkline data={weightHistory} />
+                  </div>
+                ) : weightHistory.length === 1 ? (
+                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: F.ink }}>{weightHistory[0].weight}g</div>
+                    <div style={{ color: F.muted, fontSize: '12px', marginTop: '4px' }}>บันทึกเมื่อ {formatDate(weightHistory[0].recorded_date)} — ยังไม่มีข้อมูลพอที่จะแสดงกราฟ</div>
+                  </div>
+                ) : (
+                  <div style={{ color: F.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>ยังไม่มีประวัติน้ำหนัก</div>
+                )}
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                  <Link href={`/pets/${pet.id}/weight`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '12px', background: F.pink, color: 'white', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                    <Icon.Weight /> ดู/บันทึกน้ำหนักทั้งหมด
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -1332,8 +1478,8 @@ export default function PetDetailPage() {
                     {filteredActivities.map(a => (
                       <tr key={a.id}>
                         <td style={{ width: 36, paddingLeft: 0 }}>
-                          <div className="activity-type-icon" style={{ background: a.activity_type?.includes('อาหาร') ? '#FEF9C3' : a.activity_type?.includes('หมอ') ? '#FEE2E2' : '#F0FDF4', fontSize: '14px' }}>
-                            {a.activity_type?.includes('อาหาร') ? '🍗' : a.activity_type?.includes('หมอ') ? '🏥' : a.activity_type?.includes('พยาธิ') ? '💊' : '📝'}
+                          <div className="activity-type-icon" style={{ background: a.activity_type?.includes('อาหาร') ? '#FEF9C3' : a.activity_type?.includes('หมอ') ? '#FEE2E2' : '#F0FDF4' }}>
+                            <img src={a.activity_type?.includes('อาหาร') ? '/icons/icon-feeding.png' : a.activity_type?.includes('หมอ') ? '/icons/icon-vet-care.png' : a.activity_type?.includes('พยาธิ') ? '/icons/icon-vaccine.png' : '/icons/icon-documents.png'} alt="" style={{width:16,height:16,objectFit:'contain'}} />
                           </div>
                         </td>
                         <td><div style={{ fontSize: '12px', fontWeight: 600, color: F.ink }}>{a.title}</div><div style={{ fontSize: '11px', color: F.muted, marginTop: '2px' }}>{a.description}</div></td>
@@ -1355,7 +1501,7 @@ export default function PetDetailPage() {
               <div className="card-body">
                 {documents.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีเอกสาร</div> : documents.map(doc => (
                   <div key={doc.id} className="doc-row">
-                    <div className="doc-icon" style={{ background: '#DBEAFE', fontSize: '18px' }}>📄</div>
+                    <div className="doc-icon" style={{ background: '#DBEAFE' }}><img src="/icons/icon-documents.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>
                     <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                     <div className="doc-actions">
                       <a className="doc-download" href={doc.file_url} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
@@ -1395,7 +1541,7 @@ export default function PetDetailPage() {
             <div className="share-footer-left"><div className="share-paw"><img src="/icons/icon-paw-sparkle.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <div><div className="share-title">แชร์โปรไฟล์ {pet.name}</div><div className="share-subtitle">ให้เพื่อนหรือครอบครัวดูได้ง่าย ๆ</div></div>
             </div>
-            <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว ✓' : 'คัดลอก'}</button></div>
+            <div className="share-url-box"><div className="share-url">{shareUrl}</div><button className="btn-copy-url" onClick={handleCopyUrl}>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</button></div>
             <button className="btn-pink" onClick={handleShare}><img src="/icons/icon-share.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> แชร์</button>
           </div>
         </div>
@@ -1484,7 +1630,7 @@ export default function PetDetailPage() {
                     </div>
                   </div>
                   <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#DC2626', lineHeight: 1.6 }}>
-                    ⚠ เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
+                    เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
                   </div>
                   {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
@@ -1547,6 +1693,34 @@ export default function PetDetailPage() {
         </div>
       )}
 
+      {/* ─── Status Sheet ─── */}
+      {showStatusSheet && (
+        <div className="status-sheet-overlay" onClick={() => !updatingStatus && setShowStatusSheet(false)}>
+          <div className="status-sheet" onClick={e => e.stopPropagation()}>
+            <div className="status-sheet-handle" />
+            <div className="status-sheet-title">ปรับสถานะ {pet.name}</div>
+            <div className="status-sheet-sub">เลือกสถานะที่ต้องการเปลี่ยน</div>
+            <div className="status-sheet-options">
+              <button className="status-option-btn" onClick={() => handleStatusUpdate('ติดจอง')} disabled={updatingStatus}>
+                <div className="status-option-dot" style={{ background: '#F59E0B' }} />
+                <div>
+                  <div className="status-option-label">ติดจอง</div>
+                  <div className="status-option-desc">มีผู้จองแล้ว รอนัดส่งมอบ</div>
+                </div>
+              </button>
+              <button className="status-option-btn" onClick={() => handleStatusUpdate('พร้อมย้ายบ้าน')} disabled={updatingStatus}>
+                <div className="status-option-dot" style={{ background: '#16A34A' }} />
+                <div>
+                  <div className="status-option-label">พร้อมย้ายบ้าน</div>
+                  <div className="status-option-desc">พร้อมส่งมอบให้เจ้าของใหม่ได้ทันที</div>
+                </div>
+              </button>
+            </div>
+            <button className="status-sheet-cancel" onClick={() => setShowStatusSheet(false)} disabled={updatingStatus}>ยกเลิก</button>
+          </div>
+        </div>
+      )}
+
       {/* ─── Lightbox ─── */}
       {lightboxImage && (
         <div className="lightbox" onClick={() => setLightboxImage(null)}>
@@ -1556,7 +1730,7 @@ export default function PetDetailPage() {
       )}
 
       {/* ─── Toast ─── */}
-      {copied && <div className="toast">คัดลอกลิงก์แล้ว ✓</div>}
+      {copied && <div className="toast">คัดลอกลิงก์แล้ว</div>}
     </>
   );
 }

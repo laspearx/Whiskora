@@ -25,11 +25,8 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function getVaccineEmoji(name: string | null) {
-  if (!name) return '💉';
-  if (name.includes('เห็บ') || name.includes('หยด')) return '💧';
-  if (name.includes('พยาธิ')) return '💊';
-  return '💉';
+function getVaccineIcon(name: string | null) {
+  return '/icons/icon-vaccine.png';
 }
 
 function AppointmentsList() {
@@ -74,7 +71,7 @@ function AppointmentsList() {
             }, {});
             setGroupedData(Object.keys(byName).map((key) => ({
               label: key,
-              emoji: getVaccineEmoji(key),
+              emoji: getVaccineIcon(key),
               items: byName[key],
             })));
           }
@@ -94,7 +91,7 @@ function AppointmentsList() {
             }, {});
             setGroupedData(Object.keys(byName).map((key) => ({
               label: key,
-              emoji: getVaccineEmoji(key),
+              emoji: getVaccineIcon(key),
               items: byName[key],
             })));
           }
@@ -166,7 +163,7 @@ function AppointmentsList() {
             <PageLoader />
           ) : groupedData.length === 0 ? (
             <div className="ap-empty">
-              <span className="ap-empty-emoji">💉</span>
+              <span className="ap-empty-emoji"><img src="/icons/icon-vaccine.png" alt="" style={{width:48,height:48,objectFit:'contain',opacity:0.35}} /></span>
               <p className="ap-empty-text">
                 {isDateMode ? 'ไม่มีนัดหมายในวันนี้' : 'ยังไม่มีประวัติวัคซีน'}
               </p>
@@ -181,7 +178,7 @@ function AppointmentsList() {
             groupedData.map((group, gi) => (
               <div key={gi} className="ap-group">
                 <div className="ap-group-head">
-                  <div className="ap-group-icon"><img src="/icons/icon-vaccine.png" alt="" /></div>
+                  <div className="ap-group-icon"><img src={group.emoji} alt="" style={{width:24,height:24,objectFit:'contain'}} /></div>
                   <div>
                     <div className="ap-group-title">{group.label}</div>
                     <div className="ap-group-count">{group.items.length} รายการ</div>
@@ -191,7 +188,7 @@ function AppointmentsList() {
                   {group.items.map((item: any, idx: number) => (
                     <Link key={idx} href={`/pets/${item.pet_id}/vaccines`} className="ap-item">
                       <div className="ap-item-avatar">
-                        {item.pet?.image_url ? <img src={item.pet.image_url} alt={item.pet.name} /> : '🐾'}
+                        {item.pet?.image_url ? <img src={item.pet.image_url} alt={item.pet.name} /> : <img src="/icons/icon-paw-pink.png" alt="" style={{width:'55%',height:'55%',objectFit:'contain',opacity:0.35}} />}
                       </div>
                       <div className="ap-item-info">
                         <div className="ap-item-tag">{isDateMode ? 'นัดของน้อง' : 'รับเมื่อ'}</div>
