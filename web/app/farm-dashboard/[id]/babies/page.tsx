@@ -133,6 +133,7 @@ export default function BabyDashboardPage() {
         /* Stats row */
         .bd-stats { display: flex; gap: 10px; margin-bottom: 20px; }
         .bd-stat { flex: 1; background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 14px 12px; text-align: center; }
+        .bd-stat-icon { width: 22px; height: 22px; object-fit: contain; margin-bottom: 5px; }
         .bd-stat-val { font-size: 22px; font-weight: 800; line-height: 1; }
         .bd-stat-lbl { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-top: 4px; letter-spacing: 0.04em; }
 
@@ -141,7 +142,8 @@ export default function BabyDashboardPage() {
         .bd-litter:hover { border-color: ${F.amberBorder}; }
         .bd-litter-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
         .bd-litter-info { display: flex; align-items: center; gap: 10px; }
-        .bd-litter-badge { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: ${F.amberSoft}; border: 1px solid ${F.amberBorder}; font-size: 11px; font-weight: 800; color: ${F.amber}; flex-shrink: 0; }
+        .bd-litter-badge { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; }
+        .bd-litter-badge img { width: 38px; height: 38px; object-fit: contain; }
         .bd-litter-title { font-size: 15px; font-weight: 700; color: ${F.ink}; }
         .bd-litter-date { font-size: 11px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .bd-litter-count { font-size: 11px; font-weight: 700; color: ${F.amber}; background: ${F.amberSoft}; padding: 3px 10px; border-radius: 999px; border: 1px solid ${F.amberBorder}; flex-shrink: 0; }
@@ -152,12 +154,12 @@ export default function BabyDashboardPage() {
         .bd-btn-weight:hover { background: #fbd5e3; }
 
         /* Baby thumbnail strip */
-        .bd-babies { display: flex; gap: 8px; flex-wrap: wrap; }
-        .bd-baby-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; text-decoration: none; }
-        .bd-baby-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
+        .bd-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; }
+        .bd-baby-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; }
+        .bd-baby-photo { width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; position: relative; }
         .bd-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
         .bd-baby-name { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .bd-baby-upload { position: absolute; bottom: 1px; right: 1px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .bd-baby-upload { position: absolute; top: 1px; right: 1px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .bd-baby-upload:hover { background: ${F.pinkSoft}; }
         .bd-baby-uploading { opacity: 0.5; pointer-events: none; }
 
@@ -188,18 +190,22 @@ export default function BabyDashboardPage() {
           {babies.length > 0 && (
             <div className="bd-stats">
               <div className="bd-stat">
+                <img className="bd-stat-icon" src="/icons/icon-feeding.png" alt="" />
                 <div className="bd-stat-val" style={{ color: F.amber }}>{babies.length}</div>
                 <div className="bd-stat-lbl">เบบี๋ทั้งหมด</div>
               </div>
               <div className="bd-stat">
+                <img className="bd-stat-icon" src="/icons/icon-men.png" alt="" />
                 <div className="bd-stat-val" style={{ color: F.blue }}>{maleCount}</div>
                 <div className="bd-stat-lbl">ตัวผู้</div>
               </div>
               <div className="bd-stat">
+                <img className="bd-stat-icon" src="/icons/icon-women.png" alt="" />
                 <div className="bd-stat-val" style={{ color: F.pink }}>{femaleCount}</div>
                 <div className="bd-stat-lbl">ตัวเมีย</div>
               </div>
               <div className="bd-stat">
+                <img className="bd-stat-icon" src="/icons/icon-barrier.png" alt="" />
                 <div className="bd-stat-val" style={{ color: F.green }}>{litterIds.length}</div>
                 <div className="bd-stat-lbl">ครอก</div>
               </div>
@@ -229,7 +235,7 @@ export default function BabyDashboardPage() {
                   <div key={litId} className="bd-litter">
                     <div className="bd-litter-head">
                       <div className="bd-litter-info">
-                        <div className="bd-litter-badge">{litter?.litter_code || 'N/A'}</div>
+                        <div className="bd-litter-badge"><img src="/icons/icon-foster-home.png" alt="" /></div>
                         <div>
                           <div className="bd-litter-title">ครอก {litter?.litter_code || 'ไม่ระบุ'}</div>
                           {dateLabel && <div className="bd-litter-date">{dateLabel}</div>}
