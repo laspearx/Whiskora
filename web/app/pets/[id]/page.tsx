@@ -738,6 +738,9 @@ export default function PetDetailPage() {
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
         .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: ${F.ink}; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; }
+        .pet-name-edit { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: .8; transition: opacity .15s; }
+        .pet-name-edit:hover { opacity: 1; }
+        .pet-name-edit img { width: 26px; height: 26px; object-fit: contain; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
         .breed-tag-white { background: white; color: #6B7280; border: 1px solid ${F.lineMid}; }
@@ -1078,11 +1081,6 @@ export default function PetDetailPage() {
                   <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
                 </div>
               )}
-              {isOwner && (selectedImage || pet.image_url) && (
-                <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} style={{ position: 'absolute', bottom: 10, right: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', textDecoration: 'none', zIndex: 2 }}>
-                  <img src="/icons/icon-edit.png" alt="แก้ไข" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-                </Link>
-              )}
               <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
             </div>
             <div className="hero-info">
@@ -1090,6 +1088,11 @@ export default function PetDetailPage() {
               <div className="pet-name">
                 <span>{pet.name}</span>
                 <div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div>
+                {isOwner && (
+                  <Link href={`/pets/${pet.id}/edit${from ? `?from=${encodeURIComponent(from)}` : ''}`} className="pet-name-edit" aria-label="แก้ไขข้อมูลสัตว์เลี้ยง">
+                    <img src="/icons/icon-edit.png" alt="" />
+                  </Link>
+                )}
               </div>
               <div style={{ background: 'white', border: `1px solid ${F.line}`, borderRadius: 18, padding: '4px 16px 8px', marginBottom: 14 }}>
                 <div className="pet-info-table" style={{ marginBottom: 0 }}>
