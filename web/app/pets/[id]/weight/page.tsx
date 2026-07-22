@@ -24,6 +24,13 @@ const Icon = {
 
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
+// Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
+const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightVal = (g: number) => useKgFor(g) ? (g / 1000).toFixed(2) : `${g}`;
+const fmtWeightUnit = (g: number) => useKgFor(g) ? 'กก.' : 'กรัม';
+const fmtWeightDiff = (deltaGrams: number, useKg: boolean) =>
+  useKg ? `${deltaGrams >= 0 ? '+' : ''}${(deltaGrams / 1000).toFixed(2)} กก.` : `${deltaGrams >= 0 ? '+' : ''}${deltaGrams} กรัม`;
+
 export default function PetWeightPage() {
   const router = useRouter();
   const params = useParams();
@@ -58,9 +65,10 @@ export default function PetWeightPage() {
     if (!form.weight || !userId) return;
     setIsSaving(true);
     try {
+      const weightInGrams = useKgForm ? Math.round(parseFloat(form.weight) * 1000) : parseFloat(form.weight);
       const { error } = await supabase.from('pet_weights').insert({
         pet_id: parseInt(petId),
-        weight: parseFloat(form.weight),
+        weight: weightInGrams,
         recorded_date: form.recorded_date,
         notes: form.notes || null,
         user_id: userId,
@@ -83,6 +91,7 @@ export default function PetWeightPage() {
   const latestWeight = weights[0]?.weight;
   const prevWeight = weights[1]?.weight;
   const weightDiff = latestWeight && prevWeight ? (latestWeight - prevWeight) : null;
+  const useKgForm = useKgFor(latestWeight ?? pet?.weight);
 
   return (
     <>
@@ -153,10 +162,10 @@ export default function PetWeightPage() {
                 <div className="pw-pet-name">{pet.name}</div>
                 {latestWeight ? (
                   <>
-                    <div className="pw-weight-current">{latestWeight} <span className="pw-weight-unit">กก.</span></div>
+                    <div className="pw-weight-current">{fmtWeightVal(latestWeight)} <span className="pw-weight-unit">{fmtWeightUnit(latestWeight)}</span></div>
                     {weightDiff !== null && (
                       <span className={`pw-weight-diff ${weightDiff >= 0 ? 'up' : 'down'}`}>
-                        {weightDiff >= 0 ? '+' : ''}{weightDiff.toFixed(2)} กก. จากครั้งก่อน
+                        {fmtWeightDiff(weightDiff, useKgFor(latestWeight))} จากครั้งก่อน
                       </span>
                     )}
                   </>
@@ -176,8 +185,8 @@ export default function PetWeightPage() {
                 <form onSubmit={handleSave}>
                   <div className="pw-form-row">
                     <div className="pw-field">
-                      <label className="pw-label">น้ำหนัก (กก.)</label>
-                      <input type="number" step="0.01" min="0" className="pw-input" placeholder="เช่น 4.5" value={form.weight} onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} required autoFocus />
+                      <label className="pw-label">น้ำหนัก ({useKgForm ? 'กก.' : 'กรัม'})</label>
+                      <input type="number" step={useKgForm ? '0.01' : '1'} min="0" className="pw-input" placeholder={useKgForm ? 'เช่น 4.5' : 'เช่น 450'} value={form.weight} onChange={e => setForm(f => ({ ...f, weight: e.target.value }))} required autoFocus />
                     </div>
                     <div className="pw-field">
                       <label className="pw-label">วันที่บันทึก</label>
@@ -211,11 +220,11 @@ export default function PetWeightPage() {
                     <div className="pw-entry-date">{fmtDate(w.recorded_date)}</div>
                     <div style={{ flex: 1 }}>
                       <div>
-                        <span className="pw-entry-weight">{w.weight}</span>
-                        <span className="pw-entry-unit"> กก.</span>
+                        <span className="pw-entry-weight">{fmtWeightVal(w.weight)}</span>
+                        <span className="pw-entry-unit"> {fmtWeightUnit(w.weight)}</span>
                         {diff !== null && (
                           <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: diff >= 0 ? F.green : '#EF4444' }}>
-                            {diff >= 0 ? '+' : ''}{diff.toFixed(2)}
+                            {fmtWeightDiff(diff, useKgFor(w.weight))}
                           </span>
                         )}
                       </div>

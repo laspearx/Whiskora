@@ -21,6 +21,10 @@ const Icon = {
 const BABY_STATUSES = ['เด็ก', 'ยังไม่เปิดจอง', 'เก็บ', 'เปิดจอง', 'พร้อมย้ายบ้าน'];
 const BREEDER_STATUSES = ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'];
 
+// Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
+const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
+
 export default function FarmWeightsPage() {
   const router = useRouter();
   const params = useParams();
@@ -87,6 +91,7 @@ export default function FarmWeightsPage() {
   const litterIds = Object.keys(babiesByLitter);
 
   const filledCount = Object.values(weights).filter(w => w.trim() !== '').length;
+  const petById = new Map(pets.map(p => [p.id, p]));
 
   const handleSave = async () => {
     if (!userId) return;
@@ -94,13 +99,18 @@ export default function FarmWeightsPage() {
     if (entries.length === 0) { alert('กรุณากรอกน้ำหนักอย่างน้อย 1 ตัว'); return; }
     setIsSaving(true);
     try {
-      const inserts = entries.map(([petId, w]) => ({
-        pet_id: parseInt(petId),
-        weight: parseFloat(w),
-        recorded_date: recordedDate,
-        notes: notes || null,
-        user_id: userId,
-      }));
+      const inserts = entries.map(([petId, w]) => {
+        const pet = petById.get(parseInt(petId));
+        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)) ?? pet?.weight);
+        const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
+        return {
+          pet_id: parseInt(petId),
+          weight: weightInGrams,
+          recorded_date: recordedDate,
+          notes: notes || null,
+          user_id: userId,
+        };
+      });
       const { error } = await supabase.from('pet_weights').insert(inserts);
       if (error) throw error;
       alert(`บันทึกน้ำหนัก ${entries.length} ตัวเรียบร้อยแล้ว`);
@@ -114,6 +124,7 @@ export default function FarmWeightsPage() {
     const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
     const val = weights[pet.id] ?? '';
     const latestWeight = latestWeightByPet.get(pet.id) ?? pet.weight;
+    const useKg = useKgFor(latestWeight);
     return (
       <div key={pet.id} className={`fw-pet-row ${val.trim() ? 'filled' : ''}`}>
         <div className="fw-pet-photo">
@@ -122,19 +133,19 @@ export default function FarmWeightsPage() {
         <div className="fw-pet-info">
           <div className="fw-pet-name">{pet.name || 'ยังไม่ตั้งชื่อ'}</div>
           <span className={`fw-pet-gender ${isMale ? 'm' : 'f'}`}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 10, height: 10, objectFit: 'contain' }} />{isMale ? 'ผู้' : 'เมีย'}</span>
-          {latestWeight && <div className="fw-pet-prev">น้ำหนักล่าสุด: {latestWeight} กรัม</div>}
+          {latestWeight && <div className="fw-pet-prev">น้ำหนักล่าสุด: {fmtWeightHint(latestWeight)}</div>}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
           <input
             type="number"
-            step="1"
+            step={useKg ? '0.01' : '1'}
             min="0"
             className="fw-weight-input"
-            placeholder="0"
+            placeholder={useKg ? '0.00' : '0'}
             value={val}
             onChange={e => setWeights(w => ({ ...w, [pet.id]: e.target.value }))}
           />
-          <div className="fw-weight-unit">กรัม</div>
+          <div className="fw-weight-unit">{useKg ? 'กก.' : 'กรัม'}</div>
         </div>
       </div>
     );

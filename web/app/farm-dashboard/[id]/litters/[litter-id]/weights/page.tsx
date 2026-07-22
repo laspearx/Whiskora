@@ -21,6 +21,10 @@ const Icon = {
 
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
+// Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
+const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
+
 interface PetWeight { petId: number; weight: string; }
 
 export default function LitterWeightsPage() {
@@ -83,13 +87,19 @@ export default function LitterWeightsPage() {
     if (entries.length === 0) { alert('กรุณากรอกน้ำหนักอย่างน้อย 1 ตัว'); return; }
     setIsSaving(true);
     try {
-      const inserts = entries.map(([petId, w]) => ({
-        pet_id: parseInt(petId),
-        weight: parseFloat(w),
-        recorded_date: recordedDate,
-        notes: notes || null,
-        user_id: userId,
-      }));
+      const babyById = new Map(babies.map(b => [b.id, b]));
+      const inserts = entries.map(([petId, w]) => {
+        const baby = babyById.get(parseInt(petId));
+        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)) ?? baby?.weight);
+        const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
+        return {
+          pet_id: parseInt(petId),
+          weight: weightInGrams,
+          recorded_date: recordedDate,
+          notes: notes || null,
+          user_id: userId,
+        };
+      });
       const { error } = await supabase.from('pet_weights').insert(inserts);
       if (error) throw error;
 
@@ -173,6 +183,7 @@ export default function LitterWeightsPage() {
               const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
               const val = weights[baby.id] ?? '';
               const latestWeight = latestWeightByPet.get(baby.id) ?? baby.weight;
+              const useKg = useKgFor(latestWeight);
               return (
                 <div key={baby.id} className={`lw-pet-row ${val.trim() ? 'filled' : ''}`}>
                   <div className="lw-pet-photo">
@@ -181,19 +192,19 @@ export default function LitterWeightsPage() {
                   <div className="lw-pet-info">
                     <div className="lw-pet-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
                     <span className={`lw-pet-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
-                    {latestWeight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {latestWeight} กรัม</div>}
+                    {latestWeight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {fmtWeightHint(latestWeight)}</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <input
                       type="number"
-                      step="1"
+                      step={useKg ? '0.01' : '1'}
                       min="0"
                       className="lw-weight-input"
-                      placeholder="0"
+                      placeholder={useKg ? '0.00' : '0'}
                       value={val}
                       onChange={e => setWeights(w => ({ ...w, [baby.id]: e.target.value }))}
                     />
-                    <div className="lw-weight-unit">กรัม</div>
+                    <div className="lw-weight-unit">{useKg ? 'กก.' : 'กรัม'}</div>
                   </div>
                 </div>
               );
