@@ -52,13 +52,6 @@ export default function EditFarmPage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const [mapLat, setMapLat] = useState<number | null>(null);
-  const [mapLng, setMapLng] = useState<number | null>(null);
-  const [mapVisible, setMapVisible] = useState(false);
-
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -252,31 +245,9 @@ export default function EditFarmPage() {
               <label className="fe-label">รายละเอียดเพิ่มเติม</label>
               <textarea className="fe-textarea" rows={4} value={bio} onChange={e => setBio(e.target.value)} placeholder="เล่าเรื่องราวของฟาร์มคุณ..." />
             </div>
-            <div className="fe-field">
-              <label className="fe-label">รายละเอียดเพิ่มเติม</label>
-              <textarea className="fe-textarea" rows={4} value={bio} onChange={e => setBio(e.target.value)} placeholder="เล่าเรื่องราวของฟาร์มคุณ..." />
-            </div>
           </div>
 
           {/* ── หมุดแผนที่ ── */}
-          <div className="fe-card">
-            <div className="fe-card-title"><Icon.MapPin /> ตำแหน่งฟาร์มบนแผนที่</div>
-            <button type="button" className={`fe-map-toggle ${mapLat !== null ? "has-pin" : ""}`} onClick={() => setMapVisible(v => !v)}>
-              <Icon.MapPin />
-              {mapLat !== null ? `ปักหมุดแล้ว (${mapLat.toFixed(4)}, ${mapLng?.toFixed(4)})` : "แตะเพื่อเปิดแผนที่และปักหมุด"}
-            </button>
-            {mapVisible && (
-              <>
-                <div className="fe-map-box" ref={mapRef} />
-                <div className="fe-map-actions">
-                  <button type="button" className="fe-geo-btn" onClick={handleGeolocate}><Icon.Locate /> ใช้ตำแหน่งปัจจุบัน</button>
-                  {mapLat !== null && <span className="fe-pin-coords">{mapLat.toFixed(5)}, {mapLng?.toFixed(5)}</span>}
-                </div>
-                <p style={{ fontSize: 11, color: F.muted, marginTop: 6 }}>ลากหมุดบนแผนที่เพื่อปรับตำแหน่ง</p>
-              </>
-            )}
-          </div>
-
           <div className="fe-card">
             <div className="fe-card-title"><Icon.MapPin /> ตำแหน่งฟาร์มบนแผนที่</div>
             <button type="button" className={`fe-map-toggle ${mapLat !== null ? "has-pin" : ""}`} onClick={() => setMapVisible(v => !v)}>
