@@ -488,12 +488,12 @@ export default function Navbar() {
           <span style={{ marginTop: 40, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
         </div>
 
-        {/* บริการ */}
+        {/* ชั่งน้ำหนัก */}
         <TabBtn
-          label="บริการ"
-          active={pathname.startsWith('/service-hub') || pathname.startsWith('/farm-hub')}
-          onClick={() => go('/service-hub')}
-          icon={<img src="/icons/icon-tab-explore.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
+          label="ชั่งน้ำหนัก"
+          active={pathname.startsWith('/weigh-in')}
+          onClick={() => guarded('/weigh-in')}
+          icon={<img src="/icons/icon-weight.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         {/* โปรไฟล์ */}

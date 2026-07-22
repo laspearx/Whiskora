@@ -170,6 +170,15 @@ export default function ProfilePage() {
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
   const coverUrl = profile?.cover_url;
 
+  const sortedPets = useMemo(() => {
+    return [...pets].sort((a, b) => {
+      if (!a.birth_date && !b.birth_date) return 0;
+      if (!a.birth_date) return 1;
+      if (!b.birth_date) return -1;
+      return new Date(b.birth_date).getTime() - new Date(a.birth_date).getTime();
+    });
+  }, [pets]);
+
   const petCareChecks = useMemo(() => {
     if (!pets.length) return { vaccineOk: false, weightOk: false, healthOk: false, score: 0 };
     const vaccineOk = vaccinatedPetIds.size > 0;
@@ -459,7 +468,7 @@ export default function ProfilePage() {
           </div>
           {pets.length > 0 ? (
             <div className="pp-pet-scroll">
-              {pets.slice(0, 8).map((pet) => (
+              {sortedPets.map((pet) => (
                 <Link key={pet.id} href={`/pets/${pet.id}`} className="pp-pet-bubble">
                   <div className="pp-pet-circle">
                     {pet.image_url
@@ -607,7 +616,6 @@ export default function ProfilePage() {
           <section className="pp-section">
             <div className="pp-section-head">
               <span className="pp-section-title">กิจกรรมล่าสุด</span>
-              <Link href="/pets" className="pp-see-all">ดูทั้งหมด ›</Link>
             </div>
             <div className="pp-act-list">
               {activities.map((act) => {
