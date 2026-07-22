@@ -105,7 +105,7 @@ export default function FarmBottomNav({ farmId }: { farmId: string }) {
           </Link>
           <button className="fbn-nav-tab" onClick={() => setShowApptSheet(true)}>
             <div className="fbn-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
-            <span>นัดหมาย</span>
+            <span>นัดหมาย/กิจกรรม</span>
           </button>
         </div>
       </nav>
