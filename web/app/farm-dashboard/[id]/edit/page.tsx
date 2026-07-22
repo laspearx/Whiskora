@@ -268,7 +268,7 @@ export default function EditFarmPage() {
 
           <div className="fe-actions">
             <button type="button" className="fe-btn fe-btn-cancel" onClick={() => router.back()}>ยกเลิก</button>
-            <button type="button" className="fe-btn fe-btn-save" onClick={handleSave} disabled={saving || uploadingAvatar || uploadingCover}>
+            <button type="button" className="fe-btn fe-btn-save" onClick={handleSave} disabled={saving}>
               <Icon.Save /> {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
             </button>
           </div>
