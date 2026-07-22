@@ -431,8 +431,8 @@ function FarmDashboardContent() {
         /* ─── 2. Today / Action Center ─── */
         .fd-task-row { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; margin-bottom:5px; }
         .fd-task-row:last-child { margin-bottom:0; }
-        .fd-task-icon { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .fd-task-icon img { width:18px; height:18px; object-fit:contain; }
+        .fd-task-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .fd-task-icon img { width:24px; height:24px; object-fit:contain; }
         .fd-task-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
         .fd-task-msg { flex:1; font-size:12px; font-weight:400; color:${F.ink}; line-height:1.4; min-width:0; }
         .fd-task-btn { font-size:10px; font-weight:600; padding:3px 9px; border-radius:7px; text-decoration:none; white-space:nowrap; flex-shrink:0; border:none; cursor:pointer; font-family:inherit; }
