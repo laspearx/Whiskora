@@ -9,7 +9,7 @@ import PageLoader from '@/app/components/PageLoader';
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
-  blue: '#2563EB', green: '#16A34A', orange: '#F97316',
+  blue: '#2563EB', green: '#16A34A',
   line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
@@ -87,36 +87,31 @@ export default function LitterDetailPage() {
     } finally { setUploadingId(null); }
   };
 
-  // Build per-member weight trend (latest vs previous record) so declining
-  // kittens can be flagged individually instead of only showing a litter average
-  type BabyTrend = {
+  // Build per-member weight summary: original (first recorded) vs latest weight,
+  // so the farm can see each kitten's growth at a glance instead of a litter average
+  type BabyWeightSummary = {
     baby: any;
-    latestWeight: number;
-    latestDate: string;
-    trend: 'up' | 'down' | 'same' | 'new';
+    original: number;
+    latest: number;
     delta: number;
+    isNew: boolean; // only one weight record so far — nothing to compare yet
   };
-  const babyTrends: BabyTrend[] = babies
+  const weightSummaries: BabyWeightSummary[] = babies
     .map((baby) => {
       const records = petWeights
         .filter((w) => w.pet_id === baby.id)
         .sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
       if (records.length === 0) return null;
-      const latest = records[records.length - 1];
-      const prev = records.length >= 2 ? records[records.length - 2] : null;
-      const trend: BabyTrend['trend'] = !prev ? 'new' : latest.weight > prev.weight ? 'up' : latest.weight < prev.weight ? 'down' : 'same';
-      return {
-        baby,
-        latestWeight: latest.weight,
-        latestDate: latest.recorded_date,
-        trend,
-        delta: prev ? latest.weight - prev.weight : 0,
-      };
+      const original = records[0].weight;
+      const latest = records[records.length - 1].weight;
+      return { baby, original, latest, delta: latest - original, isNew: records.length === 1 };
     })
-    .filter((t): t is BabyTrend => t !== null);
-  const watchList = babyTrends.filter((t) => t.trend === 'down');
-  const normalList = babyTrends.filter((t) => t.trend !== 'down');
+    .filter((s): s is BabyWeightSummary => s !== null)
+    .sort((a, b) => a.delta - b.delta); // biggest decline first, biggest gain last
+  const maxGain = Math.max(0, ...weightSummaries.map((s) => s.delta));
+  const topGainerId = maxGain > 0 ? weightSummaries.find((s) => s.delta === maxGain)?.baby.id : null;
   const noDataBabies = babies.filter((baby) => !petWeights.some((w) => w.pet_id === baby.id));
+  const latestWeightByPet = new Map<number, number>(weightSummaries.map((s) => [s.baby.id, s.latest]));
 
   return (
     <>
@@ -133,16 +128,13 @@ export default function LitterDetailPage() {
         .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 11px; background: white; border: 1px solid ${F.lineMid}; cursor: pointer; text-decoration: none; flex-shrink: 0; transition: all .15s; }
         .ld-title-edit:hover { background: #F9FAFB; border-color: #D1D5DB; }
         .ld-title-edit img { width: 18px; height: 18px; object-fit: contain; }
-        /* status card */
-        .ld-status { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
-        .ld-status-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 3px solid; }
-        .ld-status-info { flex: 1; min-width: 160px; }
-        .ld-status-badge { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid; margin-bottom: 6px; }
-        .ld-status-dates { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: ${F.muted}; }
-        .ld-birth-btn { background: ${F.pink}; color: white; padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all .15s; white-space: nowrap; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .ld-birth-btn { background: ${F.pink}; color: white; padding: 9px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; white-space: nowrap; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .ld-birth-btn:hover { background: #D63F6A; }
         /* parents */
-        .ld-parents { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 22px; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 18px; }
+        .ld-parents { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 22px; margin-bottom: 14px; }
+        .ld-parents-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
+        .ld-parents-foot { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid ${F.line}; font-size: 12px; font-weight: 600; color: ${F.muted}; }
+        .ld-parents-foot .highlight { color: ${F.green}; font-weight: 700; }
         .ld-parent { display: flex; flex-direction: column; align-items: center; text-decoration: none; width: 92px; }
         .ld-parent-photo { width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 26px; background: ${F.bg}; }
         .ld-parent.sire .ld-parent-photo { border-color: #BFDBFE; color: ${F.blue}; }
@@ -182,24 +174,23 @@ export default function LitterDetailPage() {
         .ld-trend-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .ld-trend-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .ld-trend-empty { font-size: 12px; color: ${F.muted}; font-weight: 600; }
-        .ld-watch-label { font-size: 12px; font-weight: 700; color: #DC2626; margin-bottom: 8px; }
-        .ld-watch-card { display: flex; align-items: center; gap: 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
-        .ld-watch-card:last-child { margin-bottom: 0; }
-        .ld-watch-photo { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: white; border: 1.5px solid #FECACA; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .ld-watch-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .ld-watch-info { flex: 1; min-width: 0; }
-        .ld-watch-name { font-size: 13px; font-weight: 700; color: ${F.ink}; }
-        .ld-watch-note { font-size: 11px; font-weight: 500; color: #B91C1C; line-height: 1.4; margin-top: 2px; }
-        .ld-watch-weight { font-size: 13px; font-weight: 800; color: #DC2626; white-space: nowrap; flex-shrink: 0; }
-        .ld-normal-block { margin-top: 12px; }
-        .ld-normal-label { font-size: 12px; font-weight: 700; color: ${F.muted}; margin-bottom: 8px; }
-        .ld-normal-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .ld-normal-chip { display: flex; align-items: center; gap: 6px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 6px 10px; font-size: 11px; }
-        .ld-normal-chip.new { background: #F9FAFB; border-color: ${F.lineMid}; }
-        .ld-normal-chip.same { background: #F9FAFB; border-color: ${F.lineMid}; }
-        .ld-normal-chip-name { font-weight: 700; color: ${F.ink}; }
-        .ld-normal-chip-weight { font-weight: 700; color: ${F.green}; }
-        .ld-normal-chip.new .ld-normal-chip-weight, .ld-normal-chip.same .ld-normal-chip-weight { color: ${F.muted}; }
+        .ld-wsum-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid ${F.line}; margin-bottom: 8px; }
+        .ld-wsum-row:last-child { margin-bottom: 0; }
+        .ld-wsum-row.down { background: #FEF2F2; border-color: #FECACA; }
+        .ld-wsum-row.top { background: #F0FDF4; border-color: #BBF7D0; }
+        .ld-wsum-photo { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: white; border: 1.5px solid ${F.line}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .ld-wsum-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ld-wsum-info { flex: 1; min-width: 0; }
+        .ld-wsum-name { font-size: 13px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .ld-wsum-badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+        .ld-wsum-badge.top { background: #DCFCE7; color: #15803D; }
+        .ld-wsum-badge.down { background: #FEE2E2; color: #DC2626; }
+        .ld-wsum-range { font-size: 11px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
+        .ld-wsum-note { font-size: 10px; font-weight: 500; color: #B91C1C; margin-top: 2px; }
+        .ld-wsum-delta { font-size: 13px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+        .ld-wsum-delta.up { color: ${F.green}; }
+        .ld-wsum-delta.down { color: #DC2626; }
+        .ld-wsum-delta.same { color: ${F.muted}; }
         .ld-nodata-note { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 12px; padding-top: 12px; border-top: 1px dashed ${F.lineMid}; }
 
         /* photo upload overlay */
@@ -221,30 +212,35 @@ export default function LitterDetailPage() {
               </Link>
             </div>
 
-            <div className="ld-status">
-              <div className="ld-status-icon" style={born ? { background: '#F0FDF4', borderColor: '#BBF7D0', color: F.green } : { background: '#FFF7ED', borderColor: '#FED7AA', color: F.orange }}>
-                {born
-                  ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                }
+            <div className="ld-parents">
+              <div className="ld-parents-row">
+                <Link href={`/pets/${sire?.id}`} className="ld-parent sire">
+                  <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : <img src="/icons/icon-men.png" alt="พ่อพันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
+                  <span className="ld-parent-name">{sire?.name || 'ไม่ระบุ'}</span>
+                  <span className="ld-parent-role">SIRE</span>
+                </Link>
+                <span className="ld-heart"><Icon.Heart /></span>
+                <Link href={`/pets/${dam?.id}`} className="ld-parent dam">
+                  <div className="ld-parent-photo">{dam?.image_url ? <img src={dam.image_url} alt={dam.name} /> : <img src="/icons/icon-women.png" alt="แม่พันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
+                  <span className="ld-parent-name">{dam?.name || 'ไม่ระบุ'}</span>
+                  <span className="ld-parent-role">DAM</span>
+                </Link>
               </div>
-              <div className="ld-status-info">
-                <span className="ld-status-badge" style={born ? { background: '#F0FDF4', color: F.green, borderColor: '#BBF7D0' } : { background: '#FFF7ED', color: F.orange, borderColor: '#FED7AA' }}>
-                  สถานะ: {litter.status}
-                </span>
-                <div className="ld-status-dates">
-                  <span>ทับ: {fmtDate(litter.mating_date)}</span>
-                  <span style={{ color: born ? F.green : F.pink }}>
-                    {born && litter.actual_birth_date ? `คลอด: ${fmtDate(litter.actual_birth_date)}` : `กำหนด: ${fmtDate(litter.expected_birth_date)}`}
-                  </span>
-                </div>
+              <div className="ld-parents-foot">
+                <span>ทับ: {fmtDate(litter.mating_date)}</span>
+                <span>•</span>
+                {born ? (
+                  <span className="highlight">คลอด: {fmtDate(litter.actual_birth_date)}</span>
+                ) : (
+                  <>
+                    <span>กำหนดคลอด: {fmtDate(litter.expected_birth_date)}</span>
+                    <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="ld-birth-btn">บันทึกการคลอด</Link>
+                  </>
+                )}
               </div>
-              {litter.status === 'รอคลอด' && (
-                <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/birth`} className="ld-birth-btn">บันทึกการคลอด</Link>
-              )}
             </div>
 
-            {/* Per-member weight trend */}
+            {/* Per-member weight tracking */}
             {born && (
               <div className="ld-trend">
                 <div className="ld-trend-head">
@@ -253,45 +249,37 @@ export default function LitterDetailPage() {
                     <Icon.Weight /> บันทึกวันนี้
                   </Link>
                 </div>
-                {babyTrends.length === 0 ? (
+                {weightSummaries.length === 0 ? (
                   <div className="ld-trend-empty">ยังไม่มีข้อมูลน้ำหนัก — กด "บันทึกวันนี้" เพื่อเริ่มแทร็ก</div>
                 ) : (
                   <>
-                    {watchList.length > 0 && (
-                      <div>
-                        <div className="ld-watch-label">⚠ ควรติดตามเป็นพิเศษ ({watchList.length})</div>
-                        {watchList.map(t => {
-                          const isMale = t.baby.gender === 'male' || t.baby.gender === 'ตัวผู้';
-                          return (
-                            <div key={t.baby.id} className="ld-watch-card">
-                              <div className="ld-watch-photo">
-                                {t.baby.image_url ? <img src={t.baby.image_url} alt={t.baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:16,height:16,objectFit:'contain',opacity:0.45}} />}
-                              </div>
-                              <div className="ld-watch-info">
-                                <div className="ld-watch-name">{t.baby.name || 'ยังไม่ตั้งชื่อ'}</div>
-                                <div className="ld-watch-note">น้ำหนักลดลง {Math.abs(t.delta)} กรัม จากครั้งก่อน — ควรดูแลเรื่องนมหรืออาหารเพิ่มเติม</div>
-                              </div>
-                              <div className="ld-watch-weight">▼ {t.latestWeight}g</div>
+                    {weightSummaries.map(s => {
+                      const isMale = s.baby.gender === 'male' || s.baby.gender === 'ตัวผู้';
+                      const isTop = s.baby.id === topGainerId;
+                      return (
+                        <div key={s.baby.id} className={`ld-wsum-row ${s.delta < 0 ? 'down' : ''} ${isTop ? 'top' : ''}`}>
+                          <div className="ld-wsum-photo">
+                            {s.baby.image_url ? <img src={s.baby.image_url} alt={s.baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:16,height:16,objectFit:'contain',opacity:0.45}} />}
+                          </div>
+                          <div className="ld-wsum-info">
+                            <div className="ld-wsum-name">
+                              {s.baby.name || 'ยังไม่ตั้งชื่อ'}
+                              {isTop && <span className="ld-wsum-badge top">🏆 โตไวสุด</span>}
+                              {s.delta < 0 && <span className="ld-wsum-badge down">⚠ ควรดูแล</span>}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {normalList.length > 0 && (
-                      <div className="ld-normal-block">
-                        {watchList.length > 0 && <div className="ld-normal-label">น้ำหนักปกติ</div>}
-                        <div className="ld-normal-grid">
-                          {normalList.map(t => (
-                            <div key={t.baby.id} className={`ld-normal-chip ${t.trend}`}>
-                              <span className="ld-normal-chip-name">{t.baby.name || '?'}</span>
-                              <span className="ld-normal-chip-weight">
-                                {t.trend === 'up' ? '▲' : t.trend === 'same' ? '—' : '•'} {t.latestWeight}g
-                              </span>
+                            <div className="ld-wsum-range">
+                              {s.isNew ? `บันทึกครั้งแรก ${s.latest}g` : `${s.original}g → ${s.latest}g`}
                             </div>
-                          ))}
+                            {s.delta < 0 && <div className="ld-wsum-note">น้ำหนักลดลง {Math.abs(s.delta)} กรัม — ควรดูแลเรื่องนมหรืออาหารเพิ่มเติม</div>}
+                          </div>
+                          {!s.isNew && (
+                            <div className={`ld-wsum-delta ${s.delta > 0 ? 'up' : s.delta < 0 ? 'down' : 'same'}`}>
+                              {s.delta > 0 ? '+' : ''}{s.delta}g
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })}
                     {noDataBabies.length > 0 && (
                       <div className="ld-nodata-note">ยังไม่มีบันทึกน้ำหนัก: {noDataBabies.map(b => b.name || '?').join(', ')}</div>
                     )}
@@ -299,20 +287,6 @@ export default function LitterDetailPage() {
                 )}
               </div>
             )}
-
-            <div className="ld-parents">
-              <Link href={`/pets/${sire?.id}`} className="ld-parent sire">
-                <div className="ld-parent-photo">{sire?.image_url ? <img src={sire.image_url} alt={sire.name} /> : <img src="/icons/icon-men.png" alt="พ่อพันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
-                <span className="ld-parent-name">{sire?.name || 'ไม่ระบุ'}</span>
-                <span className="ld-parent-role">SIRE</span>
-              </Link>
-              <span className="ld-heart"><Icon.Heart /></span>
-              <Link href={`/pets/${dam?.id}`} className="ld-parent dam">
-                <div className="ld-parent-photo">{dam?.image_url ? <img src={dam.image_url} alt={dam.name} /> : <img src="/icons/icon-women.png" alt="แม่พันธุ์" style={{width:36,height:36,objectFit:'contain',opacity:0.6}} />}</div>
-                <span className="ld-parent-name">{dam?.name || 'ไม่ระบุ'}</span>
-                <span className="ld-parent-role">DAM</span>
-              </Link>
-            </div>
 
             <div className="ld-sec-head">
               <div className="ld-sec-head-left">
@@ -332,12 +306,13 @@ export default function LitterDetailPage() {
               <div className="ld-babies">
                 {babies.map((baby) => {
                   const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
+                  const displayWeight = latestWeightByPet.get(baby.id) ?? baby.weight;
                   return (
                     <div key={baby.id} className="ld-baby">
                       <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="ld-baby-photo">
                           {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:36,height:36,objectFit:'contain',opacity:0.45}} />}
-                          <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
+                          <span className="ld-baby-weight">{displayWeight ? `${displayWeight}g` : '-'}</span>
                           {/* Photo upload button — overlaps the bottom-right of the photo frame */}
                           <div
                             className={`ld-baby-upload ${uploadingId === baby.id ? 'ld-baby-uploading' : ''}`}
