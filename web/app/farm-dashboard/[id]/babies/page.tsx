@@ -61,10 +61,12 @@ export default function BabyDashboardPage() {
     return (
       <Link key={baby.id} href={`/pets/${baby.id}`} className="bd-baby-thumb">
         <div className="bd-baby-photo">
-          {baby.image_url
-            ? <img src={baby.image_url} alt={baby.name} />
-            : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
-          }
+          <div className="bd-baby-photo-frame">
+            {baby.image_url
+              ? <img src={baby.image_url} alt={baby.name} />
+              : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            }
+          </div>
           <div
             className={`bd-baby-upload ${uploadingId === baby.id ? 'bd-baby-uploading' : ''}`}
             onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
@@ -133,7 +135,7 @@ export default function BabyDashboardPage() {
         /* Stats row */
         .bd-stats { display: flex; gap: 10px; margin-bottom: 20px; }
         .bd-stat { flex: 1; background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 14px 12px; text-align: center; }
-        .bd-stat-icon { width: 22px; height: 22px; object-fit: contain; margin-bottom: 5px; }
+        .bd-stat-icon { display: block; width: 30px; height: 30px; object-fit: contain; margin: 0 auto 6px; }
         .bd-stat-val { font-size: 22px; font-weight: 800; line-height: 1; }
         .bd-stat-lbl { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-top: 4px; letter-spacing: 0.04em; }
 
@@ -156,10 +158,11 @@ export default function BabyDashboardPage() {
         /* Baby thumbnail strip */
         .bd-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; }
         .bd-baby-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; }
-        .bd-baby-photo { width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; position: relative; }
-        .bd-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .bd-baby-photo { width: 100%; aspect-ratio: 1; position: relative; }
+        .bd-baby-photo-frame { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .bd-baby-photo-frame img { width: 100%; height: 100%; object-fit: cover; }
         .bd-baby-name { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .bd-baby-upload { position: absolute; top: 1px; right: 1px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .bd-baby-upload { position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .bd-baby-upload:hover { background: ${F.pinkSoft}; }
         .bd-baby-uploading { opacity: 0.5; pointer-events: none; }
 
