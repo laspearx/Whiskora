@@ -77,8 +77,8 @@ export default function BabyDashboardPage() {
     <>
       <style>{`
         * { box-sizing: border-box; }
-        .bd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .bd-body { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
+        .bd-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .bd-body { max-width: 680px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .bd-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .bd-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; transition: all .18s; flex-shrink: 0; }
         .bd-back:hover { background: #F9FAFB; color: ${F.ink}; transform: translateX(-1px); }

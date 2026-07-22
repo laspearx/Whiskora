@@ -103,8 +103,8 @@ export default function FarmPetsPage() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .fpl-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
-        .fpl-body { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
+        .fpl-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .fpl-body { max-width: 900px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .fpl-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .fpl-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .fpl-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }

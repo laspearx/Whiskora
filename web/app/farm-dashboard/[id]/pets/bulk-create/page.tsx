@@ -226,8 +226,8 @@ function BulkCreateContent() {
       <style>{`
 
         * { box-sizing: border-box; }
-        .bc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: transparent; }
-        .bc-body { max-width: 920px; margin: 0 auto; padding: 28px 20px 32px; }
+        .bc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
+        .bc-body { max-width: 920px; margin: 0 auto; padding: 28px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .bc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
         .bc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .bc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -271,7 +271,7 @@ function BulkCreateContent() {
         .bc-save-btn:active { transform: scale(0.97); }
         .bc-save-btn:disabled { opacity: .6; cursor: wait; }
         @media (max-width: 600px) {
-          .bc-body { padding: 18px 14px 32px; }
+          .bc-body { padding: 18px 14px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
           .bc-title { font-size: 21px; }
           .bc-row-body { grid-template-columns: 1fr; gap: 12px; }
           .bc-actions-count { font-size: 12px; }

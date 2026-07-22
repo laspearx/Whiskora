@@ -10,7 +10,7 @@ const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
   pink: "#E84677", pinkSoft: "#FDF2F5", pinkBorder: "#FBCFE8", pinkDeep: "#C4325F",
   teal: "#0D9488", tealSoft: "#F0FDFA",
-  line: "#F3F4F6", lineMid: "#E5E7EB", bg: "#FAFAFA",
+  line: "#F3F4F6", lineMid: "#E5E7EB", bg: "#FDF6F8",
 };
 
 type Role = "owner" | "admin" | "staff" | "viewer";
@@ -177,7 +177,8 @@ export default function FarmMembersPage() {
   return (
     <>
       <style>{`
-        .fm-page { max-width: 600px; margin: 0 auto; padding: 24px 16px 100px; color: ${F.ink}; font-family: inherit; }
+        .fm-page { min-height: 100vh; color: ${F.ink}; font-family: inherit; background: ${F.bg}; }
+        .fm-body { max-width: 600px; margin: 0 auto; padding: 24px 16px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .fm-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
         .fm-back { width: 40px; height: 40px; border-radius: 12px; border: 1px solid ${F.lineMid}; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: ${F.inkSoft}; transition: background .15s; flex-shrink: 0; }
         .fm-back:hover { background: ${F.line}; }
@@ -221,6 +222,7 @@ export default function FarmMembersPage() {
       `}</style>
 
       <div className="fm-page">
+      <div className="fm-body">
         {/* Header */}
         <div className="fm-header">
           <button className="fm-back" onClick={() => router.back()} aria-label="ย้อนกลับ">
@@ -375,6 +377,7 @@ export default function FarmMembersPage() {
             )}
           </>
         )}
+      </div>
       </div>
     </>
   );

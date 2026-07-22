@@ -180,7 +180,7 @@ export default function VerifyFarmPage() {
         .vf-body { max-width: 560px; margin: 0 auto; padding: 0 0 32px; }
 
         /* Top bar */
-        .vf-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: white; border-bottom: 1px solid ${F.line}; position: sticky; top: 0; z-index: 10; }
+        .vf-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: ${F.bg}; border-bottom: 1px solid ${F.line}; position: sticky; top: 0; z-index: 10; }
         .vf-back { width: 38px; height: 38px; border-radius: 11px; background: ${F.line}; color: ${F.ink}; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .vf-title { font-size: 17px; font-weight: 700; color: ${F.ink}; }
         .vf-sub { font-size: 12px; color: ${F.muted}; font-weight: 400; }
