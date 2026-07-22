@@ -483,7 +483,7 @@ export default function PublicFarmProfile() {
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-feeding.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">ลูกแมว</span>
               </Link>
-              <Link href={`/profile/finance`} className="fp-owner-tab">
+              <Link href={`/profile/finance?farm_id=${farmId}`} className="fp-owner-tab">
                 <div className="fp-owner-tab-icon"><img src="/icons/icon-wallet.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} /></div>
                 <span className="fp-owner-tab-label">รายรับรายจ่าย</span>
               </Link>

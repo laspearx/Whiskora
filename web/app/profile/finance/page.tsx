@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {
@@ -19,8 +19,10 @@ const INCOME_CATS  = ["ขายสัตว์เลี้ยง", "ค่า�
 const fmtMoney = (n: number) => `฿${Math.abs(n).toLocaleString()}`;
 const fmtDate  = (d: string) => new Date(d).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
 
-export default function FinancePage() {
+function FinancePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const lockedFarmId = searchParams.get("farm_id");
   const [loading,      setLoading]      = useState(true);
   const [farms,        setFarms]        = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -47,7 +49,11 @@ export default function FinancePage() {
       ]);
       const loadedFarms = farmData || [];
       setFarms(loadedFarms);
-      if (loadedFarms.length > 0) setForm(f => ({ ...f, farm_id: String(loadedFarms[0].id) }));
+      if (lockedFarmId) {
+        setForm(f => ({ ...f, farm_id: lockedFarmId }));
+      } else if (loadedFarms.length > 0) {
+        setForm(f => ({ ...f, farm_id: String(loadedFarms[0].id) }));
+      }
       setTransactions(txData || []);
       setLoading(false);
     })();
@@ -204,7 +210,7 @@ export default function FinancePage() {
             </div>
 
             <form onSubmit={handleSave}>
-              {farms.length > 1 && (
+              {!lockedFarmId && farms.length > 1 && (
                 <div className="fin-field">
                   <label className="fin-label">ฟาร์ม</label>
                   <select className="fin-input" value={form.farm_id}
@@ -283,5 +289,13 @@ export default function FinancePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function FinancePage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <FinancePageContent />
+    </Suspense>
   );
 }

@@ -504,9 +504,6 @@ function FarmDashboardContent() {
         .fd-fin-val { font-size:20px; font-weight:700; line-height:1; }
         .fd-fin-divider { width:1px; background:${F.line}; align-self:stretch; }
         .fd-fin-meta { font-size:10px; color:${F.muted}; font-weight:400; display:flex; flex-wrap:wrap; gap:4px 10px; }
-        .fd-fin-empty-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
-        .fd-fin-empty-btn { flex:1; min-width:120px; padding:10px; border-radius:10px; font-size:12px; font-weight:500; border:1.5px dashed ${F.lineMid}; background:white; color:${F.inkSoft}; text-decoration:none; text-align:center; cursor:pointer; transition:all .15s; display:block; }
-        .fd-fin-empty-btn:hover { border-color:${F.pink}; color:${F.pink}; background:${F.pinkSoft}; }
 
         /* ─── Misc ─── */
         .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:400; text-align:center; padding:8px 0; }
@@ -871,55 +868,45 @@ function FarmDashboardContent() {
           {/* ════════════════════════════════
               5. Monthly Business Summary
           ════════════════════════════════ */}
-          <section className="fd-sec">
-            <div className="fd-sec-head">
-              <div className="fd-sec-title">
-                <img src="/icons/icon-wallet.png" alt="" />
-                <h2 className="fd-sec-h">{monthLabel}</h2>
+          {hasFinance && (
+            <section className="fd-sec">
+              <div className="fd-sec-head">
+                <div className="fd-sec-title">
+                  <img src="/icons/icon-wallet.png" alt="" />
+                  <h2 className="fd-sec-h">{monthLabel}</h2>
+                </div>
+                <Link href={`/profile/finance?farm_id=${farmId}`} className="fd-link-sm">ดูการเงิน</Link>
               </div>
-              <Link href="/profile/finance" className="fd-link-sm">ดูการเงิน</Link>
-            </div>
 
-            {!hasFinance ? (
-              <>
-                <div className="fd-empty-sm" style={{ marginBottom: 8 }}>ยังไม่มีรายรับรายจ่าย — เริ่มบันทึกเพื่อติดตามผลกำไร</div>
-                <div className="fd-fin-empty-row">
-                  <Link href={`/farm-dashboard/${farmId}/transactions/create?type=income`} className="fd-fin-empty-btn">+ รายรับ</Link>
-                  <Link href={`/farm-dashboard/${farmId}/transactions/create?type=expense`} className="fd-fin-empty-btn">+ รายจ่าย</Link>
+              <div className="fd-fin-row">
+                <div className="fd-fin-stat">
+                  <div className="fd-fin-label">รายรับ</div>
+                  <div className="fd-fin-val" style={{ color: F.green }}>{fmtMoney(tmI)}</div>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="fd-fin-row">
-                  <div className="fd-fin-stat">
-                    <div className="fd-fin-label">รายรับ</div>
-                    <div className="fd-fin-val" style={{ color: F.green }}>{fmtMoney(tmI)}</div>
-                  </div>
-                  <div className="fd-fin-divider" />
-                  <div className="fd-fin-stat">
-                    <div className="fd-fin-label">รายจ่าย</div>
-                    <div className="fd-fin-val" style={{ color: F.red }}>{fmtMoney(tmE)}</div>
-                  </div>
-                  <div className="fd-fin-divider" />
-                  <div className="fd-fin-stat">
-                    <div className="fd-fin-label">กำไรสุทธิ</div>
-                    <div className="fd-fin-val" style={{ color: tmNet > 0 ? F.green : tmNet < 0 ? F.red : F.muted }}>
-                      {tmNet > 0 ? '+' : tmNet < 0 ? '-' : ''}{fmtMoney(tmNet)}
-                    </div>
+                <div className="fd-fin-divider" />
+                <div className="fd-fin-stat">
+                  <div className="fd-fin-label">รายจ่าย</div>
+                  <div className="fd-fin-val" style={{ color: F.red }}>{fmtMoney(tmE)}</div>
+                </div>
+                <div className="fd-fin-divider" />
+                <div className="fd-fin-stat">
+                  <div className="fd-fin-label">กำไรสุทธิ</div>
+                  <div className="fd-fin-val" style={{ color: tmNet > 0 ? F.green : tmNet < 0 ? F.red : F.muted }}>
+                    {tmNet > 0 ? '+' : tmNet < 0 ? '-' : ''}{fmtMoney(tmNet)}
                   </div>
                 </div>
-                <div className="fd-fin-meta">
-                  {pmNet !== 0 && (
-                    <span style={{ color: tmNet >= pmNet ? F.green : F.red }}>
-                      {tmNet >= pmNet ? '▲' : '▼'} vs เดือนก่อน ({pmNet > 0 ? '+' : pmNet < 0 ? '-' : ''}{fmtMoney(pmNet)})
-                    </span>
-                  )}
-                  {closedWithTx > 0 && <span>ครอกปิดบัญชีแล้ว {closedWithTx} ครอก</span>}
-                  {thisMonthTx.length > 0 && <span>{thisMonthTx.length} รายการเดือนนี้</span>}
-                </div>
-              </>
-            )}
-          </section>
+              </div>
+              <div className="fd-fin-meta">
+                {pmNet !== 0 && (
+                  <span style={{ color: tmNet >= pmNet ? F.green : F.red }}>
+                    {tmNet >= pmNet ? '▲' : '▼'} vs เดือนก่อน ({pmNet > 0 ? '+' : pmNet < 0 ? '-' : ''}{fmtMoney(pmNet)})
+                  </span>
+                )}
+                {closedWithTx > 0 && <span>ครอกปิดบัญชีแล้ว {closedWithTx} ครอก</span>}
+                {thisMonthTx.length > 0 && <span>{thisMonthTx.length} รายการเดือนนี้</span>}
+              </div>
+            </section>
+          )}
 
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}
