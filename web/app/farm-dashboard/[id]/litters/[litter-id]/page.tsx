@@ -338,18 +338,18 @@ export default function LitterDetailPage() {
                         <div className="ld-baby-photo">
                           {baby.image_url ? <img src={baby.image_url} alt={baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:36,height:36,objectFit:'contain',opacity:0.45}} />}
                           <span className="ld-baby-weight">{baby.weight ? `${baby.weight}g` : '-'}</span>
+                          {/* Photo upload button — overlaps the bottom-right of the photo frame */}
+                          <div
+                            className={`ld-baby-upload ${uploadingId === baby.id ? 'ld-baby-uploading' : ''}`}
+                            onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
+                          >
+                            {uploadingId === baby.id
+                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
+                              : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            }
+                          </div>
                         </div>
                       </Link>
-                      {/* Photo upload button */}
-                      <div
-                        className={`ld-baby-upload ${uploadingId === baby.id ? 'ld-baby-uploading' : ''}`}
-                        onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
-                      >
-                        {uploadingId === baby.id
-                          ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
-                          : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        }
-                      </div>
                       <input type="file" accept="image/*" style={{ display: 'none' }}
                         ref={el => { fileRefs.current[baby.id] = el; }}
                         onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
@@ -357,8 +357,8 @@ export default function LitterDetailPage() {
                       <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="ld-baby-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
                         <div className="ld-baby-foot">
-                          <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
                           <span className="ld-baby-status">{baby.status || 'เด็ก'}</span>
+                          <span className={`ld-baby-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
                         </div>
                       </Link>
                     </div>

@@ -63,7 +63,7 @@ export default function BabyDashboardPage() {
         <div className="bd-baby-photo">
           {baby.image_url
             ? <img src={baby.image_url} alt={baby.name} />
-            : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain', opacity: 0.4 }} />
+            : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           }
           <div
             className={`bd-baby-upload ${uploadingId === baby.id ? 'bd-baby-uploading' : ''}`}
@@ -157,7 +157,7 @@ export default function BabyDashboardPage() {
         .bd-baby-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
         .bd-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
         .bd-baby-name { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .bd-baby-upload { position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .bd-baby-upload { position: absolute; bottom: 1px; right: 1px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .bd-baby-upload:hover { background: ${F.pinkSoft}; }
         .bd-baby-uploading { opacity: 0.5; pointer-events: none; }
 
