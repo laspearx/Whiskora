@@ -89,6 +89,7 @@ export default function PetDetailPage() {
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
   const [coOwners, setCoOwners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -319,16 +320,18 @@ export default function PetDetailPage() {
 
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
 
-      const [vaccineRes, activityRes, docRes, coOwnerRes] = await Promise.all([
+      const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
         supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
         supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false }),
         supabase.from('pet_documents').select('*').eq('pet_id', petId).order('created_at', { ascending: false }),
         supabase.from('pet_co_owners').select('*, profile:user_id(id, full_name, avatar_url)').eq('pet_id', petId),
+        supabase.from('pet_weights').select('weight, recorded_date').eq('pet_id', petId).order('recorded_date', { ascending: true }),
       ]);
       if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
       if (docRes.data) setDocuments(docRes.data as PetDocument[]);
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
+      if (weightRes.data) setWeightHistory(weightRes.data as { weight: number; recorded_date: string }[]);
 
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -697,6 +700,37 @@ export default function PetDetailPage() {
   const filteredActivities = activeActivityFilter === 'ทั้งหมด'
     ? activities
     : activities.filter(a => a.activity_type?.includes(activeActivityFilter));
+
+  function WeightSparkline({ data }: { data: { weight: number; recorded_date: string }[] }) {
+    if (data.length < 2) return null;
+    const W = 300, H = 72, pad = 10;
+    const values = data.map(d => d.weight);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const x = (i: number) => pad + (i / (data.length - 1)) * (W - pad * 2);
+    const y = (v: number) => H - pad - ((v - min) / range) * (H - pad * 2);
+    const rising = values[values.length - 1] >= values[values.length - 2];
+    const color = rising ? '#16A34A' : '#EF4444';
+    const pts = data.map((d, i) => `${x(i)},${y(d.weight)}`).join(' ');
+    const first = data[0];
+    const last = data[data.length - 1];
+    return (
+      <div>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+          <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {data.map((d, i) => (
+            <circle key={i} cx={x(i)} cy={y(d.weight)} r={i === data.length - 1 ? 5 : 3} fill={color} opacity={i === data.length - 1 ? 1 : 0.5} />
+          ))}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(first.recorded_date)} · {first.weight}g</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color }}>{rising ? '▲' : '▼'} {last.weight}g</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(last.recorded_date)}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1404,11 +1438,24 @@ export default function PetDetailPage() {
                 <div className="card-title"><div className="card-title-icon" style={{ color: F.pink }}><Icon.Weight /></div>ประวัติน้ำหนัก</div>
                 <Link href={`/pets/${pet.id}/weight`} className="btn-pink" style={{ fontSize: '12px', padding: '6px 14px' }}><Icon.Plus /> บันทึกน้ำหนัก</Link>
               </div>
-              <div className="card-body" style={{ textAlign: 'center', padding: '32px 0' }}>
-                <div style={{ color: F.muted, fontSize: '13px', marginBottom: '12px' }}>ดูและบันทึกประวัติน้ำหนักทั้งหมดได้ในหน้าถัดไป</div>
-                <Link href={`/pets/${pet.id}/weight`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '12px', background: F.pink, color: 'white', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                  <Icon.Weight /> ไปหน้าบันทึกน้ำหนัก
-                </Link>
+              <div className="card-body">
+                {weightHistory.length >= 2 ? (
+                  <div style={{ padding: '8px 4px 4px' }}>
+                    <WeightSparkline data={weightHistory} />
+                  </div>
+                ) : weightHistory.length === 1 ? (
+                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: F.ink }}>{weightHistory[0].weight}g</div>
+                    <div style={{ color: F.muted, fontSize: '12px', marginTop: '4px' }}>บันทึกเมื่อ {formatDate(weightHistory[0].recorded_date)} — ยังไม่มีข้อมูลพอที่จะแสดงกราฟ</div>
+                  </div>
+                ) : (
+                  <div style={{ color: F.muted, fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>ยังไม่มีประวัติน้ำหนัก</div>
+                )}
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                  <Link href={`/pets/${pet.id}/weight`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '12px', background: F.pink, color: 'white', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                    <Icon.Weight /> ดู/บันทึกน้ำหนักทั้งหมด
+                  </Link>
+                </div>
               </div>
             </div>
           )}

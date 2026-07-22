@@ -90,8 +90,6 @@ const daysDiff = (dateStr: string) => {
   const t = new Date();        t.setHours(0, 0, 0, 0);
   return Math.ceil((d.getTime() - t.getTime()) / 86400000);
 };
-const fmtMoney = (n: number) => `฿${Math.abs(n).toLocaleString()}`;
-
 interface Task {
   id: string;
   urgency: 'overdue' | 'today' | 'upcoming' | 'info';
@@ -128,7 +126,6 @@ function FarmDashboardContent() {
   const [farm,         setFarm]         = useState<any>(null);
   const [pets,         setPets]         = useState<any[]>([]);
   const [litters,      setLitters]      = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [vaccines,     setVaccines]     = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -158,19 +155,16 @@ function FarmDashboardContent() {
       if (!farmData) { router.push('/partner'); return; }
       setFarm(farmData);
 
-      const [petsRes, littersRes, txRes] = await Promise.all([
+      const [petsRes, littersRes] = await Promise.all([
         supabase.from('pets').select('*').eq('farm_id', farmId),
         supabase.from('litters')
           .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url,species)')
           .eq('farm_id', farmId).order('mating_date', { ascending: false }),
-        supabase.from('farm_transactions').select('*').eq('farm_id', farmId)
-          .order('transaction_date', { ascending: false }),
       ]);
 
       const loadedPets = petsRes.data || [];
       setPets(loadedPets);
       setLitters(littersRes.data || []);
-      setTransactions(txRes.data || []);
 
       const petIds = loadedPets.map((p: any) => p.id);
       if (petIds.length > 0) {
@@ -283,21 +277,6 @@ function FarmDashboardContent() {
   const reserved = pets.filter(p => p.status === 'ติดจอง').length;
 
   /* ── Finance ── */
-  const today = new Date();
-  const thisMonth = today.getMonth(), thisYear = today.getFullYear();
-  const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-  const prevYear  = thisMonth === 0 ? thisYear - 1 : thisYear;
-  const inMonth = (d: string, m: number, y: number) => { const dt = new Date(d); return dt.getMonth() === m && dt.getFullYear() === y; };
-  const thisMonthTx = transactions.filter(t => t.transaction_date && inMonth(t.transaction_date, thisMonth, thisYear));
-  const prevMonthTx = transactions.filter(t => t.transaction_date && inMonth(t.transaction_date, prevMonth, prevYear));
-  const sumI = (txs: any[]) => txs.filter(t => t.transaction_type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const sumE = (txs: any[]) => txs.filter(t => t.transaction_type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-  const tmI = sumI(thisMonthTx), tmE = sumE(thisMonthTx), tmNet = tmI - tmE;
-  const pmNet = sumI(prevMonthTx) - sumE(prevMonthTx);
-  const closedWithTx = bornLitters.filter(l => transactions.some(t => t.litter_id === l.id)).length;
-  const monthLabel = today.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-  const hasFinance = transactions.length > 0;
-
   /* ── Pregnancy progress ── */
   const calcPct = (mating: string, expected: string) => {
     const s = new Date(mating).getTime(), e = new Date(expected).getTime(), n = Date.now();
@@ -498,12 +477,6 @@ function FarmDashboardContent() {
         .ptc-missing-btn { font-size:11px; font-weight:500; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:8px; text-decoration:none; white-space:nowrap; }
 
         /* ─── 5. Finance ─── */
-        .fd-fin-row { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
-        .fd-fin-stat { flex:1; }
-        .fd-fin-label { font-size:9px; font-weight:500; color:${F.muted}; text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
-        .fd-fin-val { font-size:20px; font-weight:700; line-height:1; }
-        .fd-fin-divider { width:1px; background:${F.line}; align-self:stretch; }
-        .fd-fin-meta { font-size:10px; color:${F.muted}; font-weight:400; display:flex; flex-wrap:wrap; gap:4px 10px; }
 
         /* ─── Misc ─── */
         .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:400; text-align:center; padding:8px 0; }
@@ -862,48 +835,6 @@ function FarmDashboardContent() {
             })}
           </section>
 
-          {/* ════════════════════════════════
-              5. Monthly Business Summary
-          ════════════════════════════════ */}
-          {hasFinance && (
-            <section className="fd-sec">
-              <div className="fd-sec-head">
-                <div className="fd-sec-title">
-                  <img src="/icons/icon-wallet.png" alt="" />
-                  <h2 className="fd-sec-h">{monthLabel}</h2>
-                </div>
-                <Link href={`/profile/finance?farm_id=${farmId}`} className="fd-link-sm">ดูการเงิน</Link>
-              </div>
-
-              <div className="fd-fin-row">
-                <div className="fd-fin-stat">
-                  <div className="fd-fin-label">รายรับ</div>
-                  <div className="fd-fin-val" style={{ color: F.green }}>{fmtMoney(tmI)}</div>
-                </div>
-                <div className="fd-fin-divider" />
-                <div className="fd-fin-stat">
-                  <div className="fd-fin-label">รายจ่าย</div>
-                  <div className="fd-fin-val" style={{ color: F.red }}>{fmtMoney(tmE)}</div>
-                </div>
-                <div className="fd-fin-divider" />
-                <div className="fd-fin-stat">
-                  <div className="fd-fin-label">กำไรสุทธิ</div>
-                  <div className="fd-fin-val" style={{ color: tmNet > 0 ? F.green : tmNet < 0 ? F.red : F.muted }}>
-                    {tmNet > 0 ? '+' : tmNet < 0 ? '-' : ''}{fmtMoney(tmNet)}
-                  </div>
-                </div>
-              </div>
-              <div className="fd-fin-meta">
-                {pmNet !== 0 && (
-                  <span style={{ color: tmNet >= pmNet ? F.green : F.red }}>
-                    {tmNet >= pmNet ? '▲' : '▼'} vs เดือนก่อน ({pmNet > 0 ? '+' : pmNet < 0 ? '-' : ''}{fmtMoney(pmNet)})
-                  </span>
-                )}
-                {closedWithTx > 0 && <span>ครอกปิดบัญชีแล้ว {closedWithTx} ครอก</span>}
-                {thisMonthTx.length > 0 && <span>{thisMonthTx.length} รายการเดือนนี้</span>}
-              </div>
-            </section>
-          )}
 
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}

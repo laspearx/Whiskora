@@ -99,9 +99,9 @@ export default function FarmBottomNav({ farmId }: { farmId: string }) {
             <div className="fbn-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
             <span>เบบี๋</span>
           </Link>
-          <Link href={`/profile/finance?farm_id=${farmId}`} className="fbn-nav-tab">
-            <div className="fbn-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
-            <span>รายรับรายจ่าย</span>
+          <Link href={`${base}/weights`} className="fbn-nav-tab">
+            <div className="fbn-tab-icon"><img src="/icons/icon-weight.png" alt="" /></div>
+            <span>ชั่งน้ำหนัก</span>
           </Link>
           <button className="fbn-nav-tab" onClick={() => setShowApptSheet(true)}>
             <div className="fbn-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
