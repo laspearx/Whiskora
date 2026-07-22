@@ -740,7 +740,7 @@ export default function PetDetailPage() {
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; }
         .pet-name-edit { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: .8; transition: opacity .15s; }
         .pet-name-edit:hover { opacity: 1; }
-        .pet-name-edit img { width: 26px; height: 26px; object-fit: contain; }
+        .pet-name-edit img { width: 34px; height: 34px; object-fit: contain; }
         .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
         .breed-tag-white { background: white; color: #6B7280; border: 1px solid ${F.lineMid}; }
