@@ -152,7 +152,7 @@ export default function EditLitterPage() {
     <>
       <style>{`
         * { box-sizing: border-box; }
-        .le-page { font-family: inherit; min-height: 100vh; color: #111827; background: #FDF6F8; }
+        .le-page { font-family: inherit; min-height: 100vh; color: #111827; background: #fffafc; }
         .le-body { max-width: 560px; margin: 0 auto; padding: 20px 16px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .le-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
         .le-back { width: 40px; height: 40px; border-radius: 12px; background: white; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .15s; }

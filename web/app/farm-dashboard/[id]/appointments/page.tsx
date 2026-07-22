@@ -12,7 +12,7 @@ const F = {
   green: '#16A34A', greenSoft: '#F0FDF4', greenBorder: '#BBF7D0',
   amber: '#D97706', amberSoft: '#FFFBEB', amberBorder: '#FDE68A',
   red: '#EF4444', redSoft: '#FEF2F2', redBorder: '#FECACA',
-  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#fffafc',
 };
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });

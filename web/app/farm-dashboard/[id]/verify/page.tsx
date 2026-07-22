@@ -8,7 +8,7 @@ import PageLoader from '@/app/components/PageLoader';
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
-  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', bg: '#fffafc',
   green: '#16A34A', greenSoft: '#F0FDF4',
   amber: '#D97706', amberSoft: '#FFFBEB',
 };

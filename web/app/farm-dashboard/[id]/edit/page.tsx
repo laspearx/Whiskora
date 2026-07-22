@@ -170,7 +170,7 @@ export default function EditFarmPage() {
     <>
       <style>{`
         * { box-sizing: border-box; }
-        .fe-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: #FDF6F8; }
+        .fe-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: #fffafc; }
         .fe-body { max-width: 600px; margin: 0 auto; padding: 24px 20px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
         .fe-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
         .fe-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s; flex-shrink: 0; }

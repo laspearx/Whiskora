@@ -10,7 +10,7 @@ const F = {
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
   blue: '#2563EB', blueSoft: '#EFF6FF',
   green: '#16A34A', greenSoft: '#F0FDF4',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 const Icon = {
