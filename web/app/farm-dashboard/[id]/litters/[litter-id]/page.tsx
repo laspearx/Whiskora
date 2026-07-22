@@ -16,7 +16,6 @@ const F = {
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Heart: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>,
-  Edit: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   Weight: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
   Plus: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>,
 };
@@ -128,7 +127,7 @@ export default function LitterDetailPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{data[0].date}</span>
           <span style={{ fontSize: 11, fontWeight: 700, color }}>
-            {rising ? '▲' : '▼'} เฉลี่ย {last.avg.toFixed(3)} กก.
+            {rising ? '▲' : '▼'} เฉลี่ย {Math.round(last.avg)} กรัม
           </span>
           <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{last.date}</span>
         </div>
@@ -146,8 +145,11 @@ export default function LitterDetailPage() {
         .ld-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
         .ld-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .ld-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
-        .ld-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; }
+        .ld-title { font-family: inherit; font-size: 22px; font-weight: 700; color: ${F.ink}; line-height: 1.1; flex: 1; }
         .ld-title .code { color: ${F.pink}; }
+        .ld-title-edit { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 11px; background: white; border: 1px solid ${F.lineMid}; cursor: pointer; text-decoration: none; flex-shrink: 0; transition: all .15s; }
+        .ld-title-edit:hover { background: #F9FAFB; border-color: #D1D5DB; }
+        .ld-title-edit img { width: 18px; height: 18px; object-fit: contain; }
         /* status card */
         .ld-status { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
         .ld-status-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 3px solid; }
@@ -169,10 +171,6 @@ export default function LitterDetailPage() {
         .ld-parent.dam .ld-parent-role { color: ${F.pink}; }
         .ld-heart { color: ${F.pinkBorder}; flex-shrink: 0; }
         /* edit action */
-        .ld-edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-        .ld-edit-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.lineMid}; background: white; color: ${F.inkSoft}; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; cursor: pointer; font-family: inherit; }
-        .ld-edit-btn:hover { background: #F9FAFB; border-color: #D1D5DB; }
-        .ld-edit-btn svg { flex-shrink: 0; }
         .ld-weight-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s; }
         .ld-weight-btn:hover { background: #fbd5e3; }
         /* babies */
@@ -201,9 +199,13 @@ export default function LitterDetailPage() {
         .ld-trend-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .ld-trend-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .ld-trend-empty { font-size: 12px; color: ${F.muted}; font-weight: 600; }
+        .ld-trend-single { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 10px 0 4px; }
+        .ld-trend-single span:first-child { font-size: 12px; font-weight: 600; color: ${F.muted}; }
+        .ld-trend-single strong { font-size: 20px; font-weight: 800; color: ${F.green}; }
+        .ld-trend-single-date { font-size: 11px; font-weight: 600; color: ${F.muted}; }
 
         /* photo upload overlay */
-        .ld-baby-upload { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .ld-baby-upload { position: absolute; bottom: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
         .ld-baby-upload:hover { background: ${F.pinkSoft}; }
         .ld-baby-uploading { opacity: 0.5; pointer-events: none; }
       `}</style>
@@ -216,6 +218,9 @@ export default function LitterDetailPage() {
             <div className="ld-top">
               <button className="ld-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
               <h1 className="ld-title">ครอก <span className="code">{litter.litter_code || 'ไม่ระบุ'}</span></h1>
+              <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="ld-title-edit" aria-label="แก้ไขข้อมูลการบรีด">
+                <img src="/icons/icon-edit.png" alt="" />
+              </Link>
             </div>
 
             <div className="ld-status">
@@ -241,17 +246,6 @@ export default function LitterDetailPage() {
               )}
             </div>
 
-            <div className="ld-edit-row">
-              <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/edit`} className="ld-edit-btn">
-                <Icon.Edit /> แก้ไขข้อมูลการบรีด
-              </Link>
-              {born && (
-                <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/weights`} className="ld-weight-btn">
-                  <Icon.Weight /> บันทึกน้ำหนักทั้งครอก
-                </Link>
-              )}
-            </div>
-
             {/* Weight trend chart */}
             {born && (
               <div className="ld-trend">
@@ -261,10 +255,17 @@ export default function LitterDetailPage() {
                     <Icon.Weight /> บันทึกวันนี้
                   </Link>
                 </div>
-                {weightTrendData.length >= 2
-                  ? <WeightSparkline data={weightTrendData} />
-                  : <div className="ld-trend-empty">ยังไม่มีข้อมูลน้ำหนัก — กด "บันทึกวันนี้" เพื่อเริ่มแทร็ก</div>
-                }
+                {weightTrendData.length >= 2 ? (
+                  <WeightSparkline data={weightTrendData} />
+                ) : weightTrendData.length === 1 ? (
+                  <div className="ld-trend-single">
+                    <span>น้ำหนักเฉลี่ยล่าสุด</span>
+                    <strong>{Math.round(weightTrendData[0].avg)} กรัม</strong>
+                    <span className="ld-trend-single-date">{fmtDate(weightTrendData[0].date)}</span>
+                  </div>
+                ) : (
+                  <div className="ld-trend-empty">ยังไม่มีข้อมูลน้ำหนัก — กด "บันทึกวันนี้" เพื่อเริ่มแทร็ก</div>
+                )}
               </div>
             )}
 

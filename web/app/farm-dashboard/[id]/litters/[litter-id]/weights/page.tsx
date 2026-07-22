@@ -75,6 +75,12 @@ export default function LitterWeightsPage() {
       }));
       const { error } = await supabase.from('pet_weights').insert(inserts);
       if (error) throw error;
+
+      // keep pets.weight in sync so the litter detail page badge reflects the latest recorded weight
+      await Promise.all(entries.map(([petId, w]) =>
+        supabase.from('pets').update({ weight: parseFloat(w) }).eq('id', parseInt(petId))
+      ));
+
       setSavedIds(new Set(entries.map(([id]) => parseInt(id))));
       alert(`บันทึกน้ำหนัก ${entries.length} ตัวเรียบร้อยแล้ว`);
       router.push(`/farm-dashboard/${farmId}/litters/${litterId}`);
@@ -162,19 +168,19 @@ export default function LitterWeightsPage() {
                   <div className="lw-pet-info">
                     <div className="lw-pet-name">{baby.name || 'ยังไม่ตั้งชื่อ'}</div>
                     <span className={`lw-pet-gender ${isMale ? 'm' : 'f'}`} style={{ display:'inline-flex', alignItems:'center', gap:3 }}><img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:10,height:10,objectFit:'contain'}} />{isMale ? 'ผู้' : 'เมีย'}</span>
-                    {baby.weight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {baby.weight} กก.</div>}
+                    {baby.weight && <div className="lw-pet-prev">น้ำหนักล่าสุด: {baby.weight} กรัม</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <input
                       type="number"
-                      step="0.001"
+                      step="1"
                       min="0"
                       className="lw-weight-input"
-                      placeholder="0.00"
+                      placeholder="0"
                       value={val}
                       onChange={e => setWeights(w => ({ ...w, [baby.id]: e.target.value }))}
                     />
-                    <div className="lw-weight-unit">กก.</div>
+                    <div className="lw-weight-unit">กรัม</div>
                   </div>
                 </div>
               );

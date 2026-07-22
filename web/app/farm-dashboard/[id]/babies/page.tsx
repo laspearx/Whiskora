@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -25,6 +25,8 @@ export default function BabyDashboardPage() {
   const [babies, setBabies] = useState<any[]>([]);
   const [litters, setLitters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +55,49 @@ export default function BabyDashboardPage() {
     };
     load();
   }, [farmId, router]);
+
+  const renderBabyThumb = (baby: any) => {
+    const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
+    return (
+      <Link key={baby.id} href={`/pets/${baby.id}`} className="bd-baby-thumb">
+        <div className="bd-baby-photo">
+          {baby.image_url
+            ? <img src={baby.image_url} alt={baby.name} />
+            : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain', opacity: 0.4 }} />
+          }
+          <div
+            className={`bd-baby-upload ${uploadingId === baby.id ? 'bd-baby-uploading' : ''}`}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
+          >
+            {uploadingId === baby.id
+              ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
+              : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            }
+          </div>
+          <input type="file" accept="image/*" style={{ display: 'none' }}
+            ref={el => { fileRefs.current[baby.id] = el; }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
+          />
+        </div>
+        <span className="bd-baby-name">{baby.name || '?'}</span>
+      </Link>
+    );
+  };
+
+  const handlePhotoUpload = async (baby: any, file: File) => {
+    setUploadingId(baby.id);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${farmId}/${baby.id}/photo.${ext}`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(filePath, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(filePath);
+      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', baby.id);
+      setBabies(prev => prev.map(b => b.id === baby.id ? { ...b, image_url: publicUrl } : b));
+    } catch (e: any) {
+      alert('อัพโหลดไม่สำเร็จ: ' + e.message);
+    } finally { setUploadingId(null); }
+  };
 
   if (isLoading) return <PageLoader />;
 
@@ -109,10 +154,12 @@ export default function BabyDashboardPage() {
         /* Baby thumbnail strip */
         .bd-babies { display: flex; gap: 8px; flex-wrap: wrap; }
         .bd-baby-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; text-decoration: none; }
-        .bd-baby-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .bd-baby-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
         .bd-baby-photo img { width: 100%; height: 100%; object-fit: cover; }
         .bd-baby-name { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .bd-more-chip { width: 52px; height: 52px; border-radius: 50%; background: ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: ${F.muted}; flex-shrink: 0; }
+        .bd-baby-upload { position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .bd-baby-upload:hover { background: ${F.pinkSoft}; }
+        .bd-baby-uploading { opacity: 0.5; pointer-events: none; }
 
         /* No litter section */
         .bd-nolitter { background: white; border: 1px dashed ${F.lineMid}; border-radius: 20px; padding: 18px; margin-bottom: 12px; }
@@ -171,8 +218,6 @@ export default function BabyDashboardPage() {
               {litterIds.map(litId => {
                 const litter = litterMap.get(parseInt(litId));
                 const kids = grouped[litId];
-                const preview = kids.slice(0, 5);
-                const extra = kids.length - preview.length;
                 const born = litter?.status === 'คลอดแล้ว';
                 const dateLabel = born && litter?.actual_birth_date
                   ? `คลอด ${fmtDate(litter.actual_birth_date)}`
@@ -195,26 +240,7 @@ export default function BabyDashboardPage() {
 
                     {/* Baby thumbnails */}
                     <div className="bd-babies" style={{ marginBottom: 14 }}>
-                      {preview.map(baby => {
-                        const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
-                        return (
-                          <Link key={baby.id} href={`/pets/${baby.id}`} className="bd-baby-thumb">
-                            <div className="bd-baby-photo">
-                              {baby.image_url
-                                ? <img src={baby.image_url} alt={baby.name} />
-                                : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain', opacity: 0.4 }} />
-                              }
-                            </div>
-                            <span className="bd-baby-name">{baby.name || '?'}</span>
-                          </Link>
-                        );
-                      })}
-                      {extra > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, width: 60 }}>
-                          <div className="bd-more-chip">+{extra}</div>
-                          <span style={{ fontSize: 10, color: F.muted, fontWeight: 600 }}>อื่นๆ</span>
-                        </div>
-                      )}
+                      {kids.map(baby => renderBabyThumb(baby))}
                     </div>
 
                     {/* Action buttons */}
@@ -239,20 +265,7 @@ export default function BabyDashboardPage() {
                 <div className="bd-nolitter">
                   <div className="bd-nolitter-title">ไม่ระบุครอก ({noLitter.length} ตัว)</div>
                   <div className="bd-babies">
-                    {noLitter.map(baby => {
-                      const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
-                      return (
-                        <Link key={baby.id} href={`/pets/${baby.id}`} className="bd-baby-thumb">
-                          <div className="bd-baby-photo">
-                            {baby.image_url
-                              ? <img src={baby.image_url} alt={baby.name} />
-                              : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain', opacity: 0.4 }} />
-                            }
-                          </div>
-                          <span className="bd-baby-name">{baby.name || '?'}</span>
-                        </Link>
-                      );
-                    })}
+                    {noLitter.map(baby => renderBabyThumb(baby))}
                   </div>
                 </div>
               )}
