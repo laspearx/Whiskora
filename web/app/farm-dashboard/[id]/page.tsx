@@ -133,8 +133,6 @@ function FarmDashboardContent() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(true);
 
-  const [showAddAnimalSheet, setShowAddAnimalSheet] = useState(false);
-  const [showApptSheet,      setShowApptSheet]      = useState(false);
   const [showAllTasks,       setShowAllTasks]       = useState(false);
   const [uploadingCover,  setUploadingCover]  = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -510,45 +508,13 @@ function FarmDashboardContent() {
         .fd-fin-empty-btn { flex:1; min-width:120px; padding:10px; border-radius:10px; font-size:12px; font-weight:500; border:1.5px dashed ${F.lineMid}; background:white; color:${F.inkSoft}; text-decoration:none; text-align:center; cursor:pointer; transition:all .15s; display:block; }
         .fd-fin-empty-btn:hover { border-color:${F.pink}; color:${F.pink}; background:${F.pinkSoft}; }
 
-        /* Action sheet */
-        .fd-sheet-overlay { position:fixed; inset:0; z-index:60; background:rgba(31,26,28,.4); backdrop-filter:blur(4px); display:flex; align-items:flex-end; justify-content:center; }
-        .fd-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; }
-        @keyframes fd-sheet-up { from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .fd-sheet { animation:fd-sheet-up .2s ease; }
-        .fd-sheet-handle { width:36px; height:3px; border-radius:2px; background:#E5E7EB; margin:0 auto 14px; }
-        .fd-sheet-title { font-size:12px; font-weight:500; color:${F.muted}; margin-bottom:12px; text-align:center; text-transform:uppercase; letter-spacing:.05em; }
-        .fd-sheet-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-        .fd-sheet-action { display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px; border-radius:10px; border:1px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
-        .fd-sheet-action:hover { background:${F.pinkSoft}; border-color:${F.pinkBorder}; }
-        .fd-sheet-action img { width:36px; height:36px; object-fit:contain; }
-        .fd-sheet-action span { font-size:9px; font-weight:500; color:${F.ink}; text-align:center; line-height:1.3; }
-        .fd-sheet-close { margin-top:12px; width:100%; padding:11px; border-radius:10px; border:none; background:#F3F4F6; color:${F.inkSoft}; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
-
-        /* ─── Bottom Nav ─── */
-        .fd-nav { position:fixed; bottom:0; left:0; right:0; z-index:55; background:rgba(255,255,255,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid rgba(232,70,119,.10); box-shadow:0 -4px 24px rgba(31,26,28,.07); padding-bottom:env(safe-area-inset-bottom,0px); }
-        .fd-nav-inner { display:flex; align-items:stretch; height:68px; }
-        .fd-nav-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; text-decoration:none; color:${F.inkSoft}; border:none; background:none; font-family:inherit; cursor:pointer; }
-        .fd-tab-icon { width:72px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; transition:background .15s; }
-        .fd-nav-tab:active .fd-tab-icon { background:rgba(232,70,119,.09); }
-        .fd-tab-icon img { width:48px; height:48px; object-fit:contain; }
-        .fd-nav-tab span { font-size:10px; font-weight:400; line-height:1.2; }
-
-        /* ─── Add Animal mini sheet ─── */
-        .fd-add-sheet { background:white; border-radius:20px 20px 0 0; padding:18px 16px calc(env(safe-area-inset-bottom,0px)+20px); width:100%; max-width:480px; animation:fd-sheet-up .2s ease; }
-        .fd-add-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; max-width:300px; margin-left:auto; margin-right:auto; }
-        .fd-add-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:20px 12px 16px; border-radius:16px; border:1.5px solid ${F.line}; background:white; text-decoration:none; cursor:pointer; transition:all .15s; }
-        .fd-add-card:hover { border-color:${F.pinkBorder}; background:${F.pinkSoft}; }
-        .fd-add-card img { width:64px; height:64px; object-fit:contain; }
-        .fd-add-card-title { font-size:13px; font-weight:600; color:${F.ink}; text-align:center; line-height:1.3; }
-        .fd-add-card-sub { font-size:10px; color:${F.muted}; font-weight:400; text-align:center; line-height:1.4; }
-
         /* ─── Misc ─── */
         .fd-empty-sm { font-size:11px; color:${F.muted}; font-weight:400; text-align:center; padding:8px 0; }
         .fd-link-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:${F.pink}; background:${F.pinkSoft}; border:1px solid ${F.pinkBorder}; padding:5px 12px; border-radius:16px; text-decoration:none; transition:all .15s; }
         .fd-link-pill:hover { background:#fde7ef; }
 
         @media (max-width:600px) { .fd-body { padding:8px 8px 0; gap:8px; } }
-        @media (prefers-reduced-motion:reduce) { .fd-hdr, .fd-sec, .fd-sheet { animation:none!important; transition:none!important; } }
+        @media (prefers-reduced-motion:reduce) { .fd-hdr, .fd-sec { animation:none!important; transition:none!important; } }
       `}</style>
 
       {/* ── Crop modal ── */}
@@ -958,79 +924,6 @@ function FarmDashboardContent() {
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}
 
-      {/* ── Add Animal sheet ── */}
-      {showAddAnimalSheet && (
-        <div className="fd-sheet-overlay" onClick={() => setShowAddAnimalSheet(false)}>
-          <div className="fd-add-sheet" onClick={e => e.stopPropagation()}>
-            <div className="fd-sheet-handle" />
-            <div className="fd-sheet-title">เพิ่มสัตว์เลี้ยง</div>
-            <div className="fd-add-grid">
-              <Link href={`/farm-dashboard/${farmId}/pets/create`} className="fd-add-card" onClick={() => setShowAddAnimalSheet(false)}>
-                <img src="/icons/icon-foster-home.png" alt="" />
-                <div className="fd-add-card-title">เพิ่มทีละตัว</div>
-                <div className="fd-add-card-sub">บันทึกข้อมูลพร้อมประวัติครบถ้วน</div>
-              </Link>
-              <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} className="fd-add-card" onClick={() => setShowAddAnimalSheet(false)}>
-                <img src="/icons/icon-vet-care.png" alt="" />
-                <div className="fd-add-card-title">เพิ่มหลายตัว</div>
-                <div className="fd-add-card-sub">เพิ่มลูกสัตว์ทั้งครอกในครั้งเดียว</div>
-              </Link>
-            </div>
-            <button className="fd-sheet-close" onClick={() => setShowAddAnimalSheet(false)}>ปิด</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Appointment type sheet ── */}
-      {showApptSheet && (
-        <div className="fd-sheet-overlay" onClick={() => setShowApptSheet(false)}>
-          <div className="fd-add-sheet" onClick={e => e.stopPropagation()}>
-            <div className="fd-sheet-handle" />
-            <div className="fd-sheet-title">เลือกประเภท</div>
-            <div className="fd-add-grid">
-              <Link href={`/farm-dashboard/${farmId}/appointments/create?from=${fromPage}`} className="fd-add-card" onClick={() => setShowApptSheet(false)}>
-                <img src="/icons/icon-calendar.png" alt="" />
-                <div className="fd-add-card-title">นัดหมาย</div>
-                <div className="fd-add-card-sub">บันทึกนัดส่งมอบ ตรวจสุขภาพ กรูมมิ่ง ฯลฯ</div>
-              </Link>
-              <Link href={`/farm-dashboard/${farmId}/appointments/create?type=activity&from=${fromPage}`} className="fd-add-card" onClick={() => setShowApptSheet(false)}>
-                <img src="/icons/icon-health.png" alt="" />
-                <div className="fd-add-card-title">กิจกรรม</div>
-                <div className="fd-add-card-sub">บันทึกกิจกรรมประจำวัน ชั่งน้ำหนัก ฝึกพฤติกรรม ฯลฯ</div>
-              </Link>
-            </div>
-            <button className="fd-sheet-close" onClick={() => setShowApptSheet(false)}>ปิด</button>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════
-          Bottom Navigation (Page tabs)
-      ════════════════════════════════ */}
-      <nav className="fd-nav" aria-label="เมนูฟาร์ม">
-        <div className="fd-nav-inner">
-          <button className="fd-nav-tab" onClick={() => setShowAddAnimalSheet(true)}>
-            <div className="fd-tab-icon"><img src="/icons/icon-tab-add.png" alt="" /></div>
-            <span>เพิ่มสัตว์</span>
-          </button>
-          <Link href={`/farm-dashboard/${farmId}/litters/create?from=${fromPage}`} className="fd-nav-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
-            <span>จับคู่บรีด</span>
-          </Link>
-          <Link href={`/farm-dashboard/${farmId}/babies`} className="fd-nav-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-feeding.png" alt="" /></div>
-            <span>เบบี๋</span>
-          </Link>
-          <Link href="/profile/finance" className="fd-nav-tab">
-            <div className="fd-tab-icon"><img src="/icons/icon-wallet.png" alt="" /></div>
-            <span>รายรับรายจ่าย</span>
-          </Link>
-          <button className="fd-nav-tab" onClick={() => setShowApptSheet(true)}>
-            <div className="fd-tab-icon"><img src="/icons/icon-calendar.png" alt="" /></div>
-            <span>นัดหมาย</span>
-          </button>
-        </div>
-      </nav>
     </>
   );
 }
