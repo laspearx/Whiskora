@@ -40,7 +40,6 @@ export default function PublicFarmProfile() {
   const [farm, setFarm] = useState<any>(null);
   const [owner, setOwner] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
-  const [litters, setLitters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -94,10 +93,6 @@ export default function PublicFarmProfile() {
           .from('pets').select('id, name, breed, image_url, gender, status, price, birth_date')
           .eq('farm_id', farmId);
         if (petsData) setPets(petsData);
-
-        const { data: littersData } = await supabase
-          .from('litters').select('id, status').eq('farm_id', farmId);
-        if (littersData) setLitters(littersData);
       } catch (error) {
         console.error("Error fetching farm:", error);
         alert("ไม่พบข้อมูลฟาร์มนี้ครับ");
@@ -114,15 +109,6 @@ export default function PublicFarmProfile() {
 
   // ─── สถานะการยืนยัน: verified = ฟาร์มคุณภาพ / ไม่ verified = โฮมบรีด ───
   const isVerified = !!farm?.is_verified;
-
-  // ─── สถิติ (คำนวณจากข้อมูลจริง) ───
-  const stats = {
-    total: pets.length,
-    ready: pets.filter(p => p.status === 'พร้อมย้ายบ้าน').length,
-    breeders: pets.filter(p => ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'].includes(p.status)).length,
-    neutered: pets.filter(p => p.status === 'ทำหมัน / ปลดระวาง').length,
-    litters: litters.length,
-  };
 
   const readyPets = pets.filter(p => p.status === 'พร้อมย้ายบ้าน');
 
@@ -193,13 +179,6 @@ export default function PublicFarmProfile() {
         .fp-quality-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .fp-quality-title { font-family: inherit; font-size: 13px; font-weight: 600; color: ${F.ink}; }
         .fp-quality-sub { font-size: 11px; font-weight: 400; color: ${F.inkSoft}; line-height: 1.5; margin-top: 2px; }
-        /* ── Stats ── */
-        .fp-stats-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; margin-top: 16px; }
-        .fp-stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .fp-stat { text-align: center; }
-        .fp-stat-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: ${F.muted}; margin-bottom: 6px; }
-        .fp-stat-num { font-family: inherit; font-size: 28px; font-weight: 700; line-height: 1; }
-        .fp-stat-unit { font-size: 11px; color: ${F.muted}; font-weight: 400; margin-top: 3px; }
         /* ── Section ── */
         .fp-section { margin-top: 20px; padding: 0 24px; }
         .fp-section-card { background: white; border: 1px solid ${F.line}; border-radius: 18px; padding: 22px; }
@@ -264,11 +243,9 @@ export default function PublicFarmProfile() {
         @media (max-width: 720px) {
           .fp-bio-card { grid-template-columns: 1fr; }
           .fp-quality { border-left: none; border-top: 1px solid ${F.pinkBorder}; padding-left: 0; padding-top: 14px; }
-          .fp-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
           .fp-identity, .fp-section { padding-left: 16px; padding-right: 16px; }
         }
         @media (max-width: 420px) {
-          .fp-stats-grid { grid-template-columns: repeat(2, 1fr); }
           .fp-name { font-size: 22px; }
         }
       `}</style>
@@ -331,37 +308,6 @@ export default function PublicFarmProfile() {
                 <div>
                   <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
                   <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="fp-stats-card">
-              <div className="fp-stats-grid">
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ทั้งหมด</div>
-                  <div className="fp-stat-num" style={{ color: F.pink }}>{stats.total}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">พร้อมย้ายบ้าน</div>
-                  <div className="fp-stat-num" style={{ color: '#16A34A' }}>{stats.ready}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">พ่อแม่พันธุ์</div>
-                  <div className="fp-stat-num" style={{ color: '#7C3AED' }}>{stats.breeders}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ทำหมันแล้ว</div>
-                  <div className="fp-stat-num" style={{ color: '#D97706' }}>{stats.neutered}</div>
-                  <div className="fp-stat-unit">ตัว</div>
-                </div>
-                <div className="fp-stat">
-                  <div className="fp-stat-label">ครอกทั้งหมด</div>
-                  <div className="fp-stat-num" style={{ color: '#2563EB' }}>{stats.litters}</div>
-                  <div className="fp-stat-unit">ครอก</div>
                 </div>
               </div>
             </div>
