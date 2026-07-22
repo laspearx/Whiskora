@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { speciesTh } from "@/lib/species";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
@@ -21,18 +20,23 @@ const F = {
   tealSoft: '#F0FDFA',
 };
 
+const READY_STATUSES = ['พร้อมย้ายบ้าน', 'เปิดจอง'];
+
 // ─── Elegant Minimal Icons ──────────────────────────────────────────────────
 const Icon = {
   Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-  ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
   Farm: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Pin: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Paw: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
+  Verified: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="#E84677"><path d="M12 2l2.4 1.8 3 .2.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3 .2L12 22l-2.4-1.8-3-.2-.9-2.9L3.3 15l.9-2.9-.9-2.9 2.4-1.8.9-2.9 3-.2L12 2z"/><path d="M9.5 12.5l1.8 1.8 3.7-3.7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Male: () => <img src="/icons/icon-men.png" alt="male" style={{width:22,height:22,objectFit:'contain'}} />,
   Female: () => <img src="/icons/icon-women.png" alt="female" style={{width:22,height:22,objectFit:'contain'}} />,
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
 export default function FarmHubPage() {
-  const router = useRouter();
+  const [viewMode, setViewMode] = useState<'farms' | 'pets'>('farms');
+  const [farms, setFarms] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,39 +52,36 @@ export default function FarmHubPage() {
   ];
 
   useEffect(() => {
-    fetchAvailablePets();
-  }, [activePetType]);
+    fetchData();
+  }, []);
 
-  const fetchAvailablePets = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from("pets")
-        .select("*, farms(farm_name, district, province)")
-        .in("status", ["พร้อมย้ายบ้าน", "เปิดจอง"])
-        .order("created_at", { ascending: false });
-
-      if (activePetType !== "ทั้งหมด") {
-        query = query.eq("species", activePetType);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setPets(data || []);
+      const [{ data: farmsData, error: farmsErr }, { data: petsData, error: petsErr }] = await Promise.all([
+        supabase.from("farms").select("id, farm_name, cover_url, image_url, species, province, district, is_verified"),
+        supabase.from("pets")
+          .select("*, farms(farm_name, district, province)")
+          .in("status", READY_STATUSES)
+          .order("created_at", { ascending: false }),
+      ]);
+      if (farmsErr) throw farmsErr;
+      if (petsErr) throw petsErr;
+      setFarms(farmsData || []);
+      setPets(petsData || []);
     } catch (error) {
-      console.error("Error fetching pets:", error);
+      console.error("Error fetching pet market data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const q = searchQuery.toLowerCase().trim();
-  const filteredPets = !q ? pets : pets.filter(p =>
-    p.breed?.toLowerCase().includes(q) ||
-    p.farms?.farm_name?.toLowerCase().includes(q) ||
-    p.farms?.address?.toLowerCase().includes(q) ||
-    speciesTh(p.species)?.toLowerCase().includes(q)
-  );
+  function farmLocation(farm: any): string {
+    if (!farm) return '';
+    const { province, district } = farm;
+    if (province === 'กรุงเทพมหานคร') return district ? `เขต${district}` : 'กรุงเทพฯ';
+    return province || '';
+  }
 
   function calcAge(birthDate: string | null) {
     if (!birthDate) return null;
@@ -93,13 +94,6 @@ export default function FarmHubPage() {
     if (months > 0) return `${months} เดือน`;
     const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
     return days > 0 ? `${days} วัน` : null;
-  }
-
-  function farmLocation(farm: any): string {
-    if (!farm) return '';
-    const { province, district } = farm;
-    if (province === 'กรุงเทพมหานคร') return district ? `เขต${district}` : 'กรุงเทพฯ';
-    return province || '';
   }
 
   function thaiBreedName(breed: string | null, species?: string): string {
@@ -117,12 +111,38 @@ export default function FarmHubPage() {
     return breed;
   }
 
+  // ─── สัตว์เลี้ยงพร้อมขาย ───
+  const q = searchQuery.toLowerCase().trim();
+  const petTypeFiltered = activePetType === "ทั้งหมด" ? pets : pets.filter(p => p.species === activePetType);
+  const filteredPets = !q ? petTypeFiltered : petTypeFiltered.filter(p =>
+    p.breed?.toLowerCase().includes(q) ||
+    p.farms?.farm_name?.toLowerCase().includes(q) ||
+    p.farms?.address?.toLowerCase().includes(q) ||
+    speciesTh(p.species)?.toLowerCase().includes(q)
+  );
+
+  // ─── ฟาร์มพาร์ทเนอร์ ───
+  const readyCountForFarm = (farmId: number) =>
+    petTypeFiltered.filter(p => p.farm_id === farmId).length;
+
+  const farmTypeFiltered = activePetType === "ทั้งหมด" ? farms : farms.filter(f => f.species === activePetType);
+  const searchedFarms = !q ? farmTypeFiltered : farmTypeFiltered.filter(f =>
+    f.farm_name?.toLowerCase().includes(q) || farmLocation(f).toLowerCase().includes(q)
+  );
+
+  const sortedFarms = [...searchedFarms].sort((a, b) => {
+    const aComplete = !!(a.cover_url || a.image_url) && !!a.province;
+    const bComplete = !!(b.cover_url || b.image_url) && !!b.province;
+    if (aComplete !== bComplete) return aComplete ? -1 : 1;
+    return readyCountForFarm(b.id) - readyCountForFarm(a.id);
+  });
+
   return (
     <>
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
+
         .premium-card {
           background: #ffffff;
           border: 1px solid ${F.line};
@@ -134,25 +154,34 @@ export default function FarmHubPage() {
           box-shadow: 0 12px 30px rgba(0,0,0,0.05);
           transform: translateY(-2px);
         }
+        .mode-tab {
+          flex: 1;
+          padding: 11px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+          transition: all .18s ease;
+          font-family: inherit;
+        }
       `}</style>
 
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-24 animate-in fade-in duration-500" style={{ fontFamily: 'var(--font-ui)', color: F.ink }}>
-        
+
         {/* 🔙 Header & Search */}
-        <div className="mb-10 space-y-8">
+        <div className="mb-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Pet Market</h1>
-                <p className="text-sm font-medium" style={{ color: F.muted }}>รวมเด็กๆ พร้อมย้ายบ้านจากฟาร์มคุณภาพ</p>
-              </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Pet Market</h1>
+              <p className="text-sm font-medium" style={{ color: F.muted }}>รวมฟาร์มพาร์ทเนอร์และเด็กๆ พร้อมย้ายบ้านจากฟาร์มคุณภาพ</p>
             </div>
-            
+
             <div className="relative w-full md:max-w-md">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
-              <input 
-                type="text" 
-                placeholder="ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."
+              <input
+                type="text"
+                placeholder={viewMode === 'farms' ? "ค้นหาฟาร์ม หรือจังหวัด..." : "ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -160,17 +189,35 @@ export default function FarmHubPage() {
             </div>
           </div>
 
-          {/* 🐾 Pet Type Pills (Match with Marketplace) */}
+          {/* 🗂️ Mode switcher: ดูฟาร์ม / ดูสัตว์เลี้ยง */}
+          <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl w-full md:w-auto md:inline-flex">
+            <button
+              className="mode-tab"
+              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              onClick={() => setViewMode('farms')}
+            >
+              ดูฟาร์ม
+            </button>
+            <button
+              className="mode-tab"
+              style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              onClick={() => setViewMode('pets')}
+            >
+              ดูสัตว์เลี้ยง
+            </button>
+          </div>
+
+          {/* 🐾 Pet Type Pills */}
           <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
             {petTypes.map((type) => {
-              const isActive = activePetType === type.value || (activePetType === "ทั้งหมด" && type.label === "ทั้งหมด");
+              const isActive = activePetType === type.value;
               return (
                 <button
                   key={type.label}
                   onClick={() => setActivePetType(type.value)}
                   className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all shrink-0 border ${
                     isActive
-                    ? "bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200" 
+                    ? "bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200"
                     : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -181,13 +228,64 @@ export default function FarmHubPage() {
           </div>
         </div>
 
-        {/* 📦 Pet Grid */}
+        {/* 📦 Content */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="aspect-square bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
             ))}
           </div>
+        ) : viewMode === 'farms' ? (
+          sortedFarms.length === 0 ? (
+            <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+              <div className="text-gray-300 mb-3 flex justify-center"><Icon.ImagePlaceholder /></div>
+              <p className="text-gray-500 font-semibold">ไม่พบฟาร์มในขณะนี้</p>
+              <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือประเภทสัตว์เลี้ยงดูนะครับ</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+              {sortedFarms.map((farm) => {
+                const readyCount = readyCountForFarm(farm.id);
+                const location = farmLocation(farm);
+                const cover = farm.cover_url || farm.image_url;
+                return (
+                  <Link key={farm.id} href={`/farm/${farm.id}`} className="premium-card flex flex-col overflow-hidden group">
+                    <div className="aspect-[16/9] bg-gray-50 relative overflow-hidden border-b border-gray-100">
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt={farm.farm_name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50/50">
+                          <Icon.ImagePlaceholder />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
+                      <div className="absolute bottom-3 left-4 right-4 flex items-center gap-1.5">
+                        <h3 className="text-white text-base font-bold truncate drop-shadow-sm">{farm.farm_name}</h3>
+                        {farm.is_verified && <Icon.Verified />}
+                      </div>
+                    </div>
+
+                    <div className="p-4 md:p-5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
+                        <Icon.Paw />
+                        {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ยังไม่มีตัวพร้อมขาย'}
+                      </div>
+                      {location && (
+                        <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">
+                          <Icon.Pin />
+                          <span className="truncate max-w-[110px]">{location}</span>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )
         ) : filteredPets.length === 0 ? (
           <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.ImagePlaceholder /></div>
@@ -197,25 +295,25 @@ export default function FarmHubPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredPets.map((pet) => (
-              <Link 
-                key={pet.id} 
+              <Link
+                key={pet.id}
                 href={`/pets/${pet.id}`}
                 className="premium-card flex flex-col overflow-hidden group"
               >
                 {/* Pet Image Wrapper (1:1 Square) */}
                 <div className="aspect-square bg-gray-50 relative overflow-hidden border-b border-gray-100">
                   {pet.image_url ? (
-                    <img 
-                      src={pet.image_url} 
-                      alt={pet.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    <img
+                      src={pet.image_url}
+                      alt={pet.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">
                       <Icon.ImagePlaceholder />
                     </div>
                   )}
-                  
+
                   {/* Status Badge */}
                   <div
                     className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md tracking-wider shadow-sm"
