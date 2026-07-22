@@ -43,6 +43,7 @@ export default function LitterWeightsPage() {
   const [notes, setNotes] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [unitOverrides, setUnitOverrides] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -88,7 +89,8 @@ export default function LitterWeightsPage() {
     setIsSaving(true);
     try {
       const inserts = entries.map(([petId, w]) => {
-        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)));
+        const pid = parseInt(petId);
+        const useKg = unitOverrides[pid] ?? useKgFor(latestWeightByPet.get(pid));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -141,7 +143,8 @@ export default function LitterWeightsPage() {
         .lw-pet-prev { font-size: 10px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .lw-weight-input { width: 90px; padding: 9px 10px; border: 1.5px solid ${F.lineMid}; border-radius: 10px; font-size: 15px; font-weight: 700; color: ${F.ink}; text-align: center; outline: none; font-family: inherit; transition: all .15s; }
         .lw-weight-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
-        .lw-weight-unit { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; margin-top: 2px; }
+        .lw-weight-unit-toggle { font-size: 11px; font-weight: 600; color: ${F.pink}; text-align: center; margin-top: 3px; background: none; border: none; cursor: pointer; padding: 2px 4px; font-family: inherit; }
+        .lw-weight-unit-toggle:hover { text-decoration: underline; }
         .lw-actions { display: flex; gap: 12px; margin-top: 24px; }
         .lw-save-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
         .lw-save-btn:hover { background: #D63F6A; }
@@ -181,7 +184,7 @@ export default function LitterWeightsPage() {
               const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
               const val = weights[baby.id] ?? '';
               const latestWeight = latestWeightByPet.get(baby.id);
-              const useKg = useKgFor(latestWeight);
+              const useKg = unitOverrides[baby.id] ?? useKgFor(latestWeight);
               return (
                 <div key={baby.id} className={`lw-pet-row ${val.trim() ? 'filled' : ''}`}>
                   <div className="lw-pet-photo">
@@ -202,7 +205,14 @@ export default function LitterWeightsPage() {
                       value={val}
                       onChange={e => setWeights(w => ({ ...w, [baby.id]: e.target.value }))}
                     />
-                    <div className="lw-weight-unit">{useKg ? 'กก.' : 'กรัม'}</div>
+                    <button
+                      type="button"
+                      className="lw-weight-unit-toggle"
+                      onClick={() => setUnitOverrides(o => ({ ...o, [baby.id]: !useKg }))}
+                      title="แตะเพื่อสลับหน่วย"
+                    >
+                      {useKg ? 'กก.' : 'กรัม'} ⇄
+                    </button>
                   </div>
                 </div>
               );

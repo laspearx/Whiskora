@@ -22,7 +22,9 @@ const BABY_STATUSES = ['เด็ก', 'ยังไม่เปิดจอง'
 const BREEDER_STATUSES = ['พ่อพันธุ์ / แม่พันธุ์', 'พ่อพันธุ์', 'แม่พันธุ์'];
 
 // Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
-const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+// With no prior record to go by, fall back to defaultKg (adult breeders default to kg, babies default to grams).
+const useKgFor = (lastKnownGrams: number | null | undefined, defaultKg = false) =>
+  lastKnownGrams != null ? lastKnownGrams >= 1000 : defaultKg;
 const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
 
 export default function FarmWeightsPage() {
@@ -39,6 +41,7 @@ export default function FarmWeightsPage() {
   const [recordedDate, setRecordedDate] = useState(new Date().toISOString().split('T')[0]);
   const [weights, setWeights] = useState<Record<number, string>>({});
   const [notes, setNotes] = useState('');
+  const [unitOverrides, setUnitOverrides] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +94,8 @@ export default function FarmWeightsPage() {
   const litterIds = Object.keys(babiesByLitter);
 
   const filledCount = Object.values(weights).filter(w => w.trim() !== '').length;
+  const petById = new Map(pets.map(p => [p.id, p]));
+  const defaultKgForPet = (pet: any) => BREEDER_STATUSES.includes(pet?.status);
 
   const handleSave = async () => {
     if (!userId) return;
@@ -99,7 +104,8 @@ export default function FarmWeightsPage() {
     setIsSaving(true);
     try {
       const inserts = entries.map(([petId, w]) => {
-        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)));
+        const pid = parseInt(petId);
+        const useKg = unitOverrides[pid] ?? useKgFor(latestWeightByPet.get(pid), defaultKgForPet(petById.get(pid)));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -122,7 +128,7 @@ export default function FarmWeightsPage() {
     const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
     const val = weights[pet.id] ?? '';
     const latestWeight = latestWeightByPet.get(pet.id);
-    const useKg = useKgFor(latestWeight);
+    const useKg = unitOverrides[pet.id] ?? useKgFor(latestWeight, defaultKgForPet(pet));
     return (
       <div key={pet.id} className={`fw-pet-row ${val.trim() ? 'filled' : ''}`}>
         <div className="fw-pet-photo">
@@ -143,7 +149,14 @@ export default function FarmWeightsPage() {
             value={val}
             onChange={e => setWeights(w => ({ ...w, [pet.id]: e.target.value }))}
           />
-          <div className="fw-weight-unit">{useKg ? 'กก.' : 'กรัม'}</div>
+          <button
+            type="button"
+            className="fw-weight-unit-toggle"
+            onClick={() => setUnitOverrides(o => ({ ...o, [pet.id]: !useKg }))}
+            title="แตะเพื่อสลับหน่วย"
+          >
+            {useKg ? 'กก.' : 'กรัม'} ⇄
+          </button>
         </div>
       </div>
     );
@@ -182,7 +195,8 @@ export default function FarmWeightsPage() {
         .fw-pet-prev { font-size: 10px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .fw-weight-input { width: 80px; padding: 8px 10px; border: 1.5px solid ${F.lineMid}; border-radius: 10px; font-size: 14px; font-weight: 700; color: ${F.ink}; text-align: center; outline: none; font-family: inherit; transition: all .15s; }
         .fw-weight-input:focus { border-color: ${F.pink}; box-shadow: 0 0 0 3px ${F.pinkSoft}; }
-        .fw-weight-unit { font-size: 10px; font-weight: 600; color: ${F.muted}; text-align: center; margin-top: 2px; }
+        .fw-weight-unit-toggle { font-size: 10px; font-weight: 600; color: ${F.pink}; text-align: center; margin-top: 3px; background: none; border: none; cursor: pointer; padding: 2px 4px; font-family: inherit; }
+        .fw-weight-unit-toggle:hover { text-decoration: underline; }
         .fw-empty { text-align: center; padding: 40px 20px; color: ${F.muted}; font-size: 13px; font-weight: 600; background: white; border: 1px dashed ${F.lineMid}; border-radius: 20px; }
         .fw-actions { display: flex; gap: 12px; margin-top: 8px; }
         .fw-save-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
