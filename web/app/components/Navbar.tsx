@@ -22,7 +22,7 @@ const PRIMARY: { key: string; label: string; href: Href }[] = [
 
 const EXPLORE: { key: string; label: string; sub: string; href: Href }[] = [
   { key: 'farm',        label: 'ฟาร์มสัตว์เลี้ยง',   sub: 'ค้นหาฟาร์มที่ตรวจสอบแล้ว',      href: '/farm-hub' },
-  { key: 'marketplace', label: 'ตลาดสัตว์เลี้ยง',    sub: 'ซื้อขายจากผู้ขายที่ยืนยัน',      href: '/marketplace' },
+  { key: 'marketplace', label: 'เพ็ทช็อป',           sub: 'ซื้อขายจากผู้ขายที่ยืนยัน',      href: '/marketplace' },
   { key: 'services',    label: 'คลินิกและบริการ',     sub: 'จองคลินิก กรูมมิ่ง ฝากเลี้ยง',   href: '/service-hub' },
   { key: 'community',   label: 'ชุมชนคนรักสัตว์',    sub: 'แชร์ประสบการณ์ ขอคำแนะนำ',       href: '/community' },
   { key: 'tools',       label: 'เครื่องมือ',          sub: 'คำนวณอายุ แคลอรี วันคลอด',        href: '/pet-tools' },

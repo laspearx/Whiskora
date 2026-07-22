@@ -27,7 +27,6 @@ const Icon = {
   Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
   Farm: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Pin: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-  Paw: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 7.5C11.5 8.88 10.38 10 9 10S6.5 8.88 6.5 7.5 7.62 5 9 5s2.5 1.12 2.5 2.5zM17.5 7.5C17.5 8.88 16.38 10 15 10s-2.5-1.12-2.5-2.5S13.62 5 15 5s2.5 1.12 2.5 2.5zM4.5 13C4.5 14.38 3.38 15.5 2 15.5S-.5 14.38-.5 13 .62 10.5 2 10.5 4.5 11.62 4.5 13zM22 13c0 1.38-1.12 2.5-2.5 2.5S17 14.38 17 13s1.12-2.5 2.5-2.5S22 11.62 22 13zM17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.79.05c-.11.02-.22.05-.33.09-.7.24-1.28.78-1.75 1.32-.87 1.02-1.6 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02.94 1.99 2.04 2.5.63.29 1.33.4 2.03.4h.08c.3 0 .59-.02.89-.07l.06-.01c.61-.1 1.2-.29 1.8-.56.59.27 1.19.47 1.8.56l.06.01c.3.05.59.07.89.07h.08c.7 0 1.4-.11 2.03-.4 1.1-.51 1.75-1.48 2.04-2.5.3-2.03-1.31-3.48-2.62-4.79z"/></svg>,
   Verified: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="#E84677"><path d="M12 2l2.4 1.8 3 .2.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3 .2L12 22l-2.4-1.8-3-.2-.9-2.9L3.3 15l.9-2.9-.9-2.9 2.4-1.8.9-2.9 3-.2L12 2z"/><path d="M9.5 12.5l1.8 1.8 3.7-3.7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Male: () => <img src="/icons/icon-men.png" alt="male" style={{width:22,height:22,objectFit:'contain'}} />,
   Female: () => <img src="/icons/icon-women.png" alt="female" style={{width:22,height:22,objectFit:'contain'}} />,
@@ -249,8 +248,8 @@ export default function FarmHubPage() {
                 const location = farmLocation(farm);
                 const cover = farm.cover_url || farm.image_url;
                 return (
-                  <Link key={farm.id} href={`/farm/${farm.id}`} className="premium-card flex flex-col overflow-hidden group">
-                    <div className="aspect-[16/9] bg-gray-50 relative overflow-hidden border-b border-gray-100">
+                  <Link key={farm.id} href={`/farm/${farm.id}`} className="premium-card flex flex-col overflow-visible group">
+                    <div className="aspect-[16/9] bg-gray-50 relative overflow-hidden border-b border-gray-100 rounded-t-[1.25rem]">
                       {cover ? (
                         <img
                           src={cover}
@@ -262,24 +261,32 @@ export default function FarmHubPage() {
                           <Icon.ImagePlaceholder />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
-                      <div className="absolute bottom-3 left-4 right-4 flex items-center gap-1.5">
-                        <h3 className="text-white text-base font-bold truncate drop-shadow-sm">{farm.farm_name}</h3>
-                        {farm.is_verified && <Icon.Verified />}
+                      <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-full border-[3px] border-white overflow-hidden shadow-md" style={{ background: F.pinkSoft }}>
+                        {farm.image_url ? (
+                          <img src={farm.image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <img src="/icons/icon-paw-circle-white.png" alt="" className="w-full h-full object-contain p-2.5" />
+                        )}
                       </div>
                     </div>
 
-                    <div className="p-4 md:p-5 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
-                        <Icon.Paw />
-                        {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ยังไม่มีตัวพร้อมขาย'}
+                    <div className="pt-8 pb-4 px-4 md:px-5">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <h3 className="text-[15px] font-bold text-gray-900 truncate">{farm.farm_name}</h3>
+                        <img src="/icons/icon-paw-pink.png" alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                        {farm.is_verified && <Icon.Verified />}
                       </div>
-                      {location && (
-                        <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">
-                          <Icon.Pin />
-                          <span className="truncate max-w-[110px]">{location}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
+                          {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ยังไม่มีตัวพร้อมขาย'}
                         </div>
-                      )}
+                        {location && (
+                          <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">
+                            <Icon.Pin />
+                            <span className="truncate max-w-[110px]">{location}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );
