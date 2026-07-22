@@ -109,7 +109,7 @@ export default function RecordBirthPage() {
         .rb-field:last-child { margin-bottom: 0; }
         .rb-flabel { display: block; font-size: 11px; font-weight: 700; color: ${F.muted}; margin-bottom: 5px; margin-left: 1px; }
         .rb-gender { display: flex; gap: 8px; }
-        .rb-gender-btn { flex: 1; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; }
+        .rb-gender-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 10px; border-radius: 11px; border: 1.5px solid ${F.lineMid}; background: white; cursor: pointer; font-size: 13px; font-weight: 700; color: ${F.muted}; transition: all .15s; font-family: inherit; white-space: nowrap; }
         .rb-gender-btn.m.active { border-color: ${F.blue}; background: ${F.blue}; color: white; }
         .rb-gender-btn.f.active { border-color: ${F.pink}; background: ${F.pink}; color: white; }
         .rb-plan { display: flex; gap: 8px; }
@@ -168,8 +168,8 @@ export default function RecordBirthPage() {
                   <div className="rb-field">
                     <label className="rb-flabel">เพศ</label>
                     <div className="rb-gender">
-                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวผู้</button>
-                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />ตัวเมีย</button>
+                      <button type="button" className={`rb-gender-btn m ${kitten.gender === 'male' || kitten.gender === 'ตัวผู้' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'male')}><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',flexShrink:0,marginRight:4}} />ตัวผู้</button>
+                      <button type="button" className={`rb-gender-btn f ${kitten.gender === 'female' || kitten.gender === 'ตัวเมีย' ? 'active' : ''}`} onClick={() => updateKitten(kitten.tempId, 'gender', 'female')}><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',flexShrink:0,marginRight:4}} />ตัวเมีย</button>
                     </div>
                   </div>
                   <div className="rb-field">
