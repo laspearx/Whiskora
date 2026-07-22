@@ -260,7 +260,7 @@ function FarmDashboardContent() {
   }
   const noImage = pets.filter(p => !p.image_url).length;
   if (noImage > 0) {
-    allTasks.push({ id: 'no-img', urgency: 'info', label: `สัตว์ ${noImage} ตัวยังไม่มีรูปภาพ`, action: 'เพิ่มรูป', href: `/farm-dashboard/${farmId}/pets`, icon: '/icons/icon-my-pets.png' });
+    allTasks.push({ id: 'no-img', urgency: 'info', label: `สัตว์ ${noImage} ตัวยังไม่มีรูปภาพ`, action: 'เพิ่มรูป', href: `/farm-dashboard/${farmId}/babies`, icon: '/icons/icon-my-pets.png' });
   }
 
   const urgOrd = { overdue: 0, today: 1, upcoming: 2, info: 3 } as const;
