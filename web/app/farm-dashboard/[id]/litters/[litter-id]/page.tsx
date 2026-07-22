@@ -87,53 +87,36 @@ export default function LitterDetailPage() {
     } finally { setUploadingId(null); }
   };
 
-  // Build daily average weight trend from petWeights
-  const weightTrendData = (() => {
-    if (petWeights.length < 2) return [];
-    const byDate: Record<string, number[]> = {};
-    for (const w of petWeights) {
-      if (!byDate[w.recorded_date]) byDate[w.recorded_date] = [];
-      byDate[w.recorded_date].push(w.weight);
-    }
-    return Object.entries(byDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, vals]) => ({
-        date,
-        avg: vals.reduce((s, v) => s + v, 0) / vals.length,
-      }));
-  })();
-
-  function WeightSparkline({ data }: { data: { date: string; avg: number }[] }) {
-    if (data.length < 2) return null;
-    const W = 300, H = 64, pad = 8;
-    const values = data.map(d => d.avg);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 0.001;
-    const x = (i: number) => pad + (i / (data.length - 1)) * (W - pad * 2);
-    const y = (v: number) => H - pad - ((v - min) / range) * (H - pad * 2);
-    const rising = values[values.length - 1] >= values[values.length - 2];
-    const color = rising ? '#16A34A' : '#EF4444';
-    const pts = data.map((d, i) => `${x(i)},${y(d.avg)}`).join(' ');
-    const last = data[data.length - 1];
-    return (
-      <div style={{ position: 'relative' }}>
-        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
-          <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {data.map((d, i) => (
-            <circle key={i} cx={x(i)} cy={y(d.avg)} r={i === data.length - 1 ? 5 : 3} fill={color} opacity={i === data.length - 1 ? 1 : 0.5} />
-          ))}
-        </svg>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{data[0].date}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color }}>
-            {rising ? '▲' : '▼'} เฉลี่ย {Math.round(last.avg)} กรัม
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF' }}>{last.date}</span>
-        </div>
-      </div>
-    );
-  }
+  // Build per-member weight trend (latest vs previous record) so declining
+  // kittens can be flagged individually instead of only showing a litter average
+  type BabyTrend = {
+    baby: any;
+    latestWeight: number;
+    latestDate: string;
+    trend: 'up' | 'down' | 'same' | 'new';
+    delta: number;
+  };
+  const babyTrends: BabyTrend[] = babies
+    .map((baby) => {
+      const records = petWeights
+        .filter((w) => w.pet_id === baby.id)
+        .sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
+      if (records.length === 0) return null;
+      const latest = records[records.length - 1];
+      const prev = records.length >= 2 ? records[records.length - 2] : null;
+      const trend: BabyTrend['trend'] = !prev ? 'new' : latest.weight > prev.weight ? 'up' : latest.weight < prev.weight ? 'down' : 'same';
+      return {
+        baby,
+        latestWeight: latest.weight,
+        latestDate: latest.recorded_date,
+        trend,
+        delta: prev ? latest.weight - prev.weight : 0,
+      };
+    })
+    .filter((t): t is BabyTrend => t !== null);
+  const watchList = babyTrends.filter((t) => t.trend === 'down');
+  const normalList = babyTrends.filter((t) => t.trend !== 'down');
+  const noDataBabies = babies.filter((baby) => !petWeights.some((w) => w.pet_id === baby.id));
 
   return (
     <>
@@ -199,10 +182,25 @@ export default function LitterDetailPage() {
         .ld-trend-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .ld-trend-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .ld-trend-empty { font-size: 12px; color: ${F.muted}; font-weight: 600; }
-        .ld-trend-single { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 10px 0 4px; }
-        .ld-trend-single span:first-child { font-size: 12px; font-weight: 600; color: ${F.muted}; }
-        .ld-trend-single strong { font-size: 20px; font-weight: 800; color: ${F.green}; }
-        .ld-trend-single-date { font-size: 11px; font-weight: 600; color: ${F.muted}; }
+        .ld-watch-label { font-size: 12px; font-weight: 700; color: #DC2626; margin-bottom: 8px; }
+        .ld-watch-card { display: flex; align-items: center; gap: 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+        .ld-watch-card:last-child { margin-bottom: 0; }
+        .ld-watch-photo { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: white; border: 1.5px solid #FECACA; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .ld-watch-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .ld-watch-info { flex: 1; min-width: 0; }
+        .ld-watch-name { font-size: 13px; font-weight: 700; color: ${F.ink}; }
+        .ld-watch-note { font-size: 11px; font-weight: 500; color: #B91C1C; line-height: 1.4; margin-top: 2px; }
+        .ld-watch-weight { font-size: 13px; font-weight: 800; color: #DC2626; white-space: nowrap; flex-shrink: 0; }
+        .ld-normal-block { margin-top: 12px; }
+        .ld-normal-label { font-size: 12px; font-weight: 700; color: ${F.muted}; margin-bottom: 8px; }
+        .ld-normal-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ld-normal-chip { display: flex; align-items: center; gap: 6px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 6px 10px; font-size: 11px; }
+        .ld-normal-chip.new { background: #F9FAFB; border-color: ${F.lineMid}; }
+        .ld-normal-chip.same { background: #F9FAFB; border-color: ${F.lineMid}; }
+        .ld-normal-chip-name { font-weight: 700; color: ${F.ink}; }
+        .ld-normal-chip-weight { font-weight: 700; color: ${F.green}; }
+        .ld-normal-chip.new .ld-normal-chip-weight, .ld-normal-chip.same .ld-normal-chip-weight { color: ${F.muted}; }
+        .ld-nodata-note { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 12px; padding-top: 12px; border-top: 1px dashed ${F.lineMid}; }
 
         /* photo upload overlay */
         .ld-baby-upload { position: absolute; bottom: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
@@ -246,25 +244,58 @@ export default function LitterDetailPage() {
               )}
             </div>
 
-            {/* Weight trend chart */}
+            {/* Per-member weight trend */}
             {born && (
               <div className="ld-trend">
                 <div className="ld-trend-head">
-                  <span className="ld-trend-title">เทรนน้ำหนักเฉลี่ยทั้งครอก</span>
+                  <span className="ld-trend-title">ติดตามน้ำหนักรายตัว</span>
                   <Link href={`/farm-dashboard/${farmId}/litters/${litterId}/weights`} className="ld-weight-btn" style={{ marginTop: 0 }}>
                     <Icon.Weight /> บันทึกวันนี้
                   </Link>
                 </div>
-                {weightTrendData.length >= 2 ? (
-                  <WeightSparkline data={weightTrendData} />
-                ) : weightTrendData.length === 1 ? (
-                  <div className="ld-trend-single">
-                    <span>น้ำหนักเฉลี่ยล่าสุด</span>
-                    <strong>{Math.round(weightTrendData[0].avg)} กรัม</strong>
-                    <span className="ld-trend-single-date">{fmtDate(weightTrendData[0].date)}</span>
-                  </div>
-                ) : (
+                {babyTrends.length === 0 ? (
                   <div className="ld-trend-empty">ยังไม่มีข้อมูลน้ำหนัก — กด "บันทึกวันนี้" เพื่อเริ่มแทร็ก</div>
+                ) : (
+                  <>
+                    {watchList.length > 0 && (
+                      <div>
+                        <div className="ld-watch-label">⚠ ควรติดตามเป็นพิเศษ ({watchList.length})</div>
+                        {watchList.map(t => {
+                          const isMale = t.baby.gender === 'male' || t.baby.gender === 'ตัวผู้';
+                          return (
+                            <div key={t.baby.id} className="ld-watch-card">
+                              <div className="ld-watch-photo">
+                                {t.baby.image_url ? <img src={t.baby.image_url} alt={t.baby.name} /> : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:16,height:16,objectFit:'contain',opacity:0.45}} />}
+                              </div>
+                              <div className="ld-watch-info">
+                                <div className="ld-watch-name">{t.baby.name || 'ยังไม่ตั้งชื่อ'}</div>
+                                <div className="ld-watch-note">น้ำหนักลดลง {Math.abs(t.delta)} กรัม จากครั้งก่อน — ควรดูแลเรื่องนมหรืออาหารเพิ่มเติม</div>
+                              </div>
+                              <div className="ld-watch-weight">▼ {t.latestWeight}g</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {normalList.length > 0 && (
+                      <div className="ld-normal-block">
+                        {watchList.length > 0 && <div className="ld-normal-label">น้ำหนักปกติ</div>}
+                        <div className="ld-normal-grid">
+                          {normalList.map(t => (
+                            <div key={t.baby.id} className={`ld-normal-chip ${t.trend}`}>
+                              <span className="ld-normal-chip-name">{t.baby.name || '?'}</span>
+                              <span className="ld-normal-chip-weight">
+                                {t.trend === 'up' ? '▲' : t.trend === 'same' ? '—' : '•'} {t.latestWeight}g
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {noDataBabies.length > 0 && (
+                      <div className="ld-nodata-note">ยังไม่มีบันทึกน้ำหนัก: {noDataBabies.map(b => b.name || '?').join(', ')}</div>
+                    )}
+                  </>
                 )}
               </div>
             )}
