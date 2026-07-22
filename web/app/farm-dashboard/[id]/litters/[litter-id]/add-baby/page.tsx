@@ -70,12 +70,25 @@ export default function AddBabyPage() {
         gender: b.gender,
         status: b.plan,
         birth_date: birthDate,
-        weight: b.weight ? parseFloat(b.weight) : null,
         species: litterInfo.dam?.species || null,
         breed: litterInfo.dam?.breed || null,
       }));
-      const { error } = await supabase.from('pets').insert(inserts);
+      const { data: insertedPets, error } = await supabase.from('pets').insert(inserts).select('id');
       if (error) throw error;
+
+      const weightInserts = (insertedPets || [])
+        .map((p, i) => ({ pet_id: p.id, weight: babies[i].weight }))
+        .filter(w => w.weight.trim() !== '')
+        .map(w => ({
+          pet_id: w.pet_id,
+          weight: parseFloat(w.weight),
+          recorded_date: birthDate,
+          user_id: userId,
+        }));
+      if (weightInserts.length > 0) {
+        await supabase.from('pet_weights').insert(weightInserts);
+      }
+
       router.push(`/farm-dashboard/${farmId}/litters/${litterId}`);
     } catch (err: any) {
       alert('เกิดข้อผิดพลาด: ' + err.message);

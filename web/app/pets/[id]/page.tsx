@@ -701,6 +701,11 @@ export default function PetDetailPage() {
     ? activities
     : activities.filter(a => a.activity_type?.includes(activeActivityFilter));
 
+  const latestWeight = weightHistory[weightHistory.length - 1]?.weight;
+  const latestWeightDisplay = latestWeight
+    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
+    : '-';
+
   function WeightSparkline({ data }: { data: { weight: number; recorded_date: string }[] }) {
     if (data.length < 2) return null;
     const W = 300, H = 72, pad = 10;
@@ -1133,7 +1138,7 @@ export default function PetDetailPage() {
                   {([
                     { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
                     { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
-                    { label: 'น้ำหนัก', val: pet.weight ? `${pet.weight} กก.` : '-', link: `/pets/${pet.id}/weight` },
+                    { label: 'น้ำหนัก', val: latestWeightDisplay, link: `/pets/${pet.id}/weight` },
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
                     { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },

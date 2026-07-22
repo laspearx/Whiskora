@@ -64,6 +64,7 @@ export default function ProfilePage() {
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [vaccinatedPetIds, setVaccinatedPetIds] = useState<Set<string>>(new Set());
   const [hasHealthActivities, setHasHealthActivities] = useState(false);
+  const [hasWeightRecords, setHasWeightRecords] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Crop state
@@ -95,9 +96,10 @@ export default function ProfilePage() {
 
         if (petsRes.data?.length) {
           const ids = petsRes.data.map((p: any) => p.id);
-          const [vacRes, actRes] = await Promise.all([
+          const [vacRes, actRes, weightRes] = await Promise.all([
             supabase.from("vaccines").select("next_due, vaccine_name, pet_id").in("pet_id", ids).not("next_due", "is", null),
             supabase.from("pet_activities").select("id, pet_id, activity_type, title, activity_date").in("pet_id", ids).order("activity_date", { ascending: false }).limit(5),
+            supabase.from("pet_weights").select("id").in("pet_id", ids).limit(1),
           ]);
           if (vacRes.data) {
             setAppointments(vacRes.data as VaccineRow[]);
@@ -109,6 +111,7 @@ export default function ProfilePage() {
               a.activity_type?.includes("สุขภาพ") || a.activity_type?.includes("health") || a.activity_type === "ตรวจสุขภาพ"
             ));
           }
+          setHasWeightRecords(!!weightRes.data && weightRes.data.length > 0);
         }
       } catch (err) {
         console.error("Profile load error:", err);
@@ -170,11 +173,11 @@ export default function ProfilePage() {
   const petCareChecks = useMemo(() => {
     if (!pets.length) return { vaccineOk: false, weightOk: false, healthOk: false, score: 0 };
     const vaccineOk = vaccinatedPetIds.size > 0;
-    const weightOk = pets.some((p) => p.weight || p.current_weight || p.weight_kg);
+    const weightOk = hasWeightRecords;
     const healthOk = hasHealthActivities;
     const score = (vaccineOk ? 34 : 0) + (weightOk ? 33 : 0) + (healthOk ? 33 : 0);
     return { vaccineOk, weightOk, healthOk, score };
-  }, [pets, vaccinatedPetIds, hasHealthActivities]);
+  }, [pets, vaccinatedPetIds, hasHealthActivities, hasWeightRecords]);
 
   const tasksDue = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);

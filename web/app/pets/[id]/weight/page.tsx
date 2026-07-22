@@ -50,7 +50,7 @@ export default function PetWeightPage() {
     setUserId(session.user.id);
 
     const [{ data: petData }, { data: weightData }] = await Promise.all([
-      supabase.from('pets').select('id, name, image_url, species, breed, weight').eq('id', petId).single(),
+      supabase.from('pets').select('id, name, image_url, species, breed').eq('id', petId).single(),
       supabase.from('pet_weights').select('*').eq('pet_id', petId).order('recorded_date', { ascending: false }),
     ]);
     if (petData) setPet(petData);
@@ -91,7 +91,7 @@ export default function PetWeightPage() {
   const latestWeight = weights[0]?.weight;
   const prevWeight = weights[1]?.weight;
   const weightDiff = latestWeight && prevWeight ? (latestWeight - prevWeight) : null;
-  const useKgForm = useKgFor(latestWeight ?? pet?.weight);
+  const useKgForm = useKgFor(latestWeight);
 
   return (
     <>

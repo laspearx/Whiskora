@@ -52,7 +52,7 @@ export default function LitterWeightsPage() {
 
       const [{ data: litterData }, { data: babiesData }] = await Promise.all([
         supabase.from('litters').select('id, litter_code, status, actual_birth_date').eq('id', litterId).single(),
-        supabase.from('pets').select('id, name, image_url, gender, weight').eq('litter_id', litterId).order('id', { ascending: true }),
+        supabase.from('pets').select('id, name, image_url, gender').eq('litter_id', litterId).order('id', { ascending: true }),
       ]);
 
       if (!litterData) { router.push(`/farm-dashboard/${farmId}`); return; }
@@ -87,10 +87,8 @@ export default function LitterWeightsPage() {
     if (entries.length === 0) { alert('กรุณากรอกน้ำหนักอย่างน้อย 1 ตัว'); return; }
     setIsSaving(true);
     try {
-      const babyById = new Map(babies.map(b => [b.id, b]));
       const inserts = entries.map(([petId, w]) => {
-        const baby = babyById.get(parseInt(petId));
-        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)) ?? baby?.weight);
+        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -182,7 +180,7 @@ export default function LitterWeightsPage() {
             {babies.map(baby => {
               const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
               const val = weights[baby.id] ?? '';
-              const latestWeight = latestWeightByPet.get(baby.id) ?? baby.weight;
+              const latestWeight = latestWeightByPet.get(baby.id);
               const useKg = useKgFor(latestWeight);
               return (
                 <div key={baby.id} className={`lw-pet-row ${val.trim() ? 'filled' : ''}`}>

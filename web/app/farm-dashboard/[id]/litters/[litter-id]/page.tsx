@@ -107,10 +107,6 @@ export default function LitterDetailPage() {
         const original = records[0].weight;
         return { baby, original, latest, delta: latest - original, isNew: false };
       }
-      // only one tracked weigh-in so far — compare against the recorded birth weight if it differs
-      if (baby.weight != null && baby.weight !== latest) {
-        return { baby, original: baby.weight, latest, delta: latest - baby.weight, isNew: false };
-      }
       return { baby, original: latest, latest, delta: 0, isNew: true };
     })
     .filter((s): s is BabyWeightSummary => s !== null)
@@ -313,7 +309,7 @@ export default function LitterDetailPage() {
               <div className="ld-babies">
                 {babies.map((baby) => {
                   const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
-                  const displayWeight = latestWeightByPet.get(baby.id) ?? baby.weight;
+                  const displayWeight = latestWeightByPet.get(baby.id);
                   return (
                     <div key={baby.id} className="ld-baby">
                       <Link href={`/pets/${baby.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>

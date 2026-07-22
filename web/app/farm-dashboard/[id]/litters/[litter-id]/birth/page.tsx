@@ -67,12 +67,25 @@ export default function RecordBirthPage() {
         user_id: userId, farm_id: farmId, litter_id: parseInt(litterId),
         name: k.name || `ลูก${litterInfo.dam?.name || ''} (${litterInfo.litter_code}) #${index + 1}`,
         gender: k.gender, status: k.plan, birth_date: actualBirthDate,
-        weight: k.weight ? parseFloat(k.weight) : null,
         species: litterInfo.dam?.species || litterInfo.sire?.species || null,
         breed: litterInfo.dam?.breed || litterInfo.sire?.breed || null,
       }));
-      const { error: petsError } = await supabase.from('pets').insert(petsData);
+      const { data: insertedPets, error: petsError } = await supabase.from('pets').insert(petsData).select('id');
       if (petsError) throw petsError;
+
+      const weightInserts = (insertedPets || [])
+        .map((p, index) => ({ pet_id: p.id, weight: kittens[index].weight }))
+        .filter(w => w.weight.trim() !== '')
+        .map(w => ({
+          pet_id: w.pet_id,
+          weight: parseFloat(w.weight),
+          recorded_date: actualBirthDate,
+          user_id: userId,
+        }));
+      if (weightInserts.length > 0) {
+        await supabase.from('pet_weights').insert(weightInserts);
+      }
+
       alert(`บันทึกสมาชิกใหม่ทั้ง ${kittens.length} ตัว เรียบร้อยแล้ว!`);
       router.push(`/farm-dashboard/${farmId}`);
     } catch (error: any) {

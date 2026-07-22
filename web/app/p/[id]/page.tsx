@@ -70,6 +70,7 @@ export default function PublicPetProfilePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [farm, setFarm] = useState<any>(null);
+  const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -221,6 +222,9 @@ export default function PublicPetProfilePage() {
       const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
       if (activityData) setActivities(activityData as Activity[]);
 
+      const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
+      if (weightData) setLatestWeight(weightData.weight);
+
     } catch (error) {
       console.error("Fetch Error:", error);
     } finally {
@@ -332,6 +336,9 @@ export default function PublicPetProfilePage() {
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
   const combinedTimeline = generateCombinedTimeline();
   const hasContact = farm && (farm.phone || farm.line_id || farm.facebook_link);
+  const latestWeightDisplay = latestWeight
+    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
+    : '-';
 
   return (
     <>
@@ -541,7 +548,7 @@ export default function PublicPetProfilePage() {
               </div>
               <div className="quick-stats">
                 <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{pet.weight ? `${pet.weight} กก.` : '-'}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{latestWeightDisplay}</div></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
                 <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
               </div>
@@ -601,7 +608,7 @@ export default function PublicPetProfilePage() {
                       {[
                         { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
                         { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
-                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: displayVal(pet.weight, ' กก.') },
+                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: latestWeightDisplay },
                         { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {pet.status}</span> : '-' },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>

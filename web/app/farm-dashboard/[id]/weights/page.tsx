@@ -47,7 +47,7 @@ export default function FarmWeightsPage() {
       setUserId(session.user.id);
 
       const [{ data: petsData }, { data: littersData }] = await Promise.all([
-        supabase.from('pets').select('id, name, image_url, gender, weight, litter_id, status').eq('farm_id', farmId).order('id', { ascending: true }),
+        supabase.from('pets').select('id, name, image_url, gender, litter_id, status').eq('farm_id', farmId).order('id', { ascending: true }),
         supabase.from('litters').select('id, litter_code').eq('farm_id', farmId),
       ]);
 
@@ -91,7 +91,6 @@ export default function FarmWeightsPage() {
   const litterIds = Object.keys(babiesByLitter);
 
   const filledCount = Object.values(weights).filter(w => w.trim() !== '').length;
-  const petById = new Map(pets.map(p => [p.id, p]));
 
   const handleSave = async () => {
     if (!userId) return;
@@ -100,8 +99,7 @@ export default function FarmWeightsPage() {
     setIsSaving(true);
     try {
       const inserts = entries.map(([petId, w]) => {
-        const pet = petById.get(parseInt(petId));
-        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)) ?? pet?.weight);
+        const useKg = useKgFor(latestWeightByPet.get(parseInt(petId)));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -123,7 +121,7 @@ export default function FarmWeightsPage() {
   const renderPetRow = (pet: any) => {
     const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
     const val = weights[pet.id] ?? '';
-    const latestWeight = latestWeightByPet.get(pet.id) ?? pet.weight;
+    const latestWeight = latestWeightByPet.get(pet.id);
     const useKg = useKgFor(latestWeight);
     return (
       <div key={pet.id} className={`fw-pet-row ${val.trim() ? 'filled' : ''}`}>

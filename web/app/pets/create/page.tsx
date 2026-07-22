@@ -162,7 +162,6 @@ function CreatePetContent() {
       eye_color: finalEyeColor || null,
       gender,
       birth_date: birthdate || null,
-      weight: weight ? Number(weight) : null,
       image_url: avatarUrl,
       allergies: allergies.trim() || null,
       traits: traits.trim() || null,
@@ -173,6 +172,14 @@ function CreatePetContent() {
       alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else if (data && data.length > 0) {
+      if (weight) {
+        await supabase.from("pet_weights").insert({
+          pet_id: data[0].id,
+          weight: Math.round(Number(weight) * 1000),
+          recorded_date: new Date().toISOString().split("T")[0],
+          user_id: userId,
+        });
+      }
       router.push(`/pets/${data[0].id}`);
       router.refresh();
     }
