@@ -62,7 +62,25 @@ export default function PublicFarmProfile() {
         setFarm(farmData);
 
         const { data: { session } } = await supabase.auth.getSession();
-        if (session && farmData.user_id === session.user.id) setIsOwner(true);
+        if (session) {
+          const uid = session.user.id;
+
+          // Check workspace membership first (new system) — any farm role counts
+          const { data: wsRow } = await supabase
+            .from('workspaces')
+            .select('id, workspace_members!inner(role)')
+            .eq('type', 'farm')
+            .eq('entity_id', parseInt(farmId))
+            .eq('workspace_members.user_id', uid)
+            .maybeSingle();
+
+          if (wsRow) {
+            setIsOwner(true);
+          } else if (farmData.user_id === uid) {
+            // Fallback: direct farm ownership (legacy, before workspace backfill)
+            setIsOwner(true);
+          }
+        }
 
         // เจ้าของฟาร์ม (ชื่อ/อีเมล/ที่อยู่)
         if (farmData.user_id) {
@@ -447,6 +465,8 @@ export default function PublicFarmProfile() {
             </div>
           </div>
         )}
+
+        {isOwner && <style>{`nav[aria-label="เมนูหลัก"] { display: none !important; }`}</style>}
 
         {isOwner ? (
           <div className="fp-owner-bar">
