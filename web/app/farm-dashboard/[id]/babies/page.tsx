@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import Cropper from 'react-easy-crop';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
@@ -28,6 +29,11 @@ export default function BabyDashboardPage() {
   const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [cropBaby, setCropBaby] = useState<any | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -85,7 +91,7 @@ export default function BabyDashboardPage() {
           )}
           <input type="file" accept="image/*" style={{ display: 'none' }}
             ref={el => { fileRefs.current[baby.id] = el; }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) startPhotoCrop(baby, f); e.target.value = ''; }}
           />
         </div>
         <Link href={`/pets/${baby.id}`} className="bd-baby-name">{baby.name || '?'}</Link>
@@ -93,17 +99,45 @@ export default function BabyDashboardPage() {
     );
   };
 
-  const handlePhotoUpload = async (baby: any, file: File) => {
-    if (!userId) return;
-    setUploadingId(baby.id);
+  const startPhotoCrop = (baby: any, file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => { setCropBaby(baby); setCropSrc(reader.result as string); };
+    reader.readAsDataURL(file);
+  };
+
+  const cancelPhotoCrop = () => {
+    setCropBaby(null); setCropSrc(null); setCrop({ x: 0, y: 0 }); setZoom(1);
+  };
+
+  const onCropComplete = useCallback((_area: any, pixels: any) => setCroppedAreaPixels(pixels), []);
+
+  const getCroppedBlob = (src: string, pixelCrop: any): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = pixelCrop.width; canvas.height = pixelCrop.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('no ctx')); return; }
+        ctx.drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas empty'))), 'image/jpeg', 0.9);
+      };
+      img.src = src;
+    });
+
+  const confirmPhotoCrop = async () => {
+    if (!userId || !cropBaby || !cropSrc || !croppedAreaPixels) return;
+    setUploadingId(cropBaby.id);
     try {
-      const ext = file.name.split('.').pop();
-      const filePath = `${userId}/${baby.id}-photo.${ext}`;
-      const { error: upErr } = await supabase.storage.from('pet-photos').upload(filePath, file, { upsert: true });
+      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
+      const filePath = `${userId}/${cropBaby.id}-photo-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(filePath, blob, { contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(filePath);
-      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', baby.id);
-      setBabies(prev => prev.map(b => b.id === baby.id ? { ...b, image_url: publicUrl } : b));
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from('pets').update({ image_url: url }).eq('id', cropBaby.id);
+      setBabies(prev => prev.map(b => b.id === cropBaby.id ? { ...b, image_url: url } : b));
+      cancelPhotoCrop();
     } catch (e: any) {
       alert('อัพโหลดไม่สำเร็จ: ' + e.message);
     } finally { setUploadingId(null); }
@@ -291,6 +325,24 @@ export default function BabyDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Crop รูปเบบี๋ */}
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)', padding: 16 }}>
+          <div style={{ background: 'white', width: '100%', maxWidth: 360, borderRadius: 20, overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '100%', height: 300, background: '#111' }}>
+              <Cropper image={cropSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
+            </div>
+            <div style={{ padding: '20px 20px 24px' }}>
+              <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', accentColor: F.pink, marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={cancelPhotoCrop} style={{ flex: 1, padding: 12, borderRadius: 12, border: `1.5px solid ${F.lineMid}`, background: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: F.inkSoft, cursor: 'pointer' }}>ยกเลิก</button>
+                <button type="button" onClick={confirmPhotoCrop} disabled={uploadingId === cropBaby?.id} style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', background: F.ink, color: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: uploadingId === cropBaby?.id ? .6 : 1 }}>{uploadingId === cropBaby?.id ? 'กำลังอัปโหลด...' : 'ยืนยัน'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
