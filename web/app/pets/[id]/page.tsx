@@ -52,14 +52,14 @@ const Icon = {
 
 // ─── TABS ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <img src="/icons/icon-breeding.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'health', label: 'สุขภาพ', icon: <img src="/icons/icon-health.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
-  { id: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
-  { id: 'activities', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
-  { id: 'docs', label: 'เอกสาร', icon: <img src="/icons/icon-documents.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'overview', fieldGroupKey: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'แผนผังสายเลือด', icon: <img src="/icons/icon-breeding.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'health', fieldGroupKey: 'health', label: 'สุขภาพ', icon: <img src="/icons/icon-health.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'วัคซีน', icon: <Icon.Syringe /> },
+  { id: 'weight', fieldGroupKey: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
+  { id: 'activities', fieldGroupKey: 'medical_notes', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
+  { id: 'docs', fieldGroupKey: 'documents', label: 'เอกสาร', icon: <img src="/icons/icon-documents.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
 ];
 
 const ACTIVITY_TYPES = ['หาหมอ', 'หยดเห็บหมัด', 'ถ่ายพยาธิ', 'อาหาร', 'นิสัย', 'ทั่วไป'];
@@ -88,6 +88,7 @@ export default function PetDetailPage() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
@@ -194,88 +195,61 @@ export default function PetDetailPage() {
     return () => clearTimeout(t);
   }, [showPedigreeModal, pedigreeGens]);
 
-  // ─── สร้างผังสายเลือดโดยไล่ตามลิงก์ sire_id/dam_id ขึ้นไป ───
+  // ─── สร้างผังสายเลือดผ่าน RPC get_pet_pedigree ───
+  // การเช็คสิทธิ์ทำที่ฝั่ง DB ทั้งหมด (viewer_can_see) — ถ้าดูไม่ได้ RPC จะคืน [] เปล่าๆ
+  // โดยที่ frontend ไม่มีทางรู้แม้แต่ว่า sire_id/dam_id ถูกตั้งไว้หรือไม่
   // คืนค่าเป็น array ของเจน เรียงจาก "รุ่นเก่าสุด (เจน 1)" → "ตัวเอง (เจนล่างสุด)"
-  const buildPedigreeTree = async (rootPet: Pet): Promise<PedigreeNode[][]> => {
-    // gens[0] = ตัวเอง, gens[1] = พ่อแม่, gens[2] = ปู่ย่าตายาย, ...
-    const gens: PedigreeNode[][] = [];
+  type PedigreeRow = {
+    node_id: number; child_id: number | null; name: string | null;
+    image_url: string | null; breed: string | null; gender: string | null;
+    relation: 'self' | 'sire' | 'dam'; generation: number;
+  };
 
-    // เจน 0: ตัวเอง
+  const buildPedigreeTree = async (rootPet: Pet): Promise<PedigreeNode[][]> => {
+    const { data, error } = await supabase.rpc('get_pet_pedigree', {
+      p_pet_id: rootPet.id, p_max_gen: MAX_GENERATIONS - 1,
+    });
+    if (error || !data) return [];
+    const rows = data as PedigreeRow[];
+    const selfRow = rows.find(r => r.relation === 'self');
+    if (!selfRow) return []; // ไม่มีสิทธิ์ดู หรือไม่พบข้อมูล
+
+    // map: child_id -> { sire?, dam? }
+    const byChild = new Map<number, { sire?: PedigreeRow; dam?: PedigreeRow }>();
+    for (const r of rows) {
+      if (r.relation === 'self' || r.child_id == null) continue;
+      const entry = byChild.get(r.child_id) || {};
+      if (r.relation === 'sire') entry.sire = r; else entry.dam = r;
+      byChild.set(r.child_id, entry);
+    }
+
+    const gens: PedigreeNode[][] = [];
     gens.push([{
-      id: rootPet.id, name: rootPet.name, image_url: rootPet.image_url,
-      breed: rootPet.breed, gender: rootPet.gender, isMissing: false, position: 0,
+      id: String(selfRow.node_id), name: selfRow.name, image_url: selfRow.image_url,
+      breed: selfRow.breed, gender: selfRow.gender, isMissing: false, position: 0,
     }]);
 
-    // ไล่ขึ้นไปทีละเจน จนถึง MAX_GENERATIONS หรือจนไม่มีบรรพบุรุษเหลือ
     for (let depth = 1; depth < MAX_GENERATIONS; depth++) {
       const prevGen = gens[depth - 1];
-
-      // หา id ของพ่อแม่ทั้งหมดในเจนก่อนหน้าที่ต้องไปดึงต่อ
-      const parentIdsToFetch = new Set<string>();
-      // เก็บ map: ตำแหน่งลูก -> {sire_id, dam_id}
-      const linkMap: { sireId: string | null; damId: string | null }[] = [];
-
-      for (const node of prevGen) {
-        if (node.isMissing || !node.id) {
-          linkMap.push({ sireId: null, damId: null });
-        } else {
-          // ต้องดึง sire_id/dam_id ของ node นี้ — เก็บไว้ดึง batch
-          linkMap.push({ sireId: '__pending__', damId: '__pending__' });
-          parentIdsToFetch.add(node.id);
-        }
-      }
-
-      // ดึงข้อมูล sire_id/dam_id ของ node ทั้งหมดในเจนก่อนหน้าทีเดียว
-      let parentLinks: Record<string, { sire_id: string | null; dam_id: string | null }> = {};
-      if (parentIdsToFetch.size > 0) {
-        const { data } = await supabase
-          .from('pets')
-          .select('id, sire_id, dam_id')
-          .in('id', Array.from(parentIdsToFetch));
-        if (data) for (const row of data) parentLinks[String(row.id)] = { sire_id: row.sire_id, dam_id: row.dam_id };
-      }
-
-      // รวบรวม id ของพ่อแม่ที่ต้องดึงข้อมูลเต็ม (name, image ฯลฯ)
-      const grandIdsToFetch = new Set<string>();
-      const nextLinks: { sireId: string | null; damId: string | null }[] = [];
-      for (const node of prevGen) {
-        if (node.isMissing || !node.id) {
-          nextLinks.push({ sireId: null, damId: null });
-        } else {
-          const link = parentLinks[node.id] || { sire_id: null, dam_id: null };
-          nextLinks.push({ sireId: link.sire_id, damId: link.dam_id });
-          if (link.sire_id) grandIdsToFetch.add(link.sire_id);
-          if (link.dam_id) grandIdsToFetch.add(link.dam_id);
-        }
-      }
-
-      // ดึงข้อมูลเต็มของพ่อแม่ทุกตัวในเจนนี้ทีเดียว
-      let fullData: Record<string, Pet> = {};
-      if (grandIdsToFetch.size > 0) {
-        const { data } = await supabase
-          .from('pets')
-          .select('id, name, image_url, breed, gender')
-          .in('id', Array.from(grandIdsToFetch));
-        if (data) for (const row of data) fullData[String(row.id)] = row as Pet;
-      }
-
-      // สร้างเจนใหม่: แต่ละ node ในเจนก่อนหน้าแตกเป็น พ่อ + แม่
       const newGen: PedigreeNode[] = [];
       let pos = 0;
       let hasAnyData = false;
-      for (const link of nextLinks) {
-        // พ่อ
-        if (link.sireId && fullData[link.sireId]) {
-          const p = fullData[link.sireId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+      for (const node of prevGen) {
+        const childId = node.id ? Number(node.id) : null;
+        const links = childId != null ? byChild.get(childId) : undefined;
+
+        if (links?.sire) {
+          const p = links.sire;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else {
           newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
         }
-        // แม่
-        if (link.damId && fullData[link.damId]) {
-          const p = fullData[link.damId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+        if (links?.dam) {
+          const p = links.dam;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else {
           newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
@@ -287,17 +261,15 @@ export default function PetDetailPage() {
       // ถ้าเจนนี้ไม่มีข้อมูลจริงเลย (ทุกช่องว่าง) แปลว่าไม่มีบรรพบุรุษต่อแล้ว → หยุด
       // ยกเว้นเจนพ่อแม่ (depth=1) ที่ต้องแสดงเสมอแม้ว่าจะ "ไม่มีข้อมูล"
       if (!hasAnyData && depth > 1) {
-        gens.pop(); // เอาเจนว่างเปล่าออก
+        gens.pop();
         break;
       }
     }
 
-    // ตัดเจนบนสุดที่ว่างทั้งแถวออก (ยกเว้นต้องเหลืออย่างน้อยตัวเอง + พ่อแม่)
     while (gens.length > 2 && gens[gens.length - 1].every(n => n.isMissing)) {
       gens.pop();
     }
 
-    // reverse ให้รุ่นเก่าสุด = เจน 1 (index 0) อยู่บนสุด
     return gens.reverse();
   };
 
@@ -308,12 +280,19 @@ export default function PetDetailPage() {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setSessionUserId(session.user.id);
 
+      // หมายเหตุ: ตัด sire_id/dam_id และคอลัมน์สายเลือดอื่นๆ ออกจาก select นี้โดยตั้งใจ —
+      // RLS ป้องกันได้แค่ระดับแถว ไม่ใช่ระดับคอลัมน์ ถ้า select('*') ไปเรื่อยๆ ผู้ชมที่ไม่มีสิทธิ์
+      // จะยังเห็นค่า sire_id/dam_id ดิบๆ ผ่าน network response ได้อยู่ดี แม้ว่าแท็บสายเลือด
+      // จะถูกซ่อนไปแล้วก็ตาม ข้อมูลสายเลือดทั้งหมดต้องมาจาก get_pet_pedigree() RPC เท่านั้น
+      // ซึ่งเช็คสิทธิ์ (viewer_can_see) ที่ฝั่ง DB ก่อนคืนค่าเสมอ
       const { data: petData, error: petError } = await supabase
         .from('pets')
         .select(`
-          *,
-          sire:sire_id(id, name, image_url, breed),
-          dam:dam_id(id, name, image_url, breed),
+          id, created_at, name, breed, gender, color, pattern, birth_date, status,
+          image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
+          weight, species, allergies, traits, farm_id, price, microchip_number,
+          is_public, gallery_urls, is_neutered, blood_type, chronic_diseases,
+          cover_url, health_notes, pet_code, note,
           farm:farm_id(farm_name)
         `)
         .eq('id', petId)
@@ -324,6 +303,9 @@ export default function PetDetailPage() {
       if (petData.image_url) setSelectedImage(petData.image_url);
 
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data) setFieldAccess(data as Record<string, boolean>);
+      });
 
       const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
         supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
@@ -1246,7 +1228,7 @@ export default function PetDetailPage() {
 
           {/* ─── Tabs ─── */}
           <div className="tabs-wrapper"><div className="tabs-inner">
-            {TABS.map(tab => (
+            {TABS.filter(tab => fieldAccess === null || fieldAccess[tab.fieldGroupKey] !== false).map(tab => (
               <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
                 <span className="tab-icon">{tab.icon}</span>{tab.label}
               </button>

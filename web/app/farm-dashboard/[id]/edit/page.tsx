@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import PageLoader from "@/app/components/PageLoader";
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
 
@@ -179,6 +180,11 @@ export default function EditFarmPage() {
         .fe-sub { font-size: 12px; font-weight: 600; color: ${F.muted}; margin-top: 2px; }
         .fe-card { background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 24px; margin-bottom: 16px; }
         .fe-card-title { font-size: 15px; font-weight: 700; color: ${F.ink}; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .fe-link-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: white; border: 1px solid ${F.line}; border-radius: 20px; padding: 18px 20px; margin-bottom: 16px; text-decoration: none; color: inherit; transition: border-color .15s; }
+        .fe-link-row:hover { border-color: ${F.pinkBorder}; }
+        .fe-link-row-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
+        .fe-link-row-sub { font-size: 12px; color: ${F.muted}; margin-top: 2px; }
+        .fe-link-row-arrow { color: ${F.muted}; flex-shrink: 0; }
         .fe-field { margin-bottom: 16px; }
         .fe-field:last-child { margin-bottom: 0; }
         .fe-label { display: block; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; margin-left: 2px; }
@@ -216,6 +222,16 @@ export default function EditFarmPage() {
               <p className="fe-sub">อัปเดตรายละเอียดของฟาร์ม</p>
             </div>
           </div>
+
+          <Link href={`/farm-dashboard/${farmId}/privacy`} className="fe-link-row">
+            <div>
+              <div className="fe-link-row-title">🔏 ตั้งค่าความเป็นส่วนตัว</div>
+              <div className="fe-link-row-sub">กำหนดว่าใครเห็นสายเลือด สุขภาพ เอกสาร ฯลฯ ของสัตว์ในฟาร์มนี้ได้บ้าง</div>
+            </div>
+            <span className="fe-link-row-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </Link>
 
           <div className="fe-card">
             <div className="fe-field">

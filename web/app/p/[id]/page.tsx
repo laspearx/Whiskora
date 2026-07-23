@@ -41,11 +41,11 @@ const Icon = {
 };
 
 const TABS = [
-  { id: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
-  { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
-  { id: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
-  { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
-  { id: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
+  { id: 'overview', fieldGroupKey: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
+  { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
+  { id: 'health', fieldGroupKey: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
+  { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'วัคซีน', icon: <Icon.Syringe /> },
+  { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
 ];
 
 const MAX_GENERATIONS = 5;
@@ -66,6 +66,7 @@ export default function PublicPetProfilePage() {
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [owner, setOwner] = useState<UserProfile | null>(null);
@@ -119,55 +120,56 @@ export default function PublicPetProfilePage() {
     return () => clearTimeout(t);
   }, [showPedigreeModal, pedigreeGens]);
 
-  // ─── สร้างผังสายเลือด (ไล่ตาม sire_id/dam_id) — เหมือนหน้าเจ้าของ ───
+  // ─── สร้างผังสายเลือดผ่าน RPC get_pet_pedigree — เช็คสิทธิ์ที่ฝั่ง DB ก่อนคืนค่าเสมอ ───
+  // (หน้านี้เป็นหน้าสาธารณะ ไม่ล็อกอินก็เข้าได้ ยิ่งต้องพึ่ง RLS/RPC ล้วนๆ ไม่ใช่ query ตรงๆ)
+  type PedigreeRow = {
+    node_id: number; child_id: number | null; name: string | null;
+    image_url: string | null; breed: string | null; gender: string | null;
+    relation: 'self' | 'sire' | 'dam'; generation: number;
+  };
+
   const buildPedigreeTree = async (rootPet: Pet): Promise<PedigreeNode[][]> => {
+    const { data, error } = await supabase.rpc('get_pet_pedigree', {
+      p_pet_id: rootPet.id, p_max_gen: MAX_GENERATIONS - 1,
+    });
+    if (error || !data) return [];
+    const rows = data as PedigreeRow[];
+    const selfRow = rows.find(r => r.relation === 'self');
+    if (!selfRow) return [];
+
+    const byChild = new Map<number, { sire?: PedigreeRow; dam?: PedigreeRow }>();
+    for (const r of rows) {
+      if (r.relation === 'self' || r.child_id == null) continue;
+      const entry = byChild.get(r.child_id) || {};
+      if (r.relation === 'sire') entry.sire = r; else entry.dam = r;
+      byChild.set(r.child_id, entry);
+    }
+
     const gens: PedigreeNode[][] = [];
     gens.push([{
-      id: rootPet.id, name: rootPet.name, image_url: rootPet.image_url,
-      breed: rootPet.breed, gender: rootPet.gender, isMissing: false, position: 0,
+      id: String(selfRow.node_id), name: selfRow.name, image_url: selfRow.image_url,
+      breed: selfRow.breed, gender: selfRow.gender, isMissing: false, position: 0,
     }]);
 
     for (let depth = 1; depth < MAX_GENERATIONS; depth++) {
       const prevGen = gens[depth - 1];
-      const parentIdsToFetch = new Set<string>();
-      for (const node of prevGen) if (!node.isMissing && node.id) parentIdsToFetch.add(node.id);
-
-      let parentLinks: Record<string, { sire_id: string | null; dam_id: string | null }> = {};
-      if (parentIdsToFetch.size > 0) {
-        const { data } = await supabase.from('pets').select('id, sire_id, dam_id').in('id', Array.from(parentIdsToFetch));
-        if (data) for (const row of data) parentLinks[String(row.id)] = { sire_id: row.sire_id, dam_id: row.dam_id };
-      }
-
-      const grandIdsToFetch = new Set<string>();
-      const nextLinks: { sireId: string | null; damId: string | null }[] = [];
-      for (const node of prevGen) {
-        if (node.isMissing || !node.id) { nextLinks.push({ sireId: null, damId: null }); }
-        else {
-          const link = parentLinks[node.id] || { sire_id: null, dam_id: null };
-          nextLinks.push({ sireId: link.sire_id, damId: link.dam_id });
-          if (link.sire_id) grandIdsToFetch.add(link.sire_id);
-          if (link.dam_id) grandIdsToFetch.add(link.dam_id);
-        }
-      }
-
-      let fullData: Record<string, Pet> = {};
-      if (grandIdsToFetch.size > 0) {
-        const { data } = await supabase.from('pets').select('id, name, image_url, breed, gender').in('id', Array.from(grandIdsToFetch));
-        if (data) for (const row of data) fullData[String(row.id)] = row as Pet;
-      }
-
       const newGen: PedigreeNode[] = [];
       let pos = 0;
       let hasAnyData = false;
-      for (const link of nextLinks) {
-        if (link.sireId && fullData[link.sireId]) {
-          const p = fullData[link.sireId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+      for (const node of prevGen) {
+        const childId = node.id ? Number(node.id) : null;
+        const links = childId != null ? byChild.get(childId) : undefined;
+
+        if (links?.sire) {
+          const p = links.sire;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
-        if (link.damId && fullData[link.damId]) {
-          const p = fullData[link.damId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+        if (links?.dam) {
+          const p = links.dam;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
       }
@@ -184,9 +186,19 @@ export default function PublicPetProfilePage() {
     try {
       setIsLoading(true);
       // ไม่เช็ค session / ไม่ redirect — ใครก็ดูได้
+      // หมายเหตุ: ตัดคอลัมน์สายเลือด (sire_id, dam_id, ฯลฯ) ออกจาก select นี้โดยตั้งใจ —
+      // หน้านี้เปิดให้ทุกคนเข้าถึงได้ ถ้า select('*') ไปเรื่อยๆ ใครก็เห็น sire_id/dam_id ดิบๆ
+      // ผ่าน network response ได้แม้ว่าแท็บสายเลือดจะถูกซ่อนแล้วก็ตาม ข้อมูลสายเลือดทั้งหมด
+      // ต้องมาจาก get_pet_pedigree() RPC เท่านั้น ซึ่งเช็คสิทธิ์ที่ฝั่ง DB ก่อนคืนค่าเสมอ
       const { data: petData, error: petError } = await supabase
         .from('pets')
-        .select('*')
+        .select(`
+          id, created_at, name, breed, gender, color, pattern, birth_date, status,
+          image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
+          weight, species, allergies, traits, farm_id, price, microchip_number,
+          is_public, gallery_urls, is_neutered, blood_type, chronic_diseases,
+          cover_url, health_notes, pet_code, note
+        `)
         .eq('id', petId)
         .single();
 
@@ -195,6 +207,9 @@ export default function PublicPetProfilePage() {
       if (petData.image_url) setSelectedImage(petData.image_url);
 
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data) setFieldAccess(data as Record<string, boolean>);
+      });
 
       // ฟาร์ม (ถ้ามี) — สำหรับปุ่มติดต่อ
       if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
@@ -582,7 +597,7 @@ export default function PublicPetProfilePage() {
 
           {/* ─── Tabs ─── */}
           <div className="tabs-wrapper"><div className="tabs-inner">
-            {TABS.map(tab => (
+            {TABS.filter(tab => fieldAccess === null || fieldAccess[tab.fieldGroupKey] !== false).map(tab => (
               <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
                 <span className="tab-icon">{tab.icon}</span>{tab.label}
               </button>
