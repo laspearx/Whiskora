@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
 import PageLoader from "@/app/components/PageLoader";
@@ -61,6 +61,7 @@ const PRESETS: { id: string; icon: string; name: string; desc: string; recommend
 
 export default function FarmPrivacyPage() {
   const params = useParams();
+  const router = useRouter();
   const farmId = params?.id as string;
   const { myRole } = useFarmAccess();
   const canEdit = myRole === 'owner' || myRole === 'manager';
@@ -129,8 +130,11 @@ export default function FarmPrivacyPage() {
         * { box-sizing: border-box; }
         .pv-page { font-family: inherit; min-height: 100vh; background: ${F.bg}; color: ${F.ink}; }
         .pv-body { max-width: 720px; margin: 0 auto; padding: 24px 16px calc(68px + env(safe-area-inset-bottom,0px) + 24px); }
+        .pv-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .pv-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid ${F.lineMid}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s; flex-shrink: 0; }
+        .pv-back:hover { background: ${F.line}; color: ${F.ink}; transform: translateX(-1px); }
         .pv-title { font-size: 22px; font-weight: 700; color: ${F.ink}; }
-        .pv-sub { font-size: 12px; color: ${F.muted}; margin-top: 2px; margin-bottom: 20px; }
+        .pv-sub { font-size: 12px; color: ${F.muted}; margin-top: 2px; }
 
         .pv-readonly-banner { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; border-radius: 12px; padding: 12px 16px; font-size: 13px; margin-bottom: 18px; }
 
@@ -149,19 +153,29 @@ export default function FarmPrivacyPage() {
         .pv-customize-toggle { display: flex; align-items: center; gap: 6px; background: none; border: none; padding: 8px 0; font-family: inherit; font-size: 13px; font-weight: 700; color: ${F.inkSoft}; cursor: pointer; margin-bottom: 8px; }
 
         .pv-card { background: white; border: 1px solid ${F.lineMid}; border-radius: 14px; overflow: hidden; }
-        .pv-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid ${F.line}; }
+        .pv-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid ${F.line}; flex-wrap: wrap; }
         .pv-row:last-child { border-bottom: none; }
         .pv-row-name { font-size: 13.5px; font-weight: 600; color: ${F.ink}; }
-        .pv-select { padding: 6px 30px 6px 12px; border-radius: 999px; border: none; font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; appearance: none; background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; }
-        .pv-select:disabled { cursor: default; opacity: .85; }
+        .pv-row-controls { display: flex; align-items: center; gap: 8px; }
+        .pv-tier-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .pv-select { padding: 7px 30px 7px 12px; border-radius: 10px; border: 1.5px solid ${F.lineMid}; background: white; color: ${F.ink}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+        .pv-select:focus { border-color: ${F.pink}; outline: none; }
+        .pv-select:disabled { cursor: default; opacity: .6; }
 
         .pv-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: ${F.ink}; color: white; padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
       `}</style>
 
       <div className="pv-page">
         <div className="pv-body">
-          <div className="pv-title">ตั้งค่าความเป็นส่วนตัว</div>
-          <div className="pv-sub">กำหนดว่าใครเห็นข้อมูลอะไรได้บ้าง สำหรับสัตว์ทุกตัวในฟาร์มนี้</div>
+          <div className="pv-top">
+            <button className="pv-back" onClick={() => router.push(`/farm-dashboard/${farmId}/edit`)} aria-label="ย้อนกลับ">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div>
+              <div className="pv-title">ตั้งค่าความเป็นส่วนตัว</div>
+              <div className="pv-sub">กำหนดว่าใครเห็นข้อมูลอะไรได้บ้าง สำหรับสัตว์ทุกตัวในฟาร์มนี้</div>
+            </div>
+          </div>
 
           {!canEdit && (
             <div className="pv-readonly-banner">
@@ -198,18 +212,17 @@ export default function FarmPrivacyPage() {
                 return (
                   <div key={g.key} className="pv-row">
                     <div className="pv-row-name">{g.label_th}</div>
-                    <select
-                      className="pv-select"
-                      style={{
-                        background: `${c.bg} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(c.fg)}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                        color: c.fg,
-                      }}
-                      value={tier}
-                      disabled={!canEdit || savingKey === g.key}
-                      onChange={e => saveTier(g.key, e.target.value as Tier)}
-                    >
-                      {TIER_ORDER.map(t => <option key={t} value={t}>{TIER_LABEL[t]}</option>)}
-                    </select>
+                    <div className="pv-row-controls">
+                      <span className="pv-tier-dot" style={{ background: c.bg, border: `1px solid ${c.fg}` }} />
+                      <select
+                        className="pv-select"
+                        value={tier}
+                        disabled={!canEdit || savingKey === g.key}
+                        onChange={e => saveTier(g.key, e.target.value as Tier)}
+                      >
+                        {TIER_ORDER.map(t => <option key={t} value={t}>{TIER_LABEL[t]}</option>)}
+                      </select>
+                    </div>
                   </div>
                 );
               })}

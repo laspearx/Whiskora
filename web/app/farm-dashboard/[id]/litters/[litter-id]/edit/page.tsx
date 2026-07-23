@@ -86,6 +86,10 @@ export default function EditLitterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.actual_birth_date && formData.actual_birth_date > new Date().toISOString().split('T')[0]) {
+      alert('วันที่คลอดต้องไม่ใช่วันในอนาคต');
+      return;
+    }
     setIsSaving(true);
 
     try {
@@ -214,7 +218,7 @@ export default function EditLitterPage() {
                   </div>
                   <div className="le-field">
                     <label className="le-label">วันที่คลอดจริง</label>
-                    <input type="date" name="actual_birth_date" value={formData.actual_birth_date} onChange={handleChange} className="le-date" />
+                    <input type="date" name="actual_birth_date" value={formData.actual_birth_date} max={new Date().toISOString().split('T')[0]} onChange={handleChange} className="le-date" />
                   </div>
                 </div>
               </div>

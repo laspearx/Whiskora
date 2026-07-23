@@ -60,6 +60,7 @@ export default function AddBabyPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!userId || !litterInfo) return;
+    if (birthDate && birthDate > new Date().toISOString().split('T')[0]) { alert('วันเกิดต้องไม่ใช่วันในอนาคต'); return; }
     setIsSaving(true);
     try {
       const inserts = babies.map((b, i) => ({
@@ -156,7 +157,7 @@ export default function AddBabyPage() {
 
             <div className="ab-card">
               <label className="ab-label">วันเกิด</label>
-              <input type="date" className="ab-input" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+              <input type="date" className="ab-input" value={birthDate} max={new Date().toISOString().split('T')[0]} onChange={e => setBirthDate(e.target.value)} />
             </div>
 
             <div className="ab-sec-head">

@@ -144,6 +144,7 @@ export default function CreateFarmPetPage() {
       if (!form.customBreed.trim()) return alert("กรุณาระบุสายพันธุ์");
       finalBreed = form.customBreed.trim();
     } else if (!form.breed) return alert("กรุณาระบุสายพันธุ์");
+    if (form.birthDate && form.birthDate > new Date().toISOString().split('T')[0]) return alert("วันเกิดต้องไม่ใช่วันในอนาคต");
 
     setSaving(true);
     try {
@@ -304,7 +305,7 @@ export default function CreateFarmPetPage() {
                 </div>
                 <div className="fpc-field">
                   <label className="fpc-label">วันเกิด</label>
-                  <input type="date" className="fpc-input" value={form.birthDate} onChange={e => set('birthDate', e.target.value)} />
+                  <input type="date" className="fpc-input" value={form.birthDate} max={new Date().toISOString().split('T')[0]} onChange={e => set('birthDate', e.target.value)} />
                 </div>
               </div>
 

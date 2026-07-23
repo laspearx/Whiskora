@@ -176,6 +176,9 @@ function BulkCreateContent() {
     if (validRows.length === 0) { alert('กรุณากรอกชื่อสัตว์อย่างน้อย 1 ตัว'); return; }
     const missingGender = validRows.find(r => !r.gender);
     if (missingGender) { alert(`กรุณาเลือกเพศของ "${missingGender.name}"`); return; }
+    const today = new Date().toISOString().split('T')[0];
+    const futureBirth = validRows.find(r => r.birth_date && r.birth_date > today);
+    if (futureBirth) { alert(`วันเกิดของ "${futureBirth.name}" ต้องไม่ใช่วันในอนาคต`); return; }
 
     setSaving(true);
     try {
@@ -326,7 +329,7 @@ function BulkCreateContent() {
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">วันเกิด</label>
-                    <input className="bc-input" type="date" value={row.birth_date} onChange={e => updateRow(row.key, 'birth_date', e.target.value)} />
+                    <input className="bc-input" type="date" value={row.birth_date} max={new Date().toISOString().split('T')[0]} onChange={e => updateRow(row.key, 'birth_date', e.target.value)} />
                   </div>
                   <div className="bc-field">
                     <label className="bc-label">สถานะ</label>

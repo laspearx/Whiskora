@@ -215,6 +215,7 @@ export default function EditPetPage() {
     e.preventDefault();
     if (!name.trim()) return alert("กรุณากรอกชื่อสัตว์เลี้ยง");
     if (species === 'other' && !otherPetText) return alert("กรุณาเลือกประเภทสัตว์เลี้ยง");
+    if (birthdate && birthdate > new Date().toISOString().split('T')[0]) return alert("วันเกิดต้องไม่ใช่วันในอนาคต");
     setSaving(true);
     const finalSpecies = species === 'other' ? otherPetText : species;
     const finalBreed = breed === 'อื่นๆ' ? customBreed : (breed || customBreed);
@@ -467,7 +468,7 @@ export default function EditPetPage() {
 
               <div className="ep-field">
                 <label className="ep-label">วันเกิด</label>
-                <input className="ep-input" type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} />
+                <input className="ep-input" type="date" value={birthdate} max={new Date().toISOString().split('T')[0]} onChange={e => setBirthdate(e.target.value)} />
               </div>
 
               <div className="ep-field" style={{ marginBottom: 0 }}>

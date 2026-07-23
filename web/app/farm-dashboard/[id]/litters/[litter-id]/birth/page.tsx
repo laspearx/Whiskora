@@ -59,6 +59,7 @@ export default function RecordBirthPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!userId || !litterInfo) return;
+    if (actualBirthDate > new Date().toISOString().split('T')[0]) { alert('วันที่คลอดต้องไม่ใช่วันในอนาคต'); return; }
     setIsLoading(true);
     try {
       const { error: litterError } = await supabase.from('litters').update({ status: 'คลอดแล้ว', actual_birth_date: actualBirthDate }).eq('id', litterId);
@@ -157,7 +158,7 @@ export default function RecordBirthPage() {
             <form onSubmit={handleSubmit}>
               <div className="rb-card">
                 <label className="rb-date-label">วันที่คลอดจริง</label>
-                <input type="date" className="rb-input" value={actualBirthDate} onChange={(e) => setActualBirthDate(e.target.value)} required />
+                <input type="date" className="rb-input" value={actualBirthDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setActualBirthDate(e.target.value)} required />
               </div>
 
               <div className="rb-sec-head">
