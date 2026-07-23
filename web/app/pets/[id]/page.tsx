@@ -771,6 +771,9 @@ export default function PetDetailPage() {
         .hero-photo-placeholder:hover { background: #fbd5e3; }
         .hero-photo-placeholder-icon { width: 56px; height: 56px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(232,70,119,.15); }
         .hero-photo-placeholder-text { font-size: 13px; font-weight: 600; color: ${F.pink}; }
+        .hero-photo-camera-btn { position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: ${F.pink}; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; box-shadow: 0 2px 10px rgba(0,0,0,.2); transition: background .15s; z-index: 2; }
+        .hero-photo-camera-btn:hover { background: #D63F6A; }
+        .hero-photo-camera-btn:disabled { opacity: .7; cursor: default; }
         .hero-main-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
@@ -1119,6 +1122,20 @@ export default function PetDetailPage() {
                 <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
                   <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
                 </div>
+              )}
+              {isOwner && (pet.image_url || selectedImage) && (
+                <button
+                  type="button"
+                  className="hero-photo-camera-btn"
+                  disabled={uploadingMainPhoto}
+                  onClick={(e) => { e.stopPropagation(); mainPhotoRef.current?.click(); }}
+                  aria-label="เปลี่ยนรูปโปรไฟล์"
+                >
+                  {uploadingMainPhoto
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  }
+                </button>
               )}
               <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
             </div>
