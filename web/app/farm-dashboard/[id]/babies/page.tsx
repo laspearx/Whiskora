@@ -83,7 +83,7 @@ export default function BabyDashboardPage() {
               }
             </button>
           )}
-          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+          <input type="file" accept="image/*" style={{ display: 'none' }}
             ref={el => { fileRefs.current[baby.id] = el; }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
           />

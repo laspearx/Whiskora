@@ -541,13 +541,14 @@ export default function PetDetailPage() {
     setUploadingMainPhoto(true);
     try {
       const croppedBlob = await getCroppedBlob(cropImageSrc, croppedAreaPixels);
-      const path = `${sessionUserId}/${pet.id}-main.jpg`;
-      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, croppedBlob, { upsert: true, contentType: 'image/jpeg' });
+      const path = `${sessionUserId}/${pet.id}-main-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, croppedBlob, { contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
-      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', pet.id);
-      setPet(p => p ? { ...p, image_url: publicUrl } : p);
-      setSelectedImage(publicUrl);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from('pets').update({ image_url: url }).eq('id', pet.id);
+      setPet(p => p ? { ...p, image_url: url } : p);
+      setSelectedImage(url);
       setCropImageSrc(null);
       setCrop({ x: 0, y: 0 });
       setZoom(1);
