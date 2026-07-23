@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 
 export type WorkspaceType = "personal" | "farm" | "shop" | "service";
-export type MemberRole = "owner" | "admin" | "staff" | "viewer";
+export type MemberRole = "owner" | "manager" | "staff" | "viewer";
 
 export interface Workspace {
   id: string;

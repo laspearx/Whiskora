@@ -63,7 +63,7 @@ export default function FarmPrivacyPage() {
   const params = useParams();
   const farmId = params?.id as string;
   const { myRole } = useFarmAccess();
-  const canEdit = myRole === 'owner' || myRole === 'admin';
+  const canEdit = myRole === 'owner' || myRole === 'manager';
 
   const [loading, setLoading] = useState(true);
   const [fieldGroups, setFieldGroups] = useState<FieldGroup[]>([]);

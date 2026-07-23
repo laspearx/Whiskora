@@ -27,6 +27,7 @@ export default function MyPetsPage() {
   const [loading, setLoading] = useState(true);
   const [personalPets, setPersonalPets] = useState<any[]>([]);
   const [farmPets, setFarmPets] = useState<Record<string, { name: string; pets: any[] }>>({});
+  const [pendingTransfers, setPendingTransfers] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -51,6 +52,12 @@ export default function MyPetsPage() {
 
       setPersonalPets(personal);
       setFarmPets(grouped);
+
+      const { count } = await supabase
+        .from('pet_ownership_transfers').select('id', { count: 'exact', head: true })
+        .eq('to_user_id', uid).eq('status', 'pending');
+      setPendingTransfers(count || 0);
+
       setLoading(false);
     };
     load();
@@ -197,6 +204,21 @@ export default function MyPetsPage() {
           border-color: ${F.pink};
         }
 
+        .transfer-banner {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: ${F.pinkSoft};
+          border: 1px solid ${F.pink};
+          border-radius: 14px;
+          padding: 12px 16px;
+          margin-bottom: 16px;
+          text-decoration: none;
+          color: inherit;
+        }
+        .transfer-banner-title { font-size: 13px; font-weight: 700; color: ${F.pinkDeep}; }
+        .transfer-banner-sub { font-size: 11px; color: ${F.inkSoft}; margin-top: 2px; }
+
         /* ── Pet list ── */
         .pet-list {
           display: grid;
@@ -340,6 +362,17 @@ export default function MyPetsPage() {
               <p>ทั้งหมด {totalPets} ตัว</p>
             </div>
           </div>
+
+          {pendingTransfers > 0 && (
+            <Link href="/profile/transfers" className="transfer-banner">
+              <img src="/icons/icon-pet-transfer.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="transfer-banner-title">มีคำขอโอนย้ายสัตว์เลี้ยง {pendingTransfers} รายการ</div>
+                <div className="transfer-banner-sub">แตะเพื่อดูและยืนยันการรับสิทธิ์เจ้าของ</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+            </Link>
+          )}
 
           {/* Personal pets */}
           <div className="pet-section">

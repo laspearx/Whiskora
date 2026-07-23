@@ -126,11 +126,12 @@ export default function PetDetailPage() {
 
   // Transfer modal
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferStep, setTransferStep] = useState<'input' | 'confirm'>('input');
+  const [transferStep, setTransferStep] = useState<'input' | 'confirm' | 'sent'>('input');
   const [transferEmail, setTransferEmail] = useState('');
   const [transferTarget, setTransferTarget] = useState<any>(null);
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState('');
+  const [pendingTransfer, setPendingTransfer] = useState<{ id: number; to_name: string | null } | null>(null);
 
   // Co-owner modal
   const [showCoOwnerModal, setShowCoOwnerModal] = useState(false);
@@ -327,6 +328,14 @@ export default function PetDetailPage() {
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
       if (weightRes.data) setWeightHistory(weightRes.data as { weight: number; recorded_date: string }[]);
 
+      const { data: transferData } = await supabase
+        .from('pet_ownership_transfers')
+        .select('id, to_user_id, profile:to_user_id(full_name)')
+        .eq('pet_id', petId)
+        .eq('status', 'pending')
+        .maybeSingle();
+      if (transferData) setPendingTransfer({ id: transferData.id, to_name: (transferData as any).profile?.full_name || null });
+
     } catch (error) {
       console.error("Fetch Error:", error);
     } finally {
@@ -354,17 +363,42 @@ export default function PetDetailPage() {
     finally { setTransferring(false); }
   };
 
+  // ─── ส่งคำขอโอนย้าย: สร้างแถว pending รอผู้รับกดยืนยัน ไม่ได้โอนทันที ───
   const handleTransferConfirm = async () => {
-    if (!transferTarget || !pet) return;
+    if (!transferTarget || !pet || !sessionUserId) return;
+    setTransferring(true);
+    try {
+      const { data, error } = await supabase
+        .from('pet_ownership_transfers')
+        .insert({
+          pet_id: pet.id, from_user_id: sessionUserId, to_user_id: transferTarget.id,
+          initiated_by: sessionUserId, status: 'pending',
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      setPendingTransfer({ id: data.id, to_name: transferTarget.full_name || null });
+      setTransferStep('sent');
+    } catch { setTransferError('ส่งคำขอไม่สำเร็จ กรุณาลองใหม่'); }
+    finally { setTransferring(false); }
+  };
+
+  const handleCancelTransfer = async () => {
+    if (!pendingTransfer) return;
     setTransferring(true);
     try {
       const { error } = await supabase
-        .from('pets')
-        .update({ user_id: transferTarget.id, farm_id: null })
-        .eq('id', pet.id);
+        .from('pet_ownership_transfers')
+        .update({ status: 'cancelled' })
+        .eq('id', pendingTransfer.id);
       if (error) throw error;
-      router.push('/profile');
-    } catch { setTransferError('โอนย้ายไม่สำเร็จ กรุณาลองใหม่'); setTransferring(false); }
+      setPendingTransfer(null);
+      setShowTransferModal(false);
+      setTransferStep('input');
+      setTransferEmail('');
+      setTransferTarget(null);
+    } catch { setTransferError('ยกเลิกไม่สำเร็จ กรุณาลองใหม่'); }
+    finally { setTransferring(false); }
   };
 
   const handleAddCoOwner = async () => {
@@ -1224,9 +1258,9 @@ export default function PetDetailPage() {
                     <img src="/icons/icon-co-owner.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
                   </button>
-                  <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); setTransferError(''); }}>
+                  <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferError(''); if (!pendingTransfer) { setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); } }}>
                     <img src="/icons/icon-pet-transfer.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-                    โอนย้ายสัตว์เลี้ยง
+                    {pendingTransfer ? 'รอผู้รับยืนยัน...' : 'โอนย้ายสัตว์เลี้ยง'}
                   </button>
                 </div>
               )}
@@ -1661,7 +1695,30 @@ export default function PetDetailPage() {
                 </div>
               </div>
 
-              {transferStep === 'input' ? (
+              {pendingTransfer ? (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '14px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.6 }}>
+                    ⏳ ส่งคำขอโอนย้ายให้ <strong>{pendingTransfer.to_name || 'ผู้รับ'}</strong> แล้ว กำลังรอเขากดยืนยัน — ระหว่างนี้คุณยังจัดการ {pet.name} ได้ตามปกติ
+                  </div>
+                  {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowTransferModal(false)} disabled={transferring}
+                      style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ปิด</button>
+                    <button onClick={handleCancelTransfer} disabled={transferring}
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: '#EF4444', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังยกเลิก...' : 'ยกเลิกคำขอ'}</button>
+                  </div>
+                </div>
+              ) : transferStep === 'sent' ? (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'center' }}>
+                  <div style={{ fontSize: 40 }}>✅</div>
+                  <div style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.6 }}>
+                    ส่งคำขอโอนย้ายให้ <strong>{transferTarget?.full_name || 'ผู้รับ'}</strong> เรียบร้อยแล้ว<br />
+                    เมื่อเขากดยืนยันรับสิทธิ์ {pet.name} จะเปลี่ยนเจ้าของโดยอัตโนมัติ
+                  </div>
+                  <button onClick={() => { setShowTransferModal(false); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); }}
+                    style={{ padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ปิด</button>
+                </div>
+              ) : transferStep === 'input' ? (
                 <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
                     <label className="field-label">อีเมลเจ้าของใหม่</label>
@@ -1688,15 +1745,15 @@ export default function PetDetailPage() {
                       <div style={{ fontSize: 15, fontWeight: 700, color: F.ink }}>{transferTarget.full_name || 'ผู้ใช้'}</div>
                     </div>
                   </div>
-                  <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#DC2626', lineHeight: 1.6 }}>
-                    เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
+                  <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#1D4ED8', lineHeight: 1.6 }}>
+                    ระบบจะส่งคำขอไปให้ผู้รับกดยืนยันก่อน — {pet.name} จะยังเป็นของคุณและจัดการได้ตามปกติจนกว่าผู้รับจะกดรับสิทธิ์ ยกเลิกคำขอได้ตลอดถ้ายังไม่ถูกยืนยัน
                   </div>
                   {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => setTransferStep('input')} disabled={transferring}
                       style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ย้อนกลับ</button>
                     <button onClick={handleTransferConfirm} disabled={transferring}
-                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: '#EF4444', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังโอน...' : 'ยืนยันโอนย้าย'}</button>
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังส่งคำขอ...' : 'ส่งคำขอโอนย้าย'}</button>
                   </div>
                 </div>
               )}
