@@ -77,6 +77,10 @@ export default function EditPetPage() {
   const [eyeColor, setEyeColor] = useState("");
   const [customEyeColor, setCustomEyeColor] = useState("");
 
+  const [sireId, setSireId] = useState("");
+  const [damId, setDamId] = useState("");
+  const [ownerPets, setOwnerPets] = useState<{ id: number; name: string; gender: string; breed?: string | null }[]>([]);
+
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -108,6 +112,8 @@ export default function EditPetPage() {
       setInitialIsNeutered(!!data.is_neutered);
       setBloodType(data.blood_type || "");
       setMicrochip(data.microchip_number || "");
+      setSireId(data.sire_id ? String(data.sire_id) : "");
+      setDamId(data.dam_id ? String(data.dam_id) : "");
       setStatus(data.status || "");
       setPrice(data.price || "");
       setPattern(data.pattern || "");
@@ -137,10 +143,21 @@ export default function EditPetPage() {
       } else setCustomBreed(petBreed);
 
       setColor(data.color || "");
+
+      const { data: petsData } = await supabase
+        .from("pets")
+        .select("id, name, gender, breed")
+        .eq("user_id", session.user.id)
+        .neq("id", petId);
+      if (petsData) setOwnerPets(petsData);
+
       setIsFetching(false);
     };
     if (petId) fetchPetData();
   }, [petId, router]);
+
+  const sireOptions = ownerPets.filter(p => p.gender === 'male' || p.gender === 'ตัวผู้');
+  const damOptions = ownerPets.filter(p => p.gender === 'female' || p.gender === 'ตัวเมีย');
 
   const handleSpeciesChange = (type: "cat" | "dog" | "other") => {
     setSpecies(type);
@@ -211,6 +228,8 @@ export default function EditPetPage() {
       is_neutered: isNeutered,
       blood_type: bloodType || null,
       microchip_number: microchip || null,
+      sire_id: sireId ? Number(sireId) : null,
+      dam_id: damId ? Number(damId) : null,
       status: status || null, price: price === "" ? null : Number(price),
       pattern: null, coat: coat || null, ear: ear || null, leg: leg || null,
     }).eq("id", petId);
@@ -537,7 +556,7 @@ export default function EditPetPage() {
                 </div>
                 <div className="ep-field">
                   <label className="ep-label">ไมโครชิพ</label>
-                  <input className="ep-input" type="text" value={microchip} onChange={e => setMicrochip(e.target.value)} placeholder="หมายเลขไมโครชิพ" style={{ fontFamily: 'monospace' }} />
+                  <input className="ep-input" type="text" value={microchip} onChange={e => setMicrochip(e.target.value)} placeholder="หมายเลขไมโครชิพ" />
                 </div>
               </div>
 
@@ -573,10 +592,31 @@ export default function EditPetPage() {
               </div>
 
               {(status === PET_STATUS.AVAILABLE || status === PET_STATUS.OPEN_RESERVE || status === PET_STATUS.RESERVED) && (
-                <div className="ep-field" style={{ marginBottom: 0 }}>
+                <div className="ep-field">
                   <label className="ep-label" style={{ color: F.pink }}>ค่าตัว / สินสอด (บาท)</label>
                   <input className="ep-input ep-price-input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="เช่น 15000" />
                 </div>
+              )}
+
+              <div className="ep-label" style={{ marginTop: 4 }}>สายเลือด (ถ้ามี)</div>
+              <div className="ep-grid2">
+                <div className="ep-field" style={{ marginBottom: 0 }}>
+                  <label className="ep-label">พ่อพันธุ์<img src="/icons/icon-men.png" alt="" style={{ display: 'inline-block', width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginLeft: 4 }} /></label>
+                  <select className="ep-select" value={sireId} onChange={e => setSireId(e.target.value)} disabled={sireOptions.length === 0}>
+                    <option value="">{sireOptions.length === 0 ? 'ยังไม่มีตัวผู้ให้เลือก' : '— ไม่ระบุ —'}</option>
+                    {sireOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
+                  </select>
+                </div>
+                <div className="ep-field" style={{ marginBottom: 0 }}>
+                  <label className="ep-label">แม่พันธุ์<img src="/icons/icon-women.png" alt="" style={{ display: 'inline-block', width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginLeft: 4 }} /></label>
+                  <select className="ep-select" value={damId} onChange={e => setDamId(e.target.value)} disabled={damOptions.length === 0}>
+                    <option value="">{damOptions.length === 0 ? 'ยังไม่มีตัวเมียให้เลือก' : '— ไม่ระบุ —'}</option>
+                    {damOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
+                  </select>
+                </div>
+              </div>
+              {ownerPets.length === 0 && (
+                <p style={{ fontSize: 11, color: F.muted, marginTop: 8 }}>ยังไม่มีสัตว์เลี้ยงตัวอื่นในบัญชีให้เลือกเป็นพ่อแม่พันธุ์</p>
               )}
             </div>
 
