@@ -13,23 +13,23 @@ const F = {
   line: "#F3F4F6", lineMid: "#E5E7EB", bg: "#fffafc",
 };
 
-type Role = "owner" | "admin" | "staff" | "viewer";
+type Role = "owner" | "manager" | "staff" | "viewer";
 
 const ROLES: { value: Role; label: string; desc: string }[] = [
-  { value: "admin",  label: "แอดมิน",  desc: "จัดการได้ทุกอย่าง ยกเว้นลบฟาร์ม" },
+  { value: "manager", label: "ผู้จัดการ", desc: "จัดการได้ทุกอย่าง ยกเว้นลบฟาร์ม" },
   { value: "staff",  label: "สตาฟ",    desc: "เพิ่ม/แก้ไขข้อมูลสัตว์และครอก" },
   { value: "viewer", label: "ผู้ดู",   desc: "ดูข้อมูลได้อย่างเดียว" },
 ];
 
 const ROLE_COLOR: Record<Role, string> = {
-  owner:  "#7C3AED",
-  admin:  F.pink,
-  staff:  F.teal,
-  viewer: F.muted,
+  owner:   "#7C3AED",
+  manager: F.pink,
+  staff:   F.teal,
+  viewer:  F.muted,
 };
 
 const ROLE_LABEL: Record<Role, string> = {
-  owner: "เจ้าของ", admin: "แอดมิน", staff: "สตาฟ", viewer: "ผู้ดู",
+  owner: "เจ้าของ", manager: "ผู้จัดการ", staff: "สตาฟ", viewer: "ผู้ดู",
 };
 
 interface Member {
@@ -73,7 +73,7 @@ export default function FarmMembersPage() {
   const [roleMenuId, setRoleMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const canManage = myRole === "owner" || myRole === "admin";
+  const canManage = myRole === "owner" || myRole === "manager";
 
   useEffect(() => {
     const load = async () => {
@@ -309,7 +309,7 @@ export default function FarmMembersPage() {
               </div>
             </div>
 
-            {/* Invite section — owner/admin only */}
+            {/* Invite section — owner/manager only */}
             {canManage && (
               <div className="fm-section">
                 <div className="fm-section-title">เชิญสมาชิกใหม่</div>

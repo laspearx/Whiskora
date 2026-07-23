@@ -128,6 +128,7 @@ function FarmDashboardContent() {
   const [litters,      setLitters]      = useState<any[]>([]);
   const [vaccines,     setVaccines]     = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [pendingReservations, setPendingReservations] = useState(0);
   const [loading,      setLoading]      = useState(true);
 
   const [showAllTasks,       setShowAllTasks]       = useState(false);
@@ -172,6 +173,11 @@ function FarmDashboardContent() {
           .from('vaccines').select('id,pet_id,vaccine_name,next_due')
           .in('pet_id', petIds).order('next_due');
         setVaccines(vacRes.data || []);
+
+        const { count } = await supabase
+          .from('pet_reservations').select('id', { count: 'exact', head: true })
+          .in('pet_id', petIds).eq('status', 'pending');
+        setPendingReservations(count || 0);
       }
 
       const apptRes = await supabase.from('appointments')
@@ -234,6 +240,10 @@ function FarmDashboardContent() {
       allTasks.push({ id: `vax-${v.id}`, urgency: 'upcoming', label: `${pn} — วัคซีน ${v.vaccine_name} อีก ${diff} วัน`, action: 'ดู', href: `/pets/${v.pet_id}/vaccines`, icon: '/icons/icon-health.png' });
     }
   });
+
+  if (pendingReservations > 0) {
+    allTasks.push({ id: 'pending-reservations', urgency: 'today', label: `มีคนจองสัตว์ ${pendingReservations} ตัว รอยืนยัน`, action: 'ตรวจสอบ', href: `/farm-dashboard/${farmId}/reservations`, icon: '/icons/icon-calendar.png' });
+  }
 
   appointments.forEach(a => {
     if (!a.appt_date) return;

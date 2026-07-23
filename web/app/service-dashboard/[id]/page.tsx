@@ -44,7 +44,7 @@ function ServiceDashboardContent() {
   const serviceId = params.id as string;
   const fromPage = searchParams.get("from") || "profile";
   const { myRole } = useServiceAccess();
-  const canEdit = myRole === "owner" || myRole === "admin";
+  const canEdit = myRole === "owner" || myRole === "manager";
 
   const [service, setService] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);

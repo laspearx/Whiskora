@@ -13,14 +13,14 @@ const F = {
   line: "#F3F4F6", lineMid: "#E5E7EB",
 };
 
-type Role = "owner" | "admin" | "staff" | "viewer";
+type Role = "owner" | "manager" | "staff" | "viewer";
 const ROLES: { value: Role; label: string; desc: string }[] = [
-  { value: "admin",  label: "แอดมิน", desc: "จัดการได้ทุกอย่าง ยกเว้นลบร้าน" },
+  { value: "manager", label: "ผู้จัดการ", desc: "จัดการได้ทุกอย่าง ยกเว้นลบร้าน" },
   { value: "staff",  label: "สตาฟ",   desc: "เพิ่ม/แก้ไขข้อมูลสินค้าและออเดอร์" },
   { value: "viewer", label: "ผู้ดู",  desc: "ดูข้อมูลได้อย่างเดียว" },
 ];
-const ROLE_COLOR: Record<Role, string> = { owner: "#7C3AED", admin: F.teal, staff: F.pink, viewer: F.muted };
-const ROLE_LABEL: Record<Role, string> = { owner: "เจ้าของ", admin: "แอดมิน", staff: "สตาฟ", viewer: "ผู้ดู" };
+const ROLE_COLOR: Record<Role, string> = { owner: "#7C3AED", manager: F.teal, staff: F.pink, viewer: F.muted };
+const ROLE_LABEL: Record<Role, string> = { owner: "เจ้าของ", manager: "ผู้จัดการ", staff: "สตาฟ", viewer: "ผู้ดู" };
 
 interface Member {
   id: string; role: Role; user_id: string; joined_at: string;
@@ -45,7 +45,7 @@ export default function ShopMembersPage() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [roleMenuId, setRoleMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const canManage = myRole === "owner" || myRole === "admin";
+  const canManage = myRole === "owner" || myRole === "manager";
 
   useEffect(() => {
     const load = async () => {

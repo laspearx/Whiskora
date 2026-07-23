@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import DefaultBottomNav from "@/app/components/DefaultBottomNav";
 
-export type ShopRole = "owner" | "admin" | "staff" | "viewer";
+export type ShopRole = "owner" | "manager" | "staff" | "viewer";
 
 interface ShopAccessContextValue {
   shopId: string;

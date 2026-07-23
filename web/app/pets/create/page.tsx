@@ -142,6 +142,7 @@ function CreatePetContent() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return alert("กรุณากรอกชื่อสัตว์เลี้ยง");
+    if (birthdate && birthdate > new Date().toISOString().split('T')[0]) return alert("วันเกิดต้องไม่ใช่วันในอนาคต");
     setSaving(true);
 
     const finalSpecies = species;
@@ -336,7 +337,7 @@ function CreatePetContent() {
                 </div>
                 <div className="cp-field" style={{ marginBottom: 0 }}>
                   <label className="cp-label">วันเกิด <span className="opt">(ถ้าทราบ)</span></label>
-                  <input type="date" className="cp-input" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
+                  <input type="date" className="cp-input" value={birthdate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setBirthdate(e.target.value)} />
                 </div>
               </div>
             </div>

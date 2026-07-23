@@ -88,6 +88,7 @@ export default function DataCheckPage() {
   const saveBirth = async (pet: any) => {
     const val = birthDrafts[pet.id];
     if (!val) return;
+    if (val > new Date().toISOString().split('T')[0]) { alert('วันเกิดต้องไม่ใช่วันในอนาคต'); return; }
     setSavingBirthId(pet.id);
     try {
       const { error } = await supabase.from('pets').update({ birth_date: val }).eq('id', pet.id);

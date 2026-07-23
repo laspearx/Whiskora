@@ -44,7 +44,7 @@ function ShopDashboardContent() {
   const shopId = params.id as string;
   const fromPage = searchParams.get("from") || "profile";
   const { myRole } = useShopAccess();
-  const canEdit = myRole === "owner" || myRole === "admin";
+  const canEdit = myRole === "owner" || myRole === "manager";
 
   const [shop, setShop] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);

@@ -52,14 +52,14 @@ const Icon = {
 
 // ─── TABS ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'pedigree', label: 'แผนผังสายเลือด', icon: <img src="/icons/icon-breeding.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'health', label: 'สุขภาพ', icon: <img src="/icons/icon-health.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'vaccine', label: 'วัคซีน', icon: <Icon.Syringe /> },
-  { id: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
-  { id: 'activities', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
-  { id: 'docs', label: 'เอกสาร', icon: <img src="/icons/icon-documents.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
-  { id: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'overview', fieldGroupKey: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'แผนผังสายเลือด', icon: <img src="/icons/icon-breeding.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'health', fieldGroupKey: 'health', label: 'สุขภาพ', icon: <img src="/icons/icon-health.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'วัคซีน', icon: <Icon.Syringe /> },
+  { id: 'weight', fieldGroupKey: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
+  { id: 'activities', fieldGroupKey: 'medical_notes', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
+  { id: 'docs', fieldGroupKey: 'documents', label: 'เอกสาร', icon: <img src="/icons/icon-documents.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
+  { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
 ];
 
 
@@ -87,6 +87,11 @@ export default function PetDetailPage() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
+  const [healthDetails, setHealthDetails] = useState<{
+    blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
+    health_notes: string | null; traits: string | null;
+  } | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
@@ -113,11 +118,12 @@ export default function PetDetailPage() {
 
   // Transfer modal
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferStep, setTransferStep] = useState<'input' | 'confirm'>('input');
+  const [transferStep, setTransferStep] = useState<'input' | 'confirm' | 'sent'>('input');
   const [transferEmail, setTransferEmail] = useState('');
   const [transferTarget, setTransferTarget] = useState<any>(null);
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState('');
+  const [pendingTransfer, setPendingTransfer] = useState<{ id: number; to_name: string | null } | null>(null);
 
   // Co-owner modal
   const [showCoOwnerModal, setShowCoOwnerModal] = useState(false);
@@ -186,88 +192,61 @@ export default function PetDetailPage() {
     return () => clearTimeout(t);
   }, [showPedigreeModal, pedigreeGens]);
 
-  // ─── สร้างผังสายเลือดโดยไล่ตามลิงก์ sire_id/dam_id ขึ้นไป ───
+  // ─── สร้างผังสายเลือดผ่าน RPC get_pet_pedigree ───
+  // การเช็คสิทธิ์ทำที่ฝั่ง DB ทั้งหมด (viewer_can_see) — ถ้าดูไม่ได้ RPC จะคืน [] เปล่าๆ
+  // โดยที่ frontend ไม่มีทางรู้แม้แต่ว่า sire_id/dam_id ถูกตั้งไว้หรือไม่
   // คืนค่าเป็น array ของเจน เรียงจาก "รุ่นเก่าสุด (เจน 1)" → "ตัวเอง (เจนล่างสุด)"
-  const buildPedigreeTree = async (rootPet: Pet): Promise<PedigreeNode[][]> => {
-    // gens[0] = ตัวเอง, gens[1] = พ่อแม่, gens[2] = ปู่ย่าตายาย, ...
-    const gens: PedigreeNode[][] = [];
+  type PedigreeRow = {
+    node_id: number; child_id: number | null; name: string | null;
+    image_url: string | null; breed: string | null; gender: string | null;
+    relation: 'self' | 'sire' | 'dam'; generation: number;
+  };
 
-    // เจน 0: ตัวเอง
+  const buildPedigreeTree = async (rootPet: Pet): Promise<PedigreeNode[][]> => {
+    const { data, error } = await supabase.rpc('get_pet_pedigree', {
+      p_pet_id: rootPet.id, p_max_gen: MAX_GENERATIONS - 1,
+    });
+    if (error || !data) return [];
+    const rows = data as PedigreeRow[];
+    const selfRow = rows.find(r => r.relation === 'self');
+    if (!selfRow) return []; // ไม่มีสิทธิ์ดู หรือไม่พบข้อมูล
+
+    // map: child_id -> { sire?, dam? }
+    const byChild = new Map<number, { sire?: PedigreeRow; dam?: PedigreeRow }>();
+    for (const r of rows) {
+      if (r.relation === 'self' || r.child_id == null) continue;
+      const entry = byChild.get(r.child_id) || {};
+      if (r.relation === 'sire') entry.sire = r; else entry.dam = r;
+      byChild.set(r.child_id, entry);
+    }
+
+    const gens: PedigreeNode[][] = [];
     gens.push([{
-      id: rootPet.id, name: rootPet.name, image_url: rootPet.image_url,
-      breed: rootPet.breed, gender: rootPet.gender, isMissing: false, position: 0,
+      id: String(selfRow.node_id), name: selfRow.name, image_url: selfRow.image_url,
+      breed: selfRow.breed, gender: selfRow.gender, isMissing: false, position: 0,
     }]);
 
-    // ไล่ขึ้นไปทีละเจน จนถึง MAX_GENERATIONS หรือจนไม่มีบรรพบุรุษเหลือ
     for (let depth = 1; depth < MAX_GENERATIONS; depth++) {
       const prevGen = gens[depth - 1];
-
-      // หา id ของพ่อแม่ทั้งหมดในเจนก่อนหน้าที่ต้องไปดึงต่อ
-      const parentIdsToFetch = new Set<string>();
-      // เก็บ map: ตำแหน่งลูก -> {sire_id, dam_id}
-      const linkMap: { sireId: string | null; damId: string | null }[] = [];
-
-      for (const node of prevGen) {
-        if (node.isMissing || !node.id) {
-          linkMap.push({ sireId: null, damId: null });
-        } else {
-          // ต้องดึง sire_id/dam_id ของ node นี้ — เก็บไว้ดึง batch
-          linkMap.push({ sireId: '__pending__', damId: '__pending__' });
-          parentIdsToFetch.add(node.id);
-        }
-      }
-
-      // ดึงข้อมูล sire_id/dam_id ของ node ทั้งหมดในเจนก่อนหน้าทีเดียว
-      let parentLinks: Record<string, { sire_id: string | null; dam_id: string | null }> = {};
-      if (parentIdsToFetch.size > 0) {
-        const { data } = await supabase
-          .from('pets')
-          .select('id, sire_id, dam_id')
-          .in('id', Array.from(parentIdsToFetch));
-        if (data) for (const row of data) parentLinks[String(row.id)] = { sire_id: row.sire_id, dam_id: row.dam_id };
-      }
-
-      // รวบรวม id ของพ่อแม่ที่ต้องดึงข้อมูลเต็ม (name, image ฯลฯ)
-      const grandIdsToFetch = new Set<string>();
-      const nextLinks: { sireId: string | null; damId: string | null }[] = [];
-      for (const node of prevGen) {
-        if (node.isMissing || !node.id) {
-          nextLinks.push({ sireId: null, damId: null });
-        } else {
-          const link = parentLinks[node.id] || { sire_id: null, dam_id: null };
-          nextLinks.push({ sireId: link.sire_id, damId: link.dam_id });
-          if (link.sire_id) grandIdsToFetch.add(link.sire_id);
-          if (link.dam_id) grandIdsToFetch.add(link.dam_id);
-        }
-      }
-
-      // ดึงข้อมูลเต็มของพ่อแม่ทุกตัวในเจนนี้ทีเดียว
-      let fullData: Record<string, Pet> = {};
-      if (grandIdsToFetch.size > 0) {
-        const { data } = await supabase
-          .from('pets')
-          .select('id, name, image_url, breed, gender')
-          .in('id', Array.from(grandIdsToFetch));
-        if (data) for (const row of data) fullData[String(row.id)] = row as Pet;
-      }
-
-      // สร้างเจนใหม่: แต่ละ node ในเจนก่อนหน้าแตกเป็น พ่อ + แม่
       const newGen: PedigreeNode[] = [];
       let pos = 0;
       let hasAnyData = false;
-      for (const link of nextLinks) {
-        // พ่อ
-        if (link.sireId && fullData[link.sireId]) {
-          const p = fullData[link.sireId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+      for (const node of prevGen) {
+        const childId = node.id ? Number(node.id) : null;
+        const links = childId != null ? byChild.get(childId) : undefined;
+
+        if (links?.sire) {
+          const p = links.sire;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else {
           newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
         }
-        // แม่
-        if (link.damId && fullData[link.damId]) {
-          const p = fullData[link.damId];
-          newGen.push({ id: p.id, name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
+
+        if (links?.dam) {
+          const p = links.dam;
+          newGen.push({ id: String(p.node_id), name: p.name, image_url: p.image_url, breed: p.breed, gender: p.gender, isMissing: false, position: pos++ });
           hasAnyData = true;
         } else {
           newGen.push({ id: null, name: null, isMissing: true, position: pos++ });
@@ -279,17 +258,15 @@ export default function PetDetailPage() {
       // ถ้าเจนนี้ไม่มีข้อมูลจริงเลย (ทุกช่องว่าง) แปลว่าไม่มีบรรพบุรุษต่อแล้ว → หยุด
       // ยกเว้นเจนพ่อแม่ (depth=1) ที่ต้องแสดงเสมอแม้ว่าจะ "ไม่มีข้อมูล"
       if (!hasAnyData && depth > 1) {
-        gens.pop(); // เอาเจนว่างเปล่าออก
+        gens.pop();
         break;
       }
     }
 
-    // ตัดเจนบนสุดที่ว่างทั้งแถวออก (ยกเว้นต้องเหลืออย่างน้อยตัวเอง + พ่อแม่)
     while (gens.length > 2 && gens[gens.length - 1].every(n => n.isMissing)) {
       gens.pop();
     }
 
-    // reverse ให้รุ่นเก่าสุด = เจน 1 (index 0) อยู่บนสุด
     return gens.reverse();
   };
 
@@ -300,22 +277,35 @@ export default function PetDetailPage() {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setSessionUserId(session.user.id);
 
+      // หมายเหตุ: ตัด sire_id/dam_id และคอลัมน์สายเลือด/สุขภาพอื่นๆ ออกจาก select นี้โดยตั้งใจ —
+      // RLS ป้องกันได้แค่ระดับแถว ไม่ใช่ระดับคอลัมน์ ถ้า select('*') ไปเรื่อยๆ ผู้ชมที่ไม่มีสิทธิ์
+      // จะยังเห็นค่าดิบๆ ผ่าน network response ได้อยู่ดี แม้ว่าแท็บนั้นจะถูกซ่อนไปแล้วก็ตาม
+      // ข้อมูลสายเลือดมาจาก get_pet_pedigree() ส่วนข้อมูลสุขภาพมาจาก get_pet_health()
+      // ทั้งคู่เช็คสิทธิ์ (viewer_can_see) ที่ฝั่ง DB ก่อนคืนค่าเสมอ
       const { data: petData, error: petError } = await supabase
         .from('pets')
         .select(`
-          *,
-          sire:sire_id(id, name, image_url, breed),
-          dam:dam_id(id, name, image_url, breed),
+          id, created_at, name, breed, gender, color, pattern, birth_date, status,
+          image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
+          weight, species, farm_id, price, microchip_number,
+          is_public, gallery_urls, is_neutered,
+          cover_url, pet_code, note,
           farm:farm_id(farm_name)
         `)
         .eq('id', petId)
         .single();
 
       if (petError) throw petError;
-      setPet(petData as Pet);
+      setPet(petData as unknown as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      buildPedigreeTree(petData as unknown as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data) setFieldAccess(data as Record<string, boolean>);
+      });
+      supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data && data[0]) setHealthDetails(data[0]);
+      });
 
       const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
         supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
@@ -342,6 +332,14 @@ export default function PetDetailPage() {
       }
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
       if (weightRes.data) setWeightHistory(weightRes.data as { weight: number; recorded_date: string }[]);
+
+      const { data: transferData } = await supabase
+        .from('pet_ownership_transfers')
+        .select('id, to_user_id, profile:to_user_id(full_name)')
+        .eq('pet_id', petId)
+        .eq('status', 'pending')
+        .maybeSingle();
+      if (transferData) setPendingTransfer({ id: transferData.id, to_name: (transferData as any).profile?.full_name || null });
 
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -370,23 +368,42 @@ export default function PetDetailPage() {
     finally { setTransferring(false); }
   };
 
+  // ─── ส่งคำขอโอนย้าย: สร้างแถว pending รอผู้รับกดยืนยัน ไม่ได้โอนทันที ───
   const handleTransferConfirm = async () => {
-    if (!transferTarget || !pet) return;
+    if (!transferTarget || !pet || !sessionUserId) return;
+    setTransferring(true);
+    try {
+      const { data, error } = await supabase
+        .from('pet_ownership_transfers')
+        .insert({
+          pet_id: pet.id, from_user_id: sessionUserId, to_user_id: transferTarget.id,
+          initiated_by: sessionUserId, status: 'pending',
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      setPendingTransfer({ id: data.id, to_name: transferTarget.full_name || null });
+      setTransferStep('sent');
+    } catch { setTransferError('ส่งคำขอไม่สำเร็จ กรุณาลองใหม่'); }
+    finally { setTransferring(false); }
+  };
+
+  const handleCancelTransfer = async () => {
+    if (!pendingTransfer) return;
     setTransferring(true);
     try {
       const { error } = await supabase
-        .from('pets')
-        .update({ user_id: transferTarget.id, farm_id: null })
-        .eq('id', pet.id);
+        .from('pet_ownership_transfers')
+        .update({ status: 'cancelled' })
+        .eq('id', pendingTransfer.id);
       if (error) throw error;
-      await supabase.from('pet_activities').insert({
-        pet_id: pet.id,
-        activity_type: 'ย้ายบ้าน',
-        title: `ย้ายบ้านไปอยู่กับ ${transferTarget.full_name || 'เจ้าของใหม่'}`,
-        activity_date: new Date().toISOString().split('T')[0],
-      });
-      router.push('/profile');
-    } catch { setTransferError('โอนย้ายไม่สำเร็จ กรุณาลองใหม่'); setTransferring(false); }
+      setPendingTransfer(null);
+      setShowTransferModal(false);
+      setTransferStep('input');
+      setTransferEmail('');
+      setTransferTarget(null);
+    } catch { setTransferError('ยกเลิกไม่สำเร็จ กรุณาลองใหม่'); }
+    finally { setTransferring(false); }
   };
 
   const handleAddCoOwner = async () => {
@@ -1180,7 +1197,7 @@ export default function PetDetailPage() {
                     { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
                     { label: 'น้ำหนัก', val: latestWeightDisplay, link: `/pets/${pet.id}/weight` },
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
-                    { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                    { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
                     { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
@@ -1229,9 +1246,9 @@ export default function PetDetailPage() {
                     <img src="/icons/icon-co-owner.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
                     เจ้าของร่วม{coOwners.length > 0 ? ` (${coOwners.length})` : ''}
                   </button>
-                  <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); setTransferError(''); }}>
+                  <button className="btn-owner-action danger" onClick={() => { setShowTransferModal(true); setTransferError(''); if (!pendingTransfer) { setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); } }}>
                     <img src="/icons/icon-pet-transfer.png" alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-                    โอนย้ายสัตว์เลี้ยง
+                    {pendingTransfer ? 'รอผู้รับยืนยัน...' : 'โอนย้ายสัตว์เลี้ยง'}
                   </button>
                 </div>
               )}
@@ -1240,7 +1257,7 @@ export default function PetDetailPage() {
 
           {/* ─── Tabs ─── */}
           <div className="tabs-wrapper"><div className="tabs-inner">
-            {TABS.map(tab => (
+            {TABS.filter(tab => fieldAccess === null || fieldAccess[tab.fieldGroupKey] !== false).map(tab => (
               <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
                 <span className="tab-icon">{tab.icon}</span>{tab.label}
               </button>
@@ -1370,10 +1387,10 @@ export default function PetDetailPage() {
                         ));
                       })()}
                     </div>
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</div>
+                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{healthDetails.allergies}</div>
                       </div>
                     )}
                   </div>
@@ -1436,22 +1453,22 @@ export default function PetDetailPage() {
                         ));
                       })()}
                     </div>
-                    {pet.chronic_diseases && (
+                    {healthDetails?.chronic_diseases && (
                       <div style={{ marginTop: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>โรคประจำตัว</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400 }}>{pet.chronic_diseases}</p>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400 }}>{healthDetails.chronic_diseases}</p>
                       </div>
                     )}
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
+                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{healthDetails.allergies}</p>
                       </div>
                     )}
-                    {(pet.traits || pet.health_notes) && (
+                    {(healthDetails?.traits || healthDetails?.health_notes) && (
                       <div style={{ marginTop: '12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุเพิ่มเติม</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{[pet.traits, pet.health_notes].filter(Boolean).join(' ')}</p>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{[healthDetails?.traits, healthDetails?.health_notes].filter(Boolean).join(' ')}</p>
                       </div>
                     )}
                   </div>
@@ -1648,7 +1665,30 @@ export default function PetDetailPage() {
                 </div>
               </div>
 
-              {transferStep === 'input' ? (
+              {pendingTransfer ? (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '14px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.6 }}>
+                    ⏳ ส่งคำขอโอนย้ายให้ <strong>{pendingTransfer.to_name || 'ผู้รับ'}</strong> แล้ว กำลังรอเขากดยืนยัน — ระหว่างนี้คุณยังจัดการ {pet.name} ได้ตามปกติ
+                  </div>
+                  {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowTransferModal(false)} disabled={transferring}
+                      style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ปิด</button>
+                    <button onClick={handleCancelTransfer} disabled={transferring}
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: '#EF4444', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังยกเลิก...' : 'ยกเลิกคำขอ'}</button>
+                  </div>
+                </div>
+              ) : transferStep === 'sent' ? (
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'center' }}>
+                  <div style={{ fontSize: 40 }}>✅</div>
+                  <div style={{ fontSize: 14, color: F.inkSoft, lineHeight: 1.6 }}>
+                    ส่งคำขอโอนย้ายให้ <strong>{transferTarget?.full_name || 'ผู้รับ'}</strong> เรียบร้อยแล้ว<br />
+                    เมื่อเขากดยืนยันรับสิทธิ์ {pet.name} จะเปลี่ยนเจ้าของโดยอัตโนมัติ
+                  </div>
+                  <button onClick={() => { setShowTransferModal(false); setTransferStep('input'); setTransferEmail(''); setTransferTarget(null); }}
+                    style={{ padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ปิด</button>
+                </div>
+              ) : transferStep === 'input' ? (
                 <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
                     <label className="field-label">อีเมลเจ้าของใหม่</label>
@@ -1675,15 +1715,15 @@ export default function PetDetailPage() {
                       <div style={{ fontSize: 15, fontWeight: 700, color: F.ink }}>{transferTarget.full_name || 'ผู้ใช้'}</div>
                     </div>
                   </div>
-                  <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#DC2626', lineHeight: 1.6 }}>
-                    เมื่อโอนย้ายแล้ว คุณจะสูญเสียสิทธิ์ในการจัดการ {pet.name} ทั้งหมดทันที และไม่สามารถยกเลิกได้
+                  <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#1D4ED8', lineHeight: 1.6 }}>
+                    ระบบจะส่งคำขอไปให้ผู้รับกดยืนยันก่อน — {pet.name} จะยังเป็นของคุณและจัดการได้ตามปกติจนกว่าผู้รับจะกดรับสิทธิ์ ยกเลิกคำขอได้ตลอดถ้ายังไม่ถูกยืนยัน
                   </div>
                   {transferError && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 500 }}>{transferError}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => setTransferStep('input')} disabled={transferring}
                       style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>ย้อนกลับ</button>
                     <button onClick={handleTransferConfirm} disabled={transferring}
-                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: '#EF4444', color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังโอน...' : 'ยืนยันโอนย้าย'}</button>
+                      style={{ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{transferring ? 'กำลังส่งคำขอ...' : 'ส่งคำขอโอนย้าย'}</button>
                   </div>
                 </div>
               )}

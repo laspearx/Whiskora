@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import DefaultBottomNav from "@/app/components/DefaultBottomNav";
 
-export type ServiceRole = "owner" | "admin" | "staff" | "viewer";
+export type ServiceRole = "owner" | "manager" | "staff" | "viewer";
 
 interface ServiceAccessContextValue {
   serviceId: string;

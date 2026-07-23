@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import FarmBottomNav from "@/app/components/FarmBottomNav";
 
-export type FarmRole = "owner" | "admin" | "staff" | "viewer";
+export type FarmRole = "owner" | "manager" | "staff" | "viewer";
 
 interface FarmAccessContextValue {
   farmId: string;
