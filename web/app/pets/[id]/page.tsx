@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { speciesTh } from '@/lib/species';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
+import Cropper from 'react-easy-crop';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
 
@@ -128,6 +129,10 @@ export default function PetDetailPage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const mainPhotoRef = useRef<HTMLInputElement>(null);
   const [uploadingMainPhoto, setUploadingMainPhoto] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
   // Status action
   const [showStatusSheet, setShowStatusSheet] = useState(false);
@@ -474,7 +479,7 @@ export default function PetDetailPage() {
   // ─── ปุ่ม: อัปโหลดรูป/วิดีโอเข้าแกลลอรี่ ───
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !pet) return;
+    if (!files || files.length === 0 || !pet || !sessionUserId) return;
     const current = parseGallery(pet.gallery_urls || '');
     const mainCount = pet.image_url ? 1 : 0;
     const totalUsed = mainCount + current.length;
@@ -497,7 +502,7 @@ export default function PetDetailPage() {
         if (isImage) {
           uploadFile = await resizeImage(file, 1200, 0.85);
         }
-        const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const path = `${sessionUserId}/${pet.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, uploadFile, { contentType: 'image/jpeg' });
         if (upErr) { console.error(upErr); continue; }
         const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
@@ -515,25 +520,53 @@ export default function PetDetailPage() {
     }
   };
 
-  // ─── ปุ่ม: อัปโหลดรูปหลัก ───
-  const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── ปุ่ม: เลือกรูปหลัก → เปิดหน้าต่าง crop ───
+  const handleMainPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !pet) return;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const onMainCropComplete = useCallback((_area: any, pixels: any) => setCroppedAreaPixels(pixels), []);
+
+  const getCroppedBlob = (src: string, pixelCrop: any): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = pixelCrop.width; canvas.height = pixelCrop.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('no ctx')); return; }
+        ctx.drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas empty'))), 'image/jpeg', 0.9);
+      };
+      img.src = src;
+    });
+
+  // ─── ปุ่ม: ยืนยัน crop → อัปโหลดรูปหลัก ───
+  const handleConfirmMainPhotoCrop = async () => {
+    if (!cropImageSrc || !croppedAreaPixels || !pet || !sessionUserId) return;
     setUploadingMainPhoto(true);
     try {
-      const resized = await resizeImage(file, 1200, 0.85);
-      const path = `${pet.id}/main.jpg`;
-      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+      const croppedBlob = await getCroppedBlob(cropImageSrc, croppedAreaPixels);
+      const path = `${sessionUserId}/${pet.id}-main-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, croppedBlob, { contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
-      await supabase.from('pets').update({ image_url: publicUrl }).eq('id', pet.id);
-      setPet(p => p ? { ...p, image_url: publicUrl } : p);
-      setSelectedImage(publicUrl);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from('pets').update({ image_url: url }).eq('id', pet.id);
+      setPet(p => p ? { ...p, image_url: url } : p);
+      setSelectedImage(url);
+      setCropImageSrc(null);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
     } catch (err) {
       console.error(err); alert('อัปโหลดรูปไม่สำเร็จ');
     } finally {
       setUploadingMainPhoto(false);
-      if (mainPhotoRef.current) mainPhotoRef.current.value = '';
     }
   };
 
@@ -759,10 +792,12 @@ export default function PetDetailPage() {
         .gallery-thumb-more img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
         .gallery-thumb-more span { position: relative; z-index: 1; }
         .hero-main-image { flex-shrink: 0; width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 1px solid ${F.pinkBorder}; box-shadow: 0 4px 24px rgba(232,70,119,.08); cursor: zoom-in; }
-        .hero-photo-placeholder { background: ${F.pinkSoft}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-style: dashed; transition: background .18s; }
-        .hero-photo-placeholder:hover { background: #fbd5e3; }
-        .hero-photo-placeholder-icon { width: 56px; height: 56px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(232,70,119,.15); }
-        .hero-photo-placeholder-text { font-size: 13px; font-weight: 600; color: ${F.pink}; }
+        .hero-photo-empty { background: ${F.pinkSoft}; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .18s; }
+        .hero-photo-empty:hover { background: #fbd5e3; }
+        .hero-photo-empty-icon { width: 72px; height: 72px; object-fit: contain; opacity: .45; }
+        .hero-photo-camera-btn { position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: ${F.pink}; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; box-shadow: 0 2px 10px rgba(0,0,0,.2); transition: background .15s; z-index: 2; }
+        .hero-photo-camera-btn:hover { background: #D63F6A; }
+        .hero-photo-camera-btn:disabled { opacity: .7; cursor: default; }
         .hero-main-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
         .hero-main-image:hover img { transform: scale(1.04); }
         .hero-info { flex: 1; min-width: 0; }
@@ -1100,21 +1135,32 @@ export default function PetDetailPage() {
             )}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {(!selectedImage && !pet.image_url && isOwner) ? (
-                <div className="hero-main-image hero-photo-placeholder" onClick={() => mainPhotoRef.current?.click()}>
-                  <div className="hero-photo-placeholder-icon">
-                    {uploadingMainPhoto
-                      ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
-                      : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    }
-                  </div>
-                  <span className="hero-photo-placeholder-text">{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพ'}</span>
+                <div className="hero-main-image hero-photo-empty" onClick={() => mainPhotoRef.current?.click()}>
+                  {uploadingMainPhoto
+                    ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                    : <img src="/icons/icon-paw-pink.png" alt="" className="hero-photo-empty-icon" />
+                  }
                 </div>
               ) : (
                 <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
                   <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
                 </div>
               )}
-              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
+              {isOwner && (
+                <button
+                  type="button"
+                  className="hero-photo-camera-btn"
+                  disabled={uploadingMainPhoto}
+                  onClick={(e) => { e.stopPropagation(); mainPhotoRef.current?.click(); }}
+                  aria-label="เปลี่ยนรูปโปรไฟล์"
+                >
+                  {uploadingMainPhoto
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  }
+                </button>
+              )}
+              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoFileChange} />
             </div>
             <div className="hero-info">
               <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
@@ -1731,6 +1777,24 @@ export default function PetDetailPage() {
 
       {/* ─── Toast ─── */}
       {copied && <div className="toast">คัดลอกลิงก์แล้ว</div>}
+
+      {/* ─── Crop รูปโปรไฟล์หลัก ─── */}
+      {cropImageSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)', padding: 16 }}>
+          <div style={{ background: 'white', width: '100%', maxWidth: 360, borderRadius: 20, overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '100%', height: 300, background: '#111' }}>
+              <Cropper image={cropImageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="rect" onCropChange={setCrop} onCropComplete={onMainCropComplete} onZoomChange={setZoom} />
+            </div>
+            <div style={{ padding: '20px 20px 24px' }}>
+              <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', accentColor: F.pink, marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={() => { setCropImageSrc(null); setCrop({ x: 0, y: 0 }); setZoom(1); }} style={{ flex: 1, padding: 12, borderRadius: 12, border: `1.5px solid ${F.line}`, background: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: F.inkSoft, cursor: 'pointer' }}>ยกเลิก</button>
+                <button type="button" onClick={handleConfirmMainPhotoCrop} disabled={uploadingMainPhoto} style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', background: F.ink, color: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: uploadingMainPhoto ? .6 : 1 }}>{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'ยืนยัน'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

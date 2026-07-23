@@ -157,9 +157,9 @@ export default function EditLitterPage() {
         .le-select:focus { border-color: #FBCFE8; background: white; }
         .le-date { width: 100%; background: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 0 16px; height: 48px; outline: none; font-size: 14px; font-weight: 700; color: #111827; text-align: center; transition: border-color .15s; font-family: inherit; }
         .le-date:focus { border-color: #FBCFE8; background: white; }
-        .le-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .le-field { margin-bottom: 16px; }
-        .le-field:last-child { margin-bottom: 0; }
+        .le-form-fields { display: flex; flex-direction: column; gap: 16px; }
+        .le-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+        .le-field { margin: 0; }
         .le-delete { display: flex; justify-content: center; margin-top: 8px; }
         .le-delete-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; border: 1px solid #FCA5A5; background: white; color: #DC2626; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
         .le-delete-btn:hover { background: #FEF2F2; }
@@ -186,34 +186,36 @@ export default function EditLitterPage() {
 
           <div className="le-card">
             <form onSubmit={handleSubmit}>
-              <div className="le-field">
-                <label className="le-label">รหัสครอก (Litter Code)</label>
-                <input required type="text" name="litter_code" value={formData.litter_code} onChange={handleChange} className="le-input" />
-              </div>
+              <div className="le-form-fields">
+                <div className="le-field">
+                  <label className="le-label">รหัสครอก (Litter Code)</label>
+                  <input required type="text" name="litter_code" value={formData.litter_code} onChange={handleChange} className="le-input" />
+                </div>
 
-              <div className="le-grid2">
-                <div className="le-field">
-                  <label className="le-label"><img src="/icons/icon-men.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />พ่อพันธุ์</label>
-                  <select name="sire_id" value={formData.sire_id} onChange={handleChange} className="le-select">
-                    {maleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                <div className="le-grid2">
+                  <div className="le-field">
+                    <label className="le-label">พ่อพันธุ์<img src="/icons/icon-men.png" alt="" style={{display:'inline-block',width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginLeft:4}} /></label>
+                    <select name="sire_id" value={formData.sire_id} onChange={handleChange} className="le-select">
+                      {maleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="le-field">
+                    <label className="le-label">แม่พันธุ์<img src="/icons/icon-women.png" alt="" style={{display:'inline-block',width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginLeft:4}} /></label>
+                    <select name="dam_id" value={formData.dam_id} onChange={handleChange} className="le-select">
+                      {femaleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="le-field">
-                  <label className="le-label"><img src="/icons/icon-women.png" alt="" style={{width:14,height:14,objectFit:'contain',verticalAlign:'middle',marginRight:4}} />แม่พันธุ์</label>
-                  <select name="dam_id" value={formData.dam_id} onChange={handleChange} className="le-select">
-                    {femaleBreeders.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                </div>
-              </div>
 
-              <div className="le-grid2">
-                <div className="le-field">
-                  <label className="le-label">วันที่บรีด</label>
-                  <input type="date" name="mating_date" value={formData.mating_date} onChange={handleChange} className="le-date" />
-                </div>
-                <div className="le-field" style={{ marginBottom: 0 }}>
-                  <label className="le-label">วันที่คลอดจริง</label>
-                  <input type="date" name="actual_birth_date" value={formData.actual_birth_date} onChange={handleChange} className="le-date" />
+                <div className="le-grid2">
+                  <div className="le-field">
+                    <label className="le-label">วันที่บรีด</label>
+                    <input type="date" name="mating_date" value={formData.mating_date} onChange={handleChange} className="le-date" />
+                  </div>
+                  <div className="le-field">
+                    <label className="le-label">วันที่คลอดจริง</label>
+                    <input type="date" name="actual_birth_date" value={formData.actual_birth_date} onChange={handleChange} className="le-date" />
+                  </div>
                 </div>
               </div>
             </form>
