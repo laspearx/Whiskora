@@ -256,11 +256,15 @@ function FarmDashboardContent() {
 
   const noBirth = pets.filter(p => !p.birth_date).length;
   if (noBirth > 0) {
-    allTasks.push({ id: 'no-birth', urgency: 'info', label: `สัตว์ ${noBirth} ตัวยังไม่มีวันเกิด`, action: 'แก้ไข', href: `/farm-dashboard/${farmId}/pets`, icon: '/icons/icon-my-pets.png' });
+    allTasks.push({ id: 'no-birth', urgency: 'info', label: `สัตว์ ${noBirth} ตัวยังไม่มีวันเกิด`, action: 'แก้ไข', href: `/farm-dashboard/${farmId}/data-check?focus=birth`, icon: '/icons/icon-my-pets.png' });
   }
   const noImage = pets.filter(p => !p.image_url).length;
   if (noImage > 0) {
-    allTasks.push({ id: 'no-img', urgency: 'info', label: `สัตว์ ${noImage} ตัวยังไม่มีรูปภาพ`, action: 'เพิ่มรูป', href: `/farm-dashboard/${farmId}/babies`, icon: '/icons/icon-my-pets.png' });
+    allTasks.push({ id: 'no-img', urgency: 'info', label: `สัตว์ ${noImage} ตัวยังไม่มีรูปภาพ`, action: 'เพิ่มรูป', href: `/farm-dashboard/${farmId}/data-check?focus=photo`, icon: '/icons/icon-my-pets.png' });
+  }
+  const noStatus = pets.filter(p => !p.status).length;
+  if (noStatus > 0) {
+    allTasks.push({ id: 'no-status', urgency: 'info', label: `สัตว์ ${noStatus} ตัวยังไม่ใส่สถานะในฟาร์ม`, action: 'อัปเดตสถานะ', href: `/farm-dashboard/${farmId}/data-check?focus=status`, icon: '/icons/icon-my-pets.png' });
   }
 
   const urgOrd = { overdue: 0, today: 1, upcoming: 2, info: 3 } as const;
