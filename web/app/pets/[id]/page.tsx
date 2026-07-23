@@ -767,10 +767,9 @@ export default function PetDetailPage() {
         .gallery-thumb-more img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
         .gallery-thumb-more span { position: relative; z-index: 1; }
         .hero-main-image { flex-shrink: 0; width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 1px solid ${F.pinkBorder}; box-shadow: 0 4px 24px rgba(232,70,119,.08); cursor: zoom-in; }
-        .hero-photo-placeholder { background: ${F.pinkSoft}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-style: dashed; transition: background .18s; }
-        .hero-photo-placeholder:hover { background: #fbd5e3; }
-        .hero-photo-placeholder-icon { width: 56px; height: 56px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(232,70,119,.15); }
-        .hero-photo-placeholder-text { font-size: 13px; font-weight: 600; color: ${F.pink}; }
+        .hero-photo-empty { background: ${F.pinkSoft}; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .18s; }
+        .hero-photo-empty:hover { background: #fbd5e3; }
+        .hero-photo-empty-icon { width: 72px; height: 72px; object-fit: contain; opacity: .45; }
         .hero-photo-camera-btn { position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: ${F.pink}; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; box-shadow: 0 2px 10px rgba(0,0,0,.2); transition: background .15s; z-index: 2; }
         .hero-photo-camera-btn:hover { background: #D63F6A; }
         .hero-photo-camera-btn:disabled { opacity: .7; cursor: default; }
@@ -1109,21 +1108,18 @@ export default function PetDetailPage() {
             )}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {(!selectedImage && !pet.image_url && isOwner) ? (
-                <div className="hero-main-image hero-photo-placeholder" onClick={() => mainPhotoRef.current?.click()}>
-                  <div className="hero-photo-placeholder-icon">
-                    {uploadingMainPhoto
-                      ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
-                      : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    }
-                  </div>
-                  <span className="hero-photo-placeholder-text">{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพ'}</span>
+                <div className="hero-main-image hero-photo-empty" onClick={() => mainPhotoRef.current?.click()}>
+                  {uploadingMainPhoto
+                    ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></path></svg>
+                    : <img src="/icons/icon-paw-pink.png" alt="" className="hero-photo-empty-icon" />
+                  }
                 </div>
               ) : (
                 <div className="hero-main-image" onClick={() => setLightboxImage(selectedImage || pet.image_url || null)}>
                   <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
                 </div>
               )}
-              {isOwner && (pet.image_url || selectedImage) && (
+              {isOwner && (
                 <button
                   type="button"
                   className="hero-photo-camera-btn"
