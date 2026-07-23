@@ -463,7 +463,7 @@ export default function PetDetailPage() {
   // ─── ปุ่ม: อัปโหลดรูป/วิดีโอเข้าแกลลอรี่ ───
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !pet) return;
+    if (!files || files.length === 0 || !pet || !sessionUserId) return;
     const current = parseGallery(pet.gallery_urls || '');
     const mainCount = pet.image_url ? 1 : 0;
     const totalUsed = mainCount + current.length;
@@ -486,7 +486,7 @@ export default function PetDetailPage() {
         if (isImage) {
           uploadFile = await resizeImage(file, 1200, 0.85);
         }
-        const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const path = `${sessionUserId}/${pet.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, uploadFile, { contentType: 'image/jpeg' });
         if (upErr) { console.error(upErr); continue; }
         const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
@@ -507,11 +507,11 @@ export default function PetDetailPage() {
   // ─── ปุ่ม: อัปโหลดรูปหลัก ───
   const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !pet) return;
+    if (!file || !pet || !sessionUserId) return;
     setUploadingMainPhoto(true);
     try {
       const resized = await resizeImage(file, 1200, 0.85);
-      const path = `${pet.id}/main.jpg`;
+      const path = `${sessionUserId}/${pet.id}-main.jpg`;
       const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
