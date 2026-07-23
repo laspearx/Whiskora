@@ -303,10 +303,10 @@ export default function PetDetailPage() {
         .single();
 
       if (petError) throw petError;
-      setPet(petData as Pet);
+      setPet(petData as unknown as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      buildPedigreeTree(petData as unknown as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
       supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
         if (data) setFieldAccess(data as Record<string, boolean>);
       });
