@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { speciesTh } from '@/lib/species';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
+import Cropper from 'react-easy-crop';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
 
@@ -136,6 +137,10 @@ export default function PetDetailPage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const mainPhotoRef = useRef<HTMLInputElement>(null);
   const [uploadingMainPhoto, setUploadingMainPhoto] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
   // Status action
   const [showStatusSheet, setShowStatusSheet] = useState(false);
@@ -504,25 +509,52 @@ export default function PetDetailPage() {
     }
   };
 
-  // ─── ปุ่ม: อัปโหลดรูปหลัก ───
-  const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── ปุ่ม: เลือกรูปหลัก → เปิดหน้าต่าง crop ───
+  const handleMainPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !pet || !sessionUserId) return;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const onMainCropComplete = useCallback((_area: any, pixels: any) => setCroppedAreaPixels(pixels), []);
+
+  const getCroppedBlob = (src: string, pixelCrop: any): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = pixelCrop.width; canvas.height = pixelCrop.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('no ctx')); return; }
+        ctx.drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas empty'))), 'image/jpeg', 0.9);
+      };
+      img.src = src;
+    });
+
+  // ─── ปุ่ม: ยืนยัน crop → อัปโหลดรูปหลัก ───
+  const handleConfirmMainPhotoCrop = async () => {
+    if (!cropImageSrc || !croppedAreaPixels || !pet || !sessionUserId) return;
     setUploadingMainPhoto(true);
     try {
-      const resized = await resizeImage(file, 1200, 0.85);
+      const croppedBlob = await getCroppedBlob(cropImageSrc, croppedAreaPixels);
       const path = `${sessionUserId}/${pet.id}-main.jpg`;
-      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, croppedBlob, { upsert: true, contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path);
       await supabase.from('pets').update({ image_url: publicUrl }).eq('id', pet.id);
       setPet(p => p ? { ...p, image_url: publicUrl } : p);
       setSelectedImage(publicUrl);
+      setCropImageSrc(null);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
     } catch (err) {
       console.error(err); alert('อัปโหลดรูปไม่สำเร็จ');
     } finally {
       setUploadingMainPhoto(false);
-      if (mainPhotoRef.current) mainPhotoRef.current.value = '';
     }
   };
 
@@ -1133,7 +1165,7 @@ export default function PetDetailPage() {
                   }
                 </button>
               )}
-              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoUpload} />
+              <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoFileChange} />
             </div>
             <div className="hero-info">
               <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
@@ -1768,6 +1800,24 @@ export default function PetDetailPage() {
 
       {/* ─── Toast ─── */}
       {copied && <div className="toast">คัดลอกลิงก์แล้ว</div>}
+
+      {/* ─── Crop รูปโปรไฟล์หลัก ─── */}
+      {cropImageSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)', padding: 16 }}>
+          <div style={{ background: 'white', width: '100%', maxWidth: 360, borderRadius: 20, overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '100%', height: 300, background: '#111' }}>
+              <Cropper image={cropImageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="rect" onCropChange={setCrop} onCropComplete={onMainCropComplete} onZoomChange={setZoom} />
+            </div>
+            <div style={{ padding: '20px 20px 24px' }}>
+              <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', accentColor: F.pink, marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={() => { setCropImageSrc(null); setCrop({ x: 0, y: 0 }); setZoom(1); }} style={{ flex: 1, padding: 12, borderRadius: 12, border: `1.5px solid ${F.line}`, background: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: F.inkSoft, cursor: 'pointer' }}>ยกเลิก</button>
+                <button type="button" onClick={handleConfirmMainPhotoCrop} disabled={uploadingMainPhoto} style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', background: F.ink, color: 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: uploadingMainPhoto ? .6 : 1 }}>{uploadingMainPhoto ? 'กำลังอัปโหลด...' : 'ยืนยัน'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

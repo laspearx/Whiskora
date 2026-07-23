@@ -26,6 +26,7 @@ export default function BabyDashboardPage() {
   const [litters, setLitters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function BabyDashboardPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { router.push(`/login?redirect=/farm-dashboard/${farmId}/babies`); return; }
+        setUserId(session.user.id);
 
         const [{ data: babiesData }, { data: littersData }] = await Promise.all([
           supabase.from('pets')
@@ -58,39 +60,45 @@ export default function BabyDashboardPage() {
 
   const renderBabyThumb = (baby: any) => {
     const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
+    const hasPhoto = !!baby.image_url;
     return (
-      <Link key={baby.id} href={`/pets/${baby.id}`} className="bd-baby-thumb">
+      <div key={baby.id} className="bd-baby-thumb">
         <div className="bd-baby-photo">
-          <div className="bd-baby-photo-frame">
-            {baby.image_url
+          <Link href={`/pets/${baby.id}`} className="bd-baby-photo-frame">
+            {hasPhoto
               ? <img src={baby.image_url} alt={baby.name} />
               : <img src={isMale ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
             }
-          </div>
-          <div
-            className={`bd-baby-upload ${uploadingId === baby.id ? 'bd-baby-uploading' : ''}`}
-            onClick={e => { e.preventDefault(); e.stopPropagation(); fileRefs.current[baby.id]?.click(); }}
-          >
-            {uploadingId === baby.id
-              ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
-              : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            }
-          </div>
-          <input type="file" accept="image/*" style={{ display: 'none' }}
+          </Link>
+          {!hasPhoto && (
+            <button
+              type="button"
+              className={`bd-baby-upload ${uploadingId === baby.id ? 'bd-baby-uploading' : ''}`}
+              onClick={() => fileRefs.current[baby.id]?.click()}
+              aria-label="อัปโหลดรูป หรือ ถ่ายรูป"
+            >
+              {uploadingId === baby.id
+                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
+                : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              }
+            </button>
+          )}
+          <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
             ref={el => { fileRefs.current[baby.id] = el; }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(baby, f); e.target.value = ''; }}
           />
         </div>
-        <span className="bd-baby-name">{baby.name || '?'}</span>
-      </Link>
+        <Link href={`/pets/${baby.id}`} className="bd-baby-name">{baby.name || '?'}</Link>
+      </div>
     );
   };
 
   const handlePhotoUpload = async (baby: any, file: File) => {
+    if (!userId) return;
     setUploadingId(baby.id);
     try {
       const ext = file.name.split('.').pop();
-      const filePath = `${farmId}/${baby.id}/photo.${ext}`;
+      const filePath = `${userId}/${baby.id}-photo.${ext}`;
       const { error: upErr } = await supabase.storage.from('pet-photos').upload(filePath, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(filePath);
@@ -136,6 +144,7 @@ export default function BabyDashboardPage() {
         .bd-stats { display: flex; gap: 10px; margin-bottom: 20px; }
         .bd-stat { flex: 1; background: white; border: 1px solid ${F.line}; border-radius: 14px; padding: 14px 12px; text-align: center; }
         .bd-stat-icon { display: block; width: 30px; height: 30px; object-fit: contain; margin: 0 auto 6px; }
+        .bd-stat-icon-bottle { width: 38px; height: 38px; }
         .bd-stat-val { font-size: 22px; font-weight: 800; line-height: 1; }
         .bd-stat-lbl { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-top: 4px; letter-spacing: 0.04em; }
 
@@ -159,10 +168,10 @@ export default function BabyDashboardPage() {
         .bd-babies { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; }
         .bd-baby-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; }
         .bd-baby-photo { width: 100%; aspect-ratio: 1; position: relative; }
-        .bd-baby-photo-frame { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .bd-baby-photo-frame { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: ${F.bg}; border: 2px solid ${F.line}; display: flex; align-items: center; justify-content: center; font-size: 20px; text-decoration: none; }
         .bd-baby-photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-        .bd-baby-name { font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .bd-baby-upload { position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; }
+        .bd-baby-name { display: block; font-size: 10px; font-weight: 600; color: ${F.inkSoft}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-decoration: none; }
+        .bd-baby-upload { position: absolute; bottom: -3px; right: -3px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.97); border: 1.5px solid ${F.pinkBorder}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; z-index: 2; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
         .bd-baby-upload:hover { background: ${F.pinkSoft}; }
         .bd-baby-uploading { opacity: 0.5; pointer-events: none; }
 
@@ -193,7 +202,7 @@ export default function BabyDashboardPage() {
           {babies.length > 0 && (
             <div className="bd-stats">
               <div className="bd-stat">
-                <img className="bd-stat-icon" src="/icons/icon-feeding.png" alt="" />
+                <img className="bd-stat-icon bd-stat-icon-bottle" src="/icons/icon-feeding.png" alt="" />
                 <div className="bd-stat-val" style={{ color: F.amber }}>{babies.length}</div>
                 <div className="bd-stat-lbl">เบบี๋ทั้งหมด</div>
               </div>
