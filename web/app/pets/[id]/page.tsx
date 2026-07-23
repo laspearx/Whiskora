@@ -89,6 +89,10 @@ export default function PetDetailPage() {
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
+  const [healthDetails, setHealthDetails] = useState<{
+    blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
+    health_notes: string | null; traits: string | null;
+  } | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
@@ -280,19 +284,19 @@ export default function PetDetailPage() {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setSessionUserId(session.user.id);
 
-      // หมายเหตุ: ตัด sire_id/dam_id และคอลัมน์สายเลือดอื่นๆ ออกจาก select นี้โดยตั้งใจ —
+      // หมายเหตุ: ตัด sire_id/dam_id และคอลัมน์สายเลือด/สุขภาพอื่นๆ ออกจาก select นี้โดยตั้งใจ —
       // RLS ป้องกันได้แค่ระดับแถว ไม่ใช่ระดับคอลัมน์ ถ้า select('*') ไปเรื่อยๆ ผู้ชมที่ไม่มีสิทธิ์
-      // จะยังเห็นค่า sire_id/dam_id ดิบๆ ผ่าน network response ได้อยู่ดี แม้ว่าแท็บสายเลือด
-      // จะถูกซ่อนไปแล้วก็ตาม ข้อมูลสายเลือดทั้งหมดต้องมาจาก get_pet_pedigree() RPC เท่านั้น
-      // ซึ่งเช็คสิทธิ์ (viewer_can_see) ที่ฝั่ง DB ก่อนคืนค่าเสมอ
+      // จะยังเห็นค่าดิบๆ ผ่าน network response ได้อยู่ดี แม้ว่าแท็บนั้นจะถูกซ่อนไปแล้วก็ตาม
+      // ข้อมูลสายเลือดมาจาก get_pet_pedigree() ส่วนข้อมูลสุขภาพมาจาก get_pet_health()
+      // ทั้งคู่เช็คสิทธิ์ (viewer_can_see) ที่ฝั่ง DB ก่อนคืนค่าเสมอ
       const { data: petData, error: petError } = await supabase
         .from('pets')
         .select(`
           id, created_at, name, breed, gender, color, pattern, birth_date, status,
           image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
-          weight, species, allergies, traits, farm_id, price, microchip_number,
-          is_public, gallery_urls, is_neutered, blood_type, chronic_diseases,
-          cover_url, health_notes, pet_code, note,
+          weight, species, farm_id, price, microchip_number,
+          is_public, gallery_urls, is_neutered,
+          cover_url, pet_code, note,
           farm:farm_id(farm_name)
         `)
         .eq('id', petId)
@@ -305,6 +309,9 @@ export default function PetDetailPage() {
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
       supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
         if (data) setFieldAccess(data as Record<string, boolean>);
+      });
+      supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data && data[0]) setHealthDetails(data[0]);
       });
 
       const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
@@ -1168,7 +1175,7 @@ export default function PetDetailPage() {
                     { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
                     { label: 'น้ำหนัก', val: latestWeightDisplay, link: `/pets/${pet.id}/weight` },
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
-                    { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                    { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
                     { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
@@ -1356,10 +1363,10 @@ export default function PetDetailPage() {
                         ));
                       })()}
                     </div>
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</div>
+                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 400 }}>{healthDetails.allergies}</div>
                       </div>
                     )}
                   </div>
@@ -1422,22 +1429,22 @@ export default function PetDetailPage() {
                         ));
                       })()}
                     </div>
-                    {pet.chronic_diseases && (
+                    {healthDetails?.chronic_diseases && (
                       <div style={{ marginTop: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>โรคประจำตัว</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400 }}>{pet.chronic_diseases}</p>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400 }}>{healthDetails.chronic_diseases}</p>
                       </div>
                     )}
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{pet.allergies}</p>
+                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 400 }}>{healthDetails.allergies}</p>
                       </div>
                     )}
-                    {(pet.traits || pet.health_notes) && (
+                    {(healthDetails?.traits || healthDetails?.health_notes) && (
                       <div style={{ marginTop: '12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุเพิ่มเติม</div>
-                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{[pet.traits, pet.health_notes].filter(Boolean).join(' ')}</p>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 400, lineHeight: 1.6 }}>{[healthDetails?.traits, healthDetails?.health_notes].filter(Boolean).join(' ')}</p>
                       </div>
                     )}
                   </div>

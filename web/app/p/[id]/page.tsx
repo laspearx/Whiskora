@@ -67,6 +67,10 @@ export default function PublicPetProfilePage() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
+  const [healthDetails, setHealthDetails] = useState<{
+    blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
+    health_notes: string | null; traits: string | null;
+  } | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [owner, setOwner] = useState<UserProfile | null>(null);
@@ -75,6 +79,10 @@ export default function PublicPetProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [myReservation, setMyReservation] = useState<{ id: number; status: string } | null>(null);
+  const [reserving, setReserving] = useState(false);
 
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -186,18 +194,18 @@ export default function PublicPetProfilePage() {
     try {
       setIsLoading(true);
       // ไม่เช็ค session / ไม่ redirect — ใครก็ดูได้
-      // หมายเหตุ: ตัดคอลัมน์สายเลือด (sire_id, dam_id, ฯลฯ) ออกจาก select นี้โดยตั้งใจ —
-      // หน้านี้เปิดให้ทุกคนเข้าถึงได้ ถ้า select('*') ไปเรื่อยๆ ใครก็เห็น sire_id/dam_id ดิบๆ
-      // ผ่าน network response ได้แม้ว่าแท็บสายเลือดจะถูกซ่อนแล้วก็ตาม ข้อมูลสายเลือดทั้งหมด
-      // ต้องมาจาก get_pet_pedigree() RPC เท่านั้น ซึ่งเช็คสิทธิ์ที่ฝั่ง DB ก่อนคืนค่าเสมอ
+      // หมายเหตุ: ตัดคอลัมน์สายเลือดและสุขภาพ (sire_id, dam_id, blood_type, ฯลฯ) ออกจาก select นี้
+      // โดยตั้งใจ — หน้านี้เปิดให้ทุกคนเข้าถึงได้ ถ้า select('*') ไปเรื่อยๆ ใครก็เห็นค่าดิบๆ
+      // ผ่าน network response ได้แม้ว่าแท็บนั้นจะถูกซ่อนแล้วก็ตาม ข้อมูลสายเลือดมาจาก
+      // get_pet_pedigree() ส่วนข้อมูลสุขภาพมาจาก get_pet_health() ทั้งคู่เช็คสิทธิ์ที่ฝั่ง DB ก่อนคืนค่าเสมอ
       const { data: petData, error: petError } = await supabase
         .from('pets')
         .select(`
           id, created_at, name, breed, gender, color, pattern, birth_date, status,
           image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
-          weight, species, allergies, traits, farm_id, price, microchip_number,
-          is_public, gallery_urls, is_neutered, blood_type, chronic_diseases,
-          cover_url, health_notes, pet_code, note
+          weight, species, farm_id, price, microchip_number,
+          is_public, gallery_urls, is_neutered,
+          cover_url, pet_code, note
         `)
         .eq('id', petId)
         .single();
@@ -209,6 +217,9 @@ export default function PublicPetProfilePage() {
       buildPedigreeTree(petData as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
       supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
         if (data) setFieldAccess(data as Record<string, boolean>);
+      });
+      supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
+        if (data && data[0]) setHealthDetails(data[0]);
       });
 
       // ฟาร์ม (ถ้ามี) — สำหรับปุ่มติดต่อ
@@ -240,6 +251,20 @@ export default function PublicPetProfilePage() {
       const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
       if (weightData) setLatestWeight(weightData.weight);
 
+      // เช็ค session แบบไม่ redirect — หน้านี้เปิดให้ทุกคนดูได้ แต่การจองต้องล็อกอิน
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSessionUserId(session.user.id);
+        const { data: resData } = await supabase
+          .from('pet_reservations')
+          .select('id, status')
+          .eq('pet_id', petId)
+          .eq('buyer_id', session.user.id)
+          .in('status', ['pending', 'confirmed'])
+          .maybeSingle();
+        if (resData) setMyReservation(resData);
+      }
+
     } catch (error) {
       console.error("Fetch Error:", error);
     } finally {
@@ -261,6 +286,25 @@ export default function PublicPetProfilePage() {
     } catch (err) { console.error("log lead failed:", err); }
     setShowContactModal(false);
     if (url) window.open(url, "_blank");
+  };
+
+  // ─── จองสัตว์ตัวนี้: สร้าง pet_reservations แบบ pending รอฟาร์มยืนยัน ───
+  const handleReserve = async () => {
+    if (!pet || !sessionUserId || reserving) return;
+    setReserving(true);
+    try {
+      const { data, error } = await supabase
+        .from('pet_reservations')
+        .insert({ pet_id: pet.id, buyer_id: sessionUserId, status: 'pending' })
+        .select('id, status')
+        .single();
+      if (error) throw error;
+      setMyReservation(data);
+    } catch (err: any) {
+      alert('จองไม่สำเร็จ: ' + (err.message || 'กรุณาลองใหม่'));
+    } finally {
+      setReserving(false);
+    }
   };
 
   const calculateAge = (birthDate?: string | null) => {
@@ -581,6 +625,26 @@ export default function PublicPetProfilePage() {
                 {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
                   <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>
                 )}
+                {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && sessionUserId && sessionUserId !== pet.user_id && (
+                  myReservation ? (
+                    <span className="status-pill" style={{
+                      background: myReservation.status === 'confirmed' ? '#D1FAE5' : '#FEF3C7',
+                      color: myReservation.status === 'confirmed' ? '#065F46' : '#92400E',
+                      border: `1px solid ${myReservation.status === 'confirmed' ? '#A7F3D0' : '#FDE68A'}`,
+                    }}>
+                      {myReservation.status === 'confirmed' ? '✓ ยืนยันการจองแล้ว' : '⏳ รอฟาร์มยืนยันการจอง'}
+                    </span>
+                  ) : (
+                    <button className="contact-btn" style={{ background: '#16A34A' }} onClick={handleReserve} disabled={reserving}>
+                      {reserving ? 'กำลังจอง...' : '📌 จองสัตว์ตัวนี้'}
+                    </button>
+                  )
+                )}
+                {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && !sessionUserId && (
+                  <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="status-pill" style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', textDecoration: 'none' }}>
+                    เข้าสู่ระบบเพื่อจองตัวนี้
+                  </a>
+                )}
                 {hasContact && (
                   <button className="contact-btn" onClick={() => setShowContactModal(true)}>
                     <Icon.Message /> ติดต่อ{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}
@@ -668,16 +732,16 @@ export default function PublicPetProfilePage() {
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
                   <div className="card-body">
                     {[
-                      { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
                       { label: 'ทำหมันแล้ว', val: pet.is_neutered ? 'ทำแล้ว' : '-' },
-                      { label: 'โรคประจำตัว', val: pet.chronic_diseases || 'ไม่มี' },
+                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
                     ].map((item, i) => (
                       <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
                     ))}
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</div>
+                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 600 }}>{healthDetails.allergies}</div>
                       </div>
                     )}
                   </div>
@@ -727,16 +791,16 @@ export default function PublicPetProfilePage() {
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
                   <div className="card-body">
                     {[
-                      { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-' },
+                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
                       { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
-                      { label: 'โรคประจำตัว', val: pet.chronic_diseases || 'ไม่มี' },
+                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
                     ].map((item, i) => (
                       <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
                     ))}
-                    {pet.allergies && (
+                    {healthDetails?.allergies && (
                       <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{pet.allergies}</p>
+                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{healthDetails.allergies}</p>
                       </div>
                     )}
                   </div>
