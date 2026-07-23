@@ -53,11 +53,11 @@ export default function AdminDashboardPage() {
   if (loading) return <PageLoader />;
 
   const stats = [
-    { href: '/admin/users',    icon: '/icons/icon-nav-profile.png', num: totalUsers,    label: 'ผู้ใช้งาน\nทั้งหมด',   color: F.blue,    bg: F.blueSoft },
-    { href: '/admin/pets',     icon: '/icons/icon-my-pets.png',      num: totalPets,     label: 'สัตว์เลี้ยง\nในระบบ',   color: F.pink,    bg: F.pinkSoft },
-    { href: '/admin/farms',    icon: '/icons/icon-farm.png',         num: totalFarms,    label: 'ฟาร์ม',                  color: F.green,   bg: F.greenSoft },
-    { href: '/admin/shops',    icon: '/icons/icon-shop.png',         num: totalShops,    label: 'ร้านค้า',                color: F.amber,   bg: F.amberSoft },
-    { href: '/admin/services', icon: '/icons/icon-service.png',      num: totalServices, label: 'บริการ',               color: F.purple,  bg: F.purpleSoft },
+    { href: '/admin/users',    icon: '/icons/icon-nav-profile.png', num: totalUsers,    label: 'ผู้ใช้งาน\nทั้งหมด',   color: F.blue },
+    { href: '/admin/pets',     icon: '/icons/icon-my-pets.png',      num: totalPets,     label: 'สัตว์เลี้ยง\nในระบบ',   color: F.pink },
+    { href: '/admin/farms',    icon: '/icons/icon-farm.png',         num: totalFarms,    label: 'ฟาร์ม',                  color: F.green },
+    { href: '/admin/shops',    icon: '/icons/icon-shop.png',         num: totalShops,    label: 'ร้านค้า',                color: F.amber },
+    { href: '/admin/services', icon: '/icons/icon-service.png',      num: totalServices, label: 'บริการ',               color: F.purple },
   ];
 
   return (
@@ -81,8 +81,8 @@ export default function AdminDashboardPage() {
         @media (min-width: 720px) { .ad-stats { grid-template-columns: repeat(5, 1fr); } }
         .ad-stat { background: white; border: 1px solid ${F.lineMid}; border-radius: 16px; padding: 16px 14px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: inherit; position: relative; transition: border-color .15s, transform .15s, box-shadow .15s; cursor: pointer; }
         .ad-stat:hover { border-color: ${F.pinkBorder}; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-        .ad-stat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-        .ad-stat-icon img { width: 30px; height: 30px; object-fit: contain; }
+        .ad-stat-icon { display: flex; align-items: center; justify-content: center; }
+        .ad-stat-icon img { width: 44px; height: 44px; object-fit: contain; }
         .ad-stat-num { font-size: 28px; font-weight: 800; line-height: 1; }
         .ad-stat-label { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; line-height: 1.3; }
         .ad-stat-arrow { position: absolute; top: 12px; right: 12px; color: ${F.muted}; opacity: .5; }
@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
             {stats.map((s, i) => (
               <Link key={i} href={s.href} className="ad-stat">
                 <span className="ad-stat-arrow"><Icon.ChevronRight /></span>
-                <div className="ad-stat-icon" style={{ background: s.bg }}><img src={s.icon} alt="" /></div>
+                <div className="ad-stat-icon"><img src={s.icon} alt="" /></div>
                 <div className="ad-stat-num" style={{ color: s.color }}>{s.num.toLocaleString()}</div>
                 <div className="ad-stat-label" style={{ whiteSpace: 'pre-line' }}>{s.label}</div>
               </Link>
