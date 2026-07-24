@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import BrowserChecker from '@/app/components/BrowserChecker';
+import { isInAppBrowser } from '@/lib/inAppBrowser';
 
 function LoginContent() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,7 @@ function LoginContent() {
   const [showEmailLogin, setShowEmailLogin] = useState(false); // เปิดฟอร์มอีเมลสำหรับผู้ใช้เดิม
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [showBrowserWarning, setShowBrowserWarning] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -53,6 +56,7 @@ function LoginContent() {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'custom:line-login') => {
+    if (isInAppBrowser()) { setShowBrowserWarning(true); return; }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider as any,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirect)}` },
@@ -62,6 +66,7 @@ function LoginContent() {
 
   return (
     <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-8">
+      <BrowserChecker open={showBrowserWarning} onDismiss={() => setShowBrowserWarning(false)} />
       <div className="w-full max-w-[400px] bg-white p-8 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500">
 
         <div className="text-center mb-8">

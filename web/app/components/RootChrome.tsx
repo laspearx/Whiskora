@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { I18nProvider } from "@/i18n/context";
-import BrowserChecker from "@/app/components/BrowserChecker";
 import Footer from "@/app/components/Footer";
 import HtmlLang from "@/app/components/HtmlLang";
 import Navbar from "@/app/components/Navbar";
@@ -23,7 +22,6 @@ export default function RootChrome({ children }: { children: ReactNode }) {
   return (
     <I18nProvider locale="th" messages={thMessages as Record<string, any>}>
       <HtmlLang />
-      <BrowserChecker />
       <ScrollToTop />
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 md:px-6 min-h-screen">
