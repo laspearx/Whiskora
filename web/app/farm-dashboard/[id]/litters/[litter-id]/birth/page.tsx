@@ -70,6 +70,8 @@ export default function RecordBirthPage() {
         gender: k.gender, status: k.plan, birth_date: actualBirthDate,
         species: litterInfo.dam?.species || litterInfo.sire?.species || null,
         breed: litterInfo.dam?.breed || litterInfo.sire?.breed || null,
+        sire_id: litterInfo.sire_id || null,
+        dam_id: litterInfo.dam_id || null,
       }));
       const { data: insertedPets, error: petsError } = await supabase.from('pets').insert(petsData).select('id');
       if (petsError) throw petsError;

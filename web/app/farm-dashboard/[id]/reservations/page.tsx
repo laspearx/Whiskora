@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { PET_STATUS } from "@/lib/constants";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -71,6 +72,13 @@ export default function FarmReservationsPage() {
         .update({ status, confirmed_at: status === "confirmed" ? new Date().toISOString() : null })
         .eq("id", row.id);
       if (updErr) throw updErr;
+
+      if (status === "confirmed") {
+        await supabase.from("pets").update({ status: PET_STATUS.RESERVED }).eq("id", row.pet_id);
+      } else if (status === "cancelled" && row.status === "confirmed") {
+        await supabase.from("pets").update({ status: PET_STATUS.OPEN_RESERVE }).eq("id", row.pet_id);
+      }
+
       await load();
     } catch (e: any) {
       setError(

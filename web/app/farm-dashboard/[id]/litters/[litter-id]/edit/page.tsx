@@ -106,6 +106,13 @@ export default function EditLitterPage() {
 
       if (error) throw error;
 
+      const { error: cascadeError } = await supabase
+        .from('pets')
+        .update({ sire_id: parseInt(formData.sire_id), dam_id: parseInt(formData.dam_id) })
+        .eq('litter_id', litterId);
+
+      if (cascadeError) throw cascadeError;
+
       alert('อัปเดตข้อมูลการจับคู่เรียบร้อย!');
       router.replace(`/farm-dashboard/${farmId}`);
     } catch (error: any) {

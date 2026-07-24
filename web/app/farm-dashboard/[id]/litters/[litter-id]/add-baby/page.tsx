@@ -73,6 +73,8 @@ export default function AddBabyPage() {
         birth_date: birthDate,
         species: litterInfo.dam?.species || null,
         breed: litterInfo.dam?.breed || null,
+        sire_id: litterInfo.sire_id || null,
+        dam_id: litterInfo.dam_id || null,
       }));
       const { data: insertedPets, error } = await supabase.from('pets').insert(inserts).select('id');
       if (error) throw error;
