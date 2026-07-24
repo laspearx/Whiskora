@@ -263,6 +263,7 @@ export default function EditFarmPage() {
             </div>
           </div>
 
+          {/* ── หมุดแผนที่ ── */}
           <div className="fe-card">
             <div className="fe-card-title"><Icon.MapPin /> ตำแหน่งฟาร์มบนแผนที่</div>
             <button type="button" className={`fe-map-toggle ${mapLat !== null ? "has-pin" : ""}`} onClick={() => setMapVisible(v => !v)}>

@@ -62,7 +62,6 @@ const TABS = [
   { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <img src="/icons/icon-pet-records.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
 ];
 
-const ACTIVITY_TYPES = ['หาหมอ', 'หยดเห็บหมัด', 'ถ่ายพยาธิ', 'อาหาร', 'นิสัย', 'ทั่วไป'];
 
 // จำนวนเจนสูงสุดที่แสดง (รวมตัวเอง) — ตัวเอง + พ่อแม่ + ปู่ย่าตายาย + ทวด + เทียด
 const MAX_GENERATIONS = 5;
@@ -97,6 +96,7 @@ export default function PetDetailPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
+  const [docSignedUrls, setDocSignedUrls] = useState<Record<string | number, string>>({});
   const [coOwners, setCoOwners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -115,14 +115,6 @@ export default function PetDetailPage() {
   const [copied, setCopied] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-
-  // Activity modal
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [savingActivity, setSavingActivity] = useState(false);
-  const [activityForm, setActivityForm] = useState({
-    activity_type: 'ทั่วไป', title: '', description: '',
-    activity_date: new Date().toISOString().split('T')[0],
-  });
 
   // Transfer modal
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -324,7 +316,20 @@ export default function PetDetailPage() {
       ]);
       if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
-      if (docRes.data) setDocuments(docRes.data as PetDocument[]);
+      if (docRes.data) {
+        const docs = docRes.data as PetDocument[];
+        setDocuments(docs);
+        // สร้าง signed URLs สำหรับทุก document (private bucket)
+        const urlMap: Record<string | number, string> = {};
+        await Promise.all(docs.map(async (doc) => {
+          const storagePrefix = '/object/public/pet-documents/';
+          const idx = doc.file_url.indexOf(storagePrefix);
+          const path = idx !== -1 ? doc.file_url.slice(idx + storagePrefix.length) : doc.file_url;
+          const { data } = await supabase.storage.from('pet-documents').createSignedUrl(path, 3600);
+          if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+        }));
+        setDocSignedUrls(urlMap);
+      }
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
       if (weightRes.data) setWeightHistory(weightRes.data as { weight: number; recorded_date: string }[]);
 
@@ -601,9 +606,8 @@ export default function PetDetailPage() {
         const path = `${pet.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from('pet-documents').upload(path, file);
         if (upErr) { console.error(upErr); continue; }
-        const { data: { publicUrl } } = supabase.storage.from('pet-documents').getPublicUrl(path);
         await supabase.from('pet_documents').insert({
-          pet_id: pet.id, name: file.name, file_url: publicUrl,
+          pet_id: pet.id, name: file.name, file_url: path,
           doc_type: 'other', file_size: file.size,
         });
       }
@@ -623,24 +627,6 @@ export default function PetDetailPage() {
     await fetchPetData();
   };
 
-  // ─── ปุ่ม: บันทึกโน้ต/กิจกรรม ───
-  const handleSaveActivity = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activityForm.title.trim()) return alert('กรุณากรอกหัวข้อ');
-    setSavingActivity(true);
-    const { error } = await supabase.from('pet_activities').insert({
-      pet_id: petId,
-      activity_type: activityForm.activity_type,
-      title: activityForm.title.trim(),
-      description: activityForm.description.trim() || null,
-      activity_date: activityForm.activity_date,
-    });
-    if (error) { alert('บันทึกไม่สำเร็จ'); setSavingActivity(false); return; }
-    setShowActivityModal(false);
-    setActivityForm({ activity_type: 'ทั่วไป', title: '', description: '', activity_date: new Date().toISOString().split('T')[0] });
-    setSavingActivity(false);
-    await fetchPetData();
-  };
 
   const calculateAge = (birthDate?: string | null) => {
     if (!birthDate) return '-';
@@ -664,10 +650,10 @@ export default function PetDetailPage() {
   };
 
   const generateCombinedTimeline = () => {
-    const timeline: { id: string; date: string; title: string; description: string; type: string; color: string; tag?: string }[] = [];
+    const timeline: { id: string; date: string; title: string; description: string; type: string; color: string; tag?: string; image_url?: string | null }[] = [];
     if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'สมัครเข้าระบบ Whiskora', description: '', type: 'registration', color: '#E84677', tag: pet.microchip_number || '' });
     vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `อัปเดตวัคซีน ${v.vaccine_name}`, description: v.notes || '', type: 'vaccine', color: '#0D9488' }));
-    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type?.includes('หมอ') ? '#EF4444' : '#F59E0B' }));
+    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type === 'ความสำเร็จ' ? '#D97706' : '#9CA3AF', image_url: a.image_url || null }));
     return timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
@@ -982,6 +968,8 @@ export default function PetDetailPage() {
         .timeline-title { font-size: 13px; font-weight: 600; color: ${F.ink}; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .timeline-id-badge { font-size: 9px; font-weight: 700; background: #F3F4F6; color: ${F.muted}; padding: 2px 7px; border-radius: 6px; font-family: monospace; letter-spacing: 0.04em; }
         .timeline-desc { font-size: 11px; color: #6B7280; margin-top: 3px; line-height: 1.5; }
+        .timeline-img { margin-top: 7px; border-radius: 10px; overflow: hidden; max-width: 220px; aspect-ratio: 4/3; background: ${F.line}; }
+        .timeline-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
         .activity-tab-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; cursor: pointer; transition: all .15s; }
         .activity-tab-btn.active { background: ${F.ink}; border-color: ${F.ink}; color: white; }
@@ -1338,7 +1326,7 @@ export default function PetDetailPage() {
                         <div className="doc-icon" style={{ background: '#DBEAFE' }}><img src="/icons/icon-documents.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>
                         <div className="doc-info"><div className="doc-name">{doc.name}</div><div className="doc-sub">อัปโหลด {formatDate(doc.created_at)} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''}</div></div>
                         <div className="doc-actions">
-                          <a className="doc-download" href={doc.file_url} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
+                          <a className="doc-download" href={docSignedUrls[doc.id] || '#'} target="_blank" rel="noopener noreferrer" download><Icon.Download /></a>
                           <button className="doc-download del" onClick={() => handleDeleteDoc(doc.id)}><Icon.Trash /></button>
                         </div>
                       </div>
@@ -1349,7 +1337,7 @@ export default function PetDetailPage() {
                 {/* Timeline preview */}
                 <div className="card">
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรม</div>
-                    <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
+                    <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มกิจกรรม</button>
                   </div>
                   <div className="card-body">
                     {combinedTimeline.length === 0 ? <div style={{ textAlign: 'center', padding: '24px 0', color: F.muted, fontSize: '12px' }}>ยังไม่มีกิจกรรม</div> : (
@@ -1358,7 +1346,9 @@ export default function PetDetailPage() {
                           <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
                             <div className="timeline-date">{formatDate(item.date)}</div>
                             <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
-                            {item.description && <div className="timeline-desc">{item.description}</div>}</div>
+                            {item.description && <div className="timeline-desc">{item.description}</div>}
+                            {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1538,7 +1528,7 @@ export default function PetDetailPage() {
           {activeTab === 'activities' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ color: '#D97706' }}><Icon.Doc /></div>โน้ต & พฤติกรรม</div>
-                <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มโน้ต</button>
+                <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มโน้ต</button>
               </div>
               <div className="card-body">
                 <div className="activity-tabs">
@@ -1590,7 +1580,7 @@ export default function PetDetailPage() {
           {activeTab === 'timeline' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรมทั้งหมด</div>
-                <button className="btn-add-gallery" onClick={() => setShowActivityModal(true)}><Icon.Plus /> เพิ่มกิจกรรม</button>
+                <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มกิจกรรม</button>
               </div>
               <div className="card-body">
                 {combinedTimeline.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีกิจกรรม</div> : (
@@ -1599,7 +1589,9 @@ export default function PetDetailPage() {
                       <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
                         <div className="timeline-date">{formatDate(item.date)}</div>
                         <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
-                        {item.description && <div className="timeline-desc">{item.description}</div>}</div>
+                        {item.description && <div className="timeline-desc">{item.description}</div>}
+                        {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1619,28 +1611,6 @@ export default function PetDetailPage() {
       </div>
 
       {/* ─── Activity Modal ─── */}
-      {showActivityModal && (
-        <div className="modal-overlay" onClick={() => !savingActivity && setShowActivityModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-pad">
-              <div className="modal-title">เพิ่มกิจกรรม</div>
-              <div className="modal-sub">บันทึกเหตุการณ์ลงไทม์ไลน์ของ {pet.name}</div>
-              <form onSubmit={handleSaveActivity} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <div><label className="field-label">ประเภท</label><div className="chip-row">
-                  {ACTIVITY_TYPES.map(t => <button key={t} type="button" className={`chip-btn ${activityForm.activity_type === t ? 'active' : ''}`} onClick={() => setActivityForm({ ...activityForm, activity_type: t })}>{t}</button>)}
-                </div></div>
-                <div><label className="field-label">หัวข้อ</label><input className="field-input" type="text" value={activityForm.title} onChange={(e) => setActivityForm({ ...activityForm, title: e.target.value })} placeholder="เช่น พาไปตรวจสุขภาพประจำปี" required /></div>
-                <div><label className="field-label">วันที่</label><input className="field-input" type="date" value={activityForm.activity_date} onChange={(e) => setActivityForm({ ...activityForm, activity_date: e.target.value })} required /></div>
-                <div><label className="field-label">รายละเอียด (ถ้ามี)</label><textarea className="field-input" rows={3} value={activityForm.description} onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })} placeholder="บันทึกเพิ่มเติม..." style={{ resize: 'none' }} /></div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button type="button" onClick={() => setShowActivityModal(false)} disabled={savingActivity} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" disabled={savingActivity} style={{ flex: 2, padding: '14px', borderRadius: '12px', border: 'none', background: F.pink, color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{savingActivity ? 'กำลังบันทึก...' : 'บันทึกกิจกรรม'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ─── QR Modal ─── */}
       {showQrModal && (

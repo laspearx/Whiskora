@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || origin).replace(/\/$/, '')
   const code = searchParams.get('code')
   const oauthError = searchParams.get('error')
   const oauthErrorDesc = searchParams.get('error_description')
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   // LINE (or any OAuth provider) returned an error — redirect to login with message
   if (oauthError) {
     const msg = oauthErrorDesc || oauthError
-    return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent(msg)}`)
+    return NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
   }
 
   if (code) {
@@ -38,10 +39,10 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
-      return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent(error.message)}`)
+      return NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(error.message)}`)
     }
-    return NextResponse.redirect(`${origin}${next}`)
+    return NextResponse.redirect(`${siteUrl}${next}`)
   }
 
-  return NextResponse.redirect(`${origin}/th/login?auth_error=missing_code`)
+  return NextResponse.redirect(`${siteUrl}/th/login?auth_error=missing_code`)
 }

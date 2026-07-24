@@ -136,8 +136,8 @@ export default function PublicFarmProfile() {
   if (isLoading) return <PageLoader />;
   if (!farm) return null;
 
-  const ownerName = owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
-  const farmLocation = owner?.address || null;
+  const ownerName = farm?.owner_name || owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
+  const farmLocation = farm?.address || owner?.address || null;
   const uniqueBreeds = [...new Set(pets.map(p => extractThai(p.breed)).filter(Boolean))].slice(0, 4);
   const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
   const bioIsLong = bioText.length > 120;
@@ -212,7 +212,7 @@ export default function PublicFarmProfile() {
         .fp-pet-pill { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: ${F.pinkSoft}; color: ${F.pink}; }
         .fp-empty { text-align: center; padding: 32px; color: ${F.muted}; font-size: 13px; font-weight: 600; }
         /* ── Sticky bottom CTA ── */
-        .fp-cta-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
+        .fp-cta-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid ${F.lineMid}; padding: 14px 20px; }
         .fp-cta-inner { max-width: 1000px; margin: 0 auto; display: flex; gap: 12px; }
         .fp-cta-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 26px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all .18s ease; font-family: inherit; text-decoration: none; }
         .fp-cta-primary { background: ${F.pink}; color: white; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
@@ -333,7 +333,7 @@ export default function PublicFarmProfile() {
                   </a>
                 )}
                 {farmLocation && (
-                  <a className="fp-info-row fp-info-row-link" href={`https://maps.google.com/?q=${encodeURIComponent(farmLocation)}`} target="_blank" rel="noopener noreferrer">
+                  <a className="fp-info-row fp-info-row-link" href={`https://maps.google.com/?q=${farm?.lat && farm?.lng ? `${farm.lat},${farm.lng}` : encodeURIComponent(farmLocation)}`} target="_blank" rel="noopener noreferrer">
                     <span className="fp-info-icon"><img src="/icons/icon-location.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
                     <span className="fp-info-label">ที่อยู่</span>
                     <span className="fp-info-val" style={{ color: F.pink }}>{farmLocation}</span>

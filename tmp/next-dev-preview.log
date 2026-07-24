@@ -1,0 +1,304 @@
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\User\Documents\Whiskora\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\User\Documents\Whiskora\web\package-lock.json
+
+▲ Next.js 16.1.6 (webpack)
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 3.9s
+○ Compiling /[locale]/pet-id-card-preview ...
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:302:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th/pet-id-card-preview 500 in 8.8s (compile: 7.2s, proxy.ts: 257ms, render: 1311ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:302:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th/pet-id-card-preview 500 in 1051ms (compile: 52ms, proxy.ts: 20ms, render: 978ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:302:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th/pet-id-card-preview 500 in 1175ms (compile: 50ms, proxy.ts: 199ms, render: 925ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /pet-id-card-preview 200 in 1749ms (compile: 1347ms, proxy.ts: 22ms, render: 379ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:302:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\pet-id-card-preview\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th/pet-id-card-preview 500 in 1718ms (compile: 151ms, proxy.ts: 41ms, render: 1526ms)
+ GET /pet-id-card-preview 200 in 258ms (compile: 25ms, proxy.ts: 33ms, render: 199ms)
+ GET /pet-id-card-preview 200 in 2.2s (compile: 1881ms, proxy.ts: 153ms, render: 149ms)
+ GET /pet-id-card-preview 200 in 114ms (compile: 20ms, proxy.ts: 34ms, render: 60ms)
+ GET /pet-id-card-preview 200 in 451ms (compile: 21ms, proxy.ts: 26ms, render: 404ms)
+ GET /pet-id-card-preview 200 in 182ms (compile: 16ms, proxy.ts: 25ms, render: 141ms)
+ GET /pet-id-card-preview 200 in 341ms (compile: 204ms, proxy.ts: 21ms, render: 116ms)
+ GET /pet-id-card-preview 200 in 446ms (compile: 311ms, proxy.ts: 43ms, render: 92ms)
+ GET /pet-id-card-preview 200 in 292ms (compile: 206ms, proxy.ts: 27ms, render: 58ms)
+ GET /pet-id-card-preview 200 in 267ms (compile: 178ms, proxy.ts: 16ms, render: 72ms)
+ GET /pet-id-card-preview 200 in 656ms (compile: 485ms, proxy.ts: 43ms, render: 128ms)
+ GET /pet-id-card-preview 200 in 148ms (compile: 19ms, proxy.ts: 30ms, render: 99ms)
+ GET /pet-id-card-preview 200 in 110ms (compile: 17ms, proxy.ts: 24ms, render: 69ms)
+ GET /pet-id-card-preview 200 in 91ms (compile: 11ms, proxy.ts: 18ms, render: 62ms)
+ GET /pet-id-card-preview 200 in 125ms (compile: 16ms, proxy.ts: 34ms, render: 75ms)
+ GET /pet-id-card-preview 200 in 101ms (compile: 18ms, proxy.ts: 23ms, render: 60ms)
+ GET /pet-id-card-preview 200 in 122ms (compile: 16ms, proxy.ts: 26ms, render: 79ms)
+ GET /pet-id-card-preview 200 in 118ms (compile: 18ms, proxy.ts: 22ms, render: 78ms)
+ GET /pet-id-card-preview 200 in 116ms (compile: 14ms, proxy.ts: 25ms, render: 77ms)
+ GET /pet-id-card-preview 200 in 105ms (compile: 15ms, proxy.ts: 20ms, render: 70ms)
+ GET /pet-id-card-preview 200 in 107ms (compile: 17ms, proxy.ts: 23ms, render: 67ms)
+ GET /pet-id-card-preview 200 in 496ms (compile: 12ms, proxy.ts: 20ms, render: 463ms)
+ GET /pet-id-card-preview 200 in 169ms (compile: 14ms, proxy.ts: 22ms, render: 132ms)
+ GET /pet-id-card-preview 200 in 522ms (compile: 384ms, proxy.ts: 22ms, render: 116ms)
+ GET /pet-id-card-preview 200 in 508ms (compile: 14ms, proxy.ts: 28ms, render: 466ms)
+ GET /pet-id-card-preview 200 in 626ms (compile: 405ms, proxy.ts: 48ms, render: 173ms)
+ GET /pet-id-card-preview 200 in 118ms (compile: 16ms, proxy.ts: 37ms, render: 64ms)
+ GET /pet-id-card-preview 200 in 122ms (compile: 18ms, proxy.ts: 26ms, render: 79ms)
+ GET /pet-id-card-preview 200 in 401ms (compile: 15ms, proxy.ts: 27ms, render: 359ms)
+ GET /pet-id-card-preview 200 in 185ms (compile: 13ms, proxy.ts: 25ms, render: 147ms)
+ GET /pet-id-card-preview 200 in 149ms (compile: 10ms, proxy.ts: 16ms, render: 123ms)
+ GET /pet-id-card-preview 200 in 412ms (compile: 294ms, proxy.ts: 21ms, render: 98ms)
+ GET /pet-id-card-preview 200 in 81ms (compile: 11ms, proxy.ts: 18ms, render: 52ms)
+ GET /pet-id-card-preview 200 in 339ms (compile: 10ms, proxy.ts: 20ms, render: 308ms)
+ GET /pet-id-card-preview 200 in 373ms (compile: 284ms, proxy.ts: 15ms, render: 75ms)
+ GET /pet-id-card-preview 200 in 357ms (compile: 198ms, proxy.ts: 96ms, render: 63ms)
+ GET /pet-id-card-preview 200 in 84ms (compile: 11ms, proxy.ts: 17ms, render: 56ms)
+ GET /pet-id-card-preview 200 in 91ms (compile: 10ms, proxy.ts: 20ms, render: 60ms)
+ GET /pet-id-card-preview 200 in 456ms (compile: 15ms, proxy.ts: 26ms, render: 416ms)
+ GET /pet-id-card-preview 200 in 398ms (compile: 283ms, proxy.ts: 15ms, render: 100ms)
+ GET /pet-id-card-preview 200 in 83ms (compile: 16ms, proxy.ts: 17ms, render: 51ms)
+ GET /pet-id-card-preview 200 in 298ms (compile: 211ms, proxy.ts: 14ms, render: 74ms)
+ GET /pet-id-card-preview 200 in 371ms (compile: 8ms, proxy.ts: 21ms, render: 342ms)
+ GET /pet-id-card-preview 200 in 500ms (compile: 346ms, proxy.ts: 24ms, render: 130ms)
+ GET /pet-id-card-preview 200 in 303ms (compile: 213ms, proxy.ts: 19ms, render: 71ms)
+ GET /pet-id-card-preview 200 in 261ms (compile: 175ms, proxy.ts: 17ms, render: 69ms)
+ GET /pet-id-card-preview 200 in 286ms (compile: 213ms, proxy.ts: 18ms, render: 54ms)
+ GET /pet-id-card-preview 200 in 83ms (compile: 10ms, proxy.ts: 17ms, render: 56ms)
+ GET /pet-id-card-preview 200 in 75ms (compile: 10ms, proxy.ts: 15ms, render: 49ms)
+ GET /pet-id-card-preview 200 in 403ms (compile: 11ms, proxy.ts: 18ms, render: 373ms)
+ GET /pet-id-card-preview 200 in 432ms (compile: 298ms, proxy.ts: 20ms, render: 115ms)
+ GET /pet-id-card-preview 200 in 141ms (compile: 17ms, proxy.ts: 26ms, render: 99ms)
+ GET /pet-id-card-preview 200 in 249ms (compile: 9ms, proxy.ts: 14ms, render: 226ms)
+ GET /pet-id-card-preview 200 in 378ms (compile: 261ms, proxy.ts: 19ms, render: 98ms)
+ GET /pet-id-card-preview 200 in 206ms (compile: 7ms, proxy.ts: 11ms, render: 188ms)
+ GET /pet-id-card-preview 200 in 470ms (compile: 376ms, proxy.ts: 20ms, render: 74ms)
+ GET /pet-id-card-preview 200 in 364ms (compile: 259ms, proxy.ts: 30ms, render: 76ms)
+ GET /pet-id-card-preview 200 in 490ms (compile: 267ms, proxy.ts: 111ms, render: 113ms)
+ GET /pet-id-card-preview 200 in 271ms (compile: 189ms, proxy.ts: 30ms, render: 53ms)
+ GET /pet-id-card-preview 200 in 348ms (compile: 257ms, proxy.ts: 26ms, render: 64ms)
+ GET /pet-id-card-preview 200 in 359ms (compile: 11ms, proxy.ts: 13ms, render: 335ms)
+ GET /pet-id-card-preview 200 in 116ms (compile: 10ms, proxy.ts: 11ms, render: 94ms)
+ GET /pet-id-card-preview 200 in 258ms (compile: 181ms, proxy.ts: 22ms, render: 55ms)
+ GET /pet-id-card-preview 200 in 79ms (compile: 14ms, proxy.ts: 15ms, render: 51ms)
+ GET /pet-id-card-preview 200 in 96ms (compile: 16ms, proxy.ts: 25ms, render: 54ms)
+ GET /pet-id-card-preview 200 in 61ms (compile: 11ms, proxy.ts: 16ms, render: 34ms)
+ GET /pet-id-card-preview 200 in 344ms (compile: 10ms, proxy.ts: 18ms, render: 317ms)
+ GET /pet-id-card-preview 200 in 802ms (compile: 477ms, proxy.ts: 171ms, render: 154ms)
+ GET /pet-id-card-preview 200 in 119ms (compile: 16ms, proxy.ts: 40ms, render: 64ms)
+ GET /pet-id-card-preview 200 in 259ms (compile: 179ms, proxy.ts: 14ms, render: 66ms)
+ GET /pet-id-card-preview 200 in 231ms (compile: 163ms, proxy.ts: 18ms, render: 49ms)
+ GET /pet-id-card-preview 200 in 250ms (compile: 171ms, proxy.ts: 20ms, render: 58ms)
+ GET /pet-id-card-preview 200 in 282ms (compile: 191ms, proxy.ts: 24ms, render: 66ms)
+ GET /pet-id-card-preview 200 in 104ms (compile: 10ms, proxy.ts: 17ms, render: 77ms)
+ GET /pet-id-card-preview 200 in 87ms (compile: 8ms, proxy.ts: 17ms, render: 62ms)
+ GET /pet-id-card-preview 200 in 357ms (compile: 11ms, proxy.ts: 12ms, render: 334ms)
+ GET /pet-id-card-preview 200 in 374ms (compile: 228ms, proxy.ts: 26ms, render: 120ms)
+ GET /pet-id-card-preview 200 in 97ms (compile: 14ms, proxy.ts: 27ms, render: 56ms)
+ GET /pet-id-card-preview 200 in 117ms (compile: 14ms, proxy.ts: 29ms, render: 74ms)
+ GET /pet-id-card-preview 200 in 389ms (compile: 11ms, proxy.ts: 18ms, render: 359ms)
+ GET /pet-id-card-preview 200 in 337ms (compile: 243ms, proxy.ts: 20ms, render: 75ms)
+ GET /pet-id-card-preview 200 in 78ms (compile: 10ms, proxy.ts: 22ms, render: 45ms)
+ GET /pet-id-card-preview 200 in 247ms (compile: 11ms, proxy.ts: 14ms, render: 222ms)
+ GET /pet-id-card-preview 200 in 252ms (compile: 178ms, proxy.ts: 13ms, render: 61ms)
+ GET /pet-id-card-preview 200 in 466ms (compile: 271ms, proxy.ts: 104ms, render: 91ms)
+ GET /pet-id-card-preview 200 in 281ms (compile: 167ms, proxy.ts: 14ms, render: 100ms)
+ GET /pet-id-card-preview 200 in 304ms (compile: 198ms, proxy.ts: 25ms, render: 81ms)
+ GET /pet-id-card-preview 200 in 326ms (compile: 220ms, proxy.ts: 26ms, render: 80ms)
+ GET /pet-id-card-preview 200 in 107ms (compile: 16ms, proxy.ts: 21ms, render: 71ms)
+ GET /pet-id-card-preview 200 in 66ms (compile: 9ms, proxy.ts: 14ms, render: 42ms)
+ GET /pet-id-card-preview 200 in 90ms (compile: 14ms, proxy.ts: 21ms, render: 55ms)
+ GET /pet-id-card-preview 200 in 110ms (compile: 16ms, proxy.ts: 22ms, render: 72ms)
+ GET /pet-id-card-preview 200 in 392ms (compile: 122ms, proxy.ts: 206ms, render: 64ms)
+ GET /pet-id-card-preview 200 in 147ms (compile: 72ms, proxy.ts: 19ms, render: 56ms)
+ GET /pet-id-card-preview 200 in 456ms (compile: 331ms, proxy.ts: 19ms, render: 106ms)
+ GET /pet-id-card-preview 200 in 493ms (compile: 13ms, proxy.ts: 23ms, render: 456ms)
+ GET /pet-id-card-preview 200 in 349ms (compile: 228ms, proxy.ts: 25ms, render: 95ms)
+ GET /pet-id-card-preview 200 in 304ms (compile: 12ms, proxy.ts: 15ms, render: 278ms)
+ GET /pet-id-card-preview 200 in 286ms (compile: 164ms, proxy.ts: 23ms, render: 99ms)
+ GET /pet-id-card-preview 200 in 254ms (compile: 12ms, proxy.ts: 18ms, render: 224ms)
+ GET /pet-id-card-preview 200 in 286ms (compile: 157ms, proxy.ts: 37ms, render: 92ms)
+ GET /pet-id-card-preview 200 in 412ms (compile: 13ms, proxy.ts: 25ms, render: 374ms)
+ GET /pet-id-card-preview 200 in 692ms (compile: 444ms, proxy.ts: 105ms, render: 143ms)
+ GET /pet-id-card-preview 200 in 137ms (compile: 17ms, proxy.ts: 44ms, render: 76ms)
+ GET /pet-id-card-preview 200 in 422ms (compile: 13ms, proxy.ts: 23ms, render: 386ms)
+ GET /pet-id-card-preview 200 in 172ms (compile: 13ms, proxy.ts: 18ms, render: 141ms)
+ GET /pet-id-card-preview 200 in 179ms (compile: 56ms, proxy.ts: 25ms, render: 98ms)
+ GET /th 200 in 5.9s (compile: 5.8s, proxy.ts: 17ms, render: 77ms)
+ GET /th 200 in 128ms (compile: 40ms, proxy.ts: 17ms, render: 71ms)
+ GET /th 200 in 80ms (compile: 21ms, proxy.ts: 17ms, render: 43ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th 500 in 1387ms (compile: 238ms, proxy.ts: 37ms, render: 1112ms)
+ GET /pet-id-card-preview 200 in 1344ms (compile: 53ms, proxy.ts: 1214ms, render: 77ms)
+ GET /pet-id-card-preview 200 in 172ms (compile: 12ms, proxy.ts: 17ms, render: 144ms)
+ GET /favicon.ico 404 in 491ms (compile: 125ms, render: 367ms)
+ GET /pet-id-card-preview 200 in 181ms (compile: 15ms, proxy.ts: 24ms, render: 142ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /pet-id-card-preview 200 in 441ms (compile: 260ms, proxy.ts: 38ms, render: 143ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th 500 in 1709ms (compile: 105ms, proxy.ts: 366ms, render: 1238ms)
+ GET /pet-id-card-preview 200 in 210ms (compile: 10ms, proxy.ts: 18ms, render: 181ms)
+ GET /pet-id-card-preview 200 in 247ms (compile: 75ms, proxy.ts: 19ms, render: 153ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+ GET /th 500 in 1115ms (compile: 148ms, proxy.ts: 43ms, render: 924ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/[locale]/login/page.tsx:9:71)
+    at (ssr)/./app/[locale]/login/page.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\login\page.js:203:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '311601910'
+}
+ GET /th/login 500 in 5.1s (compile: 4.1s, proxy.ts: 8ms, render: 1084ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/[locale]/login/page.tsx:9:71)
+    at (ssr)/./app/[locale]/login/page.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\login\page.js:203:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '311601910'
+}
+ GET /th/login 500 in 1372ms (compile: 32ms, proxy.ts: 14ms, render: 1325ms)
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/components/Navbar.tsx:12:71)
+    at (ssr)/./app/components/Navbar.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:247:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '2219568908'
+}
+⨯ Error: supabaseUrl is required.
+    at eval (lib\supabase.ts:6:37)
+    at (ssr)/./lib/supabase.ts (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\page.js:291:1)
+    at eval (webpack-internal:///(ssr)/./app/[locale]/login/page.tsx:9:71)
+    at (ssr)/./app/[locale]/login/page.tsx (C:\Users\User\Documents\Whiskora\web\.next\dev\server\app\[locale]\login\page.js:203:1)
+  4 | const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseKey)
+    |                                     ^
+  7 | // trigger new deploy {
+  digest: '311601910'
+}
+ GET /th/login 500 in 1510ms (compile: 31ms, proxy.ts: 18ms, render: 1462ms)
+[?25h

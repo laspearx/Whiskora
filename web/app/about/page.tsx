@@ -154,7 +154,6 @@ export default function AboutPage() {
                 <path d="m15 18-6-6 6-6"/>
               </svg>
             </button>
-            <img src="/icons/icon-paw-sparkle.png" alt="" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
             <div className="ab-header-text">
               <h1>เกี่ยวกับ Whiskora</h1>
               <p>แพลตฟอร์มดิจิทัลสำหรับผู้รักสัตว์เลี้ยง</p>

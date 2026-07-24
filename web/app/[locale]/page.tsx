@@ -35,7 +35,7 @@ const ICON_SRC: Record<IconName, string> = {
   search:   '/icons/icon-scan.png',
 };
 
-function IconImg({ name, size = 30 }: { name: IconName; size?: number }) {
+function IconImg({ name, size = 48 }: { name: IconName; size?: number }) {
   return <img src={ICON_SRC[name]} alt="" width={size} height={size} style={{ objectFit: 'contain', display: 'block' }} aria-hidden="true" />;
 }
 
@@ -792,13 +792,10 @@ export default function Home() {
         }
 
         .icon-box {
-          width: 58px;
-          height: 58px;
-          border-radius: 16px;
+          width: 52px;
+          height: 52px;
           display: grid;
           place-items: center;
-          background: var(--pink-soft);
-          color: var(--pink);
         }
 
         .problem-card h3,

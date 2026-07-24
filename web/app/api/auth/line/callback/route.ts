@@ -18,7 +18,12 @@ export async function GET(request: Request) {
 
   // ── resolve origin from cookie (saved when user clicked the LINE button) ──
   const cookieStore = await cookies()
-  const siteUrl = cookieStore.get('line_origin')?.value || 'https://whiskora.vercel.app'
+  const PRODUCTION_URL = 'https://www.whiskora.pet'
+  const rawOrigin = cookieStore.get('line_origin')?.value || ''
+  // Vercel internal compute-instance URLs look like "whiskora-f74p5-laspearxs-projects.vercel.app"
+  // (short alphanumeric segment after project name). Reject these and fall back to production.
+  const isVercelInternal = /vercel\.app$/.test(rawOrigin) && !/whiskora\.vercel\.app$/.test(rawOrigin) && !/whiskora-git-/.test(rawOrigin)
+  const siteUrl = (rawOrigin && !isVercelInternal) ? rawOrigin.replace(/\/$/, '') : PRODUCTION_URL
 
   const fail = (msg: string) =>
     NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
@@ -134,15 +139,48 @@ export async function GET(request: Request) {
       })
     }
 
-    // ── 5. generate magic link → establish session ───────────────────────────
+    // ── 5. generate OTP, verify server-side, redirect with session tokens ───────
+    // Avoids the Supabase browser-redirect chain which can land on a stale
+    // Vercel deployment URL (DEPLOYMENT_NOT_FOUND).
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type:  'magiclink',
       email: target.email!,
-      options: { redirectTo: `${siteUrl}${finalDest}` },
     })
     if (linkErr) throw linkErr
 
-    return NextResponse.redirect(linkData.properties.action_link)
+    // Verify the OTP directly via Supabase REST API (server-to-server, returns JSON)
+    const verifyRes = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify`,
+      {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept':        'application/json',
+          'apikey':        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        },
+        body: JSON.stringify({
+          email: target.email!,
+          token: linkData.properties.email_otp,
+          type:  'magiclink',
+        }),
+      },
+    )
+    if (!verifyRes.ok) throw new Error(`session_create_failed: ${await verifyRes.text()}`)
+    const sess = await verifyRes.json() as {
+      access_token: string; token_type: string; expires_in: number; refresh_token: string
+    }
+    if (!sess.access_token) throw new Error('no_session_returned')
+
+    // Redirect browser to final page; supabase-js (detectSessionInUrl: true)
+    // will detect the hash fragment and store the session in localStorage.
+    const hash = new URLSearchParams([
+      ['access_token',  sess.access_token],
+      ['token_type',    sess.token_type  ?? 'bearer'],
+      ['expires_in',    String(sess.expires_in ?? 3600)],
+      ['refresh_token', sess.refresh_token],
+      ['type',          'magiclink'],
+    ])
+    return NextResponse.redirect(`${siteUrl}${finalDest}#${hash.toString()}`)
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'auth_failed'

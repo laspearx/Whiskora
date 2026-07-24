@@ -111,7 +111,7 @@ export default function PetIdCardLandingPage() {
         .pic-empty-btn:hover { background: #D63F6A; transform: translateY(-1px); }
 
         /* CTA */
-        .pic-cta { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 20px; background: rgba(255,250,252,0.95); backdrop-filter: blur(12px); border-top: 1px solid ${F.line}; z-index: 50; }
+        .pic-cta { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 20px; background: rgba(255,250,252,0.95); backdrop-filter: blur(12px); border-top: 1px solid ${F.line}; z-index: 60; }
         .pic-cta-inner { max-width: 640px; margin: 0 auto; }
         .pic-cta-btn { width: 100%; padding: 16px; border-radius: 18px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; transition: all .2s; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .pic-cta-btn.active { background: ${F.pink}; color: white; box-shadow: 0 6px 20px rgba(232,70,119,0.35); }

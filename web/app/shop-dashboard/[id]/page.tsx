@@ -222,7 +222,8 @@ function ShopDashboardContent() {
         .sd-tools { display: flex; flex-direction: column; gap: 12px; }
         .sd-tool { display: flex; align-items: center; gap: 13px; background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 16px; text-decoration: none; transition: all .15s; }
         .sd-tool:hover { border-color: ${F.tealBorder}; }
-        .sd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.tealSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .sd-tool-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sd-tool-icon img { width: 38px; height: 38px; object-fit: contain; }
         .sd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .sd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         @media (max-width: 720px) { .sd-stats { grid-template-columns: 1fr 1fr; } .sd-cols { grid-template-columns: 1fr; } }

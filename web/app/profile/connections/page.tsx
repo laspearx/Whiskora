@@ -243,9 +243,22 @@ export default function ConnectionsPage() {
                         ) : (
                           <button
                             className="cn-btn cn-btn-link"
-                            onClick={() => {
+                            onClick={async () => {
                               if (id === 'custom:line-login') {
-                                window.location.href = `/api/auth/line?next=/profile/connections&mode=link&uid=${encodeURIComponent(currentUserId)}`
+                                setActionLoading(id)
+                                try {
+                                  const { data: { session } } = await supabase.auth.getSession()
+                                  const resp = await fetch('/api/auth/line', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Authorization': `Bearer ${session?.access_token}`,
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ uid: currentUserId }),
+                                  })
+                                  if (!resp.ok) { setError('ไม่สามารถเริ่มการเชื่อมต่อได้ กรุณาลองใหม่'); setActionLoading(null); return; }
+                                  window.location.href = `/api/auth/line?next=/profile/connections&mode=link`
+                                } catch { setError('เกิดข้อผิดพลาด กรุณาลองใหม่'); setActionLoading(null); }
                               } else {
                                 handleLink(id)
                               }

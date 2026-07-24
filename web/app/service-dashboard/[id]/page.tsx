@@ -225,7 +225,8 @@ function ServiceDashboardContent() {
         .svd-tools { display: flex; flex-direction: column; gap: 12px; }
         .svd-tool { display: flex; align-items: center; gap: 13px; background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 16px; text-decoration: none; transition: all .15s; }
         .svd-tool:hover { border-color: ${F.blueBorder}; }
-        .svd-tool-icon { width: 44px; height: 44px; border-radius: 13px; background: ${F.blueSoft}; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .svd-tool-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .svd-tool-icon img { width: 38px; height: 38px; object-fit: contain; }
         .svd-tool-title { font-size: 14px; font-weight: 700; color: ${F.ink}; }
         .svd-tool-desc { font-size: 11px; font-weight: 500; color: ${F.muted}; margin-top: 1px; }
         @media (max-width: 720px) { .svd-stats { grid-template-columns: 1fr 1fr; } .svd-cols { grid-template-columns: 1fr; } }
