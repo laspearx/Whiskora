@@ -82,6 +82,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 
 ### Profile (personal area)
 - Edit profile, settings (LINE bot notification toggle, etc.), connections (link/unlink LINE), own-pets list, appointment calendar, income/expense tracker, transfer-requests inbox.
+- `/profile` itself is **not** login-gated (fixed 2026-07-24) — anonymous visitors see the same layout with empty/placeholder data (no hard redirect). Every interactive element is intercepted by a single `onClickCapture` guard on the page's root (`handleGuardClick` in `app/profile/page.tsx`) that shows a login-required prompt instead of navigating/uploading when there's no session. All `/profile/*` sub-pages (pets, transfers, calendar, finance, edit, settings, connections) still hard-redirect to `/login` on direct access — that's fine since they're reached by clicking through an already-gated `/profile`, not organically browsed to.
 
 ## Data model (grouped)
 
@@ -102,7 +103,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Architecture conventions (read before touching related code)
 
-- **Locale shim**: every route (at least under `farm-dashboard/[id]/...`) needs a matching re-export shim at `[locale]/farm-dashboard/[id]/...` or it 404s under the `/th/`, `/en/` prefixes.
+- **Locale shim**: every route needs a matching re-export shim at `[locale]/...` or it 404s under the `/th/`, `/en/` prefixes — `middleware.ts` unconditionally redirects any un-prefixed URL to `/th/...`, so this isn't optional for any page. Found and fixed 2026-07-24: `/shops/[id]` and `/services/[id]` (two high-traffic public marketplace pages) had **no** locale shim at all, meaning every single visit 404'd. Always check `app/[locale]/<route>` exists when adding or auditing a top-level route — don't assume it's just a `farm-dashboard` gotcha.
 - **`pets.weight` is retired.** `pet_weights` is the only place weight is ever read or written. Grep for any stray write to `pets.weight` before shipping weight-related changes.
 - **App background color** is `#fffafc`. The stray `#FDF6F8` near-duplicate was fully cleaned up 2026-07-24 (14 files, including `farm/[id]`, `p/[id]`) — if it reappears, treat it as a regression, not a pre-existing gap.
 - **Shared DB-backed types belong in `web/lib/types.ts`**, not page-local interfaces. As of 2026-07-24, `PetReservation`, `PetOwnershipTransfer`, `PendingTransferRow`, and `ServiceBooking` are centralized there — reuse them instead of redeclaring a local shape when touching reservations/transfers/bookings.
@@ -126,6 +127,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-07-24 (later same day)**
+- Fixed (critical): `/shops/[id]` and `/services/[id]` had no `[locale]` re-export shim, so every visit 404'd under the `/th/`/`/en/` prefixes middleware forces on all URLs — these two public marketplace pages were completely unreachable. Added the missing shims.
+- Fixed: `/profile` no longer hard-redirects anonymous visitors to `/login`. It now renders with empty/placeholder data and a single page-wide click guard that shows a login-required prompt (with a way to dismiss and keep looking) only when an anonymous visitor actually taps something — consistent with how `/p/[id]` already handles view-vs-action gating. Sub-pages under `/profile/*` are unchanged (still hard-redirect; only reached by clicking through the now-open `/profile`).
 - Fixed: in-app-browser login warning was blocking the entire site on every route for LINE's own in-app browser, even though only Google OAuth is actually broken there (verified empirically — see Auth & identity section). Removed the global block; the warning now only appears contextually when tapping Google login inside a detected in-app browser (LINE excluded from the detection list entirely). LINE login and email/password login now work normally when a link is opened from inside LINE, Facebook Messenger/comments, Instagram, etc.
 - Shipped: reservation → confirm sale → ownership transfer pipeline wired end-to-end. Farm dashboard "ยืนยันการขาย" on a confirmed reservation now creates a transfer with `reservation_id` set; the `sync_pet_owner_on_transfer_accept` DB trigger now also flips that reservation to `'converted'` on acceptance. No RLS changes needed — verified `pet_ownership_transfers` insert policy only requires `initiated_by = auth.uid()`, not `from_user_id`.
 - Shipped: public service booking, end-to-end. Created the `service_bookings` table (didn't exist before — the dashboard was querying a table that was never created) with RLS mirroring `pet_reservations`. Added a login-gated booking form on `/services/[id]` and a new `/service-dashboard/[id]/bookings` management page (+ locale shim) replacing a link that previously 404'd.

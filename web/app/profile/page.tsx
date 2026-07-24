@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [hasHealthActivities, setHasHealthActivities] = useState(false);
   const [hasWeightRecords, setHasWeightRecords] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Crop state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -82,7 +83,9 @@ export default function ProfilePage() {
     const load = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { router.push("/login?redirect=/profile"); return; }
+        // หน้านี้เปิดให้ทุกคนดูได้ (แบบว่างเปล่า) — ไม่ redirect ไป /login
+        // ล็อกอินก็ต่อเมื่อผู้เยี่ยมชมกดใช้งานจริง (ดู handleGuardClick ด้านล่าง)
+        if (!session) return;
         setUser(session.user);
         const uid = session.user.id;
 
@@ -120,7 +123,17 @@ export default function ProfilePage() {
       }
     };
     load();
-  }, [router]);
+  }, []);
+
+  const isAuthed = !!user;
+
+  // ผู้เยี่ยมชมที่ยังไม่ล็อกอิน: กดจุดไหนของหน้านี้ก็ได้ แต่จะเจอ prompt ให้เข้าสู่ระบบ/สมัครสมาชิกก่อน
+  const handleGuardClick = (e: MouseEvent) => {
+    if (isAuthed) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setShowLoginPrompt(true);
+  };
 
 
   // Crop helpers
@@ -166,7 +179,9 @@ export default function ProfilePage() {
     }
   };
 
-  const displayName = profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Whiskora User";
+  const displayName = isAuthed
+    ? (profile?.full_name || profile?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Whiskora User")
+    : "ผู้เยี่ยมชม";
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
   const coverUrl = profile?.cover_url;
 
@@ -364,6 +379,15 @@ export default function ProfilePage() {
         .pp-act-meta { display: block; font-size: 11px; color: ${F.muted}; }
         .pp-act-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; background: ${F.pinkSoft}; color: ${F.pinkDeep}; font-size: 10px; font-weight: 500; white-space: nowrap; }
 
+        /* ── Login-required prompt ── */
+        .pp-login-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .pp-login-card { background: white; width: 100%; max-width: 340px; border-radius: 24px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .pp-login-icon { width: 60px; height: 60px; border-radius: 999px; background: ${F.pinkSoft}; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+        .pp-login-title { font-size: 17px; font-weight: 700; color: ${F.ink}; margin-bottom: 8px; }
+        .pp-login-sub { font-size: 13px; color: ${F.muted}; line-height: 1.6; margin-bottom: 20px; }
+        .pp-login-btn { width: 100%; padding: 13px; border-radius: 14px; background: ${F.pink}; color: white; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(232,70,119,0.3); }
+        .pp-login-cancel { width: 100%; padding: 11px; margin-top: 8px; border-radius: 14px; background: transparent; color: ${F.muted}; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
         /* ── Admin ── */
         .pp-admin-card { border-color: #fca5a5; background: linear-gradient(135deg, #fff5f5, #fff); }
         .pp-admin-link { display: flex; align-items: center; gap: 14px; text-decoration: none; color: ${F.ink}; }
@@ -409,7 +433,26 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <main className="pp">
+      {/* ── Login-required prompt (ผู้เยี่ยมชมที่ยังไม่ล็อกอินกดจุดไหนก็เจอ) ── */}
+      {showLoginPrompt && (
+        <div className="pp-login-overlay" onClick={() => setShowLoginPrompt(false)}>
+          <div className="pp-login-card" onClick={(e) => e.stopPropagation()}>
+            <div className="pp-login-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h2 className="pp-login-title">ยังไม่มีข้อมูลให้ดูตรงนี้</h2>
+            <p className="pp-login-sub">เข้าสู่ระบบหรือสมัครสมาชิกก่อน เพื่อดูและจัดการโปรไฟล์ของคุณเอง</p>
+            <button className="pp-login-btn" type="button" onClick={() => router.push("/login?redirect=/profile")}>
+              เข้าสู่ระบบ / สมัครสมาชิก
+            </button>
+            <button className="pp-login-cancel" type="button" onClick={() => setShowLoginPrompt(false)}>ดูต่อก่อน</button>
+          </div>
+        </div>
+      )}
+
+      <main className="pp" onClickCapture={!isAuthed ? handleGuardClick : undefined}>
         {/* Cover + Avatar */}
         <div className="pp-cover-wrap">
           {coverUrl ? <img src={coverUrl} className="pp-cover-img" alt="ภาพปก" /> : null}
@@ -447,7 +490,7 @@ export default function ProfilePage() {
           <div className="pp-hero-info">
             <div className="pp-hero-text">
               <h1 className="pp-name">{displayName}</h1>
-              <p className="pp-subtitle">เจ้าของสัตว์เลี้ยง {pets.length} ตัว</p>
+              <p className="pp-subtitle">{isAuthed ? `เจ้าของสัตว์เลี้ยง ${pets.length} ตัว` : "เข้าสู่ระบบเพื่อดูข้อมูลของคุณ"}</p>
               {user?.created_at && (
                 <span className="pp-chip">สมาชิกตั้งแต่ {formatMemberSince(user.created_at)}</span>
               )}
