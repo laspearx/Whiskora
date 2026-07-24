@@ -8,7 +8,7 @@ import PageLoader from '@/app/components/PageLoader';
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
   teal: '#0D9488', tealSoft: '#F0FDFA', tealBorder: '#99F6E4',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 const Icon = {

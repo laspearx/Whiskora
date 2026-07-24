@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-07-24
+**Last updated:** 2026-07-24 (later same day)
 
 ## What Whiskora is
 
@@ -57,10 +57,11 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - A parallel per-pet override table, `pet_visibility_settings`, **exists in the schema but has zero rows and no write path anywhere in the app** — unbuilt, not broken.
 
 ### Reservations & ownership transfers
-- `pet_reservations`: buyer reserves a listed pet from `/p/[id]` (`pending` → farm confirms/cancels from `farm-dashboard/[id]/reservations`). DB enforces one confirmed reservation per pet.
+- `pet_reservations`: buyer reserves a listed pet from `/p/[id]` (`pending` → farm confirms/cancels from `farm-dashboard/[id]/reservations`). DB enforces one confirmed reservation per pet via partial unique index `one_confirmed_reservation_per_pet` (`WHERE status='confirmed'`).
 - Confirming/cancelling a reservation **now syncs the pet's own `status`** to `ติดจอง` (reserved) / back to `เปิดจอง` (fixed 2026-07-24 — previously only the reservation row changed, the pet's status field was left stale).
-- `pet_ownership_transfers`: owner-initiated from `/pets/[id]`, accepted/declined by the recipient at `/profile/transfers` (inbox via RPC `get_my_pending_transfers`). Acceptance is handled by a **DB trigger** (`sync_pet_owner_on_transfer_accept`) that reassigns `pets.user_id` and clears `pets.farm_id` — not client-side code.
-- **Known gap**: `pet_reservations.status = 'converted'` and `pet_ownership_transfers.reservation_id` exist in the schema (clearly designed for a reserve → sell → transfer-ownership pipeline) but nothing in the app writes them — the two features are functionally disconnected today.
+- `pet_ownership_transfers`: owner-initiated from `/pets/[id]` (manual, by buyer email lookup), **or from a confirmed reservation** via "ยืนยันการขาย" on `farm-dashboard/[id]/reservations` (wired 2026-07-24) — this path sets `reservation_id` on the transfer automatically instead of requiring a manual email lookup. Accepted/declined by the recipient at `/profile/transfers` (inbox via RPC `get_my_pending_transfers`).
+- Acceptance is handled by a **DB trigger** (`sync_pet_owner_on_transfer_accept`) that reassigns `pets.user_id`, clears `pets.farm_id`, and — as of 2026-07-24 — also flips the linked `pet_reservations.status` to `'converted'` when `reservation_id` is set, freeing the pet up for a future reservation cycle. Manual (non-reservation) transfers are unaffected (`reservation_id` stays null).
+- The reserve → confirm → sell → transfer-ownership pipeline is now fully wired end-to-end (previously `'converted'`/`reservation_id` existed in the schema but nothing wrote them).
 
 ### Farm / shop / service dashboards
 - Farm dashboard: overview, edit, verify (→ `farm_verifications`, admin-approved), members (workspace roles), privacy, data-check (incomplete-data checklist with inline fixes), pets (roster/create/bulk-create), litters, babies, weights, activities, appointments, reservations.
@@ -71,6 +72,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - Browse: `farm-hub` (farm-led "Pet Market"), `marketplace`, `service-hub`, `search`.
 - Public profile pages: `/p/[id]` (pet), `/farm/[id]`, `/shops/[id]`, `/services/[id]`.
 - Contact seller: modal offering phone / LINE deep link / Facebook, every click logged to `contact_leads`. **No in-app messaging/chat exists** — contact always hands off to an external channel.
+- Service booking: logged-in users can submit a booking request from `/services/[id]` (writes to `service_bookings`, added 2026-07-24 — the table didn't exist before, so the service dashboard's booking list was silently empty). Requires login (redirects to `/login?redirect=...` otherwise), mirroring how pet reservations require an authenticated buyer. Managed from `service-dashboard/[id]/bookings` (status: pending/confirmed/cancelled/completed).
 
 ### Admin
 - `/admin/dashboard` — platform stats via RPC (`admin_get_stats`, built to bypass RLS after direct-select approaches broke).
@@ -91,7 +93,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 | Weights & health | `pet_weights` (canonical), `Vaccine` |
 | Activities | `Activity` (shared pet-level / farm-level timeline) |
 | Visibility | `field_groups`, `farm_visibility_settings`, (unused) `pet_visibility_settings` |
-| Shops / services | `Shop`, `Product`, `Service`, `ServiceBooking` |
+| Shops / services | `Shop`, `Product`, `Service`, `service_items`, `service_bookings` |
 | Scheduling | `appointments` |
 | Auth / profile | `profiles`, Supabase `auth.users` (LINE identity in `user_metadata`) |
 
@@ -101,7 +103,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 - **Locale shim**: every route (at least under `farm-dashboard/[id]/...`) needs a matching re-export shim at `[locale]/farm-dashboard/[id]/...` or it 404s under the `/th/`, `/en/` prefixes.
 - **`pets.weight` is retired.** `pet_weights` is the only place weight is ever read or written. Grep for any stray write to `pets.weight` before shipping weight-related changes.
-- **App background color** is `#fffafc`. `#FDF6F8` is a stray near-duplicate that causes visible seams — as of 2026-07-24, still present in 13 files including two high-traffic public pages (`farm/[id]`, `p/[id]`). Worth a cleanup pass.
+- **App background color** is `#fffafc`. The stray `#FDF6F8` near-duplicate was fully cleaned up 2026-07-24 (14 files, including `farm/[id]`, `p/[id]`) — if it reappears, treat it as a regression, not a pre-existing gap.
+- **Shared DB-backed types belong in `web/lib/types.ts`**, not page-local interfaces. As of 2026-07-24, `PetReservation`, `PetOwnershipTransfer`, `PendingTransferRow`, and `ServiceBooking` are centralized there — reuse them instead of redeclaring a local shape when touching reservations/transfers/bookings.
 - **Circular badge clipping**: corner badges on circular avatars (camera-upload icons on round pet photos, etc.) need their own clip layer, not just offset tuning — recurring bug class.
 - **Weight unit toggle must stay manual-overridable** — auto-guessing kg/g from a pet with no history previously corrupted real data.
 - **Pet photo upload path** must stay exactly `${userId}/${petId}-...` in the `pet-photos` storage bucket — Supabase RLS depends on that exact shape.
@@ -110,17 +113,21 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Reservation → sale → ownership-transfer pipeline is not wired end-to-end (`reservation_id` on transfers, `'converted'` reservation status both unused).
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
-- No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
-- Stray `#FDF6F8` background color still present in 13 files (see above).
+- No visible in-app checkout/payment flow for shop products (service bookings now exist end-to-end as of 2026-07-24, but there's still no payment collection — booking just requests a slot).
+- `service_items`/`service_bookings` RLS follows the exact-owner pattern (`services.user_id = auth.uid()::text`), not a workspace-team function — so, same as the pre-existing `service_items` gap, a `manager`/`staff` workspace role can see the service dashboard UI but may get RLS-denied on writes since only the literal owner account passes the policy. Not introduced by this pass, but worth fixing if service teams with non-owner roles report failed saves.
+- `service-dashboard/[id]/finance` is linked from the overview tools list but the route doesn't exist yet (pre-existing gap, separate from the bookings page fixed 2026-07-24).
 
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
-**2026-07-24**
+**2026-07-24 (later same day)**
+- Shipped: reservation → confirm sale → ownership transfer pipeline wired end-to-end. Farm dashboard "ยืนยันการขาย" on a confirmed reservation now creates a transfer with `reservation_id` set; the `sync_pet_owner_on_transfer_accept` DB trigger now also flips that reservation to `'converted'` on acceptance. No RLS changes needed — verified `pet_ownership_transfers` insert policy only requires `initiated_by = auth.uid()`, not `from_user_id`.
+- Shipped: public service booking, end-to-end. Created the `service_bookings` table (didn't exist before — the dashboard was querying a table that was never created) with RLS mirroring `pet_reservations`. Added a login-gated booking form on `/services/[id]` and a new `/service-dashboard/[id]/bookings` management page (+ locale shim) replacing a link that previously 404'd.
+- Fixed: stray `#FDF6F8` background color replaced with the canonical `#fffafc` across all 14 affected files.
+- Refactor: centralized `PetReservation`, `PetOwnershipTransfer`, `PendingTransferRow`, and a corrected `ServiceBooking` interface in `web/lib/types.ts`; removed the page-local duplicate interfaces they replaced.
 - Fixed: newborn pets now get `sire_id`/`dam_id` copied from their litter at birth-recording time (previously only the litter itself carried the link); backfilled 11 historical pet rows.
 - Fixed: editing a litter's sire/dam now cascades to already-born pets in that litter.
 - Fixed: confirming/cancelling a buyer reservation now syncs the pet's own `status` field instead of leaving it stale.

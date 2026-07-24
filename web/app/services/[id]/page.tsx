@@ -33,6 +33,19 @@ export default function PublicServiceProfile() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [myPets, setMyPets] = useState<{ id: number; name: string }[]>([]);
+  const [myPendingBooking, setMyPendingBooking] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingItemId, setBookingItemId] = useState<string>('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState('');
+  const [bookingPetId, setBookingPetId] = useState<string>('');
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState('');
+  const [bookingToast, setBookingToast] = useState(false);
+
   useEffect(() => {
     const fetchService = async () => {
       try {
@@ -41,11 +54,67 @@ export default function PublicServiceProfile() {
         setService(data);
         const { data: itemsData } = await supabase.from('service_items').select('*').eq('service_id', serviceId).order('id');
         setItems(itemsData || []);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setSessionUserId(session.user.id);
+          const { data: petsData } = await supabase.from('pets').select('id, name').eq('user_id', session.user.id).order('name');
+          setMyPets(petsData || []);
+          const { data: existingBooking } = await supabase
+            .from('service_bookings')
+            .select('id')
+            .eq('service_id', serviceId)
+            .eq('buyer_id', session.user.id)
+            .eq('status', 'pending')
+            .maybeSingle();
+          setMyPendingBooking(!!existingBooking);
+        }
       } catch { router.push('/service-hub'); }
       finally { setLoading(false); }
     };
     if (serviceId) fetchService();
   }, [serviceId, router]);
+
+  const openBookingModal = () => {
+    if (!sessionUserId) { router.push(`/login?redirect=${encodeURIComponent(`/services/${serviceId}`)}`); return; }
+    setBookingError('');
+    setBookingItemId(items[0] ? String(items[0].id) : '');
+    setBookingDate('');
+    setBookingTime('');
+    setBookingPetId('');
+    setBookingNotes('');
+    setShowBookingModal(true);
+  };
+
+  const handleSubmitBooking = async () => {
+    if (!sessionUserId) return;
+    if (!bookingDate) { setBookingError('กรุณาเลือกวันที่'); return; }
+    setBookingSubmitting(true);
+    setBookingError('');
+    try {
+      const selectedItem = items.find(i => String(i.id) === bookingItemId);
+      const { error } = await supabase.from('service_bookings').insert({
+        service_id: Number(serviceId),
+        service_item_id: selectedItem ? selectedItem.id : null,
+        buyer_id: sessionUserId,
+        pet_id: bookingPetId ? Number(bookingPetId) : null,
+        booking_date: bookingDate,
+        booking_time: bookingTime || null,
+        service_type: selectedItem ? selectedItem.name : null,
+        notes: bookingNotes.trim() || null,
+        status: 'pending',
+      });
+      if (error) throw error;
+      setShowBookingModal(false);
+      setMyPendingBooking(true);
+      setBookingToast(true);
+      setTimeout(() => setBookingToast(false), 2500);
+    } catch (e: any) {
+      setBookingError('ส่งคำขอจองไม่สำเร็จ: ' + e.message);
+    } finally {
+      setBookingSubmitting(false);
+    }
+  };
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -108,6 +177,24 @@ export default function PublicServiceProfile() {
         .sp-cta-ghost { background: white; color: ${F.blue}; border: 1px solid ${F.blueBorder}; }
         .sp-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: ${F.ink}; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 60; }
         @media (max-width: 720px) { .sp-identity, .sp-section { padding-left: 16px; padding-right: 16px; } }
+
+        .sp-modal-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
+        @media (min-width: 500px) { .sp-modal-overlay { align-items: center; padding: 20px; } }
+        .sp-modal { background: white; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 24px 20px 32px; max-height: 90vh; overflow-y: auto; }
+        @media (min-width: 500px) { .sp-modal { border-radius: 24px; } }
+        .sp-modal-title { font-size: 17px; font-weight: 700; color: ${F.ink}; margin-bottom: 18px; }
+        .sp-modal-error { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; margin-bottom: 14px; }
+        .sp-mfield { margin-bottom: 14px; }
+        .sp-mlabel { display: block; font-size: 12px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 6px; }
+        .sp-req { color: ${F.blue}; }
+        .sp-minput, .sp-mtextarea { width: 100%; padding: 11px 13px; border: 1px solid ${F.lineMid}; border-radius: 11px; font-size: 14px; font-weight: 500; color: ${F.ink}; outline: none; transition: all .18s; font-family: inherit; background: #F9FAFB; }
+        .sp-minput:focus, .sp-mtextarea:focus { border-color: ${F.blueBorder}; background: white; box-shadow: 0 0 0 3px ${F.blueSoft}; }
+        .sp-mtextarea { resize: none; }
+        .sp-mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .sp-mbtns { display: flex; gap: 10px; margin-top: 18px; }
+        .sp-mcancel { flex: 0 0 auto; padding: 13px 20px; border-radius: 13px; background: ${F.line}; color: ${F.inkSoft}; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .sp-msave { flex: 1; padding: 13px; border-radius: 13px; background: ${F.blue}; color: white; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(37,99,235,0.25); }
+        .sp-msave:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
 
       <div className="sp-page">
@@ -201,10 +288,17 @@ export default function PublicServiceProfile() {
         {/* CTA Bar */}
         <div className="sp-cta-bar">
           <div className="sp-cta-inner">
-            <button className="sp-cta-btn sp-cta-ghost" onClick={handleShare}><Icon.Share /> แชร์</button>
+            <button
+              className="sp-cta-btn sp-cta-primary"
+              onClick={openBookingModal}
+              disabled={myPendingBooking}
+              style={myPendingBooking ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+            >
+              {myPendingBooking ? 'รอทางร้านยืนยัน' : 'จองบริการ'}
+            </button>
             {service.phone && (
-              <a className="sp-cta-btn sp-cta-primary" href={`tel:${service.phone}`}>
-                <img src="/icons/icon-phone.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+              <a className="sp-cta-btn sp-cta-ghost" href={`tel:${service.phone}`}>
+                <img src="/icons/icon-phone.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
                 โทรติดต่อ
               </a>
             )}
@@ -218,6 +312,53 @@ export default function PublicServiceProfile() {
         </div>
 
         {copied && <div className="sp-toast">คัดลอกลิงก์แล้ว</div>}
+        {bookingToast && <div className="sp-toast">ส่งคำขอจองแล้ว รอทางร้านยืนยัน</div>}
+
+        {showBookingModal && (
+          <div className="sp-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowBookingModal(false); }}>
+            <div className="sp-modal">
+              <div className="sp-modal-title">จองบริการ</div>
+              {bookingError && <div className="sp-modal-error">{bookingError}</div>}
+              {items.length > 0 && (
+                <div className="sp-mfield">
+                  <label className="sp-mlabel">เลือกบริการ</label>
+                  <select className="sp-minput" value={bookingItemId} onChange={e => setBookingItemId(e.target.value)}>
+                    {items.map(item => (
+                      <option key={item.id} value={item.id}>{item.name}{item.price != null ? ` — ฿${Number(item.price).toLocaleString()}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="sp-mgrid">
+                <div className="sp-mfield">
+                  <label className="sp-mlabel">วันที่ <span className="sp-req">*</span></label>
+                  <input type="date" className="sp-minput" min={new Date().toISOString().split('T')[0]} value={bookingDate} onChange={e => setBookingDate(e.target.value)} />
+                </div>
+                <div className="sp-mfield">
+                  <label className="sp-mlabel">เวลา</label>
+                  <input type="time" className="sp-minput" value={bookingTime} onChange={e => setBookingTime(e.target.value)} />
+                </div>
+              </div>
+              {myPets.length > 0 && (
+                <div className="sp-mfield">
+                  <label className="sp-mlabel">สัตว์เลี้ยงของคุณ</label>
+                  <select className="sp-minput" value={bookingPetId} onChange={e => setBookingPetId(e.target.value)}>
+                    <option value="">ไม่ระบุ</option>
+                    {myPets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              <div className="sp-mfield">
+                <label className="sp-mlabel">หมายเหตุเพิ่มเติม</label>
+                <textarea className="sp-mtextarea" rows={2} placeholder="เช่น ขนยาว ดุนิดหน่อย" value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} />
+              </div>
+              <div className="sp-mbtns">
+                <button className="sp-mcancel" onClick={() => setShowBookingModal(false)}>ยกเลิก</button>
+                <button className="sp-msave" onClick={handleSubmitBooking} disabled={bookingSubmitting}>{bookingSubmitting ? 'กำลังส่ง...' : 'ส่งคำขอจอง'}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

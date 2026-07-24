@@ -206,16 +206,58 @@ export interface Service {
 
 // ── ServiceBooking ────────────────────────────────────────────────────────────
 export interface ServiceBooking {
-  id: string;
-  service_id: string;
-  pet_id?: string | null;
+  id: number;
+  service_id: number;
+  service_item_id?: number | null;
+  buyer_id: string;
+  pet_id?: number | null;
   booking_date: string;
   booking_time?: string | null;
   service_type?: string | null;
-  status: string;
+  status: "pending" | "confirmed" | "cancelled" | "completed";
   notes?: string | null;
   created_at?: string;
   pets?: { name: string; species?: string | null } | null;
+  buyer?: { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null;
+}
+
+// ── PetReservation ───────────────────────────────────────────────────────────
+export interface PetReservation {
+  id: number;
+  pet_id: number;
+  buyer_id: string;
+  status: "pending" | "confirmed" | "cancelled" | "converted" | "expired";
+  confirmed_at?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+  pet?: { id: number; name: string | null; image_url: string | null; status: string | null; user_id: string | null } | null;
+  buyer?: { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null;
+}
+
+// ── PetOwnershipTransfer ─────────────────────────────────────────────────────
+export interface PetOwnershipTransfer {
+  id: number;
+  pet_id: number;
+  from_user_id: string | null;
+  to_user_id: string;
+  reservation_id?: number | null;
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  initiated_by: string;
+  initiated_at: string;
+  accepted_at?: string | null;
+  anonymized_at?: string | null;
+}
+
+// shape returned by RPC get_my_pending_transfers
+export interface PendingTransferRow {
+  transfer_id: number;
+  pet_id: number;
+  pet_name: string | null;
+  pet_image_url: string | null;
+  pet_breed: string | null;
+  from_user_id: string;
+  from_name: string | null;
+  initiated_at: string;
 }
 
 // ── Partner business item (union for PartnerCategoryCard) ─────────────────────

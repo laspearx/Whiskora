@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import { PET_STATUS } from "@/lib/constants";
+import type { PetReservation } from "@/lib/types";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -27,24 +28,17 @@ const STATUS_COLOR: Record<string, { bg: string; fg: string; bd: string }> = {
   expired:   { bg: F.line, fg: F.muted, bd: F.lineMid },
 };
 
-interface ReservationRow {
-  id: number;
-  pet_id: number;
-  status: string;
-  created_at: string;
-  pet: { id: number; name: string | null; image_url: string | null; status: string | null } | null;
-  buyer: { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null;
-}
-
 export default function FarmReservationsPage() {
   const params = useParams();
   const router = useRouter();
   const farmId = params?.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<ReservationRow[]>([]);
+  const [rows, setRows] = useState<PetReservation[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [pendingTransferIds, setPendingTransferIds] = useState<Set<number>>(new Set());
 
   const load = async () => {
     const { data: pets } = await supabase.from("pets").select("id").eq("farm_id", farmId);
@@ -53,17 +47,34 @@ export default function FarmReservationsPage() {
 
     const { data } = await supabase
       .from("pet_reservations")
-      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status), buyer:buyer_id(id, full_name, username, avatar_url)")
+      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status, user_id), buyer:buyer_id(id, full_name, username, avatar_url)")
       .in("pet_id", petIds)
       .order("created_at", { ascending: false });
 
-    setRows((data || []) as unknown as ReservationRow[]);
+    const loadedRows = (data || []) as unknown as PetReservation[];
+    setRows(loadedRows);
+
+    const confirmedIds = loadedRows.filter(r => r.status === "confirmed").map(r => r.id);
+    if (confirmedIds.length > 0) {
+      const { data: transfers } = await supabase
+        .from("pet_ownership_transfers")
+        .select("reservation_id")
+        .in("reservation_id", confirmedIds)
+        .eq("status", "pending");
+      setPendingTransferIds(new Set((transfers || []).map(t => t.reservation_id)));
+    } else {
+      setPendingTransferIds(new Set());
+    }
+
     setLoading(false);
   };
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSessionUserId(data.session?.user.id ?? null));
+  }, []);
   useEffect(() => { if (farmId) load(); }, [farmId]);
 
-  const updateStatus = async (row: ReservationRow, status: "confirmed" | "cancelled") => {
+  const updateStatus = async (row: PetReservation, status: "confirmed" | "cancelled") => {
     setBusyId(row.id);
     setError("");
     try {
@@ -91,12 +102,34 @@ export default function FarmReservationsPage() {
     }
   };
 
+  const handleConfirmSale = async (row: PetReservation) => {
+    if (!row.pet?.user_id || !row.buyer?.id || !sessionUserId) return;
+    setBusyId(row.id);
+    setError("");
+    try {
+      const { error: insErr } = await supabase.from("pet_ownership_transfers").insert({
+        pet_id: row.pet_id,
+        from_user_id: row.pet.user_id,
+        to_user_id: row.buyer.id,
+        initiated_by: sessionUserId,
+        reservation_id: row.id,
+        status: "pending",
+      });
+      if (insErr) throw insErr;
+      await load();
+    } catch (e: any) {
+      setError("ส่งคำขอโอนไม่สำเร็จ: " + e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (loading) return <PageLoader />;
 
   const pending = rows.filter(r => r.status === "pending");
   const others = rows.filter(r => r.status !== "pending");
 
-  const renderRow = (row: ReservationRow) => {
+  const renderRow = (row: PetReservation) => {
     const buyerName = row.buyer?.full_name || row.buyer?.username || "ผู้ใช้ไม่ระบุชื่อ";
     const c = STATUS_COLOR[row.status] || STATUS_COLOR.pending;
     return (
@@ -126,7 +159,14 @@ export default function FarmReservationsPage() {
             </div>
           )}
           {row.status === "confirmed" && (
-            <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
+            pendingTransferIds.has(row.id) ? (
+              <span className="rv-status" style={{ background: F.pinkSoft, color: F.pink, border: `1px solid ${F.pinkBorder}` }}>ส่งคำขอโอนแล้ว รอผู้ซื้อยืนยัน</span>
+            ) : (
+              <div style={{ display: "flex", gap: 6 }}>
+                <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => handleConfirmSale(row)}>ยืนยันการขาย</button>
+                <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
+              </div>
+            )
           )}
         </div>
       </div>

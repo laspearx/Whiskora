@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import type { PendingTransferRow } from "@/lib/types";
 
 const F = {
   ink: "#1f1a1c", inkSoft: "#4a3f44", muted: "#8e7e84",
@@ -11,21 +12,10 @@ const F = {
   line: "#f3dde3", lineMid: "#E5E7EB", bg: "#fffafc",
 };
 
-interface TransferRow {
-  transfer_id: number;
-  pet_id: number;
-  pet_name: string | null;
-  pet_image_url: string | null;
-  pet_breed: string | null;
-  from_user_id: string;
-  from_name: string | null;
-  initiated_at: string;
-}
-
 export default function MyTransfersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<TransferRow[]>([]);
+  const [rows, setRows] = useState<PendingTransferRow[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
@@ -33,13 +23,13 @@ export default function MyTransfersPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push("/login?redirect=/profile/transfers"); return; }
     const { data } = await supabase.rpc("get_my_pending_transfers");
-    setRows((data || []) as TransferRow[]);
+    setRows((data || []) as PendingTransferRow[]);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const respond = async (row: TransferRow, status: "accepted" | "declined") => {
+  const respond = async (row: PendingTransferRow, status: "accepted" | "declined") => {
     setBusyId(row.transfer_id);
     setError("");
     try {

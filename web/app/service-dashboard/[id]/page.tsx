@@ -9,12 +9,13 @@ import Link from "next/link";
 import { speciesTh } from "@/lib/species";
 import PageLoader from '@/app/components/PageLoader';
 import { useServiceAccess } from "./layout";
+import type { ServiceBooking } from "@/lib/types";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
   orange: '#F97316', green: '#16A34A',
   blue: '#2563EB', blueSoft: '#EFF6FF', blueBorder: '#BFDBFE',
-  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#FDF6F8',
+  line: '#F3F4F6', lineMid: '#E5E7EB', paper: '#FFFFFF', bg: '#fffafc',
 };
 
 const Icon = {
@@ -47,7 +48,7 @@ function ServiceDashboardContent() {
   const canEdit = myRole === "owner" || myRole === "manager";
 
   const [service, setService] = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<ServiceBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalBookings: 0, pending: 0, today: 0, revenue: 0 });
 
@@ -221,7 +222,7 @@ function ServiceDashboardContent() {
         .svd-status.ok { background: #F0FDF4; color: ${F.green}; }
         .svd-status.pending { background: #FFF7ED; color: ${F.orange}; }
         .svd-status.done { background: ${F.line}; color: ${F.muted}; }
-        .svd-manage { font-size: 11px; font-weight: 700; color: ${F.blue}; background: none; border: none; cursor: pointer; }
+        .svd-manage { font-size: 11px; font-weight: 700; color: ${F.blue}; background: none; border: none; cursor: pointer; text-decoration: none; }
         .svd-tools { display: flex; flex-direction: column; gap: 12px; }
         .svd-tool { display: flex; align-items: center; gap: 13px; background: white; border: 1px solid ${F.line}; border-radius: 16px; padding: 16px; text-decoration: none; transition: all .15s; }
         .svd-tool:hover { border-color: ${F.blueBorder}; }
@@ -359,7 +360,7 @@ function ServiceDashboardContent() {
                             <div className="svd-time">{booking.booking_time} น.</div>
                           </td>
                           <td><span className={`svd-status ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span></td>
-                          <td style={{ textAlign: 'right' }}>{canEdit && <button className="svd-manage">จัดการ</button>}</td>
+                          <td style={{ textAlign: 'right' }}>{canEdit && <Link href={`/service-dashboard/${serviceId}/bookings?from=${fromPage}`} className="svd-manage">จัดการ</Link>}</td>
                         </tr>
                       ))}
                     </tbody>
