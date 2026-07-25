@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-07-24 (later same day)
+**Last updated:** 2026-07-25
 
 ## What Whiskora is
 
@@ -126,6 +126,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-07-25**
+- Fixed: `farm-hub` farm-card logo avatar was rendered as a half-circle — it was a child of the `aspect-[2/1] overflow-hidden` cover-photo box while positioned to hang below it, so the overhanging half got clipped. Moved the avatar to be a sibling of the cover box inside a shared non-clipping `relative` wrapper instead. Same root cause as the earlier corner-badge clipping bug, just on a different pair of elements.
 
 **2026-07-24 (later same day)**
 - Redesigned: `farm-hub` — renamed "Pet Market" → "ฟาร์มสัตว์เลี้ยง", replaced the 2-way farms/pets toggle with a 3-way group switcher (all farms / farms with ready pets / pets-only), search now matches farm name+location+species AND that farm's ready pets' breed/species (works from any group), species pills shrunk to small chips, farm cards shrunk to a 2-up mobile grid with a short `aspect-[2/1]` cover instead of the previous tall `16/9` single/two-column layout. Verified via server-rendered HTML (labels/classes/no console errors) — **not** visually screenshotted, no browser tooling was available in this session; worth a quick look on the Vercel preview.

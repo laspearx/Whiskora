@@ -265,18 +265,20 @@ export default function FarmHubPage() {
                 const cover = farm.cover_url || farm.image_url;
                 return (
                   <Link key={farm.id} href={`/farm/${farm.id}`} className="premium-card flex flex-col overflow-visible group">
-                    <div className="aspect-[2/1] bg-gray-50 relative overflow-hidden border-b border-gray-100 rounded-t-[1.25rem]">
-                      {cover ? (
-                        <img
-                          src={cover}
-                          alt={farm.farm_name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50/50">
-                          <Icon.ImagePlaceholder />
-                        </div>
-                      )}
+                    <div className="relative">
+                      <div className="aspect-[2/1] bg-gray-50 overflow-hidden border-b border-gray-100 rounded-t-[1.25rem]">
+                        {cover ? (
+                          <img
+                            src={cover}
+                            alt={farm.farm_name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50/50">
+                            <Icon.ImagePlaceholder />
+                          </div>
+                        )}
+                      </div>
                       <div className="absolute -bottom-4 left-3 w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-md" style={{ background: F.pinkSoft }}>
                         {farm.image_url ? (
                           <img src={farm.image_url} alt="" className="w-full h-full object-cover" />
