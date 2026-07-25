@@ -33,8 +33,10 @@ const Icon = {
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
+type ViewMode = 'all' | 'ready' | 'pets';
+
 export default function FarmHubPage() {
-  const [viewMode, setViewMode] = useState<'farms' | 'pets'>('farms');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [farms, setFarms] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,8 +127,14 @@ export default function FarmHubPage() {
     petTypeFiltered.filter(p => p.farm_id === farmId).length;
 
   const farmTypeFiltered = activePetType === "ทั้งหมด" ? farms : farms.filter(f => f.species === activePetType);
+  // ค้นหาฟาร์ม: จับคู่ทั้งชื่อ/จังหวัดฟาร์ม และสายพันธุ์/ชนิดสัตว์ของฟาร์ม (รวมถึงสัตว์พร้อมขายของฟาร์มนั้น)
   const searchedFarms = !q ? farmTypeFiltered : farmTypeFiltered.filter(f =>
-    f.farm_name?.toLowerCase().includes(q) || farmLocation(f).toLowerCase().includes(q)
+    f.farm_name?.toLowerCase().includes(q) ||
+    farmLocation(f).toLowerCase().includes(q) ||
+    speciesTh(f.species)?.toLowerCase().includes(q) ||
+    pets.some(p => p.farm_id === f.id && (
+      p.breed?.toLowerCase().includes(q) || speciesTh(p.species)?.toLowerCase().includes(q)
+    ))
   );
 
   const sortedFarms = [...searchedFarms].sort((a, b) => {
@@ -135,6 +143,8 @@ export default function FarmHubPage() {
     if (aComplete !== bComplete) return aComplete ? -1 : 1;
     return readyCountForFarm(b.id) - readyCountForFarm(a.id);
   });
+
+  const displayedFarms = viewMode === 'ready' ? sortedFarms.filter(f => readyCountForFarm(f.id) > 0) : sortedFarms;
 
   return (
     <>
@@ -155,68 +165,74 @@ export default function FarmHubPage() {
         }
         .mode-tab {
           flex: 1;
-          padding: 11px 16px;
-          border-radius: 12px;
-          font-size: 14px;
+          padding: 8px 10px;
+          border-radius: 10px;
+          font-size: 12px;
           font-weight: 700;
           border: none;
           cursor: pointer;
           transition: all .18s ease;
           font-family: inherit;
+          white-space: nowrap;
         }
       `}</style>
 
-      <div className="max-w-6xl mx-auto px-4 pt-8 pb-24 animate-in fade-in duration-500" style={{ fontFamily: 'var(--font-ui)', color: F.ink }}>
+      <div className="max-w-6xl mx-auto px-4 pt-5 pb-24 animate-in fade-in duration-500" style={{ fontFamily: 'var(--font-ui)', color: F.ink }}>
 
         {/* 🔙 Header & Search */}
-        <div className="mb-8 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Pet Market</h1>
-              <p className="text-sm font-medium" style={{ color: F.muted }}>รวมฟาร์มพาร์ทเนอร์และเด็กๆ พร้อมย้ายบ้านจากฟาร์มคุณภาพ</p>
-            </div>
-
-            <div className="relative w-full md:max-w-md">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
-              <input
-                type="text"
-                placeholder={viewMode === 'farms' ? "ค้นหาฟาร์ม หรือจังหวัด..." : "ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        <div className="mb-4 space-y-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight mb-0.5">ฟาร์มสัตว์เลี้ยง</h1>
+            <p className="text-xs font-medium" style={{ color: F.muted }}>รวมฟาร์มพาร์ทเนอร์และเด็กๆ พร้อมย้ายบ้านจากฟาร์มคุณภาพ</p>
           </div>
 
-          {/* 🗂️ Mode switcher: ดูฟาร์ม / ดูสัตว์เลี้ยง */}
-          <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl w-full md:w-auto md:inline-flex">
+          <div className="relative w-full">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
+            <input
+              type="text"
+              placeholder="ค้นหาฟาร์ม, สายพันธุ์ หรือจังหวัด..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* 🗂️ Group switcher: ฟาร์มทั้งหมด / ฟาร์มที่มีสัตว์พร้อมขาย / สัตว์พร้อมขาย */}
+          <div className="flex gap-1.5 p-1 bg-gray-100 rounded-xl w-full">
             <button
               className="mode-tab"
-              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
-              onClick={() => setViewMode('farms')}
+              style={viewMode === 'all' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              onClick={() => setViewMode('all')}
             >
-              ดูฟาร์ม
+              ฟาร์มทั้งหมด
+            </button>
+            <button
+              className="mode-tab"
+              style={viewMode === 'ready' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              onClick={() => setViewMode('ready')}
+            >
+              ฟาร์มที่มีสัตว์พร้อมขาย
             </button>
             <button
               className="mode-tab"
               style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
               onClick={() => setViewMode('pets')}
             >
-              ดูสัตว์เลี้ยง
+              สัตว์พร้อมขาย
             </button>
           </div>
 
-          {/* 🐾 Pet Type Pills */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
+          {/* 🐾 Pet Type Pills — เล็กลงเพื่อประหยัดพื้นที่ */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {petTypes.map((type) => {
               const isActive = activePetType === type.value;
               return (
                 <button
                   key={type.label}
                   onClick={() => setActivePetType(type.value)}
-                  className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all shrink-0 border ${
+                  className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all shrink-0 border ${
                     isActive
-                    ? "bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200"
+                    ? "bg-gray-900 text-white border-gray-900"
                     : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -229,27 +245,27 @@ export default function FarmHubPage() {
 
         {/* 📦 Content */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-square bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+              <div key={i} className="aspect-square bg-gray-50 animate-pulse rounded-xl border border-gray-100"></div>
             ))}
           </div>
-        ) : viewMode === 'farms' ? (
-          sortedFarms.length === 0 ? (
+        ) : viewMode !== 'pets' ? (
+          displayedFarms.length === 0 ? (
             <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
               <div className="text-gray-300 mb-3 flex justify-center"><Icon.ImagePlaceholder /></div>
               <p className="text-gray-500 font-semibold">ไม่พบฟาร์มในขณะนี้</p>
               <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือประเภทสัตว์เลี้ยงดูนะครับ</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-              {sortedFarms.map((farm) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {displayedFarms.map((farm) => {
                 const readyCount = readyCountForFarm(farm.id);
                 const location = farmLocation(farm);
                 const cover = farm.cover_url || farm.image_url;
                 return (
                   <Link key={farm.id} href={`/farm/${farm.id}`} className="premium-card flex flex-col overflow-visible group">
-                    <div className="aspect-[16/9] bg-gray-50 relative overflow-hidden border-b border-gray-100 rounded-t-[1.25rem]">
+                    <div className="aspect-[2/1] bg-gray-50 relative overflow-hidden border-b border-gray-100 rounded-t-[1.25rem]">
                       {cover ? (
                         <img
                           src={cover}
@@ -261,29 +277,28 @@ export default function FarmHubPage() {
                           <Icon.ImagePlaceholder />
                         </div>
                       )}
-                      <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-full border-[3px] border-white overflow-hidden shadow-md" style={{ background: F.pinkSoft }}>
+                      <div className="absolute -bottom-4 left-3 w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-md" style={{ background: F.pinkSoft }}>
                         {farm.image_url ? (
                           <img src={farm.image_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <img src="/icons/icon-paw-circle-white.png" alt="" className="w-full h-full object-contain p-2.5" />
+                          <img src="/icons/icon-paw-circle-white.png" alt="" className="w-full h-full object-contain p-1.5" />
                         )}
                       </div>
                     </div>
 
-                    <div className="pt-8 pb-4 px-4 md:px-5">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <h3 className="text-[15px] font-bold text-gray-900 truncate">{farm.farm_name}</h3>
-                        <img src="/icons/icon-paw-pink.png" alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                    <div className="pt-5 pb-2.5 px-2.5">
+                      <div className="flex items-center gap-1 mb-1">
+                        <h3 className="text-[12.5px] font-bold text-gray-900 truncate leading-tight">{farm.farm_name}</h3>
                         {farm.is_verified && <Icon.Verified />}
                       </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
-                          {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ยังไม่มีตัวพร้อมขาย'}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[10.5px] font-semibold truncate" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
+                          {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ไม่มีตัวพร้อมขาย'}
                         </div>
                         {location && (
-                          <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">
+                          <div className="flex items-center gap-0.5 text-[10px] font-medium text-gray-400 flex-shrink-0">
                             <Icon.Pin />
-                            <span className="truncate max-w-[110px]">{location}</span>
+                            <span className="truncate max-w-[70px]">{location}</span>
                           </div>
                         )}
                       </div>

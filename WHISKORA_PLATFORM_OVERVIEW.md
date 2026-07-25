@@ -70,7 +70,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - Onboarding: `partner/register-farm`, `partner/register-shop`, `partner/register-service`.
 
 ### Marketplace (public / anonymous-accessible)
-- Browse: `farm-hub` (farm-led "Pet Market"), `marketplace`, `service-hub`, `search`.
+- Browse: `farm-hub` ("ฟาร์มสัตว์เลี้ยง" — 3-way group toggle: all farms / farms with ready pets / pets-only grid, unified search across farm name+location+species and pet breed+species, compact 2-up mobile grid with short `aspect-[2/1]` farm cover cards; renamed from "Pet Market" and shrunk 2026-07-24 per design feedback that it read as too bulky), `marketplace`, `service-hub`, `search`.
 - Public profile pages: `/p/[id]` (pet), `/farm/[id]`, `/shops/[id]`, `/services/[id]`.
 - Contact seller: modal offering phone / LINE deep link / Facebook, every click logged to `contact_leads`. **No in-app messaging/chat exists** — contact always hands off to an external channel.
 - Service booking: logged-in users can submit a booking request from `/services/[id]` (writes to `service_bookings`, added 2026-07-24 — the table didn't exist before, so the service dashboard's booking list was silently empty). Requires login (redirects to `/login?redirect=...` otherwise), mirroring how pet reservations require an authenticated buyer. Managed from `service-dashboard/[id]/bookings` (status: pending/confirmed/cancelled/completed).
@@ -128,6 +128,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-07-24 (later same day)**
+- Redesigned: `farm-hub` — renamed "Pet Market" → "ฟาร์มสัตว์เลี้ยง", replaced the 2-way farms/pets toggle with a 3-way group switcher (all farms / farms with ready pets / pets-only), search now matches farm name+location+species AND that farm's ready pets' breed/species (works from any group), species pills shrunk to small chips, farm cards shrunk to a 2-up mobile grid with a short `aspect-[2/1]` cover instead of the previous tall `16/9` single/two-column layout. Verified via server-rendered HTML (labels/classes/no console errors) — **not** visually screenshotted, no browser tooling was available in this session; worth a quick look on the Vercel preview.
 - Added: custom `not-found.tsx` (root + `[locale]`) — any 404 now shows a friendly "กำลังพัฒนาอยู่ เร็วๆ นี้" message with a way back home, instead of Next's default bare 404 page. Verified against a live prod server for both a `/th/...` path and a bare un-prefixed path.
 - Fixed (critical): `/shops/[id]` and `/services/[id]` had no `[locale]` re-export shim, so every visit 404'd under the `/th/`/`/en/` prefixes middleware forces on all URLs — these two public marketplace pages were completely unreachable. Added the missing shims.
 - Fixed: `/profile` no longer hard-redirects anonymous visitors to `/login`. It now renders with empty/placeholder data and a single page-wide click guard that shows a login-required prompt (with a way to dismiss and keep looking) only when an anonymous visitor actually taps something — consistent with how `/p/[id]` already handles view-vs-action gating. Sub-pages under `/profile/*` are unchanged (still hard-redirect; only reached by clicking through the now-open `/profile`).
