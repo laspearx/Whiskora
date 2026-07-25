@@ -128,6 +128,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-07-25**
+- Fixed: pedigree tab on both `/p/[id]` (public) and `/pets/[id]` (owner) got permanently stuck on the literal string "Loading..." whenever `get_pet_pedigree()` legitimately returned no rows (RLS/tier check failed, not still-fetching) — `renderPedigree()` had no way to tell "still loading" apart from "loaded but empty/no permission". This hits by default on the public page for anyone who isn't the pet's owner, since the `pedigree` field group's `default_tier` is `owner` (only `current_owner`/`farm_team`/`platform_admin` satisfy it) unless a farm explicitly relaxes it in `farm_visibility_settings`/`pet_visibility_settings`. Added a `pedigreeLoaded` flag so the empty/no-permission case now shows "ไม่มีข้อมูลสายเลือดให้แสดง" instead of hanging forever.
 - Fixed: `farm-hub` farm-card logo avatar was rendered as a half-circle — it was a child of the `aspect-[2/1] overflow-hidden` cover-photo box while positioned to hang below it, so the overhanging half got clipped. Moved the avatar to be a sibling of the cover box inside a shared non-clipping `relative` wrapper instead. Same root cause as the earlier corner-badge clipping bug, just on a different pair of elements.
 
 **2026-07-24 (later same day)**

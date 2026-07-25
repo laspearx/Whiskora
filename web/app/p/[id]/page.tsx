@@ -66,6 +66,7 @@ export default function PublicPetProfilePage() {
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const [pedigreeLoaded, setPedigreeLoaded] = useState(false);
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
   const [healthDetails, setHealthDetails] = useState<{
     blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
@@ -214,7 +215,10 @@ export default function PublicPetProfilePage() {
       setPet(petData as unknown as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      buildPedigreeTree(petData as unknown as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
+      buildPedigreeTree(petData as unknown as Pet)
+        .then(setPedigreeGens)
+        .catch(() => setPedigreeGens([]))
+        .finally(() => setPedigreeLoaded(true));
       supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
         if (data) setFieldAccess(data as Record<string, boolean>);
       });
@@ -332,8 +336,11 @@ export default function PublicPetProfilePage() {
 
   // ─── Pedigree renderer (read-only: การ์ดไม่ลิงก์ออกไปไหน) ───
   const renderPedigree = () => {
-    if (pedigreeGens.length === 0) {
+    if (!pedigreeLoaded) {
       return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>Loading...</div>;
+    }
+    if (pedigreeGens.length === 0) {
+      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ไม่มีข้อมูลสายเลือดให้แสดง</div>;
     }
     const totalGens = pedigreeGens.length;
     const ROLE_NAMES = ['ตัวเอง (Current)', 'พ่อแม่ (Parents)', 'ปู่ย่าตายาย (Grandparents)', 'ทวด (Great-Grandparents)', 'เทียด (Great-Great)'];
