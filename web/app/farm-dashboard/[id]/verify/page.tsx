@@ -45,6 +45,7 @@ export default function VerifyFarmPage() {
   const [farm, setFarm] = useState<any>(null);
   const [phone, setPhone] = useState('');
   const [existingKyc, setExistingKyc] = useState<{ id_card_front_url: string | null; bank_book_url: string | null; house_registration_url: string | null } | null>(null);
+  const [latestVerification, setLatestVerification] = useState<{ status: string; admin_note: string | null; submitted_at: string } | null>(null);
   const [uploads, setUploads] = useState<Uploads>({
     id_card_front: null,
     bank_book: null, farm_photos: [], house_reg: null,
@@ -68,21 +69,38 @@ export default function VerifyFarmPage() {
       const { data: farmData } = await supabase.from('farms').select('*').eq('id', farmId).eq('user_id', session.user.id).single();
       if (!farmData) { router.push('/partner'); return; }
       if (farmData.is_verified) { router.push(`/farm-dashboard/${farmId}`); return; }
-      if (farmData.verification_status === 'pending') { router.push(`/farm-dashboard/${farmId}`); return; }
+
+      // ดูสถานะคำขอล่าสุดของฟาร์มนี้โดยตรง (ไม่พึ่ง farms.verification_status อย่างเดียว)
+      // เพราะสถานะ 'needs_more_info' ของ farm_verifications ไม่ทำให้ farms.verification_status
+      // เปลี่ยนจาก 'pending' — ถ้าเช็คแค่ farms.verification_status เจ้าของฟาร์มจะเด้งออกจากหน้านี้
+      // ตลอดไปโดยไม่มีทางเห็นว่าแอดมินขอข้อมูลเพิ่มเติม หรือส่งคำขอใหม่ได้
+      const { data: latestReq } = await supabase
+        .from('farm_verifications')
+        .select('status, admin_note, submitted_at')
+        .eq('farm_id', parseInt(farmId))
+        .eq('user_id', session.user.id)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestReq?.status === 'pending') { router.push(`/farm-dashboard/${farmId}`); return; }
+      if (latestReq?.status === 'needs_more_info' || latestReq?.status === 'rejected') {
+        setLatestVerification(latestReq);
+      }
 
       setFarm(farmData);
       setPhone(farmData.phone || '');
 
-      // ตรวจว่าเคยยืนยัน KYC ไว้แล้วจากธุรกิจอื่น
+      // ตรวจว่ามีเอกสารที่เคยอัปโหลดไว้แล้ว (ฟาร์มนี้เองหรือธุรกิจอื่นของผู้ใช้เดียวกัน) เพื่อให้เลือกใช้ซ้ำได้
+      // โดยไม่ต้องอัปโหลดใหม่ทั้งหมดตอนแก้ไขคำขอที่ถูกขอข้อมูลเพิ่มเติม/ปฏิเสธ
       const { data: kycData } = await supabase
         .from('farm_verifications')
         .select('id_card_front_url,bank_book_url,house_registration_url')
         .eq('user_id', session.user.id)
         .not('id_card_front_url', 'is', null)
-        .neq('farm_id', parseInt(farmId))
-        .order('created_at', { ascending: false })
+        .order('submitted_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       if (kycData?.id_card_front_url) setExistingKyc(kycData);
 
       setLoading(false);
@@ -242,6 +260,27 @@ export default function VerifyFarmPage() {
               <div className="vf-sub">{farm.farm_name}</div>
             </div>
           </div>
+
+          {/* สถานะคำขอล่าสุด (ถ้าแอดมินขอข้อมูลเพิ่มเติม หรือปฏิเสธ) */}
+          {latestVerification && (
+            <div className="vf-hero" style={{ paddingBottom: 0 }}>
+              <div
+                className="vf-hero-card"
+                style={latestVerification.status === 'needs_more_info'
+                  ? { background: F.amberSoft, borderColor: '#FDE68A' }
+                  : { background: '#FEF2F2', borderColor: '#FECACA' }}
+              >
+                <div>
+                  <div className="vf-hero-title" style={{ color: latestVerification.status === 'needs_more_info' ? F.amber : '#DC2626' }}>
+                    {latestVerification.status === 'needs_more_info' ? 'แอดมินขอข้อมูลเพิ่มเติม' : 'คำขอก่อนหน้าถูกปฏิเสธ'}
+                  </div>
+                  <div className="vf-hero-desc">
+                    {latestVerification.admin_note || (latestVerification.status === 'needs_more_info' ? 'กรุณาตรวจสอบและอัปโหลดเอกสารเพิ่มเติม' : 'กรุณาตรวจสอบเอกสารและส่งคำขอใหม่')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Hero */}
           <div className="vf-hero">
@@ -412,7 +451,11 @@ export default function VerifyFarmPage() {
               onClick={handleSubmit}
               disabled={submitting || !allDone}
             >
-              {submitting ? 'กำลังส่งคำขอ...' : allDone ? 'ส่งคำขอยืนยันตัวตน' : `อัพโหลดเอกสารให้ครบ (${STEPS.filter(s => isStepDone(s.id)).length + (phone ? 1 : 0)}/${STEPS.length + 1})`}
+              {submitting
+                ? 'กำลังส่งคำขอ...'
+                : allDone
+                  ? (latestVerification ? 'ส่งคำขอยืนยันตัวตนอีกครั้ง' : 'ส่งคำขอยืนยันตัวตน')
+                  : `อัพโหลดเอกสารให้ครบ (${STEPS.filter(s => isStepDone(s.id)).length + (phone ? 1 : 0)}/${STEPS.length + 1})`}
             </button>
           </div>
         </div>

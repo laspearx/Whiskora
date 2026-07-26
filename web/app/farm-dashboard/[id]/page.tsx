@@ -144,6 +144,8 @@ function FarmDashboardContent() {
   const [vaccines,     setVaccines]     = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [pendingReservations, setPendingReservations] = useState(0);
+  const [latestVerificationStatus, setLatestVerificationStatus] = useState<string | null>(null);
+  const [latestVerificationNote, setLatestVerificationNote] = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
 
   const [showAllTasks,       setShowAllTasks]       = useState(false);
@@ -179,6 +181,23 @@ function FarmDashboardContent() {
         .from('farms').select('*').eq('id', farmId).eq('user_id', session.user.id).single();
       if (!farmData) { router.push('/partner'); return; }
       setFarm(farmData);
+
+      // farms.verification_status stays 'pending' even when the latest request has been marked
+      // 'needs_more_info' by an admin (only farm_verifications.status changes) — fetch the real
+      // latest status directly so the owner doesn't just see a generic "we're reviewing" badge
+      // with no way back to /verify.
+      if (!farmData.is_verified) {
+        const { data: latestReq } = await supabase
+          .from('farm_verifications')
+          .select('status, admin_note')
+          .eq('farm_id', farmId)
+          .eq('user_id', session.user.id)
+          .order('submitted_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setLatestVerificationStatus(latestReq?.status ?? null);
+        setLatestVerificationNote(latestReq?.admin_note ?? null);
+      }
 
       const [petsRes, littersRes] = await Promise.all([
         supabase.from('pets').select('*').eq('farm_id', farmId),
@@ -620,7 +639,17 @@ function FarmDashboardContent() {
             </div>
           </div>
 
-          {!farm.is_verified && farm.verification_status !== 'pending' && (
+          {!farm.is_verified && latestVerificationStatus === 'needs_more_info' && (
+            <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn" style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
+              <img src="/icons/icon-non-verified.png" alt="" />
+              <div className="fd-verify-btn-text">
+                <div className="fd-verify-btn-title" style={{ color: '#D97706' }}>แอดมินขอข้อมูลเพิ่มเติม</div>
+                <div className="fd-verify-btn-sub">{latestVerificationNote || 'แตะเพื่อดูรายละเอียดและส่งเอกสารเพิ่ม'}</div>
+              </div>
+              <Icon.ChevronRight />
+            </Link>
+          )}
+          {!farm.is_verified && farm.verification_status !== 'pending' && latestVerificationStatus !== 'needs_more_info' && (
             <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn">
               <img src="/icons/icon-non-verified.png" alt="" />
               <div className="fd-verify-btn-text">
@@ -630,7 +659,7 @@ function FarmDashboardContent() {
               <Icon.ChevronRight />
             </Link>
           )}
-          {farm.verification_status === 'pending' && (
+          {farm.verification_status === 'pending' && latestVerificationStatus !== 'needs_more_info' && (
             <div className="fd-pending-badge">
               <img src="/icons/icon-non-verified.png" alt="" style={{ width: 22, height: 22 }} />
               รอการตรวจสอบจากแอดมิน — เราจะแจ้งผลเร็วๆ นี้
