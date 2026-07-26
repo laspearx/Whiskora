@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { speciesTh } from '@/lib/species';
+import { speciesTh, SPECIES_LIST } from '@/lib/species';
+import { sanitizeOrTerm } from '@/lib/adminSearch';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
+import Pagination from '@/app/components/admin/Pagination';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -16,6 +18,8 @@ const F = {
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
 };
+
+const PAGE_SIZE = 24;
 
 interface PetRow {
   id: number;
@@ -29,10 +33,34 @@ interface PetRow {
 export default function AdminPetsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [pets, setPets] = useState<PetRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [speciesFilter, setSpeciesFilter] = useState('');
-  const [breedFilter, setBreedFilter] = useState('');
+  const [page, setPage] = useState(0);
+
+  const fetchPets = useCallback(async (q: string, species: string, p: number) => {
+    setFetching(true);
+    let query = supabase
+      .from('pets')
+      .select('id, name, species, breed, gender, image_url', { count: 'exact' })
+      .order('id', { ascending: false })
+      .range(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE - 1);
+
+    if (species) query = query.eq('species', species);
+
+    const safeQ = sanitizeOrTerm(q);
+    if (safeQ) query = query.or(`name.ilike.%${safeQ}%,breed.ilike.%${safeQ}%,pet_code.ilike.%${safeQ}%`);
+
+    const { data, count, error } = await query;
+    if (!error && data) {
+      setPets(data);
+      setTotalCount(count || 0);
+    }
+    setFetching(false);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -41,37 +69,32 @@ export default function AdminPetsPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const { data } = await supabase
-        .from('pets')
-        .select('id, name, species, breed, gender, image_url')
-        .order('id', { ascending: false });
-
-      setPets(data || []);
+      await fetchPets('', '', 0);
       setLoading(false);
     };
     load();
-  }, [router]);
+  }, [router, fetchPets]);
 
-  const speciesOptions = useMemo(() => {
-    const set = new Set(pets.map(p => p.species).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [pets]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+      if (!loading) fetchPets(searchInput, speciesFilter, 0);
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
-  const breedOptions = useMemo(() => {
-    const scoped = speciesFilter ? pets.filter(p => p.species === speciesFilter) : pets;
-    const set = new Set(scoped.map(p => p.breed).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [pets, speciesFilter]);
+  const changeSpecies = (value: string) => {
+    setSpeciesFilter(value);
+    setPage(0);
+    fetchPets(search, value, 0);
+  };
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    return pets.filter(p => {
-      if (speciesFilter && p.species !== speciesFilter) return false;
-      if (breedFilter && p.breed !== breedFilter) return false;
-      if (q && !(p.name?.toLowerCase().includes(q) || p.breed?.toLowerCase().includes(q))) return false;
-      return true;
-    });
-  }, [pets, search, speciesFilter, breedFilter]);
+  const changePage = (next: number) => {
+    setPage(next);
+    fetchPets(search, speciesFilter, next);
+  };
 
   if (loading) return <PageLoader />;
 
@@ -129,30 +152,28 @@ export default function AdminPetsPage() {
               </span>
               <input
                 type="text"
-                placeholder="ค้นหาชื่อสัตว์, สายพันธุ์..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+                placeholder="ค้นหาชื่อสัตว์, สายพันธุ์, รหัส..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
               />
             </div>
-            <select className="ad-select" value={speciesFilter} onChange={e => { setSpeciesFilter(e.target.value); setBreedFilter(''); }}>
+            <select className="ad-select" value={speciesFilter} onChange={e => changeSpecies(e.target.value)}>
               <option value="">ทุกประเภท</option>
-              {speciesOptions.map(s => <option key={s} value={s}>{speciesTh(s) || s}</option>)}
-            </select>
-            <select className="ad-select" value={breedFilter} onChange={e => setBreedFilter(e.target.value)}>
-              <option value="">ทุกสายพันธุ์</option>
-              {breedOptions.map(b => <option key={b} value={b}>{b}</option>)}
+              {SPECIES_LIST.map(s => <option key={s.id} value={s.id}>{s.th}</option>)}
             </select>
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <span className="ad-count-chip">{filtered.length} ตัว</span>
+            <span className="ad-count-chip">{totalCount.toLocaleString()} ตัว</span>
           </div>
 
-          {filtered.length === 0 ? (
+          {fetching ? (
+            <div className="ad-empty">กำลังค้นหา...</div>
+          ) : pets.length === 0 ? (
             <div className="ad-empty">ไม่พบสัตว์เลี้ยงที่ตรงกับเงื่อนไข</div>
           ) : (
             <div className="ad-grid">
-              {filtered.map(p => (
+              {pets.map(p => (
                 <Link key={p.id} href={`/pets/${p.id}`} className="ad-pet-card">
                   <div className="ad-pet-photo">
                     {p.image_url
@@ -168,6 +189,8 @@ export default function AdminPetsPage() {
               ))}
             </div>
           )}
+
+          <Pagination page={page} pageSize={PAGE_SIZE} totalCount={totalCount} onChange={changePage} />
 
         </div>
       </div>

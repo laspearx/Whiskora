@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
+import Pagination from '@/app/components/admin/Pagination';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -42,6 +43,7 @@ const ProviderIcon = {
 };
 
 const PROVIDER_LABEL: Record<string, string> = { google: 'Google', line: 'LINE', email: 'อีเมล' };
+const PAGE_SIZE = 20;
 
 interface UserRow {
   id: string;
@@ -67,20 +69,24 @@ const fmtDateTime = (iso: string) =>
 export default function AdminUsersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/login'); return; }
-      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+  const fetchUsers = useCallback(async (q: string, p: number) => {
+    setFetching(true);
+    const { data, error } = await supabase.rpc('admin_get_users', {
+      p_search: q || null,
+      p_limit: PAGE_SIZE,
+      p_offset: p * PAGE_SIZE,
+    });
 
-      const { data } = await supabase.rpc('admin_get_users');
-
-      const rows: UserRow[] = (data || []).map((u: any) => ({
+    if (!error && data) {
+      const rows: UserRow[] = data.map((u: any) => ({
         id:             u.id,
         full_name:      u.full_name,
         username:       u.username,
@@ -97,26 +103,40 @@ export default function AdminUsersPage() {
         shopNames:      u.shop_names || [],
         serviceNames:   u.service_names || [],
       }));
-
       setUsers(rows);
+      setTotalCount(data[0]?.total_count || 0);
+    }
+    setFetching(false);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+
+      await fetchUsers('', 0);
       setLoading(false);
     };
     load();
-  }, [router]);
+  }, [router, fetchUsers]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return users;
-    return users.filter(u =>
-      u.full_name?.toLowerCase().includes(q) ||
-      u.username?.toLowerCase().includes(q) ||
-      u.email?.toLowerCase().includes(q) ||
-      u.farmNames.some(n => n.toLowerCase().includes(q)) ||
-      u.shopNames.some(n => n.toLowerCase().includes(q)) ||
-      u.serviceNames.some(n => n.toLowerCase().includes(q)) ||
-      u.petNames.some(n => n.toLowerCase().includes(q))
-    );
-  }, [users, search]);
+  // Debounce search input → server-side query, reset to page 0 on every new search.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+      if (!loading) fetchUsers(searchInput, 0);
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const changePage = (next: number) => {
+    setPage(next);
+    fetchUsers(search, next);
+  };
 
   if (loading) return <PageLoader />;
 
@@ -181,7 +201,7 @@ export default function AdminUsersPage() {
 
           <div className="ad-sec-head">
             <span className="ad-sec-title">รายชื่อผู้ใช้งาน</span>
-            <span className="ad-count-chip">{filtered.length} คน</span>
+            <span className="ad-count-chip">{totalCount.toLocaleString()} คน</span>
           </div>
 
           <div className="ad-search">
@@ -191,15 +211,17 @@ export default function AdminUsersPage() {
             <input
               type="text"
               placeholder="ค้นหาชื่อ, อีเมล, ชื่อฟาร์ม, ชื่อสัตว์..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
             />
           </div>
 
-          {filtered.length === 0 ? (
+          {fetching ? (
+            <div className="ad-empty">กำลังค้นหา...</div>
+          ) : users.length === 0 ? (
             <div className="ad-empty">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</div>
           ) : (
-            filtered.map(u => {
+            users.map(u => {
               const name = u.full_name || u.username || u.email?.split('@')[0] || 'ไม่ระบุชื่อ';
               const initial = name[0]?.toUpperCase() || '?';
               const isOpen = expandedUser === u.id;
@@ -301,6 +323,8 @@ export default function AdminUsersPage() {
               );
             })
           )}
+
+          <Pagination page={page} pageSize={PAGE_SIZE} totalCount={totalCount} onChange={changePage} />
 
         </div>
       </div>

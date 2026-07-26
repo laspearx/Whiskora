@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { sanitizeOrTerm } from '@/lib/adminSearch';
 import { useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
+import Pagination from '@/app/components/admin/Pagination';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -14,6 +16,8 @@ const F = {
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
 };
+
+const PAGE_SIZE = 20;
 
 interface ShopRow {
   id: number;
@@ -26,24 +30,36 @@ interface ShopRow {
 export default function AdminShopsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [shops, setShops] = useState<ShopRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/login'); return; }
-      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+  const fetchShops = useCallback(async (q: string, p: number) => {
+    setFetching(true);
+    let query = supabase
+      .from('shops')
+      .select('id, shop_name, image_url, owner_name, user_id, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE - 1);
 
-      const [shopsRes, profilesRes] = await Promise.all([
-        supabase.from('shops').select('id, shop_name, image_url, owner_name, user_id'),
-        supabase.from('profiles').select('id, full_name, username'),
-      ]);
+    const safeQ = sanitizeOrTerm(q);
+    if (safeQ) query = query.or(`shop_name.ilike.%${safeQ}%,owner_name.ilike.%${safeQ}%`);
 
-      const profileMap = new Map((profilesRes.data || []).map((p: any) => [String(p.id), p]));
+    const { data, count, error } = await query;
+    if (!error && data) {
+      const missingOwnerIds = Array.from(new Set(
+        data.filter((s: any) => !s.owner_name && s.user_id).map((s: any) => String(s.user_id))
+      ));
+      let profileMap = new Map<string, any>();
+      if (missingOwnerIds.length) {
+        const { data: profs } = await supabase.from('profiles').select('id, full_name, username').in('id', missingOwnerIds);
+        profileMap = new Map((profs || []).map((p: any) => [String(p.id), p]));
+      }
 
-      const rows: ShopRow[] = (shopsRes.data || []).map((s: any) => {
+      const rows: ShopRow[] = data.map((s: any) => {
         const prof = profileMap.get(String(s.user_id));
         return {
           id: s.id,
@@ -55,19 +71,38 @@ export default function AdminShopsPage() {
       });
 
       setShops(rows);
+      setTotalCount(count || 0);
+    }
+    setFetching(false);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+
+      await fetchShops('', 0);
       setLoading(false);
     };
     load();
-  }, [router]);
+  }, [router, fetchShops]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return shops;
-    return shops.filter(s =>
-      s.shop_name?.toLowerCase().includes(q) ||
-      s.owner_name?.toLowerCase().includes(q)
-    );
-  }, [shops, search]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+      if (!loading) fetchShops(searchInput, 0);
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const changePage = (next: number) => {
+    setPage(next);
+    fetchShops(search, next);
+  };
 
   if (loading) return <PageLoader />;
 
@@ -120,19 +155,21 @@ export default function AdminShopsPage() {
             <input
               type="text"
               placeholder="ค้นหาชื่อร้าน, เจ้าของ..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
             />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <span className="ad-count-chip">{filtered.length} ร้าน</span>
+            <span className="ad-count-chip">{totalCount.toLocaleString()} ร้าน</span>
           </div>
 
-          {filtered.length === 0 ? (
+          {fetching ? (
+            <div className="ad-empty">กำลังค้นหา...</div>
+          ) : shops.length === 0 ? (
             <div className="ad-empty">ไม่พบร้านค้าที่ตรงกับคำค้นหา</div>
           ) : (
-            filtered.map(s => (
+            shops.map(s => (
               <div key={s.id} className="ad-shop-card">
                 <div className="ad-shop-avatar">
                   {s.image_url
@@ -147,6 +184,8 @@ export default function AdminShopsPage() {
               </div>
             ))
           )}
+
+          <Pagination page={page} pageSize={PAGE_SIZE} totalCount={totalCount} onChange={changePage} />
 
         </div>
       </div>

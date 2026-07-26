@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { speciesTh } from '@/lib/species';
+import { sanitizeOrTerm } from '@/lib/adminSearch';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
+import Pagination from '@/app/components/admin/Pagination';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -17,6 +19,8 @@ const F = {
 const Icon = {
   ArrowLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
 };
+
+const PAGE_SIZE = 20;
 
 interface FarmRow {
   id: number;
@@ -31,27 +35,37 @@ interface FarmRow {
 export default function AdminFarmsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [farms, setFarms] = useState<FarmRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/login'); return; }
-      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+  const fetchFarms = useCallback(async (q: string, p: number) => {
+    setFetching(true);
+    let query = supabase
+      .from('farms')
+      .select('id, farm_name, image_url, species, owner_name, user_id, created_at, pets(count)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE - 1);
 
-      const [farmsRes, petsRes, profilesRes] = await Promise.all([
-        supabase.from('farms').select('id, farm_name, image_url, species, owner_name, user_id'),
-        supabase.from('pets').select('farm_id'),
-        supabase.from('profiles').select('id, full_name, username'),
-      ]);
+    const safeQ = sanitizeOrTerm(q);
+    if (safeQ) query = query.or(`farm_name.ilike.%${safeQ}%,owner_name.ilike.%${safeQ}%`);
 
-      const allFarms = farmsRes.data || [];
-      const allPets = petsRes.data || [];
-      const profileMap = new Map((profilesRes.data || []).map((p: any) => [String(p.id), p]));
+    const { data, count, error } = await query;
 
-      const rows: FarmRow[] = allFarms.map((f: any) => {
+    if (!error && data) {
+      const missingOwnerIds = Array.from(new Set(
+        data.filter((f: any) => !f.owner_name && f.user_id).map((f: any) => String(f.user_id))
+      ));
+      let profileMap = new Map<string, any>();
+      if (missingOwnerIds.length) {
+        const { data: profs } = await supabase.from('profiles').select('id, full_name, username').in('id', missingOwnerIds);
+        profileMap = new Map((profs || []).map((p: any) => [String(p.id), p]));
+      }
+
+      const rows: FarmRow[] = data.map((f: any) => {
         const prof = profileMap.get(String(f.user_id));
         return {
           id: f.id,
@@ -60,25 +74,43 @@ export default function AdminFarmsPage() {
           species: f.species,
           owner_name: f.owner_name || prof?.full_name || prof?.username || null,
           user_id: f.user_id,
-          petCount: allPets.filter((p: any) => String(p.farm_id) === String(f.id)).length,
+          petCount: f.pets?.[0]?.count || 0,
         };
       });
 
-      rows.sort((a, b) => b.petCount - a.petCount);
       setFarms(rows);
+      setTotalCount(count || 0);
+    }
+    setFetching(false);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+      if (!prof || prof.role !== 'admin') { router.push('/'); return; }
+
+      await fetchFarms('', 0);
       setLoading(false);
     };
     load();
-  }, [router]);
+  }, [router, fetchFarms]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return farms;
-    return farms.filter(f =>
-      f.farm_name?.toLowerCase().includes(q) ||
-      f.owner_name?.toLowerCase().includes(q)
-    );
-  }, [farms, search]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+      if (!loading) fetchFarms(searchInput, 0);
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const changePage = (next: number) => {
+    setPage(next);
+    fetchFarms(search, next);
+  };
 
   if (loading) return <PageLoader />;
 
@@ -134,19 +166,21 @@ export default function AdminFarmsPage() {
             <input
               type="text"
               placeholder="ค้นหาชื่อฟาร์ม, เจ้าของ..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
             />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <span className="ad-count-chip">{filtered.length} ฟาร์ม</span>
+            <span className="ad-count-chip">{totalCount.toLocaleString()} ฟาร์ม</span>
           </div>
 
-          {filtered.length === 0 ? (
+          {fetching ? (
+            <div className="ad-empty">กำลังค้นหา...</div>
+          ) : farms.length === 0 ? (
             <div className="ad-empty">ไม่พบฟาร์มที่ตรงกับคำค้นหา</div>
           ) : (
-            filtered.map(f => (
+            farms.map(f => (
               <Link key={f.id} href={`/farm/${f.id}`} className="ad-farm-card">
                 <div className="ad-farm-avatar">
                   {f.image_url
@@ -167,6 +201,8 @@ export default function AdminFarmsPage() {
               </Link>
             ))
           )}
+
+          <Pagination page={page} pageSize={PAGE_SIZE} totalCount={totalCount} onChange={changePage} />
 
         </div>
       </div>
