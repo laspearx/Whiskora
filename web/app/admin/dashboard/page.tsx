@@ -1,10 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
+import KpiCard from '@/app/components/admin/KpiCard';
+import DateRangePicker from '@/app/components/admin/DateRangePicker';
+import { resolveDateRange, DateRangePreset } from '@/lib/adminDateRange';
+
+interface MetricPair { current: number; previous: number; }
+
+interface PlatformOverviewData {
+  total_users: MetricPair;
+  new_users: MetricPair;
+  users_with_pet: MetricPair;
+  total_pets: MetricPair;
+  public_pets: MetricPair;
+  total_farms: MetricPair;
+  active_farms: MetricPair;
+  verified_farms: MetricPair;
+  total_shops: MetricPair;
+  total_services: MetricPair;
+  reservations: MetricPair;
+  confirmed_reservations: MetricPair;
+  accepted_transfers: MetricPair;
+  contact_actions: MetricPair;
+  onboarding_completion: {
+    owner_total: number; owner_completed: number;
+    farm_total: number; farm_completed: number;
+  };
+}
 
 interface ActionCenterData {
   verifications: {
@@ -81,16 +107,34 @@ function ActionCenterCard({
   );
 }
 
-export default function AdminDashboardPage() {
+function AdminDashboardInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [totalPets, setTotalPets] = useState(0);
-  const [totalFarms, setTotalFarms] = useState(0);
-  const [totalShops, setTotalShops] = useState(0);
-  const [totalServices, setTotalServices] = useState(0);
+  const [overview, setOverview] = useState<PlatformOverviewData | null>(null);
+  const [overviewError, setOverviewError] = useState(false);
   const [actionCenter, setActionCenter] = useState<ActionCenterData | null>(null);
   const [actionCenterError, setActionCenterError] = useState(false);
+
+  const preset = (searchParams.get('range') as DateRangePreset) || 'last7';
+  const customFrom = searchParams.get('from') || undefined;
+  const customTo = searchParams.get('to') || undefined;
+  const resolvedRange = resolveDateRange(preset, customFrom, customTo);
+
+  const fetchOverview = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_get_platform_overview', {
+      p_start: resolvedRange.start.toISOString(),
+      p_end: resolvedRange.end.toISOString(),
+      p_compare_start: resolvedRange.compareStart.toISOString(),
+      p_compare_end: resolvedRange.compareEnd.toISOString(),
+    });
+    if (error) {
+      setOverviewError(true);
+    } else {
+      setOverviewError(false);
+      setOverview(data as PlatformOverviewData);
+    }
+  }, [resolvedRange.start, resolvedRange.end, resolvedRange.compareStart, resolvedRange.compareEnd]);
 
   useEffect(() => {
     const load = async () => {
@@ -99,16 +143,10 @@ export default function AdminDashboardPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const [{ data: stats }, actionCenterRes] = await Promise.all([
-        supabase.rpc('admin_get_stats'),
+      const [, actionCenterRes] = await Promise.all([
+        fetchOverview(),
         supabase.rpc('admin_get_action_center'),
       ]);
-
-      setTotalUsers(stats?.users || 0);
-      setTotalPets(stats?.pets || 0);
-      setTotalFarms(stats?.farms || 0);
-      setTotalShops(stats?.shops || 0);
-      setTotalServices(stats?.services || 0);
 
       if (actionCenterRes.error) {
         setActionCenterError(true);
@@ -118,17 +156,20 @@ export default function AdminDashboardPage() {
       setLoading(false);
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  // Re-fetch just the Platform Overview KPIs whenever the date range changes (post-initial-load).
+  useEffect(() => {
+    if (!loading) fetchOverview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, customFrom, customTo]);
 
   if (loading) return <PageLoader />;
 
-  const stats = [
-    { href: '/admin/users',    icon: '/icons/icon-nav-profile.png', num: totalUsers,    label: 'ผู้ใช้งาน\nทั้งหมด',   color: F.blue },
-    { href: '/admin/pets',     icon: '/icons/icon-my-pets.png',      num: totalPets,     label: 'สัตว์เลี้ยง\nในระบบ',   color: F.pink },
-    { href: '/admin/farms',    icon: '/icons/icon-farm.png',         num: totalFarms,    label: 'ฟาร์ม',                  color: F.green },
-    { href: '/admin/shops',    icon: '/icons/icon-shop.png',         num: totalShops,    label: 'ร้านค้า',                color: F.amber },
-    { href: '/admin/services', icon: '/icons/icon-service.png',      num: totalServices, label: 'บริการ',               color: F.purple },
-  ];
+  const ob = overview?.onboarding_completion;
+  const ownerRate = ob && ob.owner_total > 0 ? Math.round((ob.owner_completed / ob.owner_total) * 100) : null;
+  const farmRate = ob && ob.farm_total > 0 ? Math.round((ob.farm_completed / ob.farm_total) * 100) : null;
 
   return (
     <>
@@ -145,19 +186,7 @@ export default function AdminDashboardPage() {
 
         .ad-sec-label { font-size: 13px; font-weight: 700; color: ${F.inkSoft}; margin-bottom: 12px; }
 
-        /* Stats grid */
-        .ad-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; }
-        @media (min-width: 520px) { .ad-stats { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 720px) { .ad-stats { grid-template-columns: repeat(5, 1fr); } }
-        .ad-stat { background: white; border: 1px solid ${F.lineMid}; border-radius: 16px; padding: 16px 14px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: inherit; position: relative; transition: border-color .15s, transform .15s, box-shadow .15s; cursor: pointer; }
-        .ad-stat:hover { border-color: ${F.pinkBorder}; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-        .ad-stat-icon { display: flex; align-items: center; justify-content: center; }
-        .ad-stat-icon img { width: 44px; height: 44px; object-fit: contain; }
-        .ad-stat-num { font-size: 28px; font-weight: 800; line-height: 1; }
-        .ad-stat-label { font-size: 11px; font-weight: 600; color: ${F.muted}; text-align: center; line-height: 1.3; }
-        .ad-stat-arrow { position: absolute; top: 12px; right: 12px; color: ${F.muted}; opacity: .5; }
-
-        .ad-hint { text-align: center; font-size: 12px; color: ${F.muted}; margin-top: -8px; }
+        .ad-hint { text-align: center; font-size: 12px; color: ${F.muted}; margin-top: 12px; }
       `}</style>
 
       <div className="ad-page">
@@ -205,24 +234,65 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          <div className="ad-sec-label">สรุปยอด</div>
+          <div className="ad-sec-label">ภาพรวมแพลตฟอร์ม</div>
+          <DateRangePicker preset={preset} customFrom={customFrom} customTo={customTo} />
 
-          {/* Stats — คลิกเพื่อดูรายละเอียดแต่ละหมวด */}
-          <div className="ad-stats">
-            {stats.map((s, i) => (
-              <Link key={i} href={s.href} className="ad-stat">
-                <span className="ad-stat-arrow"><Icon.ChevronRight /></span>
-                <div className="ad-stat-icon"><img src={s.icon} alt="" /></div>
-                <div className="ad-stat-num" style={{ color: s.color }}>{s.num.toLocaleString()}</div>
-                <div className="ad-stat-label" style={{ whiteSpace: 'pre-line' }}>{s.label}</div>
-              </Link>
-            ))}
-          </div>
+          {overviewError ? (
+            <div className="rounded-2xl border p-4 text-sm mb-6" style={{ borderColor: F.lineMid, color: F.muted, background: 'white' }}>
+              ไม่สามารถโหลดข้อมูลภาพรวมได้ในขณะนี้
+            </div>
+          ) : (
+            <div className="grid gap-3 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+              <KpiCard title="ผู้ใช้ทั้งหมด" value={overview?.total_users.current || 0} previous={overview?.total_users.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="จำนวนบัญชีผู้ใช้ (profiles) ทั้งหมด ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="ผู้ใช้ใหม่" value={overview?.new_users.current || 0} previous={overview?.new_users.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="ผู้ใช้ที่สมัครสมาชิกภายในช่วงเวลาที่เลือก นับจาก created_at" />
+              <KpiCard title="ผู้ใช้ที่ยัง Active" value={0} unavailable unavailableNote="ต้องมี event tracking การ login/activity ก่อน (ดูสถานะ Point 3)" tooltip="วัดไม่ได้ในตอนนี้ — ระบบยังไม่มี last_active_at หรือ event login ต้องไม่เดาจาก updated_at" />
+              <KpiCard title="ผู้ใช้ที่มีสัตว์ ≥1 ตัว" value={overview?.users_with_pet.current || 0} previous={overview?.users_with_pet.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="จำนวนผู้ใช้ที่เป็นเจ้าของสัตว์อย่างน้อยหนึ่งตัว ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="สัตว์เลี้ยงทั้งหมด" value={overview?.total_pets.current || 0} previous={overview?.total_pets.previous} showComparison={resolvedRange.hasComparison} href="/admin/pets" tooltip="จำนวนสัตว์เลี้ยงทั้งหมดในระบบ ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="สัตว์เลี้ยงที่เปิดสาธารณะ" value={overview?.public_pets.current || 0} previous={overview?.public_pets.previous} showComparison={resolvedRange.hasComparison} href="/admin/pets" tooltip="นับเฉพาะสัตว์ที่ is_public = true และยังไม่ถูกลบ" />
+              <KpiCard title="ฟาร์มทั้งหมด" value={overview?.total_farms.current || 0} previous={overview?.total_farms.previous} showComparison={resolvedRange.hasComparison} href="/admin/farms" tooltip="จำนวนฟาร์มทั้งหมด ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="ฟาร์มที่มีกิจกรรม" value={overview?.active_farms.current || 0} previous={overview?.active_farms.previous} showComparison={resolvedRange.hasComparison} href="/admin/farms" tooltip="ฟาร์มที่มีการเพิ่มสัตว์ตัวใหม่อย่างน้อย 1 ตัวภายในช่วงเวลาที่เลือก — นิยามชั่วคราวเพราะยังไม่มี activity log ระดับฟาร์ม" />
+              <KpiCard title="ฟาร์มที่ยืนยันตัวตนแล้ว" value={overview?.verified_farms.current || 0} previous={overview?.verified_farms.previous} showComparison={resolvedRange.hasComparison} href="/admin/farms" tooltip="ฟาร์มที่ is_verified = true ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="ร้านค้าทั้งหมด" value={overview?.total_shops.current || 0} previous={overview?.total_shops.previous} showComparison={resolvedRange.hasComparison} href="/admin/shops" tooltip="จำนวนร้านค้าทั้งหมด ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="ธุรกิจบริการทั้งหมด" value={overview?.total_services.current || 0} previous={overview?.total_services.previous} showComparison={resolvedRange.hasComparison} href="/admin/services" tooltip="จำนวนธุรกิจบริการทั้งหมด ณ สิ้นช่วงเวลาที่เลือก" />
+              <KpiCard title="คำขอจอง" value={overview?.reservations.current || 0} previous={overview?.reservations.previous} showComparison={resolvedRange.hasComparison} tooltip="จำนวน pet_reservations ที่สร้างภายในช่วงเวลาที่เลือก (ทุกสถานะ)" />
+              <KpiCard title="การจองที่ยืนยันแล้ว" value={overview?.confirmed_reservations.current || 0} previous={overview?.confirmed_reservations.previous} showComparison={resolvedRange.hasComparison} tooltip="การจองที่ status = confirmed และ confirmed_at อยู่ในช่วงเวลาที่เลือก" />
+              <KpiCard title="การโอนกรรมสิทธิ์สำเร็จ" value={overview?.accepted_transfers.current || 0} previous={overview?.accepted_transfers.previous} showComparison={resolvedRange.hasComparison} tooltip="pet_ownership_transfers ที่ status = accepted และ accepted_at อยู่ในช่วงเวลาที่เลือก (schema ปัจจุบันไม่มีสถานะ 'completed' แยกต่างหาก)" />
+              <KpiCard title="เปิดดูโปรไฟล์สาธารณะ" value={0} unavailable unavailableNote="ยังไม่เริ่มเก็บข้อมูล (ต้องเพิ่ม page-view event)" tooltip="วัดไม่ได้ในตอนนี้ — ยังไม่มีระบบ track การเปิดดู public profile" />
+              <KpiCard title="การติดต่อผู้ขาย" value={overview?.contact_actions.current || 0} previous={overview?.contact_actions.previous} showComparison={resolvedRange.hasComparison} tooltip="จำนวนแถวใน contact_leads ที่สร้างภายในช่วงเวลาที่เลือก (รวมทุกช่องทาง)" />
+              <KpiCard title="แชร์โปรไฟล์" value={0} unavailable unavailableNote="ยังไม่เริ่มเก็บข้อมูล (ต้องเพิ่ม share event)" tooltip="วัดไม่ได้ในตอนนี้ — ยังไม่มีระบบ track การแชร์โปรไฟล์" />
+              <KpiCard
+                title="Onboarding สำเร็จ (เจ้าของสัตว์)"
+                value={ownerRate ?? 0}
+                showComparison={false}
+                suffix="%"
+                unavailable={ownerRate === null}
+                unavailableNote="ไม่มีผู้เริ่ม onboarding ในช่วงเวลานี้"
+                tooltip={`ผู้ใช้ที่เริ่ม owner onboarding ในช่วงนี้ (${ob?.owner_total || 0} คน) แล้วมี completed_at กี่เปอร์เซ็นต์`}
+              />
+              <KpiCard
+                title="Onboarding สำเร็จ (ฟาร์ม)"
+                value={farmRate ?? 0}
+                showComparison={false}
+                suffix="%"
+                unavailable={farmRate === null}
+                unavailableNote="ไม่มีฟาร์มเริ่ม onboarding ในช่วงเวลานี้"
+                tooltip={`ฟาร์มที่เริ่ม farm onboarding ในช่วงนี้ (${ob?.farm_total || 0} ฟาร์ม) แล้วมี completed_at กี่เปอร์เซ็นต์`}
+              />
+            </div>
+          )}
 
-          <div className="ad-hint">แตะที่การ์ดเพื่อดูรายละเอียดแต่ละหมวด</div>
+          <div className="ad-hint">ตัวเลข &quot;ผู้ใช้ที่ยัง Active&quot;, &quot;เปิดดูโปรไฟล์สาธารณะ&quot; และ &quot;แชร์โปรไฟล์&quot; ยังวัดไม่ได้จริง — ดูรายละเอียดที่ Data Quality</div>
 
         </div>
       </div>
     </>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <AdminDashboardInner />
+    </Suspense>
   );
 }
