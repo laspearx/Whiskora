@@ -6,6 +6,26 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
 
+interface ActionCenterData {
+  verifications: {
+    pending_count: number;
+    needs_more_info_count: number;
+    new_today: number;
+    new_this_week: number;
+    oldest_pending_days: number;
+    avg_wait_hours: number;
+    items: { id: number; farm_name: string; submitted_at: string; status: string; days_pending: number }[];
+  };
+  stale_reservations: {
+    count: number;
+    items: { id: number; pet_name: string; created_at: string; days_pending: number }[];
+  };
+  stale_transfers: {
+    count: number;
+    items: { id: number; pet_name: string; initiated_at: string; days_pending: number }[];
+  };
+}
+
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
   pink: '#E84677', pinkSoft: '#FDF2F5', pinkBorder: '#FBCFE8',
@@ -22,6 +42,45 @@ const Icon = {
   ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
 };
 
+function ActionCenterCard({
+  title, count, accent, href, emptyLabel, meta, items,
+}: {
+  title: string;
+  count: number;
+  accent: string;
+  href?: string;
+  emptyLabel: string;
+  meta?: string;
+  items: { id: number; label: string; sub: string }[];
+}) {
+  return (
+    <div className="rounded-2xl border bg-white p-4" style={{ borderColor: F.lineMid }}>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="text-sm font-bold" style={{ color: F.ink }}>{title}</div>
+        <div className="text-2xl font-extrabold leading-none" style={{ color: count > 0 ? accent : F.muted }}>{count}</div>
+      </div>
+      {meta && <div className="text-xs mb-2" style={{ color: F.muted }}>{meta}</div>}
+      {count === 0 ? (
+        <div className="text-xs" style={{ color: F.muted }}>{emptyLabel} 🎉</div>
+      ) : (
+        <div className="space-y-1 mb-2">
+          {items.map(item => (
+            <div key={item.id} className="flex items-center justify-between text-xs">
+              <span className="truncate" style={{ color: F.inkSoft }}>{item.label}</span>
+              <span className="shrink-0 ml-2" style={{ color: F.muted }}>{item.sub}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {href && (
+        <Link href={href} className="inline-flex items-center gap-1 text-xs font-semibold mt-1" style={{ color: accent }}>
+          ตรวจสอบ <Icon.ChevronRight />
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -30,6 +89,8 @@ export default function AdminDashboardPage() {
   const [totalFarms, setTotalFarms] = useState(0);
   const [totalShops, setTotalShops] = useState(0);
   const [totalServices, setTotalServices] = useState(0);
+  const [actionCenter, setActionCenter] = useState<ActionCenterData | null>(null);
+  const [actionCenterError, setActionCenterError] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -38,13 +99,22 @@ export default function AdminDashboardPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const { data: stats } = await supabase.rpc('admin_get_stats');
+      const [{ data: stats }, actionCenterRes] = await Promise.all([
+        supabase.rpc('admin_get_stats'),
+        supabase.rpc('admin_get_action_center'),
+      ]);
 
       setTotalUsers(stats?.users || 0);
       setTotalPets(stats?.pets || 0);
       setTotalFarms(stats?.farms || 0);
       setTotalShops(stats?.shops || 0);
       setTotalServices(stats?.services || 0);
+
+      if (actionCenterRes.error) {
+        setActionCenterError(true);
+      } else {
+        setActionCenter(actionCenterRes.data as ActionCenterData);
+      }
       setLoading(false);
     };
     load();
@@ -101,6 +171,39 @@ export default function AdminDashboardPage() {
               <div className="ad-sub">ข้อมูลผู้ใช้งานและพาร์ทเนอร์ทั้งหมด</div>
             </div>
           </div>
+
+          <div className="ad-sec-label">งานที่ต้องจัดการ</div>
+          {actionCenterError ? (
+            <div className="rounded-2xl border p-4 text-sm mb-6" style={{ borderColor: F.lineMid, color: F.muted, background: 'white' }}>
+              ไม่สามารถโหลดข้อมูลงานที่ต้องจัดการได้ในขณะนี้
+            </div>
+          ) : (
+            <div className="grid gap-3 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+              <ActionCenterCard
+                title="คำขอยืนยันตัวตนฟาร์ม"
+                count={(actionCenter?.verifications.pending_count || 0) + (actionCenter?.verifications.needs_more_info_count || 0)}
+                accent={F.pink}
+                href="/admin/verifications"
+                emptyLabel="ไม่มีคำขอค้างตรวจสอบ"
+                meta={actionCenter ? `ใหม่วันนี้ ${actionCenter.verifications.new_today} · สัปดาห์นี้ ${actionCenter.verifications.new_this_week} · รอนานสุด ${actionCenter.verifications.oldest_pending_days} วัน` : undefined}
+                items={(actionCenter?.verifications.items || []).slice(0, 3).map(i => ({ id: i.id, label: i.farm_name, sub: `รอ ${i.days_pending} วัน` }))}
+              />
+              <ActionCenterCard
+                title="การจองค้างเกิน 3 วัน"
+                count={actionCenter?.stale_reservations.count || 0}
+                accent={F.amber}
+                emptyLabel="ไม่มีการจองค้างนาน"
+                items={(actionCenter?.stale_reservations.items || []).slice(0, 3).map(i => ({ id: i.id, label: i.pet_name, sub: `ค้าง ${i.days_pending} วัน` }))}
+              />
+              <ActionCenterCard
+                title="การโอนกรรมสิทธิ์ค้างเกิน 7 วัน"
+                count={actionCenter?.stale_transfers.count || 0}
+                accent={F.purple}
+                emptyLabel="ไม่มีการโอนค้างนาน"
+                items={(actionCenter?.stale_transfers.items || []).slice(0, 3).map(i => ({ id: i.id, label: i.pet_name, sub: `ค้าง ${i.days_pending} วัน` }))}
+              />
+            </div>
+          )}
 
           <div className="ad-sec-label">สรุปยอด</div>
 
