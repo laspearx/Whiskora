@@ -14,6 +14,8 @@ interface MetricPair { current: number; previous: number; }
 interface PlatformOverviewData {
   total_users: MetricPair;
   new_users: MetricPair;
+  active_users: MetricPair;
+  analytics_since: string | null;
   users_with_pet: MetricPair;
   total_pets: MetricPair;
   public_pets: MetricPair;
@@ -171,6 +173,10 @@ function AdminDashboardInner() {
   const ownerRate = ob && ob.owner_total > 0 ? Math.round((ob.owner_completed / ob.owner_total) * 100) : null;
   const farmRate = ob && ob.farm_total > 0 ? Math.round((ob.farm_completed / ob.farm_total) * 100) : null;
 
+  const analyticsSince = overview?.analytics_since ? new Date(overview.analytics_since) : null;
+  const activeUsersUnavailable = !analyticsSince || resolvedRange.end <= analyticsSince;
+  const activeUsersPartial = !activeUsersUnavailable && resolvedRange.start < (analyticsSince as Date);
+
   return (
     <>
       <style>{`
@@ -245,7 +251,15 @@ function AdminDashboardInner() {
             <div className="grid gap-3 mb-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
               <KpiCard title="ผู้ใช้ทั้งหมด" value={overview?.total_users.current || 0} previous={overview?.total_users.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="จำนวนบัญชีผู้ใช้ (profiles) ทั้งหมด ณ สิ้นช่วงเวลาที่เลือก" />
               <KpiCard title="ผู้ใช้ใหม่" value={overview?.new_users.current || 0} previous={overview?.new_users.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="ผู้ใช้ที่สมัครสมาชิกภายในช่วงเวลาที่เลือก นับจาก created_at" />
-              <KpiCard title="ผู้ใช้ที่ยัง Active" value={0} unavailable unavailableNote="ต้องมี event tracking การ login/activity ก่อน (ดูสถานะ Point 3)" tooltip="วัดไม่ได้ในตอนนี้ — ระบบยังไม่มี last_active_at หรือ event login ต้องไม่เดาจาก updated_at" />
+              <KpiCard
+                title="ผู้ใช้ที่ยัง Active"
+                value={overview?.active_users.current || 0}
+                previous={overview?.active_users.previous}
+                showComparison={resolvedRange.hasComparison && !activeUsersUnavailable}
+                unavailable={activeUsersUnavailable}
+                unavailableNote={analyticsSince ? `เริ่มเก็บข้อมูลตั้งแต่ ${analyticsSince.toLocaleDateString('th-TH')}` : 'ยังไม่มีข้อมูล — ยังไม่มีการ login ใดถูกบันทึก'}
+                tooltip={`นับจากผู้ใช้ที่มี event "user_logged_in" อย่างน้อย 1 ครั้งในช่วงเวลาที่เลือก${activeUsersPartial ? ` (หมายเหตุ: เริ่มเก็บข้อมูลตั้งแต่ ${analyticsSince?.toLocaleDateString('th-TH')} ช่วงก่อนหน้านั้นไม่ถูกนับ)` : ''}`}
+              />
               <KpiCard title="ผู้ใช้ที่มีสัตว์ ≥1 ตัว" value={overview?.users_with_pet.current || 0} previous={overview?.users_with_pet.previous} showComparison={resolvedRange.hasComparison} href="/admin/users" tooltip="จำนวนผู้ใช้ที่เป็นเจ้าของสัตว์อย่างน้อยหนึ่งตัว ณ สิ้นช่วงเวลาที่เลือก" />
               <KpiCard title="สัตว์เลี้ยงทั้งหมด" value={overview?.total_pets.current || 0} previous={overview?.total_pets.previous} showComparison={resolvedRange.hasComparison} href="/admin/pets" tooltip="จำนวนสัตว์เลี้ยงทั้งหมดในระบบ ณ สิ้นช่วงเวลาที่เลือก" />
               <KpiCard title="สัตว์เลี้ยงที่เปิดสาธารณะ" value={overview?.public_pets.current || 0} previous={overview?.public_pets.previous} showComparison={resolvedRange.hasComparison} href="/admin/pets" tooltip="นับเฉพาะสัตว์ที่ is_public = true และยังไม่ถูกลบ" />
@@ -281,7 +295,7 @@ function AdminDashboardInner() {
             </div>
           )}
 
-          <div className="ad-hint">ตัวเลข &quot;ผู้ใช้ที่ยัง Active&quot;, &quot;เปิดดูโปรไฟล์สาธารณะ&quot; และ &quot;แชร์โปรไฟล์&quot; ยังวัดไม่ได้จริง — ดูรายละเอียดที่ Data Quality</div>
+          <div className="ad-hint">&quot;ผู้ใช้ที่ยัง Active&quot; นับจาก event การ login ที่เพิ่งเริ่มเก็บ — &quot;เปิดดูโปรไฟล์สาธารณะ&quot; และ &quot;แชร์โปรไฟล์&quot; ยังวัดไม่ได้จริง เพราะยังไม่มี event เหล่านั้น</div>
 
         </div>
       </div>

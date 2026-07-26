@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
 import ClientProviders from "@/app/components/ClientProviders";
 import PushSetup from "@/app/components/PushSetup";
+import AnalyticsSessionTracker from "@/app/components/AnalyticsSessionTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whiskora.pet"),
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ClientProviders>
           <PushSetup />
+          <AnalyticsSessionTracker />
           <RootChrome>{children}</RootChrome>
         </ClientProviders>
       </body>
