@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, useRef, Suspense } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef, Suspense } from "react";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
@@ -8,6 +8,21 @@ import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
+import { useFarmOnboardingProgress } from "@/app/hooks/useFarmOnboardingProgress";
+import { summarizeFarmSteps } from "@/lib/onboarding/farmSteps";
+import { FARM_ONBOARDING_TH } from "@/app/components/onboarding/strings";
+import { trackOnboardingEvent } from "@/app/components/onboarding/events";
+import WelcomeOnboardingCard from "@/app/components/onboarding/WelcomeOnboardingCard";
+import OnboardingChecklist, { type OnboardingPhase } from "@/app/components/onboarding/OnboardingChecklist";
+import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
+
+const FARM_ONBOARDING_PHASES: OnboardingPhase[] = [
+  { title: FARM_ONBOARDING_TH.phase1Title, keys: ["farm_info", "farm_image", "privacy"] },
+  { title: FARM_ONBOARDING_TH.phase2Title, keys: ["first_farm_pet", "breeder_pet", "first_litter"] },
+  { title: FARM_ONBOARDING_TH.phase3Title, keys: ["data_check", "ready_to_reserve", "view_share_farm"] },
+];
+const OWNER_MANAGER_ONLY_STEPS = ["farm_info", "farm_image", "privacy"];
 
 /* ── Design tokens ── */
 const F = {
@@ -144,6 +159,15 @@ function FarmDashboardContent() {
   const [cropZoom,     setCropZoom]     = useState(1);
   const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
   const [cropUploading, setCropUploading] = useState(false);
+
+  const { myRole } = useFarmAccess();
+  const farmOnboarding = useFarmOnboardingProgress(farmId ? Number(farmId) : null);
+  const farmSummary = useMemo(() => summarizeFarmSteps(farmOnboarding.steps), [farmOnboarding.steps]);
+  const onboardingCtaDisabledKeys = useMemo(() => {
+    if (myRole === "viewer") return farmOnboarding.steps.map((s) => s.key);
+    if (myRole === "staff") return OWNER_MANAGER_ONLY_STEPS;
+    return [];
+  }, [myRole, farmOnboarding.steps]);
 
   useEffect(() => {
     if (!farmId) return;
@@ -615,6 +639,64 @@ function FarmDashboardContent() {
         </div>
 
         <div className="fd-body">
+
+          {/* ════════════════════════════════
+              1.5 Farm Onboarding
+          ════════════════════════════════ */}
+          {!farmOnboarding.loading && farmOnboarding.steps.length > 0 && myRole !== "viewer" && (
+            <section className="fd-sec" style={{ marginBottom: 14 }}>
+              {!farmOnboarding.progressRow?.dismissed_welcome_at && !farmOnboarding.progressRow?.completed_at && (
+                <div style={{ marginBottom: 14 }}>
+                  <WelcomeOnboardingCard
+                    title={FARM_ONBOARDING_TH.welcomeTitle}
+                    body={FARM_ONBOARDING_TH.welcomeBody}
+                    primaryLabel={FARM_ONBOARDING_TH.primaryCta}
+                    secondaryLabel={FARM_ONBOARDING_TH.secondaryCta}
+                    onPrimary={() => {
+                      trackOnboardingEvent({ event: "onboarding_started", onboardingType: "farm", workspaceId: farmId });
+                      farmOnboarding.dismissWelcome();
+                      router.push(`/farm-dashboard/${farmId}/edit`);
+                    }}
+                    onSecondary={() => farmOnboarding.dismissWelcome()}
+                    onDismiss={() => farmOnboarding.dismissWelcome()}
+                  />
+                </div>
+              )}
+
+              {farmSummary.allDone && (
+                <div style={{ marginBottom: 14 }}>
+                  <OnboardingSuccessCard message={FARM_ONBOARDING_TH.completeSuccess} />
+                  {!farm.is_verified && (
+                    <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn" style={{ marginTop: 10 }}>
+                      <img src="/icons/icon-non-verified.png" alt="" />
+                      <div className="fd-verify-btn-text">
+                        <div className="fd-verify-btn-title">{FARM_ONBOARDING_TH.verifyNudgeTitle}</div>
+                        <div className="fd-verify-btn-sub">{FARM_ONBOARDING_TH.verifyNudgeCta}</div>
+                      </div>
+                      <Icon.ChevronRight />
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              <OnboardingChecklist
+                title={FARM_ONBOARDING_TH.checklistTitle}
+                note={FARM_ONBOARDING_TH.checklistNote}
+                steps={farmOnboarding.steps}
+                done={farmSummary.done}
+                total={farmSummary.total}
+                collapsed={!!farmOnboarding.progressRow?.checklist_collapsed}
+                onToggleCollapse={(c) => farmOnboarding.toggleCollapse(c)}
+                phases={FARM_ONBOARDING_PHASES}
+                ctaDisabledKeys={onboardingCtaDisabledKeys}
+                onStepCta={(step) => {
+                  trackOnboardingEvent({ event: "onboarding_step_clicked", onboardingType: "farm", step: step.key, workspaceId: farmId });
+                  router.push(step.ctaHref);
+                }}
+                onStepSkip={(step) => farmOnboarding.skipStep(step.key)}
+              />
+            </section>
+          )}
 
           {/* ════════════════════════════════
               2. Today — Action Center

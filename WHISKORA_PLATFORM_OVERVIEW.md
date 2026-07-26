@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-07-25
+**Last updated:** 2026-07-26
 
 ## What Whiskora is
 
@@ -84,6 +84,14 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - Edit profile, settings (LINE bot notification toggle, etc.), connections (link/unlink LINE), own-pets list, appointment calendar, income/expense tracker, transfer-requests inbox.
 - `/profile` itself is **not** login-gated (fixed 2026-07-24) — anonymous visitors see the same layout with empty/placeholder data (no hard redirect). Every interactive element is intercepted by a single `onClickCapture` guard on the page's root (`handleGuardClick` in `app/profile/page.tsx`) that shows a login-required prompt instead of navigating/uploading when there's no session. All `/profile/*` sub-pages (pets, transfers, calendar, finance, edit, settings, connections) still hard-redirect to `/login` on direct access — that's fine since they're reached by clicking through an already-gated `/profile`, not organically browsed to.
 
+### Onboarding
+- Two derived, resumable, skippable checklists — owner (5 steps) and farm (9 steps across 3 phases) — mounted inline on `/profile` and `farm-dashboard/[id]` (no standalone routes, so no locale-shim risk). Progress is mostly **derived live** from real data (has a pet, has a vaccine, has `farm_visibility_settings` rows, etc.) via pure functions `web/lib/onboarding/ownerSteps.ts` / `farmSteps.ts`, fed by `web/app/hooks/useOwnerOnboardingProgress.ts` / `useFarmOnboardingProgress.ts`. Only what can't be derived (welcome dismissed, checklist collapsed, completed-at, viewed/shared-own-public-profile, owner intent, skipped optional steps) is persisted, in `user_onboarding_progress`.
+- Farm-scoped onboarding rows are keyed by `farm_id` (not `user_id`) and shared across the whole team — reuses the existing `is_farm_team()` Postgres function for RLS, same pattern as `farm_visibility_settings`. Owner-scoped rows are keyed by `user_id`.
+- Reusable components under `web/app/components/onboarding/`: `WelcomeOnboardingCard`, `OnboardingChecklist`, `OnboardingChecklistItem`, `OnboardingProgress`, `OnboardingSuccessCard`. Copy is centralized in `strings.ts` (hardcoded Thai, matching the rest of the app — not wired into the `messages/*.json` dictionary, which is barely adopted elsewhere either).
+- Owner-view and farm-team-view tracking (for the "view/share profile" step) is wired into `/p/[id]` and `/farm/[id]` — fires once, guarded by the existing metadata flag, no new tables. `/farm/[id]`'s existing `handleShare()` also sets the flag.
+- Re-entry after completion only via a "ดูขั้นตอนเริ่มต้น" item in `Navbar.tsx`'s user menu (desktop) and mobile hamburger menu — never re-opens automatically.
+- `trackOnboardingEvent()` (`web/app/components/onboarding/events.ts`) is a typed no-op sink (`console.debug` in dev) — no analytics provider exists in this repo yet.
+
 ## Data model (grouped)
 
 | Area | Key tables |
@@ -98,6 +106,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 | Shops / services | `Shop`, `Product`, `Service`, `service_items`, `service_bookings` |
 | Scheduling | `appointments` |
 | Auth / profile | `profiles`, Supabase `auth.users` (LINE identity in `user_metadata`) |
+| Onboarding | `user_onboarding_progress` (added 2026-07-26 — one row per user for owner onboarding, one row per `farm_id` shared by the team for farm onboarding; RLS via `is_farm_team()`) |
 
 Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_pedigree`, `get_pet_health`, `get_my_pet_access`, `get_my_pending_transfers`, `admin_get_stats`, `admin_get_users`.
 
@@ -126,6 +135,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-07-26**
+- Shipped: onboarding system for owner (5-step checklist) and farm (9-step, 3-phase checklist), embedded on `/profile` and `farm-dashboard/[id]` — no new routes/pages, so no locale-shim exposure. New table `user_onboarding_progress` (RLS via the existing `is_farm_team()` function, same pattern as `farm_visibility_settings`). Progress is derived live from real data wherever possible; only welcome-dismissed/collapsed/completed/viewed-own-profile/intent/skipped-steps are persisted. See "Onboarding" under Feature map for the full breakdown.
 
 **2026-07-25**
 - Fixed (critical, DB): `get_pet_pedigree()` RPC threw `42702 column reference "child_id" is ambiguous` for every viewer who actually *passed* the `viewer_can_see` check — its `RETURNS TABLE(...)` output columns share names with the recursive CTE's columns (`child_id`, `name`, `breed`, etc.), and the final `select` referenced them unqualified. Viewers who failed the permission check never noticed (the function returns early via `return;` before reaching that query), so this only broke pedigree for the exact people who should see it — pet owners/farm team got a silent empty result, not real ancestor data. Fixed by qualifying the final select with the CTE alias (`select lineage.id, lineage.child_id, ...`). Applied directly via Supabase MCP migration (this repo has no checked-in `supabase/migrations/`, schema changes go straight to the remote project).

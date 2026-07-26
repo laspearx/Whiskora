@@ -6,6 +6,8 @@ import { speciesTh } from '@/lib/species';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
+import { getFarmProgress, patchFarmProgress } from '@/lib/onboarding/client';
+import { trackOnboardingEvent } from '@/app/components/onboarding/events';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -45,6 +47,7 @@ export default function PublicFarmProfile() {
   const [copied, setCopied] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [viewerUserId, setViewerUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const prev = document.documentElement.style.overflowX;
@@ -63,6 +66,7 @@ export default function PublicFarmProfile() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const uid = session.user.id;
+          setViewerUserId(uid);
 
           // Check workspace membership first (new system) — any farm role counts
           const { data: wsRow } = await supabase
@@ -73,11 +77,17 @@ export default function PublicFarmProfile() {
             .eq('workspace_members.user_id', uid)
             .maybeSingle();
 
-          if (wsRow) {
+          const isTeamMember = !!wsRow || farmData.user_id === uid;
+          if (isTeamMember) {
             setIsOwner(true);
-          } else if (farmData.user_id === uid) {
-            // Fallback: direct farm ownership (legacy, before workspace backfill)
-            setIsOwner(true);
+            // ทีมฟาร์มเปิดดูโปรไฟล์สาธารณะของฟาร์มตัวเอง — นับเป็นขั้นตอน onboarding "ดูและแชร์โปรไฟล์ฟาร์ม"
+            getFarmProgress(Number(farmId)).then((row) => {
+              if (!row?.metadata?.shared_profile_at) {
+                patchFarmProgress(Number(farmId), uid, {
+                  metadata: { ...(row?.metadata ?? {}), shared_profile_at: new Date().toISOString() },
+                });
+              }
+            }).catch(() => {});
           }
         }
 
@@ -130,6 +140,15 @@ export default function PublicFarmProfile() {
     try {
       if (navigator.share) await navigator.share({ title: farm?.farm_name, url });
       else { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+      if (isOwner && viewerUserId) {
+        const row = await getFarmProgress(Number(farmId));
+        if (!row?.metadata?.shared_profile_at) {
+          patchFarmProgress(Number(farmId), viewerUserId, {
+            metadata: { ...(row?.metadata ?? {}), shared_profile_at: new Date().toISOString() },
+          });
+        }
+        trackOnboardingEvent({ event: 'public_profile_shared', onboardingType: 'farm', userId: viewerUserId, workspaceId: farmId });
+      }
     } catch { /* cancelled */ }
   };
 

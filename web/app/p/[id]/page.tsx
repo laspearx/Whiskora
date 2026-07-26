@@ -7,6 +7,8 @@ import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
+import { getOwnerProgress, patchOwnerProgress } from '@/lib/onboarding/client';
+import { trackOnboardingEvent } from '@/app/components/onboarding/events';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -267,6 +269,18 @@ export default function PublicPetProfilePage() {
           .in('status', ['pending', 'confirmed'])
           .maybeSingle();
         if (resData) setMyReservation(resData);
+
+        // เจ้าของเปิดดูโปรไฟล์สาธารณะของตัวเอง — นับเป็นขั้นตอน onboarding "ดูหรือแชร์โปรไฟล์สัตว์"
+        if (session.user.id === petData.user_id) {
+          getOwnerProgress(session.user.id).then((row) => {
+            if (!row?.metadata?.viewed_own_public_profile_at) {
+              patchOwnerProgress(session.user.id, {
+                metadata: { ...(row?.metadata ?? {}), viewed_own_public_profile_at: new Date().toISOString() },
+              });
+              trackOnboardingEvent({ event: 'public_profile_shared', onboardingType: 'owner', userId: session.user.id });
+            }
+          }).catch(() => {});
+        }
       }
 
     } catch (error) {

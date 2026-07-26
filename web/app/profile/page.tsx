@@ -7,6 +7,14 @@ import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { useOwnerOnboardingProgress } from "@/app/hooks/useOwnerOnboardingProgress";
+import { summarizeSteps } from "@/lib/onboarding/ownerSteps";
+import { OWNER_ONBOARDING_TH } from "@/app/components/onboarding/strings";
+import { trackOnboardingEvent } from "@/app/components/onboarding/events";
+import WelcomeOnboardingCard from "@/app/components/onboarding/WelcomeOnboardingCard";
+import OnboardingChecklist from "@/app/components/onboarding/OnboardingChecklist";
+import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
+import type { OwnerIntent } from "@/lib/onboarding/types";
 
 const F = {
   ink: "#1f1a1c",
@@ -78,6 +86,10 @@ export default function ProfilePage() {
 
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+
+  const onboarding = useOwnerOnboardingProgress();
+  const ownerSummary = useMemo(() => summarizeSteps(onboarding.steps), [onboarding.steps]);
+  const ownerIntent = onboarding.progressRow?.metadata?.intent as OwnerIntent | undefined;
 
   useEffect(() => {
     const load = async () => {
@@ -501,6 +513,107 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Onboarding */}
+        {isAuthed && !onboarding.loading && onboarding.steps.length > 0 && (
+          <section className="pp-section">
+            {!onboarding.progressRow?.dismissed_welcome_at && !onboarding.progressRow?.completed_at && (
+              <div style={{ marginBottom: 14 }}>
+                <WelcomeOnboardingCard
+                  title={OWNER_ONBOARDING_TH.welcomeTitle}
+                  body={OWNER_ONBOARDING_TH.welcomeBody}
+                  primaryLabel={OWNER_ONBOARDING_TH.primaryCta}
+                  secondaryLabel={OWNER_ONBOARDING_TH.secondaryCta}
+                  onPrimary={() => {
+                    trackOnboardingEvent({ event: "onboarding_started", onboardingType: "owner", userId: user?.id });
+                    onboarding.dismissWelcome();
+                    router.push("/pets/create");
+                  }}
+                  onSecondary={() => onboarding.dismissWelcome()}
+                  onDismiss={() => onboarding.dismissWelcome()}
+                >
+                  <div className="pp-intent-row">
+                    <span className="pp-intent-prompt">{OWNER_ONBOARDING_TH.intentPrompt}</span>
+                    <div className="pp-intent-chips">
+                      {OWNER_ONBOARDING_TH.intentOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`pp-intent-chip ${ownerIntent === opt.value ? "is-active" : ""}`}
+                          onClick={() => onboarding.setIntent(opt.value)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </WelcomeOnboardingCard>
+              </div>
+            )}
+
+            {ownerIntent === "buyer" && !onboarding.progressRow?.completed_at && (
+              <div className="pp-buyer-guide">
+                <div className="pp-buyer-guide-title">{OWNER_ONBOARDING_TH.buyerGuideTitle}</div>
+                <div className="pp-buyer-guide-links">
+                  {OWNER_ONBOARDING_TH.buyerGuideSteps.map((s) => (
+                    <Link key={s.href} href={s.href} className="pp-buyer-guide-link">
+                      {s.label} ›
+                    </Link>
+                  ))}
+                </div>
+                <p className="pp-buyer-guide-note">{OWNER_ONBOARDING_TH.buyerGuideNote}</p>
+              </div>
+            )}
+
+            {ownerSummary.done >= 3 && !ownerSummary.allDone && (
+              <div style={{ marginBottom: 14 }}>
+                <OnboardingSuccessCard message={OWNER_ONBOARDING_TH.interimSuccess} />
+              </div>
+            )}
+
+            <OnboardingChecklist
+              title={OWNER_ONBOARDING_TH.checklistTitle}
+              note={OWNER_ONBOARDING_TH.checklistNote}
+              steps={onboarding.steps}
+              done={ownerSummary.done}
+              total={ownerSummary.total}
+              collapsed={!!onboarding.progressRow?.checklist_collapsed}
+              onToggleCollapse={(c) => onboarding.toggleCollapse(c)}
+              onStepCta={(step) => {
+                trackOnboardingEvent({ event: "onboarding_step_clicked", onboardingType: "owner", step: step.key, userId: user?.id });
+                router.push(step.ctaHref);
+              }}
+            />
+
+            <style>{`
+              .pp-intent-row { margin: -6px 0 16px; }
+              .pp-intent-prompt { display: block; font-size: 12.5px; font-weight: 600; color: ${F.inkSoft}; margin-bottom: 8px; }
+              .pp-intent-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+              .pp-intent-chip {
+                padding: 7px 12px;
+                border-radius: 999px;
+                border: 1px solid ${F.line};
+                background: #fff;
+                color: ${F.inkSoft};
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+              }
+              .pp-intent-chip.is-active { background: ${F.pink}; border-color: ${F.pink}; color: #fff; }
+              .pp-buyer-guide {
+                border: 1px solid ${F.line};
+                border-radius: 16px;
+                padding: 16px;
+                margin-bottom: 14px;
+                background: #fff;
+              }
+              .pp-buyer-guide-title { font-size: 13.5px; font-weight: 700; color: ${F.ink}; margin-bottom: 8px; }
+              .pp-buyer-guide-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+              .pp-buyer-guide-link { font-size: 13px; font-weight: 600; color: ${F.pink}; }
+              .pp-buyer-guide-note { font-size: 12px; color: ${F.muted}; line-height: 1.6; margin: 0; }
+            `}</style>
+          </section>
+        )}
+
         {/* Pet Bubbles */}
         <section className="pp-section">
           <div className="pp-section-head">
@@ -530,7 +643,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="pp-empty-pets">
-              ยังไม่มีสัตว์เลี้ยงในบัญชี<br />
+              ยังไม่มีสัตว์เลี้ยงในบัญชีของคุณ เริ่มสร้างโปรไฟล์ตัวแรกเพื่อเก็บข้อมูลสำคัญไว้ในที่เดียว<br />
               <Link href="/pets/create" style={{ color: F.pink, fontWeight: 600 }}>+ เพิ่มสัตว์เลี้ยงตัวแรก</Link>
             </div>
           )}

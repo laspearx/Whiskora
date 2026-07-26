@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import PetQRSheet from '@/app/components/PetQRSheet';
 import { useWorkspace } from '@/app/contexts/WorkspaceContext';
 import type { Workspace } from '@/app/contexts/WorkspaceContext';
+import { patchOwnerProgress, patchFarmProgress } from '@/lib/onboarding/client';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 type Href = string;
@@ -105,6 +106,20 @@ export default function Navbar() {
   };
 
   const guarded = (href: Href) => go(session ? href : '/login');
+
+  const reopenOnboarding = async () => {
+    if (!session) return;
+    if (activeWorkspace?.type === 'farm' && activeWorkspace.entity_id) {
+      await patchFarmProgress(activeWorkspace.entity_id, session.user.id, {
+        dismissed_welcome_at: null,
+        checklist_collapsed: false,
+      });
+      go(`/farm-dashboard/${activeWorkspace.entity_id}` as Href);
+    } else {
+      await patchOwnerProgress(session.user.id, { dismissed_welcome_at: null, checklist_collapsed: false });
+      go('/profile' as Href);
+    }
+  };
 
   const switchWs = (ws: Workspace) => {
     switchWorkspace(ws.id);
@@ -308,6 +323,11 @@ export default function Navbar() {
                       <button onClick={() => go('/profile')} className={dropItem(active('/profile'))}>
                         โปรไฟล์ของฉัน
                       </button>
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={reopenOnboarding} className={dropItem(false)}>
+                          ดูขั้นตอนเริ่มต้น
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -395,6 +415,11 @@ export default function Navbar() {
             <button onClick={() => go('/pet-id-card')} className={dropItem(active('/pet-id-card'))}>Pet ID Card</button>
             <button onClick={() => go('/pet-knowledge')} className={dropItem(active('/pet-knowledge'))}>ความรู้สัตว์เลี้ยง</button>
             <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>พาร์ทเนอร์</button>
+            {session && (
+              <button onClick={reopenOnboarding} className={dropItem(false)}>
+                ดูขั้นตอนเริ่มต้น
+              </button>
+            )}
 
             {/* Explore group */}
             <div className="border-t border-gray-100 mt-1.5 pt-1.5">
