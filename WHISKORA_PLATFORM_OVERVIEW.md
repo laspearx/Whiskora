@@ -35,7 +35,8 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 
 ### Pets & lineage
 - Owner-facing profile at `/pets/[id]` (adaptive: richer tooling — gallery/docs upload, pedigree modal, status pipeline, co-owner management, transfer initiation — only when `isOwner`).
-- Separate lightweight **buyer-facing** profile at `/p/[id]` with reserve + contact-seller UI. This split is intentional, not a duplicate.
+- Separate **read-only public profile** at `/p/[id]` (2026-07-26 redesign): now mirrors `/pets/[id]`'s layout/tabs (overview, pedigree, health, vaccine, weight, notes, timeline — no documents tab, see below) with all edit/upload affordances stripped, plus reserve + contact-seller UI. The page always ends in a page-level "owner info" section (avatar/name/farm badge/address/contact) in place of the owner page's share-footer; the farm-follow/"view farm profile" button was removed since a publicly-viewed pet isn't necessarily for sale. This split is intentional, not a duplicate.
+- No **documents** tab on `/p/[id]`: `pet_documents` rows are tier-gated and readable, but the `pet-documents` storage bucket only has a read policy for the owner's own folder (`storage.objects` "owner read pet-documents"), so a non-owner can never generate a signed download URL even when the row is visible. Needs a viewer-tier storage policy before a public Documents tab is safe to add.
 - Pedigree, health, and access-tier reads go through RPCs (`get_pet_pedigree`, `get_pet_health`, `get_my_pet_access`), not raw selects — so tier gating lives server-side.
 - Co-ownership via `pet_co_owners`; document uploads via `pet_documents`.
 
@@ -131,6 +132,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No visible in-app checkout/payment flow for shop products (service bookings now exist end-to-end as of 2026-07-24, but there's still no payment collection — booking just requests a slot).
 - `service_items`/`service_bookings` RLS follows the exact-owner pattern (`services.user_id = auth.uid()::text`), not a workspace-team function — so, same as the pre-existing `service_items` gap, a `manager`/`staff` workspace role can see the service dashboard UI but may get RLS-denied on writes since only the literal owner account passes the policy. Not introduced by this pass, but worth fixing if service teams with non-owner roles report failed saves.
 - `service-dashboard/[id]/finance` is linked from the overview tools list but the route doesn't exist yet (pre-existing gap, separate from the bookings page fixed 2026-07-24).
+- No viewer-tier storage policy for the `pet-documents` bucket (`storage.objects` only allows the owner's own folder to be read) — blocks adding a public Documents tab to `/p/[id]` even though `pet_documents` row visibility is already tier-gated via `viewer_can_see`.
 
 ## Changelog
 
@@ -138,6 +140,8 @@ Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-07-26**
 - Shipped: onboarding system for owner (5-step checklist) and farm (9-step, 3-phase checklist), embedded on `/profile` and `farm-dashboard/[id]` — no new routes/pages, so no locale-shim exposure. New table `user_onboarding_progress` (RLS via the existing `is_farm_team()` function, same pattern as `farm_visibility_settings`). Progress is derived live from real data wherever possible; only welcome-dismissed/collapsed/completed/viewed-own-profile/intent/skipped-steps are persisted. See "Onboarding" under Feature map for the full breakdown.
+- Redesigned `/p/[id]` (public pet profile) to match `/pets/[id]`'s layout: added read-only weight/notes tabs, tick-list health card, timeline preview, and a page-level owner-info footer replacing the per-tab owner/farm sidebar card and the removed "view farm profile" button. Deliberately excluded a documents tab (see Known gaps).
+- **DB fix:** granted `SELECT` on `public.profiles` to the `anon` role — the RLS policies already declared profiles publicly readable (`qual: true`), but the underlying Postgres grant was missing, so every unauthenticated fetch of another user's profile (e.g. owner name/avatar on public pages) silently 42501'd. Anonymous visitors previously never saw owner info on `/p/[id]` or likely other public pages.
 
 **2026-07-25**
 - Fixed (critical, DB): `get_pet_pedigree()` RPC threw `42702 column reference "child_id" is ambiguous` for every viewer who actually *passed* the `viewer_can_see` check — its `RETURNS TABLE(...)` output columns share names with the recursive CTE's columns (`child_id`, `name`, `breed`, etc.), and the final `select` referenced them unqualified. Viewers who failed the permission check never noticed (the function returns early via `return;` before reaching that query), so this only broke pedigree for the exact people who should see it — pet owners/farm team got a silent empty result, not real ancestor data. Fixed by qualifying the final select with the CTE alias (`select lineage.id, lineage.child_id, ...`). Applied directly via Supabase MCP migration (this repo has no checked-in `supabase/migrations/`, schema changes go straight to the remote project).

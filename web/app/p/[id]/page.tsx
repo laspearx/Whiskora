@@ -35,6 +35,7 @@ const Icon = {
   Dna: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.598 3.597-1.198 5.397 0"/><path d="M9 2c1.798 1.598 3.597 1.198 5.397 0"/><path d="M2 9c6.667 6 13.333 0 20 6"/></svg>,
   Image: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   Timeline: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+  Doc: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
   Check: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   Phone: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.64 3.29a2 2 0 0 1 1.95-2.18h3.06a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.95a16 16 0 0 0 6 6l.42-.54a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16.92z"/></svg>,
   Expand: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>,
@@ -47,6 +48,8 @@ const TABS = [
   { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
   { id: 'health', fieldGroupKey: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
   { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'วัคซีน', icon: <Icon.Syringe /> },
+  { id: 'weight', fieldGroupKey: 'weight', label: 'น้ำหนัก', icon: <Icon.Weight /> },
+  { id: 'activities', fieldGroupKey: 'medical_notes', label: 'โน้ต & พฤติกรรม', icon: <Icon.Doc /> },
   { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
 ];
 
@@ -76,9 +79,10 @@ export default function PublicPetProfilePage() {
   } | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [activeActivityFilter, setActiveActivityFilter] = useState('ทั้งหมด');
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [farm, setFarm] = useState<any>(null);
-  const [latestWeight, setLatestWeight] = useState<number | null>(null);
+  const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -95,9 +99,6 @@ export default function PublicPetProfilePage() {
   const pedScalerRef = useRef<HTMLDivElement>(null);
 
   const isFarmPet = pet?.farm_id && pet.farm_id !== 'PERSONAL';
-
-  const displayVal = (val: string | number | null | undefined, suffix = '') =>
-    val != null && val !== '' ? `${val}${suffix}` : '-';
 
   const parseGallery = (urls: string): string[] => {
     if (!urls) return [];
@@ -254,8 +255,8 @@ export default function PublicPetProfilePage() {
       const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
       if (activityData) setActivities(activityData as Activity[]);
 
-      const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
-      if (weightData) setLatestWeight(weightData.weight);
+      const { data: weightData } = await supabase.from('pet_weights').select('weight, recorded_date').eq('pet_id', petId).order('recorded_date', { ascending: true });
+      if (weightData) setWeightHistory(weightData as { weight: number; recorded_date: string }[]);
 
       // เช็ค session แบบไม่ redirect — หน้านี้เปิดให้ทุกคนดูได้ แต่การจองต้องล็อกอิน
       const { data: { session } } = await supabase.auth.getSession();
@@ -341,10 +342,10 @@ export default function PublicPetProfilePage() {
   };
 
   const generateCombinedTimeline = () => {
-    const timeline: { id: string; date: string; title: string; description: string; color: string }[] = [];
-    if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'เกิด / เข้าระบบ Whiskora', description: '', color: '#E84677' });
-    vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `วัคซีน ${v.vaccine_name}`, description: v.notes || '', color: '#0D9488' }));
-    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', color: '#F59E0B' }));
+    const timeline: { id: string; date: string; title: string; description: string; color: string; tag?: string; image_url?: string | null }[] = [];
+    if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'เกิด / เข้าระบบ Whiskora', description: '', color: '#E84677', tag: pet.microchip_number || '' });
+    vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `อัปเดตวัคซีน ${v.vaccine_name}`, description: v.notes || '', color: '#0D9488' }));
+    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', color: a.activity_type === 'ความสำเร็จ' ? '#D97706' : '#9CA3AF', image_url: a.image_url || null }));
     return timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
@@ -416,9 +417,44 @@ export default function PublicPetProfilePage() {
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
   const combinedTimeline = generateCombinedTimeline();
   const hasContact = farm && (farm.phone || farm.line_id || farm.facebook_link);
+  const filteredActivities = activeActivityFilter === 'ทั้งหมด'
+    ? activities
+    : activities.filter(a => a.activity_type?.includes(activeActivityFilter));
+  const latestWeight = weightHistory[weightHistory.length - 1]?.weight;
   const latestWeightDisplay = latestWeight
     ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
     : '-';
+
+  function WeightSparkline({ data }: { data: { weight: number; recorded_date: string }[] }) {
+    if (data.length < 2) return null;
+    const W = 300, H = 72, pad = 10;
+    const values = data.map(d => d.weight);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const x = (i: number) => pad + (i / (data.length - 1)) * (W - pad * 2);
+    const y = (v: number) => H - pad - ((v - min) / range) * (H - pad * 2);
+    const rising = values[values.length - 1] >= values[values.length - 2];
+    const color = rising ? '#16A34A' : '#EF4444';
+    const pts = data.map((d, i) => `${x(i)},${y(d.weight)}`).join(' ');
+    const first = data[0];
+    const last = data[data.length - 1];
+    return (
+      <div>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+          <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {data.map((d, i) => (
+            <circle key={i} cx={x(i)} cy={y(d.weight)} r={i === data.length - 1 ? 5 : 3} fill={color} opacity={i === data.length - 1 ? 1 : 0.5} />
+          ))}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(first.recorded_date)} · {first.weight}g</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color }}>{rising ? '▲' : '▼'} {last.weight}g</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: F.muted }}>{formatDate(last.recorded_date)}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -443,14 +479,11 @@ export default function PublicPetProfilePage() {
         .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: ${F.pink}; margin-bottom: 6px; }
         .pet-name { font-family: inherit; font-size: 32px; font-weight: 700; color: #111827; line-height: 1.1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .gender-chip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; }
-        .breed-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-        .breed-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #FDF2F5; color: ${F.pink}; border: 1px solid #FBCFE8; }
-        .breed-tag-white { background: white; color: #6B7280; border: 1px solid ${F.lineMid}; }
-        .quick-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: ${F.line}; border: 1px solid ${F.line}; border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
-        .stat-cell { background: white; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .stat-label { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: ${F.muted}; text-transform: uppercase; letter-spacing: 0.04em; }
-        .stat-value { font-size: 13px; font-weight: 700; color: ${F.ink}; overflow: hidden; text-overflow: ellipsis; }
-        .stat-sub { font-size: 10px; color: ${F.muted}; font-weight: 500; }
+        .pet-info-table { width: 100%; margin-bottom: 16px; }
+        .pet-info-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid ${F.line}; gap: 12px; }
+        .pet-info-row:last-child { border-bottom: none; }
+        .pet-info-label { font-size: 12px; font-weight: 500; color: ${F.muted}; flex-shrink: 0; }
+        .pet-info-val { font-size: 13px; font-weight: 600; color: ${F.ink}; text-align: right; min-width: 0; word-break: break-word; }
         .pet-id-card { background: linear-gradient(135deg, #FFF5F8 0%, white 100%); border: 1px solid ${F.pinkBorder}; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
         .pet-id-left { min-width: 0; }
         .pet-id-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
@@ -461,9 +494,6 @@ export default function PublicPetProfilePage() {
         .contact-btn:active { transform: scale(0.97); }
         .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
         .price-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; font-family: inherit; background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
-        .farm-link-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: 24px; background: white; color: ${F.pink}; font-size: 14px; font-weight: 700; border: 1px solid ${F.pinkBorder}; cursor: pointer; text-decoration: none; transition: all .18s ease; }
-        .farm-link-btn:hover { background: ${F.pinkSoft}; border-color: ${F.pink}; transform: translateY(-1px); }
-        .farm-link-btn:active { transform: scale(0.97); }
         .tabs-wrapper { border-bottom: 1px solid ${F.lineMid}; margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .tabs-wrapper::-webkit-scrollbar { display: none; }
         .tabs-inner { display: flex; gap: 0; min-width: max-content; }
@@ -483,6 +513,9 @@ export default function PublicPetProfilePage() {
         .card-body { padding: 20px; }
         .btn-view-full { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; border: 1px dashed ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
         .btn-view-full:hover { background: #FDE7EF; border-color: ${F.pink}; }
+        .card-footer { padding: 12px 20px; border-top: 1px solid ${F.line}; text-align: center; }
+        .card-footer a, .card-footer button { font-size: 12px; font-weight: 600; color: ${F.pink}; text-decoration: none; cursor: pointer; background: none; border: none; }
+        .card-footer a:hover, .card-footer button:hover { text-decoration: underline; }
         /* ─── Pedigree (horizontal, read-only) ─── */
         .pedigree-tree { display: flex; flex-direction: row; align-items: stretch; gap: 0; padding: 24px 20px; background: #FAFAFA; border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .pedigree-col { display: flex; flex-direction: column; position: relative; flex-shrink: 0; padding-right: 32px; }
@@ -510,11 +543,15 @@ export default function PublicPetProfilePage() {
         .pedigree-col.has-parent-right .ped-card-slot::after { content: ''; position: absolute; top: 50%; left: 100%; transform: translateY(-50%); width: 16px; height: 2px; background: ${F.pinkBorder}; }
         .pedigree-col.has-connector .pedigree-col-cards::before { content: ''; position: absolute; left: -16px; width: 2px; background: ${F.pinkBorder}; border-radius: 2px; top: calc(50% / var(--ped-n)); bottom: calc(50% / var(--ped-n)); }
         .pedigree-col.has-connector .pedigree-col-cards { position: relative; }
-        .health-check-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid ${F.line}; gap: 10px; }
-        .health-check-item:last-child { border-bottom: none; }
-        .health-check-left { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #374151; min-width: 0; }
-        .check-icon { width: 22px; height: 22px; border-radius: 50%; background: #D1FAE5; display: flex; align-items: center; justify-content: center; color: #059669; flex-shrink: 0; }
-        .health-check-val { font-size: 12px; font-weight: 600; color: ${F.muted}; flex-shrink: 0; text-align: right; }
+        .health-tick-list { display: flex; flex-direction: column; gap: 0; }
+        .health-tick-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid ${F.line}; }
+        .health-tick-row:last-child { border-bottom: none; }
+        .health-tick { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .health-tick.ok { background: #DCFCE7; color: #16A34A; }
+        .health-tick.no { background: ${F.line}; color: ${F.muted}; }
+        .health-tick-info { flex: 1; min-width: 0; }
+        .health-tick-label { font-size: 13px; font-weight: 600; color: ${F.ink}; }
+        .health-tick-detail { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
         .vaccine-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid ${F.line}; }
         .vaccine-row:last-child { border-bottom: none; }
         .vaccine-icon { width: 36px; height: 36px; border-radius: 10px; background: #F0FDFA; display: flex; align-items: center; justify-content: center; color: #0D9488; flex-shrink: 0; }
@@ -522,14 +559,15 @@ export default function PublicPetProfilePage() {
         .vaccine-name { font-size: 13px; font-weight: 700; color: ${F.ink}; }
         .vaccine-sub { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
         .vaccine-date { font-size: 11px; font-weight: 600; color: ${F.teal}; white-space: nowrap; flex-shrink: 0; }
-        .owner-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .owner-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: ${F.pinkSoft}; flex-shrink: 0; border: 2px solid ${F.pinkBorder}; }
-        .owner-name-wrap { min-width: 0; }
-        .owner-name { font-size: 14px; font-weight: 700; color: ${F.ink}; }
-        .owner-cattery { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: ${F.pink}; }
-        .owner-info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #4B5563; border-bottom: 1px solid ${F.line}; word-break: break-word; }
-        .owner-info-row:last-child { border-bottom: none; }
-        .owner-info-icon { color: ${F.muted}; flex-shrink: 0; }
+        .owner-cattery { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: ${F.pink}; margin-top: 2px; }
+        .owner-footer { background: linear-gradient(135deg, #FFF0F4, #FDF2F5); border: 1px solid ${F.pinkBorder}; border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+        .owner-footer-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .owner-footer-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: white; border: 2px solid ${F.pinkBorder}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: ${F.pink}; font-weight: 700; font-size: 20px; }
+        .owner-footer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .owner-footer-info { min-width: 0; }
+        .owner-footer-label { font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+        .owner-footer-name { font-size: 15px; font-weight: 700; color: ${F.ink}; }
+        .owner-footer-address { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #6B7280; margin-top: 4px; }
         .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .gallery-item { aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: ${F.line}; position: relative; cursor: zoom-in; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
@@ -538,8 +576,19 @@ export default function PublicPetProfilePage() {
         .timeline-item { position: relative; }
         .timeline-dot { position: absolute; left: -31px; top: 3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px ${F.lineMid}; }
         .timeline-date { font-size: 10px; font-weight: 700; color: ${F.muted}; margin-bottom: 3px; }
-        .timeline-title { font-size: 13px; font-weight: 700; color: ${F.ink}; }
         .timeline-desc { font-size: 11px; color: #6B7280; margin-top: 3px; line-height: 1.5; }
+        .timeline-title { font-size: 13px; font-weight: 700; color: ${F.ink}; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .timeline-id-badge { font-size: 9px; font-weight: 700; background: #F3F4F6; color: ${F.muted}; padding: 2px 7px; border-radius: 6px; font-family: monospace; letter-spacing: 0.04em; }
+        .timeline-img { margin-top: 7px; border-radius: 10px; overflow: hidden; max-width: 220px; aspect-ratio: 4/3; background: ${F.line}; }
+        .timeline-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .activity-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+        .activity-tab-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${F.lineMid}; background: white; color: #6B7280; cursor: pointer; transition: all .15s; }
+        .activity-tab-btn.active { background: ${F.ink}; border-color: ${F.ink}; color: white; }
+        .activity-table { width: 100%; border-collapse: collapse; }
+        .activity-table tr { border-bottom: 1px solid ${F.line}; }
+        .activity-table tr:last-child { border-bottom: none; }
+        .activity-table td { padding: 10px 8px; vertical-align: middle; font-size: 12px; }
+        .activity-type-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
         .empty-hint { text-align: center; padding: 28px 0; color: ${F.muted}; font-size: 13px; }
         /* ─── Modals ─── */
         .modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); padding: 16px; }
@@ -582,7 +631,6 @@ export default function PublicPetProfilePage() {
           .hero-main-image { order: 1; width: 100%; height: auto; aspect-ratio: 1 / 1; max-height: 360px; }
           .hero-info { order: 3; width: 100%; }
           .pet-name { font-size: 26px; flex-wrap: wrap; }
-          .quick-stats { grid-template-columns: repeat(2, 1fr); }
           .tabs-wrapper { margin-left: -16px; margin-right: -16px; padding: 0 16px; }
           .content-grid { grid-template-columns: 1fr; gap: 16px; }
           .card-header { padding: 14px 16px; }
@@ -590,11 +638,12 @@ export default function PublicPetProfilePage() {
           .pedigree-tree { padding: 16px 12px; }
           .ped-card, .pedigree-col-cards, .ped-card-slot, .ped-card-link { width: 150px; }
           .pedigree-col { padding-right: 32px; }
+          .owner-footer { flex-direction: column; text-align: center; padding: 16px; }
+          .owner-footer-main { flex-direction: column; }
         }
         @media (max-width: 400px) {
           .page-body { padding: 12px 12px 36px; }
           .pet-name { font-size: 22px; }
-          .quick-stats { grid-template-columns: 1fr 1fr; }
           .gallery-grid { grid-template-columns: repeat(2, 1fr); }
           .ped-card, .pedigree-col-cards, .ped-card-slot, .ped-card-link { width: 140px; }
         }
@@ -621,16 +670,23 @@ export default function PublicPetProfilePage() {
             <div className="hero-info">
               <div className="verified-badge"><Icon.Verified /> Verified by Whiskora</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
-              <div className="breed-tags">
-                {pet.breed && <span className="breed-tag"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {pet.breed}</span>}
-                {pet.color && <span className="breed-tag breed-tag-white">{pet.color}</span>}
-                {pet.pattern && <span className="breed-tag breed-tag-white">{pet.pattern}</span>}
-              </div>
-              <div className="quick-stats">
-                <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{latestWeightDisplay}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
+              <div style={{ background: 'white', border: `1px solid ${F.line}`, borderRadius: 18, padding: '4px 16px 8px', marginBottom: 16 }}>
+                <div className="pet-info-table" style={{ marginBottom: 0 }}>
+                  {([
+                    { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
+                    { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
+                    { label: 'น้ำหนัก', val: latestWeightDisplay },
+                    { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
+                    { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
+                    { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
+                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                  ] as any[]).map((row: any, i: number) => (
+                    <div key={i} className="pet-info-row">
+                      <span className="pet-info-label">{row.label}</span>
+                      <span className="pet-info-val" style={row.mono ? { fontFamily: 'monospace', fontSize: 11 } : undefined}>{row.val}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="pet-id-card">
                 <div className="pet-id-left">
@@ -671,11 +727,6 @@ export default function PublicPetProfilePage() {
                     <Icon.Message /> ติดต่อ{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}
                   </button>
                 )}
-                {isFarmPet && farm && (
-                  <a href={`/farm/${farm.id}`} className="farm-link-btn">
-                    <Icon.Home /> ดูโปรไฟล์ฟาร์ม
-                  </a>
-                )}
               </div>
             </div>
           </div>
@@ -701,25 +752,6 @@ export default function PublicPetProfilePage() {
                   <div className="card-body" style={{ padding: '16px' }}>{renderPedigree()}</div>
                 </div>
 
-                <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>ข้อมูลพื้นฐาน</div></div>
-                  <div className="card-body">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-                      {[
-                        { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
-                        { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
-                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: latestWeightDisplay },
-                        { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {pet.status}</span> : '-' },
-                      ].map((item, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: F.muted, flexShrink: 0 }}>{item.label}</span>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: F.ink, textAlign: 'right' }}>{item.val as React.ReactNode}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 {allImages.length > 0 && (
                   <div className="card">
                     <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Image /></div>แกลลอรี่</div></div>
@@ -737,28 +769,64 @@ export default function PublicPetProfilePage() {
                   <div className="card">
                     <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}><Icon.Syringe /></div>ประวัติการฉีดวัคซีน</div></div>
                     <div className="card-body">
-                      {vaccines.slice(0, 5).map(v => (
+                      {vaccines.slice(0, 4).map(v => (
                         <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
                           <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || 'รับวัคซีนเรียบร้อย'}</div></div>
                           <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
                       ))}
                     </div>
+                    {vaccines.length > 4 && <div className="card-footer"><button onClick={() => setActiveTab('vaccine')}>ดูประวัติทั้งหมด →</button></div>}
                   </div>
                 )}
+
+                <div className="card">
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Timeline /></div>ไทม์ไลน์กิจกรรม</div></div>
+                  <div className="card-body">
+                    {combinedTimeline.length === 0 ? <div className="empty-hint">ยังไม่มีกิจกรรม</div> : (
+                      <div className="timeline-list">
+                        {combinedTimeline.slice(0, 5).map(item => (
+                          <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
+                            <div className="timeline-date">{formatDate(item.date)}</div>
+                            <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
+                            {item.description && <div className="timeline-desc">{item.description}</div>}
+                            {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {combinedTimeline.length > 5 && <div className="card-footer"><button onClick={() => setActiveTab('timeline')}>ดูไทม์ไลน์ทั้งหมด →</button></div>}
+                </div>
               </div>
 
               {/* Side */}
               <div className="content-side">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    {[
-                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
-                      { label: 'ทำหมันแล้ว', val: pet.is_neutered ? 'ทำแล้ว' : '-' },
-                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
+                    <div className="health-tick-list">
+                      {(() => {
+                        const today = new Date();
+                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
+                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
+                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
+                        const checks = [
+                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                        ];
+                        return checks.map((c, i) => (
+                          <div key={i} className="health-tick-row">
+                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}><Icon.Check /></div>
+                            <div className="health-tick-info">
+                              <div className="health-tick-label">{c.label}</div>
+                              <div className="health-tick-detail">{c.detail}</div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
                     {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
@@ -766,30 +834,8 @@ export default function PublicPetProfilePage() {
                       </div>
                     )}
                   </div>
+                  <div className="card-footer"><button onClick={() => setActiveTab('health')}>ดูข้อมูลสุขภาพทั้งหมด →</button></div>
                 </div>
-
-                {owner && (
-                  <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>👤</div>{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}</div></div>
-                    <div className="card-body">
-                      <div className="owner-card-header">
-                        <div className="owner-avatar">
-                          {owner.avatar_url ? <img src={owner.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: F.pinkSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: F.pink, fontWeight: 700 }}>{(farm?.farm_name || owner.full_name)?.[0] || '?'}</div>}
-                        </div>
-                        <div className="owner-name-wrap">
-                          <div className="owner-name">{farm?.farm_name || owner.full_name || 'ไม่ระบุชื่อ'}</div>
-                          {farm?.farm_name && <div className="owner-cattery"><Icon.Verified /> ฟาร์มที่ยืนยันแล้ว</div>}
-                        </div>
-                      </div>
-                      {owner.address && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Calendar /></span>{owner.address}</div>}
-                      {hasContact && (
-                        <button className="contact-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }} onClick={() => setShowContactModal(true)}>
-                          <Icon.Message /> ติดต่อสอบถาม
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -809,19 +855,46 @@ export default function PublicPetProfilePage() {
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    {[
-                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
-                      { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
-                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
+                    <div className="health-tick-list">
+                      {(() => {
+                        const today = new Date();
+                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
+                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
+                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
+                        return [
+                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
+                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                        ].map((c, i) => (
+                          <div key={i} className="health-tick-row">
+                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}><Icon.Check /></div>
+                            <div className="health-tick-info">
+                              <div className="health-tick-label">{c.label}</div>
+                              <div className="health-tick-detail">{c.detail}</div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    {healthDetails?.chronic_diseases && (
+                      <div style={{ marginTop: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>โรคประจำตัว</div>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 600 }}>{healthDetails.chronic_diseases}</p>
+                      </div>
+                    )}
                     {healthDetails?.allergies && (
-                      <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
                         <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{healthDetails.allergies}</p>
+                      </div>
+                    )}
+                    {(healthDetails?.traits || healthDetails?.health_notes) && (
+                      <div style={{ marginTop: '12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>หมายเหตุเพิ่มเติม</div>
+                        <p style={{ fontSize: '13px', color: '#92400E', fontWeight: 600, lineHeight: 1.6 }}>{[healthDetails?.traits, healthDetails?.health_notes].filter(Boolean).join(' ')}</p>
                       </div>
                     )}
                   </div>
@@ -845,6 +918,56 @@ export default function PublicPetProfilePage() {
             </div>
           )}
 
+          {/* ─── Weight tab ─── */}
+          {activeTab === 'weight' && (
+            <div className="card">
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft, color: F.pink }}><Icon.Weight /></div>ประวัติน้ำหนัก</div></div>
+              <div className="card-body">
+                {weightHistory.length >= 2 ? (
+                  <div style={{ padding: '8px 4px 4px' }}>
+                    <WeightSparkline data={weightHistory} />
+                  </div>
+                ) : weightHistory.length === 1 ? (
+                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: F.ink }}>{weightHistory[0].weight}g</div>
+                    <div style={{ color: F.muted, fontSize: '12px', marginTop: '4px' }}>บันทึกเมื่อ {formatDate(weightHistory[0].recorded_date)} — ยังไม่มีข้อมูลพอที่จะแสดงกราฟ</div>
+                  </div>
+                ) : (
+                  <div className="empty-hint">ยังไม่มีประวัติน้ำหนัก</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Activities tab ─── */}
+          {activeTab === 'activities' && (
+            <div className="card">
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Doc /></div>โน้ต & พฤติกรรม</div></div>
+              <div className="card-body">
+                <div className="activity-tabs">
+                  {['ทั้งหมด', 'นิสัย', 'อาหาร', 'หาหมอ', 'ทั่วไป'].map(t => (
+                    <button key={t} className={`activity-tab-btn ${activeActivityFilter === t ? 'active' : ''}`} onClick={() => setActiveActivityFilter(t)}>{t}</button>
+                  ))}
+                </div>
+                {filteredActivities.length === 0 ? <div className="empty-hint">ยังไม่มีโน้ตในหมวดนี้</div> : (
+                  <table className="activity-table"><tbody>
+                    {filteredActivities.map(a => (
+                      <tr key={a.id}>
+                        <td style={{ width: 36, paddingLeft: 0 }}>
+                          <div className="activity-type-icon" style={{ background: a.activity_type?.includes('อาหาร') ? '#FEF9C3' : a.activity_type?.includes('หมอ') ? '#FEE2E2' : '#F0FDF4' }}>
+                            <img src={a.activity_type?.includes('อาหาร') ? '/icons/icon-feeding.png' : a.activity_type?.includes('หมอ') ? '/icons/icon-vet-care.png' : a.activity_type?.includes('พยาธิ') ? '/icons/icon-vaccine.png' : '/icons/icon-documents.png'} alt="" style={{width:16,height:16,objectFit:'contain'}} />
+                          </div>
+                        </td>
+                        <td><div style={{ fontSize: '12px', fontWeight: 600, color: F.ink }}>{a.title}</div><div style={{ fontSize: '11px', color: F.muted, marginTop: '2px' }}>{a.description}</div></td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap', color: F.muted, fontSize: '11px' }}>{formatDate(a.activity_date)}</td>
+                      </tr>
+                    ))}
+                  </tbody></table>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ─── Timeline tab ─── */}
           {activeTab === 'timeline' && (
             <div className="card">
@@ -855,12 +978,37 @@ export default function PublicPetProfilePage() {
                     {combinedTimeline.map(item => (
                       <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
                         <div className="timeline-date">{formatDate(item.date)}</div>
-                        <div className="timeline-title">{item.title}</div>
-                        {item.description && <div className="timeline-desc">{item.description}</div>}</div>
+                        <div className="timeline-title">{item.title}{item.tag && <span className="timeline-id-badge">{item.tag}</span>}</div>
+                        {item.description && <div className="timeline-desc">{item.description}</div>}
+                        {item.image_url && <div className="timeline-img"><img src={item.image_url} alt="" /></div>}</div>
                     ))}
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ─── Owner info ─── */}
+          {owner && (
+            <div className="owner-footer">
+              <div className="owner-footer-main">
+                <div className="owner-footer-avatar">
+                  {owner.avatar_url
+                    ? <img src={owner.avatar_url} alt="" />
+                    : <span>{(farm?.farm_name || owner.full_name)?.[0] || '?'}</span>}
+                </div>
+                <div className="owner-footer-info">
+                  <div className="owner-footer-label">ข้อมูลเบื้องต้นของ{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}</div>
+                  <div className="owner-footer-name">{farm?.farm_name || owner.full_name || 'ไม่ระบุชื่อ'}</div>
+                  {farm?.farm_name && <div className="owner-cattery"><Icon.Verified /> ฟาร์มที่ยืนยันแล้ว</div>}
+                  {owner.address && <div className="owner-footer-address"><Icon.Home /> {owner.address}</div>}
+                </div>
+              </div>
+              {hasContact && (
+                <button className="contact-btn" onClick={() => setShowContactModal(true)}>
+                  <Icon.Message /> ติดต่อสอบถาม
+                </button>
+              )}
             </div>
           )}
         </div>
