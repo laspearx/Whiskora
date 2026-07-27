@@ -106,16 +106,10 @@ export default function CoverIdentityHeader({
             <Icon.ChevronRight />
           </Link>
         )}
-        {!farm.is_verified && farm.verification_status !== 'pending' && latestVerificationStatus !== 'needs_more_info' && (
-          <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn">
-            <img src="/icons/icon-non-verified.png" alt="" />
-            <div className="fd-verify-btn-text">
-              <div className="fd-verify-btn-title">ยืนยันตัวตนฟาร์ม</div>
-              <div className="fd-verify-btn-sub">รับป้าย Verified เพื่อเพิ่มความน่าเชื่อถือ</div>
-            </div>
-            <Icon.ChevronRight />
-          </Link>
-        )}
+        {/* Standalone "ยืนยันตัวตนฟาร์ม" CTA removed (2026-07-27) — the onboarding checklist's
+            verify-nudge button (FARM_ONBOARDING_TH.verifyNudgeTitle, shown once onboarding is
+            complete) already covers "increase credibility via farm verification"; having both
+            was a duplicate prompt. */}
         {farm.verification_status === 'pending' && latestVerificationStatus !== 'needs_more_info' && (
           <div className="fd-pending-badge">
             <img src="/icons/icon-non-verified.png" alt="" style={{ width: 22, height: 22 }} />

@@ -118,6 +118,8 @@ function FarmDashboardContent() {
 
   const [farm,         setFarm]         = useState<any>(null);
   const [summary,      setSummary]      = useState<FarmDashboardSummary | null>(null);
+  const [summaryError, setSummaryError] = useState(false);
+  const [summaryRetrying, setSummaryRetrying] = useState(false);
   const [latestVerificationStatus, setLatestVerificationStatus] = useState<string | null>(null);
   const [latestVerificationNote, setLatestVerificationNote] = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
@@ -175,8 +177,13 @@ function FarmDashboardContent() {
         setLatestVerificationNote(verificationRes.data?.admin_note ?? null);
       }
       if (summaryRes.error) {
+        // Surfaced as a distinct error banner (see summaryError below), never as a silent
+        // "farm has zero pets" empty state — that misread already happened once in production
+        // when the RPC 404'd because PostgREST's schema cache hadn't picked up the new function.
         console.error('get_farm_dashboard_summary error:', summaryRes.error);
+        setSummaryError(true);
       } else {
+        setSummaryError(false);
         setSummary(summaryRes.data as FarmDashboardSummary);
       }
 
@@ -186,6 +193,22 @@ function FarmDashboardContent() {
     };
     load();
   }, [farmId, router]);
+
+  const retrySummary = async () => {
+    setSummaryRetrying(true);
+    try {
+      const { data, error } = await supabase.rpc('get_farm_dashboard_summary', { p_farm_id: Number(farmId) });
+      if (error) {
+        console.error('get_farm_dashboard_summary retry error:', error);
+        setSummaryError(true);
+      } else {
+        setSummaryError(false);
+        setSummary(data as FarmDashboardSummary);
+      }
+    } finally {
+      setSummaryRetrying(false);
+    }
+  };
 
   /* ── Derived ── */
   const pets = summary?.pets ?? [];
@@ -507,72 +530,97 @@ function FarmDashboardContent() {
           )}
 
           {/* ════════════════════════════════
-              2. Today — Action Center
+              Load-failure banner — never fall through to the "farm has 0 pets" empty state
+              when the summary genuinely failed to load (this happened once in production when
+              the RPC 404'd before PostgREST's schema cache picked it up).
           ════════════════════════════════ */}
-          <TodaysTasks tasks={allTasks} farmId={farmId} />
-
-          {/* ════════════════════════════════
-              Notification Panel — sits top-right on the existing 2-col desktop grid,
-              stacks as a card on mobile
-          ════════════════════════════════ */}
-          {summary && <NotificationRail summary={summary} farmId={farmId} />}
-
-          {/* ════════════════════════════════
-              Quick Actions
-          ════════════════════════════════ */}
-          <QuickActionsBar farmId={farmId} />
-
-          {/* ════════════════════════════════
-              3. Business Overview
-          ════════════════════════════════ */}
-          {pets.length === 0 ? (
-            <section className="fd-sec">
-              <div className="fd-sec-head">
-                <div className="fd-sec-title">
-                  <img src="/icons/icon-home.png" alt="" style={{ width: 32, height: 32 }} />
-                  <h2 className="fd-sec-h">ภาพรวมธุรกิจ</h2>
+          {summaryError && (
+            <section className="fd-sec" style={{ borderColor: F.redBorder, background: F.redSoft }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: F.red }}>โหลดข้อมูลแดชบอร์ดไม่สำเร็จ</div>
+                  <div style={{ fontSize: 11, color: F.inkSoft, marginTop: 2 }}>ไม่ใช่ว่าฟาร์มไม่มีสัตว์ — ระบบโหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่</div>
                 </div>
-              </div>
-              <div className="fd-empty-sm">
-                ยังไม่มีสัตว์ในฟาร์ม —{' '}
-                <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ color: F.pink, fontWeight: 700 }}>เพิ่มสัตว์</Link>
+                <button
+                  onClick={retrySummary}
+                  disabled={summaryRetrying}
+                  style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: F.red, color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: summaryRetrying ? 0.6 : 1 }}
+                >
+                  {summaryRetrying ? 'กำลังลอง...' : 'ลองใหม่'}
+                </button>
               </div>
             </section>
-          ) : summary && (
-            <BusinessOverview
-              farmId={farmId}
-              totalPets={pets.length}
-              openReserve={openReserve}
-              available={available}
-              reserved={reserved}
-              sires={sires}
-              dams={dams}
-              summary={summary}
-            />
           )}
 
-          {/* ════════════════════════════════
-              4. Animals Requiring Attention
-          ════════════════════════════════ */}
-          <AttentionList items={attentionItems} farmId={farmId} />
-
-          {/* ════════════════════════════════
-              5. Breeding Operations
-          ════════════════════════════════ */}
           {summary && (
-            <BreedingOperations
-              farmId={farmId}
-              pets={summary.pets}
-              litters={summary.litters}
-              farmSpecies={farm?.pet_type}
-              littersBorn90d={summary.litters_born_90d}
-            />
-          )}
+            <>
+              {/* ════════════════════════════════
+                  2. Today — Action Center
+              ════════════════════════════════ */}
+              <TodaysTasks tasks={allTasks} farmId={farmId} />
 
-          {/* ════════════════════════════════
-              6. Business Insights
-          ════════════════════════════════ */}
-          <BusinessInsights insights={insights} farmId={farmId} />
+              {/* ════════════════════════════════
+                  Notification Panel — sits top-right on the existing 2-col desktop grid,
+                  stacks as a card on mobile
+              ════════════════════════════════ */}
+              <NotificationRail summary={summary} farmId={farmId} />
+
+              {/* ════════════════════════════════
+                  Quick Actions
+              ════════════════════════════════ */}
+              <QuickActionsBar farmId={farmId} pendingReservations={summary.pending_reservations.length} />
+
+              {/* ════════════════════════════════
+                  3. Business Overview
+              ════════════════════════════════ */}
+              {pets.length === 0 ? (
+                <section className="fd-sec">
+                  <div className="fd-sec-head">
+                    <div className="fd-sec-title">
+                      <img src="/icons/icon-home.png" alt="" style={{ width: 32, height: 32 }} />
+                      <h2 className="fd-sec-h">ภาพรวมธุรกิจ</h2>
+                    </div>
+                  </div>
+                  <div className="fd-empty-sm">
+                    ยังไม่มีสัตว์ในฟาร์ม —{' '}
+                    <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ color: F.pink, fontWeight: 700 }}>เพิ่มสัตว์</Link>
+                  </div>
+                </section>
+              ) : (
+                <BusinessOverview
+                  farmId={farmId}
+                  totalPets={pets.length}
+                  openReserve={openReserve}
+                  available={available}
+                  reserved={reserved}
+                  sires={sires}
+                  dams={dams}
+                  summary={summary}
+                />
+              )}
+
+              {/* ════════════════════════════════
+                  4. Animals Requiring Attention
+              ════════════════════════════════ */}
+              <AttentionList items={attentionItems} farmId={farmId} />
+
+              {/* ════════════════════════════════
+                  5. Breeding Operations
+              ════════════════════════════════ */}
+              <BreedingOperations
+                farmId={farmId}
+                pets={summary.pets}
+                litters={summary.litters}
+                farmSpecies={farm?.pet_type}
+                littersBorn90d={summary.litters_born_90d}
+              />
+
+              {/* ════════════════════════════════
+                  6. Business Insights
+              ════════════════════════════════ */}
+              <BusinessInsights insights={insights} farmId={farmId} />
+            </>
+          )}
 
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}
