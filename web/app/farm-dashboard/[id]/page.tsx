@@ -18,6 +18,9 @@ import OnboardingChecklist, { type OnboardingPhase } from "@/app/components/onbo
 import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
 import { deriveTasks } from "@/lib/farmDashboard/deriveTasks";
 import type { FarmDashboardSummary } from "@/lib/farmDashboard/types";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import TodaysTasks from "@/app/farm-dashboard/[id]/components/TodaysTasks";
+import QuickActionsBar from "@/app/farm-dashboard/[id]/components/QuickActionsBar";
 
 const FARM_ONBOARDING_PHASES: OnboardingPhase[] = [
   { title: FARM_ONBOARDING_TH.phase1Title, keys: ["farm_info", "farm_image", "privacy"] },
@@ -132,7 +135,6 @@ function FarmDashboardContent() {
   const [latestVerificationNote, setLatestVerificationNote] = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
 
-  const [showAllTasks,       setShowAllTasks]       = useState(false);
   const [uploadingCover,  setUploadingCover]  = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const coverInputRef  = useRef<HTMLInputElement>(null);
@@ -196,6 +198,8 @@ function FarmDashboardContent() {
         setSummary(summaryRes.data as FarmDashboardSummary);
       }
 
+      trackEvent({ eventName: 'dashboard_opened', entityType: 'farm', entityId: farmId, farmId: Number(farmId) });
+
       setLoading(false);
     };
     load();
@@ -225,8 +229,6 @@ function FarmDashboardContent() {
 
   /* ── All Tasks (unified, deduped) — derived from the RPC summary, see lib/farmDashboard/deriveTasks ── */
   const allTasks = useMemo(() => summary ? deriveTasks(summary, farmId) : [], [summary, farmId]);
-  const TASK_LIMIT = 4;
-  const visibleTasks = showAllTasks ? allTasks : allTasks.slice(0, TASK_LIMIT);
 
   /* ── Farm Overview stats ── */
   const pregnantDamIds = new Set(activeLitters.map((l: any) => l.dam_id).filter(Boolean));
@@ -633,49 +635,12 @@ function FarmDashboardContent() {
           {/* ════════════════════════════════
               2. Today — Action Center
           ════════════════════════════════ */}
-          <section className="fd-sec">
-            <div className="fd-sec-head">
-              <div className="fd-sec-title">
-                <img src="/icons/icon-calendar.png" alt="" />
-                <h2 className="fd-sec-h">วันนี้</h2>
-                {allTasks.length > 0 && (
-                  <span className="fd-sec-badge" style={{ background: allTasks.some(t => t.urgency === 'overdue') ? F.redSoft : F.amberSoft, color: allTasks.some(t => t.urgency === 'overdue') ? F.red : F.amber }}>
-                    {allTasks.length}
-                  </span>
-                )}
-              </div>
-              {allTasks.length > 0 && (
-                <Link href={`/farm-dashboard/${farmId}/appointments`} className="fd-link-sm">
-                  ดูนัดหมาย
-                </Link>
-              )}
-            </div>
+          <TodaysTasks tasks={allTasks} farmId={farmId} />
 
-            {allTasks.length === 0 ? (
-              <div className="fd-today-empty">
-                <img src="/icons/icon-verified.png" alt="" />
-                วันนี้ไม่มีงานเร่งด่วน ทุกอย่างเรียบร้อย
-              </div>
-            ) : (
-              <>
-                {visibleTasks.map(task => (
-                  <div key={task.id} className={`fd-task-row fd-t-${task.urgency}`}>
-                    <div className="fd-task-icon" style={{ background: task.urgency === 'overdue' ? F.redSoft : task.urgency === 'today' ? F.amberSoft : task.urgency === 'upcoming' ? '#EFF6FF' : '#F9FAFB' }}>
-                      <img src={task.icon} alt="" />
-                    </div>
-                    <div className="fd-task-dot" />
-                    <span className="fd-task-msg">{task.label}</span>
-                    <Link href={task.href} className="fd-task-btn">{task.action}</Link>
-                  </div>
-                ))}
-                {allTasks.length > TASK_LIMIT && (
-                  <button className="fd-show-more" onClick={() => setShowAllTasks(v => !v)}>
-                    {showAllTasks ? `ย่อ ▲` : `ดูทั้งหมด ${allTasks.length} รายการ ▼`}
-                  </button>
-                )}
-              </>
-            )}
-          </section>
+          {/* ════════════════════════════════
+              Quick Actions
+          ════════════════════════════════ */}
+          <QuickActionsBar farmId={farmId} />
 
           {/* ════════════════════════════════
               3. Farm Overview
