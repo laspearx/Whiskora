@@ -18,6 +18,7 @@ import OnboardingChecklist, { type OnboardingPhase } from "@/app/components/onbo
 import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
 import { deriveTasks } from "@/lib/farmDashboard/deriveTasks";
 import { buildAttentionList } from "@/lib/farmDashboard/smartLists";
+import { deriveInsights } from "@/lib/farmDashboard/insights";
 import type { FarmDashboardSummary } from "@/lib/farmDashboard/types";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { PET_STATUS } from "@/lib/constants";
@@ -25,6 +26,9 @@ import TodaysTasks from "@/app/farm-dashboard/[id]/components/TodaysTasks";
 import QuickActionsBar from "@/app/farm-dashboard/[id]/components/QuickActionsBar";
 import BusinessOverview from "@/app/farm-dashboard/[id]/components/BusinessOverview";
 import AttentionList from "@/app/farm-dashboard/[id]/components/AttentionList";
+import BreedingOperations from "@/app/farm-dashboard/[id]/components/BreedingOperations";
+import BusinessInsights from "@/app/farm-dashboard/[id]/components/BusinessInsights";
+import NotificationRail from "@/app/farm-dashboard/[id]/components/NotificationRail";
 
 const FARM_ONBOARDING_PHASES: OnboardingPhase[] = [
   { title: FARM_ONBOARDING_TH.phase1Title, keys: ["farm_info", "farm_image", "privacy"] },
@@ -102,13 +106,6 @@ const STATUS_URGENCY: Record<ActiveLitterStatus, number> = {
   overdue: 0, due_window: 1, near_due: 2, pregnant: 3, waiting_confirmation: 4,
 };
 
-/* ── Helpers ── */
-const fmtDate = (d?: string | null, short = false) => {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('th-TH', short
-    ? { day: 'numeric', month: 'short' }
-    : { day: 'numeric', month: 'short', year: 'numeric' });
-};
 async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200): Promise<Blob> {
   const image = new Image();
   image.src = imageSrc;
@@ -246,6 +243,12 @@ function FarmDashboardContent() {
   const attentionItems = useMemo(
     () => summary ? buildAttentionList(summary.pets, summary.latest_weights) : [],
     [summary]
+  );
+
+  /* ── Business Insights ── */
+  const insights = useMemo(
+    () => summary ? deriveInsights(summary, { sires, dams, activeBreedingPairs: activeLitters.length }, farmId) : [],
+    [summary, sires, dams, activeLitters.length, farmId]
   );
 
   /* ── Finance ── */
@@ -648,6 +651,12 @@ function FarmDashboardContent() {
           <TodaysTasks tasks={allTasks} farmId={farmId} />
 
           {/* ════════════════════════════════
+              Notification Panel — sits top-right on the existing 2-col desktop grid,
+              stacks as a card on mobile
+          ════════════════════════════════ */}
+          {summary && <NotificationRail summary={summary} farmId={farmId} />}
+
+          {/* ════════════════════════════════
               Quick Actions
           ════════════════════════════════ */}
           <QuickActionsBar farmId={farmId} />
@@ -687,148 +696,22 @@ function FarmDashboardContent() {
           <AttentionList items={attentionItems} farmId={farmId} />
 
           {/* ════════════════════════════════
-              4. Active Litters (max 2)
+              5. Breeding Operations
           ════════════════════════════════ */}
-          <section className="fd-sec" id="active-litters">
-            <div className="fd-sec-head">
-              <div className="fd-sec-title">
-                <img src="/icons/icon-breeding.png" alt="" />
-                <h2 className="fd-sec-h">ครอกที่กำลังดำเนินการ</h2>
-              </div>
-              {activeLitters.length > 0 && <span className="fd-sec-badge" style={{ background: F.pinkSoft, color: F.pink }}>{activeLitters.length}</span>}
-            </div>
+          {summary && (
+            <BreedingOperations
+              farmId={farmId}
+              pets={summary.pets}
+              litters={summary.litters}
+              farmSpecies={farm?.pet_type}
+              littersBorn90d={summary.litters_born_90d}
+            />
+          )}
 
-            {activeLitters.length === 0 ? (
-              <div className="fd-empty-sm">ยังไม่มีครอกที่กำลังดำเนิน</div>
-            ) : activeLitters.map(litter => {
-              const species = litter.dam?.species || farm?.pet_type;
-              const si = deriveLitterStatus(litter, species);
-              const { status, daysPregnant, daysUntilWindowStart, daysOverdue, minDueDate, maxDueDate } = si;
-
-              /* ── accent + badge colors ── */
-              const accentColor = status === 'overdue' ? F.red
-                : status === 'due_window' ? F.orange
-                : status === 'near_due'   ? F.amber
-                : status === 'pregnant'   ? F.pink
-                : F.slate;
-              const badgeBg = status === 'overdue' ? F.redSoft
-                : status === 'due_window' ? F.orangeSoft
-                : status === 'near_due'   ? F.amberSoft
-                : status === 'pregnant'   ? F.pinkSoft
-                : F.slateSoft;
-              const badgeLabel = status === 'overdue' ? 'เลยกำหนด'
-                : status === 'due_window' ? 'เฝ้าคลอด'
-                : status === 'near_due'   ? 'ใกล้คลอด'
-                : status === 'pregnant'   ? 'กำลังตั้งท้อง'
-                : 'รอยืนยัน';
-
-              /* ── summary text ── */
-              const mainText = !litter.mating_date ? 'ยังไม่ระบุวันผสม'
-                : `วันที่ ${daysPregnant} ของการตั้งท้อง`;
-              const subText = status === 'waiting_confirmation' ? 'กรุณาระบุวันผสมเพื่อติดตาม'
-                : status === 'pregnant'   ? `เหลืออีกประมาณ ${daysUntilWindowStart} วัน ถึงช่วงคาดคลอด`
-                : status === 'near_due'   ? `อีก ${daysUntilWindowStart} วัน ถึงช่วงคาดคลอด`
-                : status === 'due_window' ? 'อยู่ในช่วงเฝ้าคลอด'
-                : daysOverdue > 0        ? `เลยช่วงคาดการณ์ ${daysOverdue} วัน — ควรตรวจสอบ`
-                : 'เลยช่วงคาดการณ์';
-
-              /* ── date range display ── */
-              const datesText = litter.mating_date && minDueDate && maxDueDate
-                ? `ผสม ${fmtDate(litter.mating_date, true)} · คาดคลอด ${fmtDate(minDueDate.toISOString(), true)}–${fmtDate(maxDueDate.toISOString(), true)}`
-                : litter.mating_date
-                ? `ผสม ${fmtDate(litter.mating_date, true)}`
-                : null;
-
-              /* ── stage timeline ── */
-              const STAGES = ['ผสมแล้ว', 'ยืนยันตั้งท้อง', 'ใกล้คลอด', 'คลอดแล้ว'];
-              const currentStage = status === 'waiting_confirmation' ? 0
-                : status === 'pregnant' ? 1
-                : 2; // near_due / due_window / overdue all at stage 2
-
-              /* ── primary action ── */
-              const primaryLabel = status === 'waiting_confirmation' ? 'บันทึกผลตรวจ'
-                : (status === 'pregnant' || status === 'near_due') ? 'ดูการติดตาม'
-                : 'บันทึกคลอด';
-              const primaryHref = status === 'waiting_confirmation'
-                ? `/farm-dashboard/${farmId}/litters/${litter.id}/edit`
-                : (status === 'pregnant' || status === 'near_due')
-                ? `/farm-dashboard/${farmId}/litters/${litter.id}`
-                : `/farm-dashboard/${farmId}/litters/${litter.id}/birth`;
-
-              return (
-                <div key={litter.id} className="ptc">
-                  <div className="ptc-accent" style={{ background: accentColor }} />
-                  <div className="ptc-inner">
-
-                    {/* Header */}
-                    <div className="ptc-header">
-                      <div className="ptc-code">ครอก {litter.litter_code || 'TBA'}</div>
-                      <span className="ptc-badge" style={{ background: badgeBg, color: accentColor }}>{badgeLabel}</span>
-                    </div>
-
-                    {/* Parent pair */}
-                    <div className="ptc-parents">
-                      <div className="ptc-avatars">
-                        <div className="ptc-av ptc-av-sire">
-                          {litter.sire?.image_url ? <img src={litter.sire.image_url} alt="" /> : <Icon.Male />}
-                        </div>
-                        <div className="ptc-av ptc-av-dam">
-                          {litter.dam?.image_url ? <img src={litter.dam.image_url} alt="" /> : <Icon.Female />}
-                        </div>
-                      </div>
-                      <span className="ptc-pair-name">{litter.sire?.name || '?'} × {litter.dam?.name || '?'}</span>
-                    </div>
-
-                    <div className="ptc-divider" />
-
-                    {/* Pregnancy summary */}
-                    {status === 'waiting_confirmation' ? (
-                      <div className="ptc-missing">
-                        <span className="ptc-missing-text">ข้อมูลการผสมยังไม่ครบ</span>
-                        <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}/edit`} className="ptc-missing-btn">แก้ไขข้อมูล</Link>
-                      </div>
-                    ) : (
-                      <div className="ptc-summary">
-                        <div className="ptc-main">{mainText}</div>
-                        <div className="ptc-sub" style={{ color: status === 'overdue' ? F.red : status === 'due_window' ? F.orange : status === 'near_due' ? F.amber : F.muted }}>{subText}</div>
-                        {datesText && <div className="ptc-dates">{datesText}</div>}
-                      </div>
-                    )}
-
-                    {/* Stage timeline */}
-                    <div className="ptc-timeline" style={{ marginBottom: 12 }}>
-                      {STAGES.map((label, i) => {
-                        const isDone    = i < currentStage;
-                        const isCurrent = i === currentStage;
-                        const dotColor  = isDone ? F.green : isCurrent ? accentColor : F.lineMid;
-                        const lineColor = isDone ? F.green : F.lineMid;
-                        const labelColor = isDone ? F.green : isCurrent ? accentColor : F.muted;
-                        return (
-                          <div key={label} className="ptc-stage">
-                            <div className="ptc-stage-row">
-                              <div className="ptc-stage-dot" style={{ borderColor: dotColor, background: isDone ? F.green : isCurrent ? accentColor : 'white', color: 'white' }}>
-                                {isDone && <Icon.Check />}
-                              </div>
-                              {i < STAGES.length - 1 && <div className="ptc-stage-line" style={{ background: lineColor }} />}
-                            </div>
-                            <div className="ptc-stage-label" style={{ color: labelColor }}>{label}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="ptc-actions">
-                      <Link href={`/farm-dashboard/${farmId}/litters/${litter.id}`} className="ptc-btn-ghost">ดูรายละเอียด</Link>
-                      <Link href={primaryHref} className="ptc-btn-primary" style={{ background: accentColor }}>{primaryLabel}</Link>
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-
+          {/* ════════════════════════════════
+              6. Business Insights
+          ════════════════════════════════ */}
+          <BusinessInsights insights={insights} farmId={farmId} />
 
         </div>{/* end fd-body */}
       </div>{/* end fd-page */}
