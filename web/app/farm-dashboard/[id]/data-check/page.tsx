@@ -6,6 +6,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import { PET_STATUS } from '@/lib/constants';
+import { PET_COMPLETENESS_CHECKS } from '@/lib/petDataCompleteness';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
@@ -67,9 +68,9 @@ export default function DataCheckPage() {
     if (ref?.current) setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   }, [isLoading, focus]);
 
-  const noStatus = pets.filter(p => !p.status);
-  const noPhoto = pets.filter(p => !p.image_url);
-  const noBirth = pets.filter(p => !p.birth_date);
+  const noStatus = pets.filter(PET_COMPLETENESS_CHECKS.noStatus);
+  const noPhoto = pets.filter(PET_COMPLETENESS_CHECKS.noPhoto);
+  const noBirth = pets.filter(PET_COMPLETENESS_CHECKS.noBirth);
   const totalMissing = noStatus.length + noPhoto.length + noBirth.length;
 
   const saveStatus = async (pet: any) => {

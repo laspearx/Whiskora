@@ -16,6 +16,8 @@ import { trackOnboardingEvent } from "@/app/components/onboarding/events";
 import WelcomeOnboardingCard from "@/app/components/onboarding/WelcomeOnboardingCard";
 import OnboardingChecklist, { type OnboardingPhase } from "@/app/components/onboarding/OnboardingChecklist";
 import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
+import { deriveTasks } from "@/lib/farmDashboard/deriveTasks";
+import type { FarmDashboardSummary } from "@/lib/farmDashboard/types";
 
 const FARM_ONBOARDING_PHASES: OnboardingPhase[] = [
   { title: FARM_ONBOARDING_TH.phase1Title, keys: ["farm_info", "farm_image", "privacy"] },
@@ -100,20 +102,6 @@ const fmtDate = (d?: string | null, short = false) => {
     ? { day: 'numeric', month: 'short' }
     : { day: 'numeric', month: 'short', year: 'numeric' });
 };
-const daysDiff = (dateStr: string) => {
-  const d = new Date(dateStr); d.setHours(0, 0, 0, 0);
-  const t = new Date();        t.setHours(0, 0, 0, 0);
-  return Math.ceil((d.getTime() - t.getTime()) / 86400000);
-};
-interface Task {
-  id: string;
-  urgency: 'overdue' | 'today' | 'upcoming' | 'info';
-  label: string;
-  action: string;
-  href: string;
-  icon: string;
-}
-
 async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200): Promise<Blob> {
   const image = new Image();
   image.src = imageSrc;
@@ -139,11 +127,7 @@ function FarmDashboardContent() {
   const fromPage = searchParams.get("from") || "profile";
 
   const [farm,         setFarm]         = useState<any>(null);
-  const [pets,         setPets]         = useState<any[]>([]);
-  const [litters,      setLitters]      = useState<any[]>([]);
-  const [vaccines,     setVaccines]     = useState<any[]>([]);
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [pendingReservations, setPendingReservations] = useState(0);
+  const [summary,      setSummary]      = useState<FarmDashboardSummary | null>(null);
   const [latestVerificationStatus, setLatestVerificationStatus] = useState<string | null>(null);
   const [latestVerificationNote, setLatestVerificationNote] = useState<string | null>(null);
   const [loading,      setLoading]      = useState(true);
@@ -186,47 +170,31 @@ function FarmDashboardContent() {
       // 'needs_more_info' by an admin (only farm_verifications.status changes) — fetch the real
       // latest status directly so the owner doesn't just see a generic "we're reviewing" badge
       // with no way back to /verify.
-      if (!farmData.is_verified) {
-        const { data: latestReq } = await supabase
-          .from('farm_verifications')
-          .select('status, admin_note')
-          .eq('farm_id', farmId)
-          .eq('user_id', session.user.id)
-          .order('submitted_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        setLatestVerificationStatus(latestReq?.status ?? null);
-        setLatestVerificationNote(latestReq?.admin_note ?? null);
-      }
-
-      const [petsRes, littersRes] = await Promise.all([
-        supabase.from('pets').select('*').eq('farm_id', farmId),
-        supabase.from('litters')
-          .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url,species)')
-          .eq('farm_id', farmId).order('mating_date', { ascending: false }),
+      // Runs in parallel with the dashboard summary RPC — both only depend on farmData, which is
+      // already resolved above.
+      const [verificationRes, summaryRes] = await Promise.all([
+        !farmData.is_verified
+          ? supabase
+              .from('farm_verifications')
+              .select('status, admin_note')
+              .eq('farm_id', farmId)
+              .eq('user_id', session.user.id)
+              .order('submitted_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase.rpc('get_farm_dashboard_summary', { p_farm_id: Number(farmId) }),
       ]);
 
-      const loadedPets = petsRes.data || [];
-      setPets(loadedPets);
-      setLitters(littersRes.data || []);
-
-      const petIds = loadedPets.map((p: any) => p.id);
-      if (petIds.length > 0) {
-        const vacRes = await supabase
-          .from('vaccines').select('id,pet_id,vaccine_name,next_due')
-          .in('pet_id', petIds).order('next_due');
-        setVaccines(vacRes.data || []);
-
-        const { count } = await supabase
-          .from('pet_reservations').select('id', { count: 'exact', head: true })
-          .in('pet_id', petIds).eq('status', 'pending');
-        setPendingReservations(count || 0);
+      if (!farmData.is_verified) {
+        setLatestVerificationStatus(verificationRes.data?.status ?? null);
+        setLatestVerificationNote(verificationRes.data?.admin_note ?? null);
       }
-
-      const apptRes = await supabase.from('appointments')
-        .select('id,title,appt_date,appt_type').eq('farm_id', farmId)
-        .eq('is_done', false).order('appt_date');
-      setAppointments(apptRes.data || []);
+      if (summaryRes.error) {
+        console.error('get_farm_dashboard_summary error:', summaryRes.error);
+      } else {
+        setSummary(summaryRes.data as FarmDashboardSummary);
+      }
 
       setLoading(false);
     };
@@ -234,7 +202,8 @@ function FarmDashboardContent() {
   }, [farmId, router]);
 
   /* ── Derived ── */
-  const petMap = Object.fromEntries(pets.map(p => [p.id, p]));
+  const pets = summary?.pets ?? [];
+  const litters = summary?.litters ?? [];
   const activeLitters = litters
     .filter(l => l.status === 'รอคลอด')
     .sort((a, b) => {
@@ -242,7 +211,6 @@ function FarmDashboardContent() {
       const sb = deriveLitterStatus(b, b.dam?.species || farm?.pet_type);
       return STATUS_URGENCY[sa.status] - STATUS_URGENCY[sb.status];
     });
-  const bornLitters = litters.filter(l => l.status !== 'รอคลอด');
 
   /* Profile completion */
   const completionItems = [
@@ -255,73 +223,8 @@ function FarmDashboardContent() {
   ];
   const farmCompletion = Math.min(100, 20 + completionItems.reduce((s, i) => s + (i.done ? i.pts : 0), 0));
 
-  /* ── All Tasks (unified, deduped) ── */
-  const allTasks: Task[] = [];
-
-  activeLitters.forEach(l => {
-    if (!l.expected_birth_date) return;
-    const diff = daysDiff(l.expected_birth_date);
-    const code = l.litter_code || 'TBA';
-    if (diff < 0) {
-      allTasks.push({ id: `lb-${l.id}`, urgency: 'overdue', label: `ครอก ${code} เลยกำหนดคลอด ${Math.abs(diff)} วัน`, action: 'บันทึกคลอด', href: `/farm-dashboard/${farmId}/litters/${l.id}/birth`, icon: '/icons/icon-breeding.png' });
-    } else if (diff === 0) {
-      allTasks.push({ id: `lb-${l.id}`, urgency: 'today', label: `ครอก ${code} — คาดคลอดวันนี้`, action: 'บันทึกคลอด', href: `/farm-dashboard/${farmId}/litters/${l.id}/birth`, icon: '/icons/icon-breeding.png' });
-    } else if (diff <= 5) {
-      allTasks.push({ id: `lb-${l.id}`, urgency: 'upcoming', label: `ครอก ${code} — คาดคลอดใน ${diff} วัน`, action: 'ดู', href: `/farm-dashboard/${farmId}/litters/${l.id}`, icon: '/icons/icon-breeding.png' });
-    }
-  });
-
-  vaccines.forEach(v => {
-    if (!v.next_due) return;
-    const diff = daysDiff(v.next_due);
-    const pn   = petMap[v.pet_id]?.name || 'สัตว์';
-    if (diff < 0) {
-      allTasks.push({ id: `vax-${v.id}`, urgency: 'overdue', label: `${pn} — วัคซีน ${v.vaccine_name} เลยกำหนด ${Math.abs(diff)} วัน`, action: 'จัดการ', href: `/pets/${v.pet_id}/vaccines`, icon: '/icons/icon-health.png' });
-    } else if (diff === 0) {
-      allTasks.push({ id: `vax-${v.id}`, urgency: 'today', label: `${pn} — วัคซีน ${v.vaccine_name} ครบกำหนดวันนี้`, action: 'บันทึก', href: `/pets/${v.pet_id}/vaccines/create`, icon: '/icons/icon-health.png' });
-    } else if (diff <= 7) {
-      allTasks.push({ id: `vax-${v.id}`, urgency: 'upcoming', label: `${pn} — วัคซีน ${v.vaccine_name} อีก ${diff} วัน`, action: 'ดู', href: `/pets/${v.pet_id}/vaccines`, icon: '/icons/icon-health.png' });
-    }
-  });
-
-  if (pendingReservations > 0) {
-    allTasks.push({ id: 'pending-reservations', urgency: 'today', label: `มีคนจองสัตว์ ${pendingReservations} ตัว รอยืนยัน`, action: 'ตรวจสอบ', href: `/farm-dashboard/${farmId}/reservations`, icon: '/icons/icon-calendar.png' });
-  }
-
-  appointments.forEach(a => {
-    if (!a.appt_date) return;
-    const diff = daysDiff(a.appt_date);
-    if (diff < 0) {
-      allTasks.push({ id: `ap-${a.id}`, urgency: 'overdue', label: `นัดหมาย: ${a.title} (เลยกำหนด ${Math.abs(diff)} วัน)`, action: 'ดู', href: `/farm-dashboard/${farmId}/appointments`, icon: '/icons/icon-calendar.png' });
-    } else if (diff === 0) {
-      allTasks.push({ id: `ap-${a.id}`, urgency: 'today', label: `นัดหมาย: ${a.title} — วันนี้`, action: 'ดู', href: `/farm-dashboard/${farmId}/appointments`, icon: '/icons/icon-calendar.png' });
-    } else if (diff <= 7) {
-      allTasks.push({ id: `ap-${a.id}`, urgency: 'upcoming', label: `นัดหมาย: ${a.title} — ${fmtDate(a.appt_date, true)}`, action: 'ดู', href: `/farm-dashboard/${farmId}/appointments`, icon: '/icons/icon-calendar.png' });
-    }
-  });
-
-  bornLitters.forEach(l => {
-    const kittens = pets.filter(p => p.litter_id === l.id);
-    if (kittens.length === 0 && (!l.puppy_count || l.puppy_count === 0)) {
-      allTasks.push({ id: `nk-${l.id}`, urgency: 'today', label: `ครอก ${l.litter_code || 'TBA'} คลอดแล้วแต่ยังไม่บันทึกลูกสัตว์`, action: 'บันทึก', href: `/farm-dashboard/${farmId}/litters/${l.id}`, icon: '/icons/icon-feeding.png' });
-    }
-  });
-
-  const noBirth = pets.filter(p => !p.birth_date).length;
-  if (noBirth > 0) {
-    allTasks.push({ id: 'no-birth', urgency: 'info', label: `สัตว์ ${noBirth} ตัวยังไม่มีวันเกิด`, action: 'แก้ไข', href: `/farm-dashboard/${farmId}/data-check?focus=birth`, icon: '/icons/icon-my-pets.png' });
-  }
-  const noImage = pets.filter(p => !p.image_url).length;
-  if (noImage > 0) {
-    allTasks.push({ id: 'no-img', urgency: 'info', label: `สัตว์ ${noImage} ตัวยังไม่มีรูปภาพ`, action: 'เพิ่มรูป', href: `/farm-dashboard/${farmId}/data-check?focus=photo`, icon: '/icons/icon-my-pets.png' });
-  }
-  const noStatus = pets.filter(p => !p.status).length;
-  if (noStatus > 0) {
-    allTasks.push({ id: 'no-status', urgency: 'info', label: `สัตว์ ${noStatus} ตัวยังไม่ใส่สถานะในฟาร์ม`, action: 'อัปเดตสถานะ', href: `/farm-dashboard/${farmId}/data-check?focus=status`, icon: '/icons/icon-my-pets.png' });
-  }
-
-  const urgOrd = { overdue: 0, today: 1, upcoming: 2, info: 3 } as const;
-  allTasks.sort((a, b) => urgOrd[a.urgency] - urgOrd[b.urgency]);
+  /* ── All Tasks (unified, deduped) — derived from the RPC summary, see lib/farmDashboard/deriveTasks ── */
+  const allTasks = useMemo(() => summary ? deriveTasks(summary, farmId) : [], [summary, farmId]);
   const TASK_LIMIT = 4;
   const visibleTasks = showAllTasks ? allTasks : allTasks.slice(0, TASK_LIMIT);
 
@@ -330,7 +233,7 @@ function FarmDashboardContent() {
   const sires    = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'male' || p.gender === 'ตัวผู้')).length;
   const dams     = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'female' || p.gender === 'ตัวเมีย') && !pregnantDamIds.has(p.id)).length;
   const pregnant = pregnantDamIds.size;
-  const forSale  = pets.filter(p => ['เด็ก', 'ยังไม่เปิดจอง', 'เปิดจอง', 'พร้อมย้ายบ้าน'].includes(p.status)).length;
+  const forSale  = pets.filter(p => !!p.status && ['เด็ก', 'ยังไม่เปิดจอง', 'เปิดจอง', 'พร้อมย้ายบ้าน'].includes(p.status)).length;
   const reserved = pets.filter(p => p.status === 'ติดจอง').length;
 
   /* ── Finance ── */

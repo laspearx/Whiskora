@@ -1,4 +1,5 @@
 import { PET_STATUS } from "@/lib/constants";
+import { scorePetCompleteness } from "@/lib/petDataCompleteness";
 import type { OnboardingStep } from "./types";
 
 export interface FarmStepsInput {
@@ -44,15 +45,7 @@ export function deriveFarmSteps(input: FarmStepsInput): OnboardingStep[] {
     (p) => p.status === PET_STATUS.OPEN_RESERVE || p.status === PET_STATUS.AVAILABLE
   ).length;
 
-  const totalFields = input.pets.length * 3;
-  const missingFields = input.pets.reduce((sum, p) => {
-    let missing = 0;
-    if (!p.status) missing++;
-    if (!p.image_url) missing++;
-    if (!p.birth_date) missing++;
-    return sum + missing;
-  }, 0);
-  const completenessRatio = totalFields > 0 ? (totalFields - missingFields) / totalFields : 0;
+  const completenessRatio = scorePetCompleteness(input.pets).ratio;
   const dataCheckPassed = hasAnyPet && completenessRatio >= DATA_CHECK_PASS_RATIO;
 
   const litterSkipped = input.skippedSteps.includes("litter");

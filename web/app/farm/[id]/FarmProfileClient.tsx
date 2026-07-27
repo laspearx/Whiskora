@@ -15,6 +15,7 @@ import { isForSale, type Locale } from '@/lib/publicProfile/statusLabels';
 import { safeTelHref } from '@/lib/publicProfile/safeUrl';
 import PublicPetCard, { type PublicPetCardData } from '@/app/components/public/PublicPetCard';
 import ContactModal, { type ContactChannel } from '@/app/components/public/ContactModal';
+import { trackEvent } from '@/lib/analytics/trackEvent';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -80,6 +81,10 @@ export default function PublicFarmProfile() {
         if (farmError) throw farmError;
         setFarm(farmData);
 
+        // ทีมฟาร์มเปิดดูโปรไฟล์ของตัวเอง ไม่ควรถูกนับเป็น "Profile View" ทางธุรกิจ —
+        // ตัวแปรนี้ถูกตั้งค่าใน IIFE ด้านล่าง แล้วใช้ตัดสินใจว่าจะยิง trackEvent หรือไม่ หลัง Promise.all
+        let viewerIsTeamMember = false;
+
         // ─── สามงานนี้เป็นอิสระต่อกัน (ต้องการแค่ farmData ที่มีแล้ว) ยิงพร้อมกัน ───
         await Promise.all([
           (async () => {
@@ -98,6 +103,7 @@ export default function PublicFarmProfile() {
               .maybeSingle();
 
             const isTeamMember = !!wsRow || farmData.user_id === uid;
+            viewerIsTeamMember = isTeamMember;
             if (isTeamMember) {
               setIsOwner(true);
               // ทีมฟาร์มเปิดดูโปรไฟล์สาธารณะของฟาร์มตัวเอง — นับเป็นขั้นตอน onboarding "ดูและแชร์โปรไฟล์ฟาร์ม"
@@ -123,6 +129,18 @@ export default function PublicFarmProfile() {
             .eq('farm_id', farmId).eq('is_public', true)
             .then(({ data: petsData }) => { if (petsData) setPets(petsData); }),
         ]);
+
+        // "Profile Views" business metric — real view tracking, excludes the farm's own team
+        // checking their own page. Only new dashboard-scoped analytics event added by this change.
+        if (!viewerIsTeamMember) {
+          trackEvent({
+            eventName: 'farm_profile_viewed',
+            entityType: 'farm',
+            entityId: farmId,
+            farmId: Number(farmId),
+            source: 'farm_profile',
+          });
+        }
       } catch (error) {
         console.error("Error fetching farm:", error);
         alert("ไม่พบข้อมูลฟาร์มนี้ครับ");

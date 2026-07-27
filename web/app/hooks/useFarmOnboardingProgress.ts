@@ -28,6 +28,10 @@ export function useFarmOnboardingProgress(farmId: number | null) {
       const uid = session?.user.id ?? null;
       setUserId(uid);
 
+      // pets/litters here overlap what get_farm_dashboard_summary() also fetches for the
+      // farm-dashboard page — deliberate, not a bug to "fix" into a shared fetch: this hook
+      // also *writes* progress state (dismiss/collapse/skip/complete) with its own lifecycle,
+      // independent of the dashboard's read-only summary refresh cadence.
       const [farmRes, petsRes, vsRes, littersRes, progressRow0] = await Promise.all([
         supabase
           .from("farms")
