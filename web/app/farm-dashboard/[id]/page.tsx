@@ -337,7 +337,7 @@ function FarmDashboardContent() {
         .fd-prog-fill  { height:100%; border-radius:10px; background:${F.pink}; transition:width 1s ease; }
         .fd-prog-text  { font-size:11px; font-weight:600; color:${F.pink}; white-space:nowrap; }
 
-        .fd-verify-btn { display:flex; align-items:center; gap:8px; margin:12px 12px 0; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; }
+        .fd-verify-btn { display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:12px; background:${F.pinkSoft}; border:1.5px dashed ${F.pinkBorder}; text-decoration:none; cursor:pointer; transition:all .15s; box-sizing:border-box; }
         .fd-verify-btn:hover { background:#fde7ef; border-color:${F.pink}; }
         .fd-verify-btn img { width:28px; height:28px; object-fit:contain; }
         .fd-verify-btn-text { flex:1; }
