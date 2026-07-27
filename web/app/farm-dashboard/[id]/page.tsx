@@ -17,10 +17,14 @@ import WelcomeOnboardingCard from "@/app/components/onboarding/WelcomeOnboarding
 import OnboardingChecklist, { type OnboardingPhase } from "@/app/components/onboarding/OnboardingChecklist";
 import OnboardingSuccessCard from "@/app/components/onboarding/OnboardingSuccessCard";
 import { deriveTasks } from "@/lib/farmDashboard/deriveTasks";
+import { buildAttentionList } from "@/lib/farmDashboard/smartLists";
 import type { FarmDashboardSummary } from "@/lib/farmDashboard/types";
 import { trackEvent } from "@/lib/analytics/trackEvent";
+import { PET_STATUS } from "@/lib/constants";
 import TodaysTasks from "@/app/farm-dashboard/[id]/components/TodaysTasks";
 import QuickActionsBar from "@/app/farm-dashboard/[id]/components/QuickActionsBar";
+import BusinessOverview from "@/app/farm-dashboard/[id]/components/BusinessOverview";
+import AttentionList from "@/app/farm-dashboard/[id]/components/AttentionList";
 
 const FARM_ONBOARDING_PHASES: OnboardingPhase[] = [
   { title: FARM_ONBOARDING_TH.phase1Title, keys: ["farm_info", "farm_image", "privacy"] },
@@ -234,9 +238,15 @@ function FarmDashboardContent() {
   const pregnantDamIds = new Set(activeLitters.map((l: any) => l.dam_id).filter(Boolean));
   const sires    = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'male' || p.gender === 'ตัวผู้')).length;
   const dams     = pets.filter(p => p.status === 'พ่อพันธุ์ / แม่พันธุ์' && (p.gender === 'female' || p.gender === 'ตัวเมีย') && !pregnantDamIds.has(p.id)).length;
-  const pregnant = pregnantDamIds.size;
-  const forSale  = pets.filter(p => !!p.status && ['เด็ก', 'ยังไม่เปิดจอง', 'เปิดจอง', 'พร้อมย้ายบ้าน'].includes(p.status)).length;
   const reserved = pets.filter(p => p.status === 'ติดจอง').length;
+  const openReserve = pets.filter(p => p.status === PET_STATUS.OPEN_RESERVE).length;
+  const available    = pets.filter(p => p.status === PET_STATUS.AVAILABLE).length;
+
+  /* ── Animals Requiring Attention ── */
+  const attentionItems = useMemo(
+    () => summary ? buildAttentionList(summary.pets, summary.latest_weights) : [],
+    [summary]
+  );
 
   /* ── Finance ── */
   /* ── Pregnancy progress ── */
@@ -643,47 +653,38 @@ function FarmDashboardContent() {
           <QuickActionsBar farmId={farmId} />
 
           {/* ════════════════════════════════
-              3. Farm Overview
+              3. Business Overview
           ════════════════════════════════ */}
-          <section className="fd-sec">
-            <div className="fd-sec-head">
-              <div className="fd-sec-title">
-                <img src="/icons/icon-home.png" alt="" style={{ width: 32, height: 32 }} />
-                <h2 className="fd-sec-h">ภาพรวมฟาร์ม</h2>
+          {pets.length === 0 ? (
+            <section className="fd-sec">
+              <div className="fd-sec-head">
+                <div className="fd-sec-title">
+                  <img src="/icons/icon-home.png" alt="" style={{ width: 32, height: 32 }} />
+                  <h2 className="fd-sec-h">ภาพรวมธุรกิจ</h2>
+                </div>
               </div>
-              <Link href={`/farm-dashboard/${farmId}/pets`} className="fd-link-sm">
-                ดูทั้งหมด
-              </Link>
-            </div>
-
-            {pets.length === 0 ? (
               <div className="fd-empty-sm">
                 ยังไม่มีสัตว์ในฟาร์ม —{' '}
                 <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ color: F.pink, fontWeight: 700 }}>เพิ่มสัตว์</Link>
               </div>
-            ) : (
-              <div className="fd-ov-grid">
-                {[
-                  { label: 'พ่อพันธุ์',       count: sires,    color: '#2563EB', bg: '#EFF6FF',   icon: '/icons/icon-men.png',         href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}&gender=male` },
-                  { label: 'แม่พันธุ์',       count: dams,     color: F.pink,    bg: F.pinkSoft,  icon: '/icons/icon-women.png',       href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('พ่อพันธุ์ / แม่พันธุ์')}&gender=female` },
-                  { label: 'กำลังตั้งท้อง', count: pregnant, color: F.purple,  bg: '#F3E8FF',   icon: '/icons/icon-foster-home.png', href: `/farm-dashboard/${farmId}/pets?group=pregnant` },
-                  { label: 'พร้อมขาย',        count: forSale,  color: F.amber,   bg: F.amberSoft, icon: '/icons/icon-price-tag.png',   href: `/farm-dashboard/${farmId}/pets?group=forsale` },
-                  { label: 'รอส่งมอบ',        count: reserved, color: F.green,   bg: F.greenSoft, icon: '/icons/icon-pet-carrier.png', href: `/farm-dashboard/${farmId}/pets?status=${encodeURIComponent('ติดจอง')}` },
-                ].map(stat => (
-                  <Link
-                    key={stat.label}
-                    href={stat.href}
-                    className="fd-ov-stat"
-                    style={{ background: stat.bg }}
-                  >
-                    <img className="fd-ov-icon" src={stat.icon} alt="" />
-                    <div className="fd-ov-count" style={{ color: stat.color }}>{stat.count}</div>
-                    <div className="fd-ov-label">{stat.label}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
+            </section>
+          ) : summary && (
+            <BusinessOverview
+              farmId={farmId}
+              totalPets={pets.length}
+              openReserve={openReserve}
+              available={available}
+              reserved={reserved}
+              sires={sires}
+              dams={dams}
+              summary={summary}
+            />
+          )}
+
+          {/* ════════════════════════════════
+              4. Animals Requiring Attention
+          ════════════════════════════════ */}
+          <AttentionList items={attentionItems} farmId={farmId} />
 
           {/* ════════════════════════════════
               4. Active Litters (max 2)

@@ -12,6 +12,8 @@ export interface DashboardPet {
   price: number | null;
   sire_id: number | null;
   dam_id: number | null;
+  is_public: boolean | null;
+  health_notes: string | null;
 }
 
 export interface DashboardLitter {
@@ -78,6 +80,8 @@ export interface FarmDashboardSummary {
   contact_leads_prior_30d: number;
   reservations_30d: number;
   reservations_prior_30d: number;
+  transfers_30d: number;
+  transfers_prior_30d: number;
   litters_born_90d: number;
   analytics_since: string | null;
   profile_views_30d: number;
