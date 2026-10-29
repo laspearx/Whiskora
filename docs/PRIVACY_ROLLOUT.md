@@ -1,6 +1,6 @@
 # Privacy fix — staging & production rollout
 
-Status 2026-10-30: **nothing applied anywhere.** Migrations validated only on a local
+Status 2026-10-30: **nothing applied anywhere.** Supabase MCP connected; production inventory done read-only (see overview → Known gaps). Org LaspearX is on the free plan with a single project (production) and no branches. Migrations validated only on a local
 synthetic Postgres (`supabase/tests/`, 64/64 checks + concurrency). The production leak
 (anon can read `profiles.email/phone/address` and `pets` health columns) is still open.
 

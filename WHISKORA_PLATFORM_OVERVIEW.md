@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30
+**Last updated:** 2026-10-30 (DB inventory)
 
 ## What Whiskora is
 
@@ -131,7 +131,12 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
 - Stray `#FDF6F8` background color still present in 13 files (see above).
-- **Privacy (DB) — STILL OPEN in production**: anon can read `profiles.email/phone/address` and `pets` health columns directly via REST (confirmed 2026-10-29). Fix = `supabase/migrations/20261029100000_private_columns.sql`, **not applied anywhere** (no Supabase access / no staging as of 2026-10-30). Validated only on a local synthetic Postgres (`supabase/tests/`). Rollout plan and what the owner must provide: `docs/PRIVACY_ROLLOUT.md`. Not checked: RLS of vaccines / activities / weights / documents for signed-in unrelated users.
+- **Privacy (DB) — STILL OPEN in production** (read-only inventory 2026-10-30 via Supabase MCP; project `vhudldcizmbpujedojei` is the only project = production, free plan, no staging/branches):
+  - anon + authenticated have table-level ALL on `profiles`/`pets`; `profiles` RLS SELECT `using (true)` → email/phone/address readable by anyone; `pets` health columns readable on public/available pets.
+  - **Role self-escalation**: `profiles` UPDATE policy is row-only and `role` is writable → any user can make themselves admin and then call `admin_get_users` (all emails). Not exploited; 1 admin account exists — owner should confirm it is theirs.
+  - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). **Not applied.** Passes 63 synthetic checks on a stub mirroring production types/trigger/ACLs; needs a real staging run.
+  - Fine as is: vaccines/activities/weights/documents SELECT via `viewer_can_see()`; buckets `pet-documents`, `verification-docs` are private (so `getPublicUrl` links for verification docs do not open — admin viewing bug).
+  - Also open (separate): `pet_reservations` UPDATE policy allows any farm-team member (incl. staff/viewer) and co-owners; default privileges grant ALL on new tables to anon; leaked-password protection off; 7 functions without `search_path`.
 - Verification documents are uploaded with `getPublicUrl` on bucket `verification-docs` — confirm the bucket is private.
 - Knowledge hub (`pet-knowledge/articles.ts`) has summaries only — no full-article route yet; cards say so.
 - Terms of Service page is a placeholder ("อยู่ระหว่างจัดทำ") until real legal text exists.
@@ -143,6 +148,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Reservation migration no longer adds a converted-trigger (existing `sync_pet_owner_on_transfer_accept` already does it when `reservation_id` is set).
 - Migrations split: privacy `20261029100000` (apply first, independent) and reservation `20261029200000`; both idempotent with rollback; local synthetic tests in `supabase/tests/` (64/64 + concurrency) — not real staging.
 - Fixed: pet edit could overwrite health data with blanks when `get_pet_health` failed.
 - Build: npm only, `package-lock.json` synced, pnpm files removed, Vercel `npm ci`; html-to-image declared in web; clean-checkout install + tsc + build verified.
