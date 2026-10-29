@@ -63,7 +63,7 @@ export default function FarmPetsPage() {
         if (!session) { router.push(`/login?redirect=${encodeURIComponent(`/farm-dashboard/${farmId}/pets`)}`); return; }
 
         // สมาชิกทุกบทบาทดูรายชื่อสัตว์ในฟาร์มได้ (layout ตรวจสิทธิ์แล้ว, RLS คุมการอ่านจริง)
-        let query = supabase.from("pets").select("*").eq("farm_id", farmId).order("created_at", { ascending: false });
+        let query = supabase.from("pets").select(PET_COLUMNS).eq("farm_id", farmId).order("created_at", { ascending: false });
 
         if (groupFilter === 'pregnant') {
           const { data: littersData } = await supabase

@@ -38,7 +38,7 @@ export default function MyPetsPage() {
 
       const [{ data: farms }, { data: pets }] = await Promise.all([
         supabase.from("farms").select("id, farm_name").eq("user_id", uid),
-        supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+        supabase.from("pets").select(PET_COLUMNS).eq("user_id", uid).order("created_at", { ascending: false }),
       ]);
 
       const personal: any[] = [];

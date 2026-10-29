@@ -103,7 +103,7 @@ export default function PetIdCardPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
-      const { data: petData } = await supabase.from('pets').select('*').eq('id', petId).single();
+      const { data: petData } = await supabase.from('pets').select(PET_COLUMNS).eq('id', petId).single();
       if (!petData) { router.push('/'); return; }
       // กรุ๊ปเลือดเป็นข้อมูลสุขภาพ — อ่านผ่าน RPC ที่ตรวจสิทธิ์ แทนคอลัมน์ตรง
       const { data: h } = await supabase.rpc('get_pet_health', { p_pet_id: petData.id });

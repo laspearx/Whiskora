@@ -100,7 +100,7 @@ export default function EditPetPage() {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setUserId(session.user.id);
 
-      const { data, error } = await supabase.from("pets").select("*").eq("id", petId).eq("user_id", session.user.id).single();
+      const { data, error } = await supabase.from("pets").select(PET_COLUMNS).eq("id", petId).eq("user_id", session.user.id).single();
       if (error || !data) {
         router.push("/profile");
         return;
@@ -109,7 +109,7 @@ export default function EditPetPage() {
       setName(data.name || "");
       setPetName(data.name || "");
       setGender(data.gender || "male");
-      setBirthdate(data.birth_date || data.birthdate || "");
+      setBirthdate(data.birth_date || "");
       // สุขภาพส่วนตัวไม่อยู่ใน PET_COLUMNS — อ่านผ่าน RPC ที่ตรวจสิทธิ์ฝั่ง DB (เจ้าของได้ครบ)
       const { data: healthRows, error: healthErr } = await supabase.rpc("get_pet_health", { p_pet_id: data.id });
       const healthRow = Array.isArray(healthRows) ? healthRows[0] : healthRows;

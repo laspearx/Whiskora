@@ -162,7 +162,7 @@ function FarmDashboardContent() {
       setFarm(farmData);
 
       const [petsRes, littersRes] = await Promise.all([
-        supabase.from('pets').select('*').eq('farm_id', farmId),
+        supabase.from('pets').select(PET_COLUMNS).eq('farm_id', farmId),
         supabase.from('litters')
           .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url,species)')
           .eq('farm_id', farmId).order('mating_date', { ascending: false }),

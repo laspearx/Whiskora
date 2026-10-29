@@ -78,7 +78,9 @@ export default function AdminUsersPage() {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
       if (!prof || prof.role !== 'admin') { router.push('/'); return; }
 
-      const { data } = await supabase.rpc('admin_get_users');
+      // admin_get_users มี 2 overload (ไม่มี args / p_search,p_limit,p_offset) → เรียกแบบไม่ส่ง args แล้ว PostgREST ตอบ PGRST203
+      // ส่ง args ให้ครบเพื่อเลือกตัวที่แบ่งหน้าได้ หน้านี้กรองฝั่ง client จึงขอทีเดียวทั้งหมด
+      const { data } = await supabase.rpc('admin_get_users', { p_search: null, p_limit: 5000, p_offset: 0 });
 
       const rows: UserRow[] = (data || []).map((u: any) => ({
         id:             u.id,

@@ -46,12 +46,12 @@ export default function LitterDetailPage() {
         const { data: litterData, error: litterError } = await supabase.from('litters').select('*').eq('id', litterId).single();
         if (litterError) throw litterError;
         setLitter(litterData);
-        const { data: parentsData } = await supabase.from('pets').select('*').in('id', [litterData.sire_id, litterData.dam_id]);
+        const { data: parentsData } = await supabase.from('pets').select(PET_COLUMNS).in('id', [litterData.sire_id, litterData.dam_id]);
         if (parentsData) {
           setSire(parentsData.find((p) => p.id === litterData.sire_id));
           setDam(parentsData.find((p) => p.id === litterData.dam_id));
         }
-        const { data: babiesData } = await supabase.from('pets').select('*').eq('litter_id', litterId).order('id', { ascending: true });
+        const { data: babiesData } = await supabase.from('pets').select(PET_COLUMNS).eq('litter_id', litterId).order('id', { ascending: true });
         if (babiesData) {
           setBabies(babiesData);
           if (babiesData.length > 0) {

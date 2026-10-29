@@ -92,7 +92,7 @@ export default function AdminVerificationsPage() {
     // อีเมลผู้ยื่นมาจาก RPC admin_get_users (ตรวจสิทธิ์ admin ฝั่ง DB) แทนการอ่านคอลัมน์ email ตรง
     if (error) console.error('fetch verifications failed:', error);
     if (!error && data) {
-      const { data: users } = await supabase.rpc('admin_get_users');
+      const { data: users } = await supabase.rpc('admin_get_users', { p_search: null, p_limit: 5000, p_offset: 0 }); // ต้องส่ง args: มี 2 overload
       const emailById = new Map<string, string>(((users || []) as { id: string; email: string }[]).map(u => [u.id, u.email]));
       setVerifications((data as unknown as Verification[]).map(v => ({ ...v, profile: { ...v.profile, email: emailById.get(v.user_id) ?? null } })));
     }
