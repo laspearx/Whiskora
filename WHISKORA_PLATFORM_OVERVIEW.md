@@ -133,7 +133,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - Stray `#FDF6F8` background color still present in 13 files (see above).
 - **Privacy (DB) — STILL OPEN in production** (read-only inventory 2026-10-30 via Supabase MCP; project `vhudldcizmbpujedojei` is the only project = production, free plan, no staging/branches):
   - anon + authenticated have table-level ALL on `profiles`/`pets`; `profiles` RLS SELECT `using (true)` → email/phone/address readable by anyone; `pets` health columns readable on public/available pets.
-  - **Role self-escalation**: `profiles` UPDATE policy is row-only and `role` is writable → any user can make themselves admin and then call `admin_get_users` (all emails). Not exploited; 1 admin account exists — owner should confirm it is theirs.
+  - **Role self-escalation — HOTFIXED on production 2026-10-30**: trigger `trg_profiles_protect_role` (BEFORE INSERT OR UPDATE) rejects any role set/change by `anon`/`authenticated` (42501); SECURITY DEFINER code, service_role and the dashboard can still change roles. Grants are unchanged (column privilege still exists, the trigger enforces). Role counts unchanged (1 admin, 104 user) — owner should confirm the admin account is theirs.
   - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). **Not applied.** Passes 63 synthetic checks on a stub mirroring production types/trigger/ACLs; needs a real staging run.
   - Fine as is: vaccines/activities/weights/documents SELECT via `viewer_can_see()`; buckets `pet-documents`, `verification-docs` are private (so `getPublicUrl` links for verification docs do not open — admin viewing bug).
   - Also open (separate): `pet_reservations` UPDATE policy allows any farm-team member (incl. staff/viewer) and co-owners; default privileges grant ALL on new tables to anon; leaked-password protection off; 7 functions without `search_path`.
@@ -148,6 +148,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- PRODUCTION HOTFIX applied: `20261029050000_hotfix_profile_role_guard.sql` (role guard trigger only). Verified via catalog + rolled-back probe with a non-existent user id. Read leaks still open.
 - Reservation migration no longer adds a converted-trigger (existing `sync_pet_owner_on_transfer_accept` already does it when `reservation_id` is set).
 - Migrations split: privacy `20261029100000` (apply first, independent) and reservation `20261029200000`; both idempotent with rollback; local synthetic tests in `supabase/tests/` (64/64 + concurrency) — not real staging.
 - Fixed: pet edit could overwrite health data with blanks when `get_pet_health` failed.

@@ -1,0 +1,19 @@
+{
+  "note": "Privileges/policies/triggers of public.profiles on production (vhudldcizmbpujedojei) captured right before applying 20261029050000_hotfix_profile_role_guard.sql. No user data; role_counts are aggregates.",
+  "captured_at": "2026-10-29T13:06:43Z",
+  "table_acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+  "column_acls": {"id": "{anon=r/postgres}", "created_at": "{anon=r/postgres}", "username": "{anon=r/postgres}", "avatar_url": "{anon=r/postgres}", "updated_at": "{anon=r/postgres}", "full_name": "{anon=r/postgres}", "location": "{anon=r/postgres}", "cover_url": "{anon=r/postgres}"},
+  "rls_enabled": true,
+  "policies": [
+    {"name": "Everyone can view profiles", "cmd": "SELECT", "roles": "{public}", "using": "true"},
+    {"name": "Public can read profiles", "cmd": "SELECT", "roles": "{public}", "using": "true"},
+    {"name": "Users can insert own profile", "cmd": "INSERT", "roles": "{public}", "check": "((auth.uid())::text = (id)::text)"},
+    {"name": "Users can insert their own profile", "cmd": "INSERT", "roles": "{public}", "check": "(auth.uid() = id)"},
+    {"name": "Users can update own profile", "cmd": "UPDATE", "roles": "{public}", "using": "((auth.uid())::text = (id)::text)", "check": "((auth.uid())::text = (id)::text)"},
+    {"name": "Users can update their own profile", "cmd": "UPDATE", "roles": "{public}", "using": "(auth.uid() = id)"},
+    {"name": "Users can view own profile", "cmd": "SELECT", "roles": "{public}", "using": "((auth.uid())::text = (id)::text)"}
+  ],
+  "triggers": ["CREATE TRIGGER trg_sync_personal_workspace_name AFTER UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION sync_personal_workspace_name()"],
+  "role_column": {"default": "'user'::text", "nullable": "YES"},
+  "role_counts": {"admin": 1, "user": 104}
+}
