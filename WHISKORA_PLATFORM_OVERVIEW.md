@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-29
+**Last updated:** 2026-10-30
 
 ## What Whiskora is
 
@@ -115,6 +115,10 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - **Weight unit toggle must stay manual-overridable** — auto-guessing kg/g from a pet with no history previously corrupted real data.
 - **Pet photo upload path** must stay exactly `${userId}/${petId}-...` in the `pet-photos` storage bucket — Supabase RLS depends on that exact shape.
 - **"Fetched but not written" bug class**: watch for flows that fetch a related record into memory (e.g. a litter, a farm) but only copy *some* of its fields into an insert/update payload. This exact pattern caused the sire/dam linkage bug (2026-07-24) and is worth checking any time a new multi-step create/edit flow is added.
+- **npm only** (`vercel.json` → `npm ci`, `.npmrc` legacy-peer-deps). No pnpm/yarn lockfiles. Every package the web app imports must be in `web/package.json` (html-to-image used to resolve from the repo-root `node_modules`).
+- **Private columns**: read pets with `PET_COLUMNS` and other people's profiles with `PROFILE_PUBLIC_COLUMNS` (`lib/columns.ts`); your own profile via `getMyProfile()`, user lookups via `findUserByEmail()` / `searchUsersForInvite()` (`lib/profile.ts`). Never `select('*')` on `pets`/`profiles`, never `RETURNING *` (`.select()`) after writing them, never `upsert` profile rows with private columns. Pet health only through `get_pet_health`.
+- `app/[locale]/login/page.tsx` is the **live** sign-in page (not a shim); `app/login/page.tsx` is unreachable. The i18n router adds the locale itself — strip `/th|/en` from redirect targets (`stripLocale`).
+- Tests: `npm run test:e2e` (Playwright, desktop + mobile). Signed-in specs need staging test accounts (see `web/e2e/README.md`). Lint baseline 2026-10-30: 320 errors, mostly `no-explicit-any` (296); compare by file/rule/code, not by total.
 - Always verify current schema against the live Supabase project (via MCP tools) rather than trusting `web/lib/types.ts` or `supabase/migrations/` alone.
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
@@ -127,7 +131,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
 - Stray `#FDF6F8` background color still present in 13 files (see above).
-- **Privacy (DB, unverified fix)**: as of 2026-10-29 the anon role can read `profiles.email/phone/address` and raw `pets` health columns (`allergies`, `blood_type`) directly via REST — RLS is row-level only. Needs column grants or a public view; UI-side select narrowing is done but does not close this.
+- **Privacy (DB) — STILL OPEN**: anon can read `profiles.email/phone/address` and `pets` health columns directly via REST (confirmed 2026-10-29). Fix = `supabase/migrations/20261030_private_columns.sql` (column grants + RPCs), **not applied** — no DB/staging access yet. The app is already compatible with it (falls back while the RPCs are missing). Not checked: RLS for vaccines / activities / weights / documents against *signed-in unrelated* users.
 - Verification documents are uploaded with `getPublicUrl` on bucket `verification-docs` — confirm the bucket is private.
 - Knowledge hub (`pet-knowledge/articles.ts`) has summaries only — no full-article route yet; cards say so.
 - Terms of Service page is a placeholder ("อยู่ระหว่างจัดทำ") until real legal text exists.
@@ -137,6 +141,14 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-10-30**
+- Build: npm only, `package-lock.json` synced, pnpm files removed, Vercel `npm ci`; html-to-image declared in web; clean-checkout install + tsc + build verified.
+- Privacy readiness: column allow-lists, `getMyProfile`/`findUserByEmail`/`searchUsersForInvite`, no partial-email member search, no member emails in lists; proposed migration with rollback (not applied).
+- Fixed: email login redirect produced `/th/th/...`; admin verifications list always empty (queried non-existent columns); `useKgFor` renamed (14 false-positive rules-of-hooks errors).
+- i18n: sign in/up, public pet profile, transfers, reservations; status in `docs/I18N_STATUS.md`.
+- Notifications: email sender now from `RESEND_FROM` (whiskora.com is a parked third-party domain; whiskora.pet not verified in Resend); setup guide `docs/NOTIFICATIONS_SETUP.md`.
+- Tests: Playwright smoke suite (18 public checks pass; signed-in suite skipped until staging accounts exist).
 
 **2026-10-29**
 - Fixed: hard-coded "Verified by Whiskora" / "ฟาร์มที่ยืนยันแล้ว" on `/p/[id]` now come from real data; trust copy centralised in `lib/trust.ts`; homepage no longer claims every farm is verified.
