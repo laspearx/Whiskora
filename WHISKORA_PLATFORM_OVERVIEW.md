@@ -64,7 +64,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - `pet_reservations`: buyer reserves a listed pet from `/p/[id]` (`pending` → farm confirms/cancels from `farm-dashboard/[id]/reservations`). DB enforces one confirmed reservation per pet.
 - Confirming/cancelling a reservation **now syncs the pet's own `status`** to `ติดจอง` (reserved) / back to `เปิดจอง` (fixed 2026-07-24 — previously only the reservation row changed, the pet's status field was left stale).
 - `pet_ownership_transfers`: owner-initiated from `/pets/[id]`, accepted/declined by the recipient at `/profile/transfers` (inbox via RPC `get_my_pending_transfers`). Acceptance is handled by a **DB trigger** (`sync_pet_owner_on_transfer_accept`) that reassigns `pets.user_id` and clears `pets.farm_id` — not client-side code.
-- Reservation → transfer: a confirmed reservation now has "ส่งคำขอโอนเจ้าของ" (farm owner only), which inserts a pending `pet_ownership_transfers` row with `reservation_id` and `to_user_id = buyer`. Marking the reservation `converted` on accept is done by a proposed trigger in `supabase/migrations/20261029_reservation_transfer_pipeline.sql` — **not applied yet**, so until then the reservation stays `confirmed` after transfer.
+- Reservation → transfer: a confirmed reservation now has "ส่งคำขอโอนเจ้าของ" (farm owner only), which inserts a pending `pet_ownership_transfers` row with `reservation_id` and `to_user_id = buyer`. Marking the reservation `converted` on accept is done by a proposed trigger in `supabase/migrations/20261029200000_reservation_transfer_pipeline.sql` — **not applied yet**, so until then the reservation stays `confirmed` after transfer.
 - Confirm/cancel calls RPC `farm_set_reservation_status` (atomic, row-locked, idempotent, owner/manager only) from the same migration; if the RPC is missing (PGRST202) the page falls back to the old two-step update with rollback on failure.
 
 ### Farm / shop / service dashboards
@@ -131,7 +131,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
 - Stray `#FDF6F8` background color still present in 13 files (see above).
-- **Privacy (DB) — STILL OPEN**: anon can read `profiles.email/phone/address` and `pets` health columns directly via REST (confirmed 2026-10-29). Fix = `supabase/migrations/20261030_private_columns.sql` (column grants + RPCs), **not applied** — no DB/staging access yet. The app is already compatible with it (falls back while the RPCs are missing). Not checked: RLS for vaccines / activities / weights / documents against *signed-in unrelated* users.
+- **Privacy (DB) — STILL OPEN in production**: anon can read `profiles.email/phone/address` and `pets` health columns directly via REST (confirmed 2026-10-29). Fix = `supabase/migrations/20261029100000_private_columns.sql`, **not applied anywhere** (no Supabase access / no staging as of 2026-10-30). Validated only on a local synthetic Postgres (`supabase/tests/`). Rollout plan and what the owner must provide: `docs/PRIVACY_ROLLOUT.md`. Not checked: RLS of vaccines / activities / weights / documents for signed-in unrelated users.
 - Verification documents are uploaded with `getPublicUrl` on bucket `verification-docs` — confirm the bucket is private.
 - Knowledge hub (`pet-knowledge/articles.ts`) has summaries only — no full-article route yet; cards say so.
 - Terms of Service page is a placeholder ("อยู่ระหว่างจัดทำ") until real legal text exists.
@@ -143,6 +143,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Migrations split: privacy `20261029100000` (apply first, independent) and reservation `20261029200000`; both idempotent with rollback; local synthetic tests in `supabase/tests/` (64/64 + concurrency) — not real staging.
+- Fixed: pet edit could overwrite health data with blanks when `get_pet_health` failed.
 - Build: npm only, `package-lock.json` synced, pnpm files removed, Vercel `npm ci`; html-to-image declared in web; clean-checkout install + tsc + build verified.
 - Privacy readiness: column allow-lists, `getMyProfile`/`findUserByEmail`/`searchUsersForInvite`, no partial-email member search, no member emails in lists; proposed migration with rollback (not applied).
 - Fixed: email login redirect produced `/th/th/...`; admin verifications list always empty (queried non-existent columns); `useKgFor` renamed (14 false-positive rules-of-hooks errors).
