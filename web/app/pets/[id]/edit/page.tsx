@@ -68,6 +68,8 @@ export default function EditPetPage() {
   const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
   const [initialIsNeutered, setInitialIsNeutered] = useState<boolean | null>(null);
   const [bloodType, setBloodType] = useState("");
+  // false = โหลดข้อมูลสุขภาพไม่ได้ (error/ไม่มีสิทธิ์) — ห้ามบันทึกทับด้วยค่าว่าง
+  const [healthLoaded, setHealthLoaded] = useState(false);
   const [microchip, setMicrochip] = useState("");
 
   const [status, setStatus] = useState("");
@@ -109,8 +111,10 @@ export default function EditPetPage() {
       setGender(data.gender || "male");
       setBirthdate(data.birth_date || data.birthdate || "");
       // สุขภาพส่วนตัวไม่อยู่ใน PET_COLUMNS — อ่านผ่าน RPC ที่ตรวจสิทธิ์ฝั่ง DB (เจ้าของได้ครบ)
-      const { data: healthRows } = await supabase.rpc("get_pet_health", { p_pet_id: data.id });
-      const health = (Array.isArray(healthRows) ? healthRows[0] : healthRows) || {};
+      const { data: healthRows, error: healthErr } = await supabase.rpc("get_pet_health", { p_pet_id: data.id });
+      const healthRow = Array.isArray(healthRows) ? healthRows[0] : healthRows;
+      setHealthLoaded(!healthErr && !!healthRow);
+      const health = healthRow || {};
       setAllergies(health.allergies || "");
       setTraits(health.traits || "");
       setIsNeutered(data.is_neutered ?? null);
@@ -230,9 +234,9 @@ export default function EditPetPage() {
     const { error } = await supabase.from("pets").update({
       name: name.trim(), species: finalSpecies, breed: finalBreed || null, color: finalColor || null, eye_color: finalEyeColor || null,
       gender, birth_date: birthdate || null, image_url: avatarUrl,
-      allergies: allergies || null, traits: traits || null,
+      // ส่งช่องสุขภาพเฉพาะเมื่อโหลดค่าเดิมได้จริง ไม่งั้นจะลบข้อมูลเดิมทิ้งโดยไม่ตั้งใจ
+      ...(healthLoaded ? { allergies: allergies || null, traits: traits || null, blood_type: bloodType || null } : {}),
       is_neutered: isNeutered,
-      blood_type: bloodType || null,
       microchip_number: microchip || null,
       sire_id: sireId ? Number(sireId) : null,
       dam_id: damId ? Number(damId) : null,
@@ -555,11 +559,16 @@ export default function EditPetPage() {
                 <img src="/icons/icon-health.png" alt="" />
                 สุขภาพ & ข้อมูลการแพทย์
               </div>
+              {!healthLoaded && (
+                <div style={{ fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '8px 12px', marginBottom: 12 }}>
+                  โหลดข้อมูลสุขภาพเดิมไม่ได้ — ช่องกรุ๊ปเลือด สิ่งที่แพ้ และนิสัย จะไม่ถูกบันทึกในครั้งนี้ เพื่อไม่ให้ข้อมูลเดิมถูกลบ
+                </div>
+              )}
 
               <div className="ep-grid2">
                 <div className="ep-field">
                   <label className="ep-label">กรุ๊ปเลือด</label>
-                  <select className="ep-select" value={bloodType} onChange={e => setBloodType(e.target.value)}>
+                  <select className="ep-select" disabled={!healthLoaded} value={bloodType} onChange={e => setBloodType(e.target.value)}>
                     <option value="">ไม่ทราบ...</option>
                     {BLOOD_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -572,12 +581,12 @@ export default function EditPetPage() {
 
               <div className="ep-field">
                 <label className="ep-label">สิ่งที่แพ้</label>
-                <input className="ep-input" type="text" value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="เช่น อาหารทะเล, ยา..." />
+                <input className="ep-input" type="text" disabled={!healthLoaded} value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="เช่น อาหารทะเล, ยา..." />
               </div>
 
               <div className="ep-field" style={{ marginBottom: 0 }}>
                 <label className="ep-label">นิสัย / หมายเหตุ</label>
-                <input className="ep-input" type="text" value={traits} onChange={e => setTraits(e.target.value)} placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
+                <input className="ep-input" type="text" disabled={!healthLoaded} value={traits} onChange={e => setTraits(e.target.value)} placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
               </div>
             </div>
 

@@ -109,7 +109,7 @@ export default function EditProfilePage() {
     setSaving(true);
     const { data: { session } } = await supabase.auth.getSession();
     // update/insert แยกกันแทน upsert: ON CONFLICT DO UPDATE ต้องมีสิทธิ์ SELECT คอลัมน์ที่เขียน
-    // ซึ่งคอลัมน์ส่วนตัว (phone/address) ถูกปิดไว้ใน migration 20261030_private_columns.sql
+    // ซึ่งคอลัมน์ส่วนตัว (phone/address) ถูกปิดไว้ใน migration 20261029100000_private_columns.sql
     const payload = {
       username, full_name: fullName, avatar_url: avatarUrl, phone,
       address: composeAddress(addr),

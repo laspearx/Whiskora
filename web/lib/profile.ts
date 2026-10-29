@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-// RPCs from supabase/migrations/20261030_private_columns.sql. Until that migration is applied
+// RPCs from supabase/migrations/20261029100000_private_columns.sql. Until that migration is applied
 // the functions do not exist (PostgREST PGRST202) and we fall back to the old direct query,
 // so the app works in both states. Remove the fallbacks once production has the migration.
 const missing = (error: { code?: string } | null) => error?.code === 'PGRST202';

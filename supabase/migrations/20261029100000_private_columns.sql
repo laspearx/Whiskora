@@ -1,6 +1,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Whiskora: stop direct API reads of private profile / pet-health columns
 -- STATUS: PROPOSED — NOT APPLIED (no DB/staging access on 2026-10-30).
+-- ORDER: apply FIRST and on its own. No dependency on the reservation/transfer migration.
 --
 -- Problem (confirmed 2026-10-29 with the anon key, counts only):
 --   anon can SELECT profiles.email / phone / address* and pets.allergies / blood_type / …

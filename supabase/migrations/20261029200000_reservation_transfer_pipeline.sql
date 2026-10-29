@@ -1,6 +1,9 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Whiskora: reservation ↔ pet status (atomic) + reservation → ownership transfer
--- STATUS: PROPOSED — NOT APPLIED. Written without DB access (schema could not be
+-- STATUS: PROPOSED — NOT APPLIED.
+-- INDEPENDENT of 20261029100000_private_columns.sql: both functions here are SECURITY DEFINER,
+-- so column-level grants on pets do not affect them. Apply the privacy migration first
+-- (higher priority); this one can follow later or be skipped without breaking the app. Written without DB access (schema could not be
 -- introspected with the anon key). Before applying:
 --   1. Verify column types below (ids assumed bigint, statuses assumed text).
 --   2. Read the body of the existing trigger function sync_pet_owner_on_transfer_accept
@@ -50,7 +53,7 @@ begin
     from public.workspaces w
     join public.workspace_members m on m.workspace_id = w.id
     where w.type = 'farm'
-      and w.entity_id = v_pet.farm_id::bigint   -- verify: pets.farm_id type vs workspaces.entity_id
+      and w.entity_id::text = v_pet.farm_id::text   -- text compare: legacy rows may hold 'PERSONAL'
       and m.user_id = v_uid
       and m.role in ('owner', 'manager')
   ) into v_allowed;
@@ -130,8 +133,12 @@ create trigger trg_mark_reservation_converted
 
 -- 3) A transfer to yourself is never valid (the UI check compared email to user id
 --    and never fired). NOT VALID so existing rows are not re-checked on apply.
-alter table public.pet_ownership_transfers
-  add constraint pet_ownership_transfers_not_self check (from_user_id <> to_user_id) not valid;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'pet_ownership_transfers_not_self') then
+    alter table public.pet_ownership_transfers
+      add constraint pet_ownership_transfers_not_self check (from_user_id <> to_user_id) not valid;
+  end if;
+end $$;
 
 -- 4) At most one pending transfer per pet (double-click / concurrent sends).
 --    Check for existing duplicates first:

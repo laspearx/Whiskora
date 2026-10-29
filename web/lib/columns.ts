@@ -1,6 +1,6 @@
 // ─── Column allow-lists for direct table reads ────────────────────────────────
 // Supabase RLS is row-level only. The privacy migration
-// (supabase/migrations/20261030_private_columns.sql) revokes SELECT on private columns,
+// (supabase/migrations/20261029100000_private_columns.sql) revokes SELECT on private columns,
 // after which `select('*')` on these tables fails — so always read with these lists.
 
 // pets: everything except private health fields. Health comes from RPC get_pet_health()
