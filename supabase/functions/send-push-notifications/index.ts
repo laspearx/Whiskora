@@ -110,8 +110,8 @@ Deno.serve(async (req) => {
       );
       sent++;
     } catch (err: any) {
-      // 410 Gone = subscription expired, remove it
-      if (err?.statusCode === 410) {
+      // 404/410 = subscription no longer exists on the push service, remove it
+      if (err?.statusCode === 410 || err?.statusCode === 404) {
         failed.push(sub.endpoint);
       }
     }
