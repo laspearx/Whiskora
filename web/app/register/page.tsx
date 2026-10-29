@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { safeInternalPath } from "@/lib/locale";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
@@ -28,7 +29,7 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/profile";
-  const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
+  const safeRedirect = safeInternalPath(redirectTo);
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");

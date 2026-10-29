@@ -3,6 +3,9 @@ import type { NextRequest } from 'next/server';
 
 const locales = ['th', 'en'];
 const defaultLocale = 'th';
+// จำภาษาล่าสุดที่ผู้ใช้เปิด เพื่อให้ลิงก์/redirect ที่ไม่มี prefix (next/link ตรงๆ, router.push('/login') ฯลฯ)
+// พากลับไปภาษาเดิม แทนที่จะตกไป /th เสมอ — auth callback routes อ่าน cookie เดียวกันนี้ผ่าน lib/locale.ts
+const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,17 +14,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const pathnameHasLocale = locales.some(
+  const currentLocale = locales.find(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  if (!pathnameHasLocale) {
+  if (!currentLocale) {
+    const saved = request.cookies.get(LOCALE_COOKIE)?.value;
+    const locale = saved && locales.includes(saved) ? saved : defaultLocale;
     const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLocale}${pathname}`;
+    url.pathname = `/${locale}${pathname}`;
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (request.cookies.get(LOCALE_COOKIE)?.value !== currentLocale) {
+    response.cookies.set(LOCALE_COOKIE, currentLocale, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
+  }
+  return response;
 }
 
 export const config = {

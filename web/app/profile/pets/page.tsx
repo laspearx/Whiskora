@@ -32,7 +32,7 @@ export default function MyPetsPage() {
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return router.push("/login");
+      if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       const uid = session.user.id;
 
       const [{ data: farms }, { data: pets }] = await Promise.all([

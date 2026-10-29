@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { safeInternalPath } from "@/lib/locale";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
@@ -22,7 +23,7 @@ function LoginContent() {
     if (err) setAuthError(decodeURIComponent(err));
   }, [searchParams]);
   // กันไม่ให้ redirect ออกไปนอกเว็บ (เปิดเฉพาะ path ภายใน)
-  const safeRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/profile";
+  const safeRedirect = safeInternalPath(redirectTo);
 
   // ดักจับ Session ที่ติดมากับ URL (เด้งกลับจาก OAuth)
   useEffect(() => {
