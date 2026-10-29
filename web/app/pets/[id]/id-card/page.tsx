@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
+import { neuteredText } from '@/lib/trust';
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -153,7 +154,7 @@ export default function PetIdCardPage() {
     { label: 'วันเกิด',   val: fmtDate(pet.birth_date), icon: '/icons/icon-calendar.png' },
     { label: 'อายุ',      val: calcAge(pet.birth_date), icon: '/icons/icon-pet-records.png' },
     { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-',  icon: '/icons/icon-health.png' },
-    { label: 'ทำหมัน',   val: pet.is_neutered ? 'ทำหมันแล้ว' : 'ยังไม่ทำหมัน', icon: '/icons/icon-vaccine.png', isPill: true, pillOk: !!pet.is_neutered },
+    { label: 'ทำหมัน',   val: neuteredText(pet.is_neutered), icon: '/icons/icon-vaccine.png', isPill: true, pillOk: !!pet.is_neutered },
   ] : [];
 
   if (loading) return <PageLoader />;
@@ -372,7 +373,7 @@ export default function PetIdCardPage() {
                 {/* Footer */}
                 <div className="pc-footer">
                   <div className="pc-footer-icon"><img src="/icons/icon-paw-sparkle.png" alt="" /></div>
-                  <span className="pc-footer-txt">รับรองโดย Whiskora</span>
+                  <span className="pc-footer-txt">ลงทะเบียนกับ Whiskora</span>
                 </div>
 
               </div>

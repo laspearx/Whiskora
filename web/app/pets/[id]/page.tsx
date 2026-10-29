@@ -9,6 +9,7 @@ import QRCode from 'qrcode';
 import Cropper from 'react-easy-crop';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
+import { neuteredText } from '@/lib/trust';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
 const F = {
@@ -352,7 +353,6 @@ export default function PetDetailPage() {
   const handleTransferLookup = async () => {
     setTransferError('');
     if (!transferEmail.trim()) { setTransferError('กรุณากรอกอีเมล'); return; }
-    if (transferEmail.trim().toLowerCase() === sessionUserId) { setTransferError('ไม่สามารถโอนให้ตัวเองได้'); return; }
     setTransferring(true);
     try {
       const { data, error } = await supabase
@@ -362,6 +362,8 @@ export default function PetDetailPage() {
         .maybeSingle();
       if (error) throw error;
       if (!data) { setTransferError('ไม่พบผู้ใช้งานที่มีอีเมลนี้ในระบบ'); return; }
+      // เทียบ user ID หลังค้นหา (เดิมเทียบอีเมลกับ user ID จึงไม่เคยกันได้จริง)
+      if (data.id === sessionUserId || data.id === pet?.user_id) { setTransferError('ไม่สามารถโอนให้ตัวเองได้'); return; }
       setTransferTarget(data);
       setTransferStep('confirm');
     } catch { setTransferError('เกิดข้อผิดพลาด กรุณาลองใหม่'); }
@@ -370,7 +372,8 @@ export default function PetDetailPage() {
 
   // ─── ส่งคำขอโอนย้าย: สร้างแถว pending รอผู้รับกดยืนยัน ไม่ได้โอนทันที ───
   const handleTransferConfirm = async () => {
-    if (!transferTarget || !pet || !sessionUserId) return;
+    if (!transferTarget || !pet || !sessionUserId || transferring) return;
+    if (transferTarget.id === sessionUserId) { setTransferError('ไม่สามารถโอนให้ตัวเองได้'); return; }
     setTransferring(true);
     try {
       const { data, error } = await supabase
@@ -1199,7 +1202,7 @@ export default function PetDetailPage() {
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
                     { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
-                    { label: 'ทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                    { label: 'ทำหมัน', val: neuteredText(pet.is_neutered) },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
                   ] as any[]).filter(Boolean).map((row: any, i: number) => (
                     <div key={i} className="pet-info-row">
@@ -1372,7 +1375,7 @@ export default function PetDetailPage() {
                           { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
                           { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
                           { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
-                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: neuteredText(pet.is_neutered) },
                         ];
                         return checks.map((c, i) => (
                           <div key={i} className="health-tick-row">
@@ -1441,7 +1444,7 @@ export default function PetDetailPage() {
                           { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
                           { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
                           { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
-                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
+                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: neuteredText(pet.is_neutered) },
                         ].map((c, i) => (
                           <div key={i} className="health-tick-row">
                             <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}><Icon.Check /></div>

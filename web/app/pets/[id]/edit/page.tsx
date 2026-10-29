@@ -63,8 +63,9 @@ export default function EditPetPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
-  const [isNeutered, setIsNeutered] = useState(false);
-  const [initialIsNeutered, setInitialIsNeutered] = useState(false);
+  // null = ยังไม่ได้ระบุ — ไม่แปลงเป็น "ยังไม่ทำหมัน" โดยอัตโนมัติ
+  const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
+  const [initialIsNeutered, setInitialIsNeutered] = useState<boolean | null>(null);
   const [bloodType, setBloodType] = useState("");
   const [microchip, setMicrochip] = useState("");
 
@@ -93,7 +94,7 @@ export default function EditPetPage() {
   useEffect(() => {
     const fetchPetData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return router.push("/login");
+      if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setUserId(session.user.id);
 
       const { data, error } = await supabase.from("pets").select("*").eq("id", petId).eq("user_id", session.user.id).single();
@@ -108,8 +109,8 @@ export default function EditPetPage() {
       setBirthdate(data.birth_date || data.birthdate || "");
       setAllergies(data.allergies || "");
       setTraits(data.traits || "");
-      setIsNeutered(!!data.is_neutered);
-      setInitialIsNeutered(!!data.is_neutered);
+      setIsNeutered(data.is_neutered ?? null);
+      setInitialIsNeutered(data.is_neutered ?? null);
       setBloodType(data.blood_type || "");
       setMicrochip(data.microchip_number || "");
       setSireId(data.sire_id ? String(data.sire_id) : "");
@@ -239,7 +240,7 @@ export default function EditPetPage() {
       alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else {
-      if (isNeutered && !initialIsNeutered) {
+      if (isNeutered === true && initialIsNeutered !== true) {
         await supabase.from("pet_activities").insert({
           pet_id: parseInt(petId),
           activity_type: "ทำหมัน",
@@ -327,6 +328,8 @@ export default function EditPetPage() {
         .ep-gender-btn { border: 1.5px solid ${F.line}; background: white; border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: ${F.muted}; transition: all .15s; }
         .ep-gender-btn.male.active { border-color: #93C5FD; background: #EFF6FF; color: #2563EB; }
         .ep-gender-btn.female.active { border-color: ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; }
+        .ep-gender-btn.active:not(.male):not(.female) { border-color: ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; }
+        .ep-neuter-row { grid-template-columns: repeat(3, 1fr) !important; }
 
         /* Neutered toggle */
         .ep-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; cursor: pointer; }
@@ -473,14 +476,16 @@ export default function EditPetPage() {
 
               <div className="ep-field" style={{ marginBottom: 0 }}>
                 <label className="ep-label">ทำหมัน</label>
-                <div className="ep-toggle-row" onClick={() => setIsNeutered(!isNeutered)}>
-                  <div>
-                    <div className="ep-toggle-label">{isNeutered ? 'ทำหมันแล้ว' : 'ยังไม่ทำหมัน'}</div>
-                    <div className="ep-toggle-sub">{isNeutered ? 'สัตว์เลี้ยงได้รับการทำหมัน' : 'กดเพื่อระบุว่าทำหมันแล้ว'}</div>
-                  </div>
-                  <div className={`ep-toggle-pill ${isNeutered ? 'on' : 'off'}`}>
-                    <div className={`ep-toggle-dot ${isNeutered ? 'on' : 'off'}`} />
-                  </div>
+                <div className="ep-gender-row ep-neuter-row">
+                  {([
+                    { val: true, label: 'ทำหมันแล้ว' },
+                    { val: false, label: 'ยังไม่ทำหมัน' },
+                    { val: null, label: 'ยังไม่ระบุ' },
+                  ] as const).map(opt => (
+                    <button key={String(opt.val)} type="button" className={`ep-gender-btn ${isNeutered === opt.val ? 'active' : ''}`} onClick={() => setIsNeutered(opt.val)}>
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

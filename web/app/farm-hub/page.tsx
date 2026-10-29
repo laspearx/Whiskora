@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { speciesTh } from "@/lib/species";
+import { PUBLIC_LISTING_STATUSES, isPublicListing } from "@/lib/trust";
 import Link from "next/link";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
@@ -20,7 +21,6 @@ const F = {
   tealSoft: '#F0FDFA',
 };
 
-const READY_STATUSES = ['พร้อมย้ายบ้าน', 'เปิดจอง'];
 
 // ─── Elegant Minimal Icons ──────────────────────────────────────────────────
 const Icon = {
@@ -60,14 +60,15 @@ export default function FarmHubPage() {
       const [{ data: farmsData, error: farmsErr }, { data: petsData, error: petsErr }] = await Promise.all([
         supabase.from("farms").select("id, farm_name, cover_url, image_url, species, province, district, is_verified"),
         supabase.from("pets")
-          .select("*, farms(farm_name, district, province)")
-          .in("status", READY_STATUSES)
+          .select("id, name, breed, species, gender, birth_date, image_url, price, status, is_public, farm_id, farms(farm_name, district, province)")
+          .in("status", PUBLIC_LISTING_STATUSES)
           .order("created_at", { ascending: false }),
       ]);
       if (farmsErr) throw farmsErr;
       if (petsErr) throw petsErr;
       setFarms(farmsData || []);
-      setPets(petsData || []);
+      // กรองซ้ำด้วยเงื่อนไขเดียวกับหน้าฟาร์ม (สถานะ + is_public) เพื่อให้จำนวนบนการ์ดตรงกับรายการที่เปิดดูได้
+      setPets((petsData || []).filter(isPublicListing));
     } catch (error) {
       console.error("Error fetching pet market data:", error);
     } finally {
@@ -173,7 +174,7 @@ export default function FarmHubPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Pet Market</h1>
-              <p className="text-sm font-medium" style={{ color: F.muted }}>รวมฟาร์มพาร์ทเนอร์และเด็กๆ พร้อมย้ายบ้านจากฟาร์มคุณภาพ</p>
+              <p className="text-sm font-medium" style={{ color: F.muted }}>รวมฟาร์มในระบบและสัตว์ที่พร้อมย้ายบ้านหรือเปิดจอง</p>
             </div>
 
             <div className="relative w-full md:max-w-md">
@@ -274,11 +275,11 @@ export default function FarmHubPage() {
                       <div className="flex items-center gap-1.5 mb-2">
                         <h3 className="text-[15px] font-bold text-gray-900 truncate">{farm.farm_name}</h3>
                         <img src="/icons/icon-paw-pink.png" alt="" className="w-4 h-4 object-contain flex-shrink-0" />
-                        {farm.is_verified && <Icon.Verified />}
+                        {farm.is_verified && <span title="ฟาร์มยืนยันตัวตนแล้ว" style={{ display: 'inline-flex' }}><Icon.Verified /></span>}
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
-                          {readyCount > 0 ? `${readyCount} ตัวพร้อมขาย` : 'ยังไม่มีตัวพร้อมขาย'}
+                          {readyCount > 0 ? `${readyCount} ตัวพร้อมย้ายบ้าน/เปิดจอง` : 'ยังไม่มีตัวพร้อมขาย'}
                         </div>
                         {location && (
                           <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">

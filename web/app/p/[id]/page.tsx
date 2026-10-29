@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
+import { TRUST_COPY, healthText, neuteredText, NOT_SPECIFIED } from '@/lib/trust';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -66,6 +67,8 @@ export default function PublicPetProfilePage() {
 
   const [pet, setPet] = useState<Pet | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  // loading → ready | empty | error — ห้ามค้าง Loading เมื่อไม่มีข้อมูลหรือไม่มีสิทธิ์
+  const [pedigreeState, setPedigreeState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
   const [healthDetails, setHealthDetails] = useState<{
     blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
@@ -140,8 +143,8 @@ export default function PublicPetProfilePage() {
     const { data, error } = await supabase.rpc('get_pet_pedigree', {
       p_pet_id: rootPet.id, p_max_gen: MAX_GENERATIONS - 1,
     });
-    if (error || !data) return [];
-    const rows = data as PedigreeRow[];
+    if (error) throw error;
+    const rows = (data || []) as PedigreeRow[];
     const selfRow = rows.find(r => r.relation === 'self');
     if (!selfRow) return [];
 
@@ -190,6 +193,18 @@ export default function PublicPetProfilePage() {
     return gens.reverse();
   };
 
+  const loadPedigree = (rootPet: Pet) => {
+    setPedigreeState('loading');
+    buildPedigreeTree(rootPet)
+      .then(gens => {
+        setPedigreeGens(gens);
+        // gens เรียงจากบรรพบุรุษ → ตัวเอง; มีบรรพบุรุษจริงอย่างน้อย 1 ตัวจึงถือว่ามีผัง
+        const hasAncestor = gens.some(gen => gen.length > 1 && gen.some(n => !n.isMissing));
+        setPedigreeState(hasAncestor ? 'ready' : 'empty');
+      })
+      .catch(err => { console.error('pedigree load failed:', err); setPedigreeGens([]); setPedigreeState('error'); });
+  };
+
   const fetchPublicData = async () => {
     try {
       setIsLoading(true);
@@ -214,42 +229,52 @@ export default function PublicPetProfilePage() {
       setPet(petData as unknown as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      buildPedigreeTree(petData as unknown as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
-      supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
-        if (data) setFieldAccess(data as Record<string, boolean>);
-      });
-      supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
-        if (data && data[0]) setHealthDetails(data[0]);
-      });
+      loadPedigree(petData as unknown as Pet);
+      // รู้สิทธิ์ก่อน แล้วค่อยขอข้อมูลกลุ่มที่ได้รับอนุญาต — ไม่พึ่งการซ่อนแท็บอย่างเดียว (RLS ยังเป็นด่านจริงฝั่ง DB)
+      const { data: accessData } = await supabase.rpc('get_my_pet_access', { p_pet_id: petData.id });
+      const access = (accessData || null) as Record<string, boolean> | null;
+      if (access) setFieldAccess(access);
+      const allowed = (key: string) => !access || access[key] !== false;
+      if (allowed('health')) {
+        supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
+          if (data && data[0]) setHealthDetails(data[0]);
+        });
+      }
 
       // ฟาร์ม (ถ้ามี) — สำหรับปุ่มติดต่อ
       if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
         const { data: farmData } = await supabase
           .from('farms')
-          .select('id, farm_name, phone, facebook_link, line_id')
+          .select('id, farm_name, phone, facebook_link, line_id, is_verified')
           .eq('id', petData.farm_id)
           .maybeSingle();
         if (farmData) setFarm(farmData);
       }
 
-      // เจ้าของ (แสดงชื่อ + ฟาร์ม แต่ไม่โชว์เบอร์/อีเมลส่วนตัวในมุมมองสาธารณะ)
+      // เจ้าของ (แสดงชื่อ + ฟาร์ม แต่ไม่โชว์ที่อยู่/เบอร์/อีเมลส่วนตัวในมุมมองสาธารณะ)
       if (petData.user_id) {
         const { data: ownerData } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, address')
+          .select('id, full_name, avatar_url')
           .eq('id', petData.user_id)
           .maybeSingle();
         if (ownerData) setOwner(ownerData as UserProfile);
       }
 
-      const { data: vaccineData } = await supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false });
-      if (vaccineData) setVaccines(vaccineData as Vaccine[]);
+      if (allowed('vaccination')) {
+        const { data: vaccineData } = await supabase.from('vaccines').select('id, vaccine_name, date_given, next_due, notes').eq('pet_id', petId).order('date_given', { ascending: false });
+        if (vaccineData) setVaccines(vaccineData as Vaccine[]);
+      }
 
-      const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
-      if (activityData) setActivities(activityData as Activity[]);
+      if (allowed('timeline')) {
+        const { data: activityData } = await supabase.from('pet_activities').select('*').eq('pet_id', petId).order('activity_date', { ascending: false });
+        if (activityData) setActivities(activityData as Activity[]);
+      }
 
-      const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
-      if (weightData) setLatestWeight(weightData.weight);
+      if (allowed('weight')) {
+        const { data: weightData } = await supabase.from('pet_weights').select('weight').eq('pet_id', petId).order('recorded_date', { ascending: false }).limit(1).maybeSingle();
+        if (weightData) setLatestWeight(weightData.weight);
+      }
 
       // เช็ค session แบบไม่ redirect — หน้านี้เปิดให้ทุกคนดูได้ แต่การจองต้องล็อกอิน
       const { data: { session } } = await supabase.auth.getSession();
@@ -332,8 +357,25 @@ export default function PublicPetProfilePage() {
 
   // ─── Pedigree renderer (read-only: การ์ดไม่ลิงก์ออกไปไหน) ───
   const renderPedigree = () => {
-    if (pedigreeGens.length === 0) {
-      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>Loading...</div>;
+    const stateBox = (title: string, sub?: string, action?: React.ReactNode) => (
+      <div style={{ textAlign: 'center', padding: '28px 12px', color: F.muted, fontSize: '13px' }}>
+        <div style={{ fontWeight: 700, color: F.inkSoft }}>{title}</div>
+        {sub && <div style={{ marginTop: 4, fontSize: '12px' }}>{sub}</div>}
+        {action && <div style={{ marginTop: 12 }}>{action}</div>}
+      </div>
+    );
+    if (fieldAccess?.pedigree === false) {
+      return stateBox('เจ้าของจำกัดการเข้าถึงแผนผังสายเลือด',
+        sessionUserId ? 'ข้อมูลนี้เปิดให้เฉพาะผู้ที่เจ้าของอนุญาต' : 'เข้าสู่ระบบเพื่อดูข้อมูลที่เจ้าของเปิดให้สมาชิก',
+        !sessionUserId && <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="btn-view-full" style={{ display: 'inline-flex' }}>เข้าสู่ระบบ</a>);
+    }
+    if (pedigreeState === 'loading') return stateBox('กำลังโหลดแผนผังสายเลือด...');
+    if (pedigreeState === 'error') {
+      return stateBox('โหลดแผนผังสายเลือดไม่สำเร็จ', 'ตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง',
+        <button className="btn-view-full" onClick={() => pet && loadPedigree(pet)}>ลองใหม่</button>);
+    }
+    if (pedigreeState === 'empty' || pedigreeGens.length === 0) {
+      return stateBox('ยังไม่มีข้อมูลพ่อแม่พันธุ์', 'เจ้าของยังไม่ได้บันทึกสายเลือดของสัตว์ตัวนี้');
     }
     const totalGens = pedigreeGens.length;
     const ROLE_NAMES = ['ตัวเอง (Current)', 'พ่อแม่ (Parents)', 'ปู่ย่าตายาย (Grandparents)', 'ทวด (Great-Grandparents)', 'เทียด (Great-Great)'];
@@ -378,6 +420,41 @@ export default function PublicPetProfilePage() {
             </div>
           );
         })}
+      </div>
+    );
+  };
+
+  // ─── ข้อมูลสุขภาพ: null = "ยังไม่ได้ระบุ" ไม่ใช่ "ไม่มี" ───
+  const renderHealth = () => {
+    const locked = fieldAccess?.health === false;
+    const rows = [
+      { label: 'กรุ๊ปเลือด', val: locked ? null : healthDetails?.blood_type },
+      { label: 'ทำหมัน', val: pet ? neuteredText(pet.is_neutered) : NOT_SPECIFIED },
+      { label: 'โรคประจำตัว', val: locked ? null : healthDetails?.chronic_diseases },
+      { label: 'สิ่งที่แพ้', val: locked ? null : healthDetails?.allergies },
+    ];
+    return (
+      <div className="card">
+        <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
+        <div className="card-body">
+          {locked && (
+            <div style={{ fontSize: '12px', color: F.muted, background: '#F9FAFB', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px' }}>
+              เจ้าของจำกัดการเข้าถึงข้อมูลสุขภาพ{!sessionUserId && ' — เข้าสู่ระบบเพื่อดูข้อมูลที่เปิดให้สมาชิก'}
+            </div>
+          )}
+          {rows.filter(r => !(locked && r.val === null)).map((item, i) => {
+            const text = item.label === 'ทำหมัน' ? (item.val as string) : healthText(item.val);
+            const specified = text !== NOT_SPECIFIED;
+            return (
+              <div key={i} className="health-check-item">
+                <div className="health-check-left">
+                  <div className="check-icon" style={specified ? undefined : { background: '#F3F4F6', color: '#D1D5DB' }}>{specified ? <Icon.Check /> : '–'}</div>{item.label}
+                </div>
+                <div className="health-check-val" style={specified ? undefined : { color: '#D1D5DB', fontWeight: 500 }}>{text}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -598,7 +675,7 @@ export default function PublicPetProfilePage() {
               <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
             </div>
             <div className="hero-info">
-              <div className="verified-badge"><Icon.Verified /> Verified by Whiskora</div>
+              <div className="verified-badge" title={TRUST_COPY.registered.hint}><Icon.Verified /> {TRUST_COPY.registered.label}</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
               <div className="breed-tags">
                 {pet.breed && <span className="breed-tag"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {pet.breed}</span>}
@@ -675,7 +752,7 @@ export default function PublicPetProfilePage() {
                 <div className="card">
                   <div className="card-header">
                     <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div>
-                    <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>
+                    {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>}
                   </div>
                   <div className="card-body" style={{ padding: '16px' }}>{renderPedigree()}</div>
                 </div>
@@ -728,24 +805,7 @@ export default function PublicPetProfilePage() {
 
               {/* Side */}
               <div className="content-side">
-                <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
-                  <div className="card-body">
-                    {[
-                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
-                      { label: 'ทำหมันแล้ว', val: pet.is_neutered ? 'ทำแล้ว' : '-' },
-                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
-                    {healthDetails?.allergies && (
-                      <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <div style={{ fontSize: '12px', color: '#9F1239', fontWeight: 600 }}>{healthDetails.allergies}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {renderHealth()}
 
                 {owner && (
                   <div className="card">
@@ -757,10 +817,11 @@ export default function PublicPetProfilePage() {
                         </div>
                         <div className="owner-name-wrap">
                           <div className="owner-name">{farm?.farm_name || owner.full_name || 'ไม่ระบุชื่อ'}</div>
-                          {farm?.farm_name && <div className="owner-cattery"><Icon.Verified /> ฟาร์มที่ยืนยันแล้ว</div>}
+                          {farm?.farm_name && (farm.is_verified
+                            ? <div className="owner-cattery" title={TRUST_COPY.farmVerified.hint}><Icon.Verified /> {TRUST_COPY.farmVerified.label}</div>
+                            : <div className="owner-cattery" style={{ color: F.muted }} title={TRUST_COPY.farmUnverified.hint}>{TRUST_COPY.farmUnverified.label}</div>)}
                         </div>
                       </div>
-                      {owner.address && <div className="owner-info-row"><span className="owner-info-icon"><Icon.Calendar /></span>{owner.address}</div>}
                       {hasContact && (
                         <button className="contact-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }} onClick={() => setShowContactModal(true)}>
                           <Icon.Message /> ติดต่อสอบถาม
@@ -777,7 +838,7 @@ export default function PublicPetProfilePage() {
           {activeTab === 'pedigree' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div>
-                <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>
+                {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>}
               </div>
               <div className="card-body">{renderPedigree()}</div>
             </div>
@@ -787,24 +848,7 @@ export default function PublicPetProfilePage() {
           {activeTab === 'health' && (
             <div className="content-grid">
               <div className="content-main">
-                <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
-                  <div className="card-body">
-                    {[
-                      { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
-                      { label: 'สถานะทำหมัน', val: pet.is_neutered ? 'ทำแล้ว' : 'ยังไม่ทำ' },
-                      { label: 'โรคประจำตัว', val: healthDetails?.chronic_diseases || 'ไม่มี' },
-                    ].map((item, i) => (
-                      <div key={i} className="health-check-item"><div className="health-check-left"><div className="check-icon"><Icon.Check /></div>{item.label}</div><div className="health-check-val">{item.val}</div></div>
-                    ))}
-                    {healthDetails?.allergies && (
-                      <div style={{ marginTop: '14px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#E11D48', textTransform: 'uppercase', marginBottom: '6px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
-                        <p style={{ fontSize: '13px', color: '#9F1239', fontWeight: 600 }}>{healthDetails.allergies}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {renderHealth()}
               </div>
               <div className="content-side"></div>
             </div>
