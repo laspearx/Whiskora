@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
-import { TRUST_COPY, healthText, neuteredText, NOT_SPECIFIED } from '@/lib/trust';
+import { useLocale, useTranslations } from '@/i18n/context';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -42,11 +42,11 @@ const Icon = {
 };
 
 const TABS = [
-  { id: 'overview', fieldGroupKey: 'overview', label: 'ภาพรวม', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
-  { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'แผนผังสายเลือด', icon: <Icon.Dna /> },
-  { id: 'health', fieldGroupKey: 'health', label: 'สุขภาพ', icon: <Icon.HeartCheck /> },
-  { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'วัคซีน', icon: <Icon.Syringe /> },
-  { id: 'timeline', fieldGroupKey: 'timeline', label: 'ไทม์ไลน์', icon: <Icon.Timeline /> },
+  { id: 'overview', fieldGroupKey: 'overview', label: 'tab_overview', icon: <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> },
+  { id: 'pedigree', fieldGroupKey: 'pedigree', label: 'tab_pedigree', icon: <Icon.Dna /> },
+  { id: 'health', fieldGroupKey: 'health', label: 'tab_health', icon: <Icon.HeartCheck /> },
+  { id: 'vaccine', fieldGroupKey: 'vaccination', label: 'tab_vaccine', icon: <Icon.Syringe /> },
+  { id: 'timeline', fieldGroupKey: 'timeline', label: 'tab_timeline', icon: <Icon.Timeline /> },
 ];
 
 const MAX_GENERATIONS = 5;
@@ -62,6 +62,13 @@ type PedigreeNode = {
 };
 
 export default function PublicPetProfilePage() {
+  const t = useTranslations('pet');
+  const locale = useLocale();
+  // ค่าว่าง = ยังไม่ได้ระบุ (ไม่ใช่ "ไม่มี") — ข้อความเดียวกับ lib/trust.ts แต่ผ่าน i18n
+  const healthText = (v: string | null | undefined) => (v != null && v.trim() !== '' ? v : t('notSpecified'));
+  const neuteredText = (v: boolean | null | undefined) => (v === true ? t('neutered') : v === false ? t('notNeutered') : t('notSpecified'));
+  // pets.status เก็บเป็นค่าไทยใน DB — แปลเฉพาะตอนแสดง
+  const statusLabel = (st: string) => { const key = 'status_' + st; const out = t(key); return out === key ? st : out; };
   const params = useParams();
   const petId = params.id as string;
 
@@ -326,7 +333,7 @@ export default function PublicPetProfilePage() {
       if (error) throw error;
       setMyReservation(data);
     } catch (err: any) {
-      alert('จองไม่สำเร็จ: ' + (err.message || 'กรุณาลองใหม่'));
+      alert(t('reserveFailed') + (err.message || t('tryAgain')));
     } finally {
       setReserving(false);
     }
@@ -338,19 +345,19 @@ export default function PublicPetProfilePage() {
     let years = today.getFullYear() - dob.getFullYear();
     let months = today.getMonth() - dob.getMonth();
     if (months < 0) { years--; months += 12; }
-    if (years === 0 && months === 0) return 'เพิ่งเกิด';
-    return `${years > 0 ? years + ' ปี ' : ''}${months > 0 ? months + ' เดือน' : ''}`;
+    if (years === 0 && months === 0) return t('newborn');
+    return `${years > 0 ? years + t('yearsSuffix') : ''}${months > 0 ? months + t('monthsSuffix') : ''}`;
   };
 
   const formatDate = (date?: string | null) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(date).toLocaleDateString(locale === 'en' ? 'en-GB' : 'th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const generateCombinedTimeline = () => {
     const timeline: { id: string; date: string; title: string; description: string; color: string }[] = [];
-    if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'เกิด / เข้าระบบ Whiskora', description: '', color: '#E84677' });
-    vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `วัคซีน ${v.vaccine_name}`, description: v.notes || '', color: '#0D9488' }));
+    if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: t('timelineBorn'), description: '', color: '#E84677' });
+    vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `${t('vaccinePrefix')} ${v.vaccine_name}`, description: v.notes || '', color: '#0D9488' }));
     activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', color: '#F59E0B' }));
     return timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
@@ -365,23 +372,23 @@ export default function PublicPetProfilePage() {
       </div>
     );
     if (fieldAccess?.pedigree === false) {
-      return stateBox('เจ้าของจำกัดการเข้าถึงแผนผังสายเลือด',
-        sessionUserId ? 'ข้อมูลนี้เปิดให้เฉพาะผู้ที่เจ้าของอนุญาต' : 'เข้าสู่ระบบเพื่อดูข้อมูลที่เจ้าของเปิดให้สมาชิก',
-        !sessionUserId && <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="btn-view-full" style={{ display: 'inline-flex' }}>เข้าสู่ระบบ</a>);
+      return stateBox(t('pedLocked'),
+        sessionUserId ? t('lockedMember') : t('lockedGuest'),
+        !sessionUserId && <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="btn-view-full" style={{ display: 'inline-flex' }}>{t('signIn')}</a>);
     }
-    if (pedigreeState === 'loading') return stateBox('กำลังโหลดแผนผังสายเลือด...');
+    if (pedigreeState === 'loading') return stateBox(t('pedLoading'));
     if (pedigreeState === 'error') {
-      return stateBox('โหลดแผนผังสายเลือดไม่สำเร็จ', 'ตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง',
-        <button className="btn-view-full" onClick={() => pet && loadPedigree(pet)}>ลองใหม่</button>);
+      return stateBox(t('pedError'), t('checkConnection'),
+        <button className="btn-view-full" onClick={() => pet && loadPedigree(pet)}>{t('retry')}</button>);
     }
     if (pedigreeState === 'empty' || pedigreeGens.length === 0) {
-      return stateBox('ยังไม่มีข้อมูลพ่อแม่พันธุ์', 'เจ้าของยังไม่ได้บันทึกสายเลือดของสัตว์ตัวนี้');
+      return stateBox(t('pedEmpty'), t('pedEmptySub'));
     }
     const totalGens = pedigreeGens.length;
-    const ROLE_NAMES = ['ตัวเอง (Current)', 'พ่อแม่ (Parents)', 'ปู่ย่าตายาย (Grandparents)', 'ทวด (Great-Grandparents)', 'เทียด (Great-Great)'];
+    const ROLE_NAMES = [t('gen0'), t('gen1'), t('gen2'), t('gen3'), t('gen4')];
     const firstRealGen = pedigreeGens.findIndex(gen => gen.some(n => !n.isMissing));
     const genNumberOf = (gi: number): number | null => (gi < firstRealGen ? null : gi - firstRealGen + 1);
-    const roleNameOf = (gi: number): string => ROLE_NAMES[(totalGens - 1) - gi] || `รุ่นที่ ${gi + 1}`;
+    const roleNameOf = (gi: number): string => ROLE_NAMES[(totalGens - 1) - gi] || `${t('genN')} ${gi + 1}`;
     const columns = pedigreeGens.map((gen, gi) => ({ gen, gi })).reverse();
 
     return (
@@ -394,7 +401,7 @@ export default function PublicPetProfilePage() {
           return (
             <div key={gi} className={`pedigree-col ${isSelfCol ? 'pedigree-col-self' : ''} ${hasConnector ? 'has-connector' : ''} ${hasParentRight ? 'has-parent-right' : ''}`}>
               <div className="pedigree-col-head">
-                {genNum !== null && <span className="pedigree-gen-num">เจน {genNum}</span>}
+                {genNum !== null && <span className="pedigree-gen-num">{t('genShort')} {genNum}</span>}
                 <span className="pedigree-gen-role">{roleNameOf(gi)}</span>
               </div>
               <div className="pedigree-col-cards" style={{ '--ped-n': gen.length } as React.CSSProperties}>
@@ -408,7 +415,7 @@ export default function PublicPetProfilePage() {
                             {node.image_url ? <img src={node.image_url} alt={node.name || ''} /> : (node.isMissing ? <img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: '60%', height: '60%', objectFit: 'contain' }} /> : (isSireSide ? <Icon.Male /> : <Icon.Female />))}
                           </div>
                           <div className="ped-card-info">
-                            <div className="ped-card-name">{node.isMissing ? 'ไม่มีข้อมูล' : (node.name || 'ไม่ระบุ')}</div>
+                            <div className="ped-card-name">{node.isMissing ? t('noData') : (node.name || t('unnamed'))}</div>
                             {node.breed && !node.isMissing && <div className="ped-card-breed">{node.breed}</div>}
                           </div>
                         </div>
@@ -428,23 +435,23 @@ export default function PublicPetProfilePage() {
   const renderHealth = () => {
     const locked = fieldAccess?.health === false;
     const rows = [
-      { label: 'กรุ๊ปเลือด', val: locked ? null : healthDetails?.blood_type },
-      { label: 'ทำหมัน', val: pet ? neuteredText(pet.is_neutered) : NOT_SPECIFIED },
-      { label: 'โรคประจำตัว', val: locked ? null : healthDetails?.chronic_diseases },
-      { label: 'สิ่งที่แพ้', val: locked ? null : healthDetails?.allergies },
+      { label: t('bloodType'), val: locked ? null : healthDetails?.blood_type },
+      { label: t('neuterLabel'), neuter: true, val: pet ? neuteredText(pet.is_neutered) : t('notSpecified') },
+      { label: t('chronic'), val: locked ? null : healthDetails?.chronic_diseases },
+      { label: t('allergies'), val: locked ? null : healthDetails?.allergies },
     ];
     return (
       <div className="card">
-        <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>ข้อมูลสุขภาพ</div></div>
+        <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FFE4E6' }}><img src="/icons/icon-health.png" alt="" style={{width:18,height:18,objectFit:'contain'}} /></div>{t('healthTitle')}</div></div>
         <div className="card-body">
           {locked && (
             <div style={{ fontSize: '12px', color: F.muted, background: '#F9FAFB', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px' }}>
-              เจ้าของจำกัดการเข้าถึงข้อมูลสุขภาพ{!sessionUserId && ' — เข้าสู่ระบบเพื่อดูข้อมูลที่เปิดให้สมาชิก'}
+              {t('healthLocked')}{!sessionUserId && t('healthLockedGuest')}
             </div>
           )}
           {rows.filter(r => !(locked && r.val === null)).map((item, i) => {
-            const text = item.label === 'ทำหมัน' ? (item.val as string) : healthText(item.val);
-            const specified = text !== NOT_SPECIFIED;
+            const text = item.neuter ? (item.val as string) : healthText(item.val);
+            const specified = text !== t('notSpecified');
             return (
               <div key={i} className="health-check-item">
                 <div className="health-check-left">
@@ -463,7 +470,7 @@ export default function PublicPetProfilePage() {
 
   if (!pet) return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="font-bold text-gray-400">ไม่พบข้อมูลสัตว์เลี้ยง 😢</p>
+      <p className="font-bold text-gray-400">{t('notFound')}</p>
     </div>
   );
 
@@ -473,7 +480,7 @@ export default function PublicPetProfilePage() {
   const combinedTimeline = generateCombinedTimeline();
   const hasContact = farm && (farm.phone || farm.line_id || farm.facebook_link);
   const latestWeightDisplay = latestWeight
-    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
+    ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} ${t('kg')}` : `${latestWeight} ${t('g')}`
     : '-';
 
   return (
@@ -675,7 +682,7 @@ export default function PublicPetProfilePage() {
               <img src={selectedImage || pet.image_url || '/placeholder-pet.jpg'} alt={pet.name} />
             </div>
             <div className="hero-info">
-              <div className="verified-badge" title={TRUST_COPY.registered.hint}><Icon.Verified /> {TRUST_COPY.registered.label}</div>
+              <div className="verified-badge" title={t('trustRegisteredHint')}><Icon.Verified /> {t('trustRegistered')}</div>
               <div className="pet-name">{pet.name}<div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div></div>
               <div className="breed-tags">
                 {pet.breed && <span className="breed-tag"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} /> {pet.breed}</span>}
@@ -683,21 +690,21 @@ export default function PublicPetProfilePage() {
                 {pet.pattern && <span className="breed-tag breed-tag-white">{pet.pattern}</span>}
               </div>
               <div className="quick-stats">
-                <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> วันเกิด</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">อายุ {calculateAge(pet.birth_date)}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> น้ำหนัก</div><div className="stat-value">{latestWeightDisplay}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Brush /> สี</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
-                <div className="stat-cell"><div className="stat-label"><Icon.Chip /> ไมโครชิพ</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Calendar /> {t('birthDate')}</div><div className="stat-value">{formatDate(pet.birth_date)}</div><div className="stat-sub">{t('age')} {calculateAge(pet.birth_date)}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Weight /> {t('weight')}</div><div className="stat-value">{latestWeightDisplay}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Brush /> {t('color')}</div><div className="stat-value">{pet.color || '-'}</div><div className="stat-sub">{pet.coat || ''}</div></div>
+                <div className="stat-cell"><div className="stat-label"><Icon.Chip /> {t('microchip')}</div><div className="stat-value" style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pet.microchip_number || '-'}</div></div>
               </div>
               <div className="pet-id-card">
                 <div className="pet-id-left">
                   <div className="pet-id-label"><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain' }} /> PET ID</div>
                   <div className="pet-id-number">{pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`}</div>
-                  <div className="pet-id-reg">ลงทะเบียนกับ Whiskora</div>
+                  <div className="pet-id-reg">{t('registeredWith')}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 {pet.status && (
-                  <span className="status-pill" style={{ background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' }}>● {pet.status}</span>
+                  <span className="status-pill" style={{ background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' }}>● {statusLabel(pet.status)}</span>
                 )}
                 {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
                   <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>
@@ -709,27 +716,27 @@ export default function PublicPetProfilePage() {
                       color: myReservation.status === 'confirmed' ? '#065F46' : '#92400E',
                       border: `1px solid ${myReservation.status === 'confirmed' ? '#A7F3D0' : '#FDE68A'}`,
                     }}>
-                      {myReservation.status === 'confirmed' ? '✓ ยืนยันการจองแล้ว' : '⏳ รอฟาร์มยืนยันการจอง'}
+                      {myReservation.status === 'confirmed' ? t('resConfirmed') : t('resPending')}
                     </span>
                   ) : (
                     <button className="contact-btn" style={{ background: '#16A34A' }} onClick={handleReserve} disabled={reserving}>
-                      {reserving ? 'กำลังจอง...' : '📌 จองสัตว์ตัวนี้'}
+                      {reserving ? t('reserving') : t('reserve')}
                     </button>
                   )
                 )}
                 {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && !sessionUserId && (
                   <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="status-pill" style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', textDecoration: 'none' }}>
-                    เข้าสู่ระบบเพื่อจองตัวนี้
+                    {t('signInToReserve')}
                   </a>
                 )}
                 {hasContact && (
                   <button className="contact-btn" onClick={() => setShowContactModal(true)}>
-                    <Icon.Message /> ติดต่อ{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}
+                    <Icon.Message /> {isFarmPet ? t('contactFarm') : t('contactOwner')}
                   </button>
                 )}
                 {isFarmPet && farm && (
                   <a href={`/farm/${farm.id}`} className="farm-link-btn">
-                    <Icon.Home /> ดูโปรไฟล์ฟาร์ม
+                    <Icon.Home /> {t('viewFarm')}
                   </a>
                 )}
               </div>
@@ -740,7 +747,7 @@ export default function PublicPetProfilePage() {
           <div className="tabs-wrapper"><div className="tabs-inner">
             {TABS.filter(tab => fieldAccess === null || fieldAccess[tab.fieldGroupKey] !== false).map(tab => (
               <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
-                <span className="tab-icon">{tab.icon}</span>{tab.label}
+                <span className="tab-icon">{tab.icon}</span>{t(tab.label)}
               </button>
             ))}
           </div></div>
@@ -751,21 +758,21 @@ export default function PublicPetProfilePage() {
               <div className="content-main">
                 <div className="card">
                   <div className="card-header">
-                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div>
-                    {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>}
+                    <div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>{t('pedigreeTitle')}</div>
+                    {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> {t('viewFull')}</button>}
                   </div>
                   <div className="card-body" style={{ padding: '16px' }}>{renderPedigree()}</div>
                 </div>
 
                 <div className="card">
-                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>ข้อมูลพื้นฐาน</div></div>
+                  <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: F.pinkSoft }}><img src="/icons/icon-paw-circle-white.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} /></div>{t('basicInfo')}</div></div>
                   <div className="card-body">
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
                       {[
-                        { label: 'ชื่อ', val: pet.name }, { label: 'วันเกิด', val: formatDate(pet.birth_date) },
-                        { label: 'เพศ', val: isMale ? 'Male' : 'Female' }, { label: 'อายุ', val: calculateAge(pet.birth_date) },
-                        { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' }, { label: 'น้ำหนัก', val: latestWeightDisplay },
-                        { label: 'สี', val: displayVal(pet.color) }, { label: 'สถานะ', val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {pet.status}</span> : '-' },
+                        { label: t('name'), val: pet.name }, { label: t('birthDate'), val: formatDate(pet.birth_date) },
+                        { label: t('sex'), val: isMale ? t('male') : t('female') }, { label: t('age'), val: calculateAge(pet.birth_date) },
+                        { label: t('breed'), val: pet.breed || speciesTh(pet.species) || '-' }, { label: t('weight'), val: latestWeightDisplay },
+                        { label: t('color'), val: displayVal(pet.color) }, { label: t('status'), val: pet.status ? <span style={{ color: '#059669', fontWeight: 700 }}>● {statusLabel(pet.status)}</span> : '-' },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: `1px solid ${F.line}`, gap: 10 }}>
                           <span style={{ fontSize: '12px', fontWeight: 600, color: F.muted, flexShrink: 0 }}>{item.label}</span>
@@ -778,7 +785,7 @@ export default function PublicPetProfilePage() {
 
                 {allImages.length > 0 && (
                   <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Image /></div>แกลลอรี่</div></div>
+                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3E8FF', color: '#7C3AED' }}><Icon.Image /></div>{t('gallery')}</div></div>
                     <div className="card-body">
                       <div className="gallery-grid">
                         {allImages.map((img, i) => (
@@ -791,11 +798,11 @@ export default function PublicPetProfilePage() {
 
                 {vaccines.length > 0 && (
                   <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}><Icon.Syringe /></div>ประวัติการฉีดวัคซีน</div></div>
+                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}><Icon.Syringe /></div>{t('vaccineHistory')}</div></div>
                     <div className="card-body">
                       {vaccines.slice(0, 5).map(v => (
                         <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
-                          <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || 'รับวัคซีนเรียบร้อย'}</div></div>
+                          <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || t('vaccineDone')}</div></div>
                           <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
                       ))}
                     </div>
@@ -809,22 +816,22 @@ export default function PublicPetProfilePage() {
 
                 {owner && (
                   <div className="card">
-                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>👤</div>{isFarmPet ? 'ฟาร์ม' : 'เจ้าของ'}</div></div>
+                    <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>👤</div>{isFarmPet ? t('farm') : t('owner')}</div></div>
                     <div className="card-body">
                       <div className="owner-card-header">
                         <div className="owner-avatar">
                           {owner.avatar_url ? <img src={owner.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: F.pinkSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: F.pink, fontWeight: 700 }}>{(farm?.farm_name || owner.full_name)?.[0] || '?'}</div>}
                         </div>
                         <div className="owner-name-wrap">
-                          <div className="owner-name">{farm?.farm_name || owner.full_name || 'ไม่ระบุชื่อ'}</div>
+                          <div className="owner-name">{farm?.farm_name || owner.full_name || t('noName')}</div>
                           {farm?.farm_name && (farm.is_verified
-                            ? <div className="owner-cattery" title={TRUST_COPY.farmVerified.hint}><Icon.Verified /> {TRUST_COPY.farmVerified.label}</div>
-                            : <div className="owner-cattery" style={{ color: F.muted }} title={TRUST_COPY.farmUnverified.hint}>{TRUST_COPY.farmUnverified.label}</div>)}
+                            ? <div className="owner-cattery" title={t('trustFarmVerifiedHint')}><Icon.Verified /> {t('trustFarmVerified')}</div>
+                            : <div className="owner-cattery" style={{ color: F.muted }} title={t('trustFarmUnverifiedHint')}>{t('trustFarmUnverified')}</div>)}
                         </div>
                       </div>
                       {hasContact && (
                         <button className="contact-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }} onClick={() => setShowContactModal(true)}>
-                          <Icon.Message /> ติดต่อสอบถาม
+                          <Icon.Message /> {t('ask')}
                         </button>
                       )}
                     </div>
@@ -837,8 +844,8 @@ export default function PublicPetProfilePage() {
           {/* ─── Pedigree tab ─── */}
           {activeTab === 'pedigree' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>แผนผังสายเลือด (Pedigree)</div>
-                {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> ดูแบบเต็ม</button>}
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}><Icon.Dna /></div>{t('pedigreeTitle')}</div>
+                {pedigreeState === 'ready' && fieldAccess?.pedigree !== false && <button className="btn-view-full" onClick={() => setShowPedigreeModal(true)}><Icon.Expand /> {t('viewFull')}</button>}
               </div>
               <div className="card-body">{renderPedigree()}</div>
             </div>
@@ -857,9 +864,9 @@ export default function PublicPetProfilePage() {
           {/* ─── Vaccine tab ─── */}
           {activeTab === 'vaccine' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}><Icon.Syringe /></div>ประวัติการฉีดวัคซีน</div></div>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}><Icon.Syringe /></div>{t('vaccineHistory')}</div></div>
               <div className="card-body">
-                {vaccines.length === 0 ? <div className="empty-hint">ยังไม่มีประวัติวัคซีน</div> : vaccines.map(v => (
+                {vaccines.length === 0 ? <div className="empty-hint">{t('noVaccines')}</div> : vaccines.map(v => (
                   <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
                     <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || '-'}</div></div>
                     <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
@@ -871,9 +878,9 @@ export default function PublicPetProfilePage() {
           {/* ─── Timeline tab ─── */}
           {activeTab === 'timeline' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Timeline /></div>ไทม์ไลน์</div></div>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Icon.Timeline /></div>{t('tab_timeline')}</div></div>
               <div className="card-body">
-                {combinedTimeline.length === 0 ? <div className="empty-hint">ยังไม่มีกิจกรรม</div> : (
+                {combinedTimeline.length === 0 ? <div className="empty-hint">{t('noActivity')}</div> : (
                   <div className="timeline-list">
                     {combinedTimeline.map(item => (
                       <div key={item.id} className="timeline-item"><div className="timeline-dot" style={{ background: item.color }} />
@@ -893,24 +900,24 @@ export default function PublicPetProfilePage() {
       {showContactModal && (
         <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
           <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="contact-modal-title">ติดต่อ{isFarmPet ? `ฟาร์ม ${farm?.farm_name || ''}` : 'เจ้าของ'}</div>
-            <div className="contact-modal-sub">เลือกช่องทางที่สะดวก แล้วทักได้เลย</div>
+            <div className="contact-modal-title">{isFarmPet ? `${t('contactFarm')} ${farm?.farm_name || ''}` : t('contactOwner')}</div>
+            <div className="contact-modal-sub">{t('pickChannel')}</div>
             {farm?.phone && (
               <button className="contact-channel contact-phone" onClick={() => logLeadAndOpen("phone", `tel:${farm.phone}`)}>
-                <img src="/icons/icon-phone.png" alt="" style={{width:22,height:22,objectFit:'contain'}} /><span>โทรหา <span style={{ opacity: .7, fontWeight: 500 }}>{farm.phone}</span></span>
+                <img src="/icons/icon-phone.png" alt="" style={{width:22,height:22,objectFit:'contain'}} /><span>{t('call')} <span style={{ opacity: .7, fontWeight: 500 }}>{farm.phone}</span></span>
               </button>
             )}
             {farm?.line_id && (
               <button className="contact-channel contact-line" onClick={() => logLeadAndOpen("line", `https://line.me/ti/p/~${farm.line_id}`)}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>แชทผ่าน LINE</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>{t('line')}</span>
               </button>
             )}
             {farm?.facebook_link && (
               <button className="contact-channel contact-fb" onClick={() => logLeadAndOpen("facebook", farm.facebook_link)}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>ติดต่อผ่าน Facebook</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>{t('facebook')}</span>
               </button>
             )}
-            <button className="contact-close" onClick={() => setShowContactModal(false)}>ปิด</button>
+            <button className="contact-close" onClick={() => setShowContactModal(false)}>{t('close')}</button>
           </div>
         </div>
       )}
@@ -919,7 +926,7 @@ export default function PublicPetProfilePage() {
       {showPedigreeModal && (
         <div className="modal-overlay" onClick={() => { setShowPedigreeModal(false); setPedigreeZoom(1); }}>
           <div className="ped-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="ped-modal-head"><div className="ped-modal-title"><Icon.Dna /> แผนผังสายเลือด {pet.name}</div></div>
+            <div className="ped-modal-head"><div className="ped-modal-title"><Icon.Dna /> {t('tab_pedigree')} {pet.name}</div></div>
             <div className="ped-modal-stage" ref={pedStageRef}>
               <div className="ped-modal-scaler" ref={pedScalerRef} style={{ transform: `scale(${pedigreeZoom})` }}>
                 {renderPedigree()}
@@ -929,7 +936,7 @@ export default function PublicPetProfilePage() {
               <button className="ped-modal-zoombtn" onClick={() => setPedigreeZoom(z => Math.max(0.5, +(z - 0.15).toFixed(2)))}>−</button>
               <span className="ped-modal-zoomval">{Math.round(pedigreeZoom * 100)}%</span>
               <button className="ped-modal-zoombtn" onClick={() => setPedigreeZoom(z => Math.min(2.5, +(z + 0.15).toFixed(2)))}>+</button>
-              <button className="ped-modal-close" onClick={() => { setShowPedigreeModal(false); setPedigreeZoom(1); }}>ปิด</button>
+              <button className="ped-modal-close" onClick={() => { setShowPedigreeModal(false); setPedigreeZoom(1); }}>{t('close')}</button>
             </div>
           </div>
         </div>

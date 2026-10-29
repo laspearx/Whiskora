@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { useLocale, useTranslations } from "@/i18n/context";
 import { PET_STATUS } from "@/lib/constants";
 import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
 
@@ -16,10 +17,8 @@ const F = {
   line: "#F3F4F6", lineMid: "#E5E7EB", bg: "#fffafc",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", cancelled: "ยกเลิกแล้ว",
-  converted: "โอนย้ายแล้ว", expired: "หมดอายุ",
-};
+// ข้อความอยู่ใน messages/*.json → reservations.status_<status>
+const STATUS_KEYS = ["pending", "confirmed", "cancelled", "converted", "expired"];
 const STATUS_COLOR: Record<string, { bg: string; fg: string; bd: string }> = {
   pending:   { bg: F.amberSoft, fg: F.amber, bd: F.amberBorder },
   confirmed: { bg: F.greenSoft, fg: F.green, bd: F.greenBorder },
@@ -38,6 +37,8 @@ interface ReservationRow {
 }
 
 export default function FarmReservationsPage() {
+  const t = useTranslations("reservations");
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const farmId = params?.id as string;
@@ -115,10 +116,10 @@ export default function FarmReservationsPage() {
     } catch (e: any) {
       setError(
         e.message?.includes("one_confirmed_reservation")
-          ? "สัตว์ตัวนี้มีคนจองที่ยืนยันแล้วอยู่ก่อนแล้ว ยกเลิกรายการเดิมก่อนถึงจะยืนยันรายการใหม่ได้"
+          ? t("errAlreadyConfirmed")
           : e.message?.includes("forbidden")
-          ? "บทบาทของคุณไม่มีสิทธิ์ยืนยันหรือยกเลิกการจอง"
-          : "ทำรายการไม่สำเร็จ: " + e.message
+          ? t("errForbidden")
+          : t("errFailed") + e.message
       );
       await load();
     } finally {
@@ -129,7 +130,7 @@ export default function FarmReservationsPage() {
   // ─── จองยืนยันแล้ว → ส่งคำขอโอนเจ้าของให้ผู้จอง (ใช้ pet_ownership_transfers เดิม ผู้ซื้อต้องกดยอมรับเอง) ───
   const sendTransfer = async (row: ReservationRow) => {
     if (busyId !== null || !row.buyer || !row.pet?.user_id) return;
-    if (row.buyer.id === row.pet.user_id) { setError("ผู้จองเป็นเจ้าของสัตว์ตัวนี้อยู่แล้ว"); return; }
+    if (row.buyer.id === row.pet.user_id) { setError(t("errSelf")); return; }
     setBusyId(row.id);
     setError("");
     try {
@@ -148,7 +149,7 @@ export default function FarmReservationsPage() {
       if (insErr) throw insErr;
       await load();
     } catch (e) {
-      setError("ส่งคำขอโอนไม่สำเร็จ: " + (e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)));
+      setError(t("errTransfer") + (e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)));
     } finally {
       setBusyId(null);
     }
@@ -160,7 +161,7 @@ export default function FarmReservationsPage() {
   const others = rows.filter(r => r.status !== "pending");
 
   const renderRow = (row: ReservationRow) => {
-    const buyerName = row.buyer?.full_name || row.buyer?.username || "ผู้ใช้ไม่ระบุชื่อ";
+    const buyerName = row.buyer?.full_name || row.buyer?.username || t("noBuyerName");
     const c = STATUS_COLOR[row.status] || STATUS_COLOR.pending;
     return (
       <div key={row.id} className="rv-row">
@@ -171,34 +172,34 @@ export default function FarmReservationsPage() {
           }
         </Link>
         <div className="rv-info">
-          <div className="rv-pet-name">{row.pet?.name || "ไม่ระบุชื่อ"}</div>
+          <div className="rv-pet-name">{row.pet?.name || t("noName")}</div>
           <div className="rv-buyer">
             <div className="rv-buyer-avatar">
               {row.buyer?.avatar_url ? <img src={row.buyer.avatar_url} alt="" /> : (buyerName[0] || "?")}
             </div>
             {buyerName}
           </div>
-          <div className="rv-date">{new Date(row.created_at).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+          <div className="rv-date">{new Date(row.created_at).toLocaleString((locale === "en" ? "en-GB" : "th-TH"), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
         </div>
         <div className="rv-actions">
-          <span className="rv-status" style={{ background: c.bg, color: c.fg, border: `1px solid ${c.bd}` }}>{STATUS_LABEL[row.status] || row.status}</span>
+          <span className="rv-status" style={{ background: c.bg, color: c.fg, border: `1px solid ${c.bd}` }}>{STATUS_KEYS.includes(row.status) ? t("status_" + row.status) : row.status}</span>
           {canDecide && row.status === "pending" && (
             <div style={{ display: "flex", gap: 6 }}>
-              <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => updateStatus(row, "confirmed")}>ยืนยัน</button>
-              <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ปฏิเสธ</button>
+              <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => updateStatus(row, "confirmed")}>{t("confirm")}</button>
+              <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>{t("reject")}</button>
             </div>
           )}
           {canDecide && row.status === "confirmed" && (() => {
             const pt = pendingTransfers[row.pet_id];
             if (pt && pt.to_user_id === row.buyer?.id) {
-              return <span className="rv-date">ส่งคำขอโอนแล้ว · รอผู้ซื้อยอมรับ</span>;
+              return <span className="rv-date">{t("transferSent")}</span>;
             }
             return (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {myRole === "owner" && !pt && (
-                  <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => sendTransfer(row)}>ส่งคำขอโอนเจ้าของ</button>
+                  <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => sendTransfer(row)}>{t("sendTransfer")}</button>
                 )}
-                <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id || !!pt} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
+                <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id || !!pt} onClick={() => updateStatus(row, "cancelled")}>{t("cancel")}</button>
               </div>
             );
           })()}
@@ -248,26 +249,26 @@ export default function FarmReservationsPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <div>
-              <div className="rv-title">การจองสัตว์เลี้ยง</div>
-              <div className="rv-sub">รายการจองจากผู้ซื้อ — ยืนยันเพื่อปลดล็อกข้อมูลระดับ &quot;ผู้ที่จองไว้&quot;</div>
+              <div className="rv-title">{t("title")}</div>
+              <div className="rv-sub">{t("sub")}</div>
             </div>
           </div>
 
           {error && <div className="rv-error">{error}</div>}
 
           {rows.length === 0 ? (
-            <div className="rv-empty">ยังไม่มีใครจองสัตว์เลี้ยงในฟาร์มนี้</div>
+            <div className="rv-empty">{t("empty")}</div>
           ) : (
             <>
               {pending.length > 0 && (
                 <>
-                  <div className="rv-sec-label">รอยืนยัน ({pending.length})</div>
+                  <div className="rv-sec-label">{t("status_pending")} ({pending.length})</div>
                   {pending.map(renderRow)}
                 </>
               )}
               {others.length > 0 && (
                 <>
-                  <div className="rv-sec-label">ประวัติ</div>
+                  <div className="rv-sec-label">{t("history")}</div>
                   {others.map(renderRow)}
                 </>
               )}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { useLocale, useTranslations } from "@/i18n/context";
 
 const F = {
   ink: "#1f1a1c", inkSoft: "#4a3f44", muted: "#8e7e84",
@@ -23,6 +24,8 @@ interface TransferRow {
 }
 
 export default function MyTransfersPage() {
+  const t = useTranslations("transfers");
+  const locale = useLocale();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<TransferRow[]>([]);
@@ -59,7 +62,7 @@ export default function MyTransfersPage() {
       }
       setRows(prev => prev.filter(r => r.transfer_id !== row.transfer_id));
     } catch (e: any) {
-      setError("ทำรายการไม่สำเร็จ: " + e.message);
+      setError(t("failed") + e.message);
     } finally {
       setBusyId(null);
     }
@@ -108,15 +111,15 @@ export default function MyTransfersPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <div>
-              <div className="tf-title">คำขอโอนย้ายสัตว์เลี้ยง</div>
-              <div className="tf-sub">กดยืนยันเพื่อรับสิทธิ์เจ้าของ หรือปฏิเสธถ้าไม่ใช่คุณ</div>
+              <div className="tf-title">{t("title")}</div>
+              <div className="tf-sub">{t("sub")}</div>
             </div>
           </div>
 
           {error && <div className="tf-error">{error}</div>}
 
           {rows.length === 0 ? (
-            <div className="tf-empty">ไม่มีคำขอโอนย้ายที่รอดำเนินการ</div>
+            <div className="tf-empty">{t("empty")}</div>
           ) : (
             rows.map(row => (
               <div key={row.transfer_id} className="tf-card">
@@ -128,16 +131,16 @@ export default function MyTransfersPage() {
                     }
                   </div>
                   <div className="tf-info">
-                    <div className="tf-pet-name">{row.pet_name || "ไม่ระบุชื่อ"}</div>
+                    <div className="tf-pet-name">{row.pet_name || t("noName")}</div>
                     {row.pet_breed && <div className="tf-pet-breed">{row.pet_breed}</div>}
-                    <div className="tf-from">จาก <b>{row.from_name || "ผู้ใช้"}</b></div>
-                    <div className="tf-date">{new Date(row.initiated_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}</div>
+                    <div className="tf-from">{t("from")} <b>{row.from_name || t("user")}</b></div>
+                    <div className="tf-date">{new Date(row.initiated_at).toLocaleDateString((locale === "en" ? "en-GB" : "th-TH"), { day: "numeric", month: "short", year: "numeric" })}</div>
                   </div>
                 </div>
                 <div className="tf-actions">
-                  <button className="tf-btn tf-btn-decline" disabled={busyId === row.transfer_id} onClick={() => respond(row, "declined")}>ปฏิเสธ</button>
+                  <button className="tf-btn tf-btn-decline" disabled={busyId === row.transfer_id} onClick={() => respond(row, "declined")}>{t("decline")}</button>
                   <button className="tf-btn tf-btn-accept" disabled={busyId === row.transfer_id} onClick={() => respond(row, "accepted")}>
-                    {busyId === row.transfer_id ? "กำลังยืนยัน..." : "ยืนยันรับสิทธิ์"}
+                    {busyId === row.transfer_id ? t("accepting") : t("accept")}
                   </button>
                 </div>
               </div>

@@ -12,6 +12,11 @@ export function withLocale(path: string, locale: string): string {
   return /^\/(th|en)(\/|$)/.test(path) ? path : `/${locale}${path}`;
 }
 
+// ตัด /th หรือ /en ด้านหน้าออก — ใช้ก่อนส่งให้ router ของ i18n (ซึ่งเติม prefix เอง) ไม่งั้นได้ /th/th/...
+export function stripLocale(path: string): string {
+  return path.replace(/^\/(th|en)(?=\/|$)/, '') || '/';
+}
+
 // path ภายในที่ปลอดภัยเท่านั้น — กัน open redirect แบบ //evil.com และ /\evil.com
 export function safeInternalPath(raw: string | null | undefined, fallback = '/profile'): string {
   return raw && raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : fallback;

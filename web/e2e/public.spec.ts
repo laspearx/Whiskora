@@ -96,3 +96,19 @@ test.describe('navigation and locale', () => {
     await expect(page.getByText('คำตอบสรุป · บทความเต็มกำลังจัดทำ').first()).toBeVisible();
   });
 });
+
+test.describe('English system text', () => {
+  test('public profile and sign-in are translated under /en', async ({ page }) => {
+    await page.goto(`/en/p/${PET_ID}`);
+    await expect(page.getByText('Pet ID registered').first()).toBeVisible();
+    await expect(page.getByText(FARM_VERIFIED ? 'Farm identity verified' : 'Farm not verified').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Overview' })).toBeVisible();
+    await expect(page.getByText('ลงทะเบียน Pet ID แล้ว')).toHaveCount(0);
+
+    await page.goto('/en/login');
+    await expect(page.getByText('Continue with Google').first()).toBeVisible();
+    await expect(page.getByText('Continue with LINE').first()).toBeVisible();
+    await page.goto('/en/register');
+    await expect(page.getByRole('heading', { name: 'Create a new account' })).toBeVisible();
+  });
+});

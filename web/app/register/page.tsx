@@ -6,17 +6,19 @@ import { safeInternalPath } from "@/lib/locale";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import { useTranslations } from "@/i18n/context";
 
 const RULES = [
-  { id: 'len',   label: 'อย่างน้อย 8 ตัวอักษร',       test: (p: string) => p.length >= 8 },
-  { id: 'upper', label: 'มีตัวพิมพ์ใหญ่ (A–Z)',         test: (p: string) => /[A-Z]/.test(p) },
-  { id: 'lower', label: 'มีตัวพิมพ์เล็ก (a–z)',         test: (p: string) => /[a-z]/.test(p) },
-  { id: 'num',   label: 'มีตัวเลข (0–9)',               test: (p: string) => /[0-9]/.test(p) },
-  { id: 'sym',   label: 'มีสัญลักษณ์ (!@#$%...)',        test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  { id: 'len',   label: 'ruleLen8',       test: (p: string) => p.length >= 8 },
+  { id: 'upper', label: 'ruleUpperP',         test: (p: string) => /[A-Z]/.test(p) },
+  { id: 'lower', label: 'ruleLowerP',         test: (p: string) => /[a-z]/.test(p) },
+  { id: 'num',   label: 'ruleNumP',               test: (p: string) => /[0-9]/.test(p) },
+  { id: 'sym',   label: 'ruleSymP',        test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
 function strength(p: string) { return RULES.filter(r => r.test(p)).length; }
-const STRENGTH_LABEL = ['', 'อ่อนมาก', 'อ่อน', 'พอใช้', 'ดี', 'แข็งแรงมาก'];
+// label = message key in messages/*.json → register.*
+const STRENGTH_LABEL = ['', 'strength1', 'strength2', 'strength3', 'strength4', 'strength5'];
 const STRENGTH_COLOR = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
 
 const LineSvg = ({ color = 'white' }: { color?: string }) => (
@@ -26,6 +28,7 @@ const LineSvg = ({ color = 'white' }: { color?: string }) => (
 );
 
 function RegisterContent() {
+  const t = useTranslations("register");
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/profile";
@@ -68,13 +71,13 @@ function RegisterContent() {
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!allPass) { setError("รหัสผ่านไม่ผ่านเงื่อนไขความปลอดภัย"); return; }
-    if (!passwordsMatch) { setError("รหัสผ่านทั้งสองช่องไม่ตรงกัน"); return; }
+    if (!allPass) { setError(t("errWeak")); return; }
+    if (!passwordsMatch) { setError(t("errMismatch")); return; }
     setLoading(true);
     const { error: err } = await supabase.auth.signUp({ email, password });
     setLoading(false);
     if (err) {
-      if (err.message.includes("already registered")) setError("อีเมลนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ");
+      if (err.message.includes("already registered")) setError(t("errExists"));
       else setError(err.message);
     } else {
       setSuccess(true);
@@ -102,16 +105,16 @@ function RegisterContent() {
               <polyline points="20 6 9 17 4 12"/>
             </svg>
           </div>
-          <h2 className="text-xl font-black text-gray-800 mb-2">สมัครสำเร็จ!</h2>
+          <h2 className="text-xl font-black text-gray-800 mb-2">{t("doneTitle")}</h2>
           <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            ระบบส่งลิงก์ยืนยันไปที่ <strong className="text-gray-700">{email}</strong> แล้ว<br />
-            กรุณาตรวจสอบอีเมลและกดยืนยันก่อนเข้าสู่ระบบ
+            {t("doneSentTo")} <strong className="text-gray-700">{email}</strong> {t("doneSentSuffix")}<br />
+            {t("doneCheck")}
           </p>
           <Link
             href={`/login?redirect=${encodeURIComponent(safeRedirect)}`}
             className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-2xl transition-all text-sm"
           >
-            ไปหน้าเข้าสู่ระบบ →
+            {t("goLogin")}
           </Link>
         </div>
       </div>
@@ -123,8 +126,8 @@ function RegisterContent() {
       <div className="w-full max-w-[420px] bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 animate-in fade-in zoom-in duration-500 overflow-hidden">
 
         <div className="text-center pt-8 pb-6 px-8">
-          <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">สร้างบัญชีใหม่</h1>
-          <p className="text-gray-400 text-sm font-medium">เริ่มต้นดูแลสัตว์เลี้ยงของคุณด้วย Whiskora</p>
+          <h1 className="text-3xl font-black text-pink-500 tracking-tight mb-2">{t("heading")}</h1>
+          <p className="text-gray-400 text-sm font-medium">{t("tagline")}</p>
         </div>
 
         <div className="px-8 pb-8 space-y-3">
@@ -135,7 +138,7 @@ function RegisterContent() {
             className="w-full flex items-center justify-center gap-3 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all active:scale-[0.98] font-bold text-gray-700 text-sm shadow-sm"
           >
             <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-            สมัครด้วย Google
+            {t("googleBtn")}
           </button>
 
           {/* LINE */}
@@ -144,20 +147,20 @@ function RegisterContent() {
             className="w-full flex items-center justify-center gap-3 py-4 bg-[#06C755] hover:bg-[#05b34d] rounded-2xl transition-all active:scale-[0.98] font-bold text-white text-sm shadow-sm shadow-green-100"
           >
             <LineSvg color="white" />
-            สมัครด้วย LINE
+            {t("lineBtn")}
           </button>
 
           {/* Divider */}
           <div className="relative flex items-center justify-center py-1">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
-            <span className="relative px-4 bg-white text-[11px] font-bold text-gray-300 uppercase tracking-widest">หรือสมัครด้วยอีเมล</span>
+            <span className="relative px-4 bg-white text-[11px] font-bold text-gray-300 uppercase tracking-widest">{t("orEmail")}</span>
           </div>
 
           {/* Email form */}
           <form onSubmit={handleEmailRegister} className="space-y-4">
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">อีเมล</label>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">{t("emailLabel")}</label>
               <input
                 type="email"
                 placeholder="example@email.com"
@@ -170,7 +173,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">รหัสผ่าน</label>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">{t("passwordLabel")}</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -195,7 +198,7 @@ function RegisterContent() {
                       <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-300" style={{ background: i <= score ? STRENGTH_COLOR[score] : '#e5e7eb' }} />
                     ))}
                   </div>
-                  <p className="text-xs font-bold" style={{ color: STRENGTH_COLOR[score] || '#9ca3af' }}>{STRENGTH_LABEL[score]}</p>
+                  <p className="text-xs font-bold" style={{ color: STRENGTH_COLOR[score] || '#9ca3af' }}>{t(STRENGTH_LABEL[score])}</p>
                 </div>
               )}
 
@@ -208,7 +211,7 @@ function RegisterContent() {
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${pass ? 'bg-green-500' : 'bg-gray-200'}`}>
                           {pass && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><polyline points="2 6 5 9 10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
-                        <span className={`text-xs font-medium transition-colors ${pass ? 'text-green-600' : 'text-gray-400'}`}>{r.label}</span>
+                        <span className={`text-xs font-medium transition-colors ${pass ? 'text-green-600' : 'text-gray-400'}`}>{t(r.label)}</span>
                       </div>
                     );
                   })}
@@ -217,7 +220,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">ยืนยันรหัสผ่าน</label>
+              <label className="block text-xs font-bold text-gray-400 mb-1.5 ml-1 uppercase tracking-wide">{t("confirmPasswordLabel")}</label>
               <div className="relative">
                 <input
                   type={showCf ? "text" : "password"}
@@ -237,7 +240,7 @@ function RegisterContent() {
                 </button>
               </div>
               {confirm.length > 0 && !passwordsMatch && (
-                <p className="text-xs text-red-500 font-medium mt-1.5 ml-1">รหัสผ่านไม่ตรงกัน</p>
+                <p className="text-xs text-red-500 font-medium mt-1.5 ml-1">{t("passwordMismatch")}</p>
               )}
             </div>
 
@@ -252,31 +255,31 @@ function RegisterContent() {
               disabled={loading || !allPass || !passwordsMatch}
               className="w-full bg-pink-500 hover:bg-pink-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-pink-100 active:scale-[0.98] disabled:shadow-none"
             >
-              {loading ? "กำลังสมัคร..." : "สร้างบัญชี"}
+              {loading ? t("submitting") : t("submit")}
             </button>
 
             <p className="text-xs text-gray-400 text-center leading-relaxed">
-              การสมัครถือว่าคุณยอมรับ{" "}
-              <Link href="/privacy" className="text-pink-400 hover:underline">นโยบายความเป็นส่วนตัว</Link>
+              {t("consent")}{" "}
+              <Link href="/privacy" className="text-pink-400 hover:underline">{t("privacyLink")}</Link>
             </p>
           </form>
         </div>
 
         <div className="text-center border-t border-gray-50 py-5 px-8">
           <p className="text-gray-400 text-sm font-medium">
-            มีบัญชีอยู่แล้ว?{" "}
+            {t("hasAccount2")}{" "}
             <Link
               href={`/login${safeRedirect !== '/profile' ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`}
               className="text-pink-500 font-bold hover:underline"
             >
-              เข้าสู่ระบบ
+              {t("loginLink")}
             </Link>
           </p>
         </div>
       </div>
 
       <Link href="/" className="mt-6 text-gray-400 text-xs font-bold hover:text-pink-500 transition">
-        ← กลับหน้าแรก
+        {t("backHome")}
       </Link>
     </div>
   );
