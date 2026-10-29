@@ -1,6 +1,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Whiskora: stop direct API reads of private profile / pet-health columns
--- STATUS: PROPOSED — NOT APPLIED (no DB/staging access on 2026-10-30).
+-- STATUS: APPLIED ON STAGING (whiskora-staging, 2026-10-30) — NOT APPLIED ON PRODUCTION. Rollout: docs/PRIVACY_ROLLOUT.md
+--         Gate before applying: supabase/tests/privacy_precheck.sql; verify after: supabase/tests/privacy_postcheck.sql
 -- ORDER: apply FIRST and on its own. No dependency on the reservation/transfer migration.
 --
 -- Problem (confirmed 2026-10-29 with the anon key, counts only):
@@ -14,7 +15,7 @@
 -- lib/columns.ts + lib/profile.ts and falls back when these functions are missing, so the
 -- app can be deployed before or after this migration.
 --
--- PRODUCTION INVENTORY (read-only, 2026-10-30, project vhudldcizmbpujedojei — the only project; no staging):
+-- PRODUCTION INVENTORY (read-only, 2026-10-30, project vhudldcizmbpujedojei):
 --   * anon + authenticated have table-level ALL on profiles and pets; RLS: profiles SELECT using(true) x2,
 --     pets SELECT where is_public or status='พร้อมย้ายบ้าน' → every column of those rows is readable.
 --   * Explicit column ACLs already exist for anon on profiles (id, created_at, username, avatar_url,
