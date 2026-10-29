@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import { PET_STATUS } from "@/lib/constants";
+import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -32,7 +33,7 @@ interface ReservationRow {
   pet_id: number;
   status: string;
   created_at: string;
-  pet: { id: number; name: string | null; image_url: string | null; status: string | null } | null;
+  pet: { id: number; name: string | null; image_url: string | null; status: string | null; user_id: string | null } | null;
   buyer: { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
@@ -45,6 +46,11 @@ export default function FarmReservationsPage() {
   const [rows, setRows] = useState<ReservationRow[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  // pet_id → transfer ที่ยัง pending (ใช้กันส่งคำขอโอนซ้ำ และแสดงสถานะรอผู้ซื้อยอมรับ)
+  const [pendingTransfers, setPendingTransfers] = useState<Record<number, { id: number; to_user_id: string; reservation_id: number | null }>>({});
+  const { myRole } = useFarmAccess();
+  // ตรงกับเงื่อนไขใน farm_set_reservation_status(): owner/manager เท่านั้น
+  const canDecide = myRole === "owner" || myRole === "manager";
 
   const load = async () => {
     const { data: pets } = await supabase.from("pets").select("id").eq("farm_id", farmId);
@@ -53,9 +59,18 @@ export default function FarmReservationsPage() {
 
     const { data } = await supabase
       .from("pet_reservations")
-      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status), buyer:buyer_id(id, full_name, username, avatar_url)")
+      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status, user_id), buyer:buyer_id(id, full_name, username, avatar_url)")
       .in("pet_id", petIds)
       .order("created_at", { ascending: false });
+
+    const { data: transfers } = await supabase
+      .from("pet_ownership_transfers")
+      .select("id, pet_id, to_user_id, reservation_id")
+      .in("pet_id", petIds)
+      .eq("status", "pending");
+    const byPet: Record<number, { id: number; to_user_id: string; reservation_id: number | null }> = {};
+    (transfers || []).forEach(t => { byPet[t.pet_id] = { id: t.id, to_user_id: t.to_user_id, reservation_id: t.reservation_id }; });
+    setPendingTransfers(byPet);
 
     setRows((data || []) as unknown as ReservationRow[]);
     setLoading(false);
@@ -64,19 +79,36 @@ export default function FarmReservationsPage() {
   useEffect(() => { if (farmId) load(); }, [farmId]);
 
   const updateStatus = async (row: ReservationRow, status: "confirmed" | "cancelled") => {
+    if (busyId !== null) return; // กันกดซ้ำระหว่างรอผล
     setBusyId(row.id);
     setError("");
     try {
-      const { error: updErr } = await supabase
-        .from("pet_reservations")
-        .update({ status, confirmed_at: status === "confirmed" ? new Date().toISOString() : null })
-        .eq("id", row.id);
-      if (updErr) throw updErr;
+      // ทางหลัก: RPC อัปเดตการจอง + สถานะสัตว์ใน transaction เดียว (supabase/migrations/20261029_reservation_transfer_pipeline.sql)
+      const { error: rpcErr } = await supabase.rpc("farm_set_reservation_status", { p_reservation_id: row.id, p_status: status });
+      if (rpcErr && rpcErr.code !== "PGRST202") throw rpcErr;
 
-      if (status === "confirmed") {
-        await supabase.from("pets").update({ status: PET_STATUS.RESERVED }).eq("id", row.pet_id);
-      } else if (status === "cancelled" && row.status === "confirmed") {
-        await supabase.from("pets").update({ status: PET_STATUS.OPEN_RESERVE }).eq("id", row.pet_id);
+      if (rpcErr?.code === "PGRST202") {
+        // ยังไม่ได้ติดตั้ง migration — ใช้วิธีเดิม (ไม่ atomic) แต่ตรวจผลทุกขั้นและอิงสถานะจริงจาก DB ไม่ใช่ค่าในหน้าจอ
+        const { data: current, error: curErr } = await supabase.from("pet_reservations").select("status").eq("id", row.id).single();
+        if (curErr) throw curErr;
+        if (current.status === status) { await load(); return; }
+        const { error: updErr } = await supabase
+          .from("pet_reservations")
+          .update({ status, confirmed_at: status === "confirmed" ? new Date().toISOString() : null })
+          .eq("id", row.id)
+          .eq("status", current.status);
+        if (updErr) throw updErr;
+
+        const nextPetStatus = status === "confirmed" ? PET_STATUS.RESERVED
+          : current.status === "confirmed" ? PET_STATUS.OPEN_RESERVE : null;
+        if (nextPetStatus) {
+          const { error: petErr } = await supabase.from("pets").update({ status: nextPetStatus }).eq("id", row.pet_id);
+          if (petErr) {
+            // ย้อนรายการจองกลับ เพื่อไม่ให้เกิด "จองสำเร็จแต่สัตว์ยังพร้อมขาย"
+            await supabase.from("pet_reservations").update({ status: current.status }).eq("id", row.id);
+            throw petErr;
+          }
+        }
       }
 
       await load();
@@ -84,8 +116,39 @@ export default function FarmReservationsPage() {
       setError(
         e.message?.includes("one_confirmed_reservation")
           ? "สัตว์ตัวนี้มีคนจองที่ยืนยันแล้วอยู่ก่อนแล้ว ยกเลิกรายการเดิมก่อนถึงจะยืนยันรายการใหม่ได้"
+          : e.message?.includes("forbidden")
+          ? "บทบาทของคุณไม่มีสิทธิ์ยืนยันหรือยกเลิกการจอง"
           : "ทำรายการไม่สำเร็จ: " + e.message
       );
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // ─── จองยืนยันแล้ว → ส่งคำขอโอนเจ้าของให้ผู้จอง (ใช้ pet_ownership_transfers เดิม ผู้ซื้อต้องกดยอมรับเอง) ───
+  const sendTransfer = async (row: ReservationRow) => {
+    if (busyId !== null || !row.buyer || !row.pet?.user_id) return;
+    if (row.buyer.id === row.pet.user_id) { setError("ผู้จองเป็นเจ้าของสัตว์ตัวนี้อยู่แล้ว"); return; }
+    setBusyId(row.id);
+    setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: existing } = await supabase.from("pet_ownership_transfers")
+        .select("id").eq("pet_id", row.pet_id).eq("status", "pending").maybeSingle();
+      if (existing) { await load(); return; } // มีคำขอค้างอยู่แล้ว ไม่สร้างซ้ำ
+      const { error: insErr } = await supabase.from("pet_ownership_transfers").insert({
+        pet_id: row.pet_id,
+        from_user_id: row.pet.user_id,
+        to_user_id: row.buyer.id,
+        initiated_by: session?.user.id,
+        status: "pending",
+        reservation_id: row.id,
+      });
+      if (insErr) throw insErr;
+      await load();
+    } catch (e) {
+      setError("ส่งคำขอโอนไม่สำเร็จ: " + (e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)));
     } finally {
       setBusyId(null);
     }
@@ -119,15 +182,26 @@ export default function FarmReservationsPage() {
         </div>
         <div className="rv-actions">
           <span className="rv-status" style={{ background: c.bg, color: c.fg, border: `1px solid ${c.bd}` }}>{STATUS_LABEL[row.status] || row.status}</span>
-          {row.status === "pending" && (
+          {canDecide && row.status === "pending" && (
             <div style={{ display: "flex", gap: 6 }}>
               <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => updateStatus(row, "confirmed")}>ยืนยัน</button>
               <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ปฏิเสธ</button>
             </div>
           )}
-          {row.status === "confirmed" && (
-            <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
-          )}
+          {canDecide && row.status === "confirmed" && (() => {
+            const pt = pendingTransfers[row.pet_id];
+            if (pt && pt.to_user_id === row.buyer?.id) {
+              return <span className="rv-date">ส่งคำขอโอนแล้ว · รอผู้ซื้อยอมรับ</span>;
+            }
+            return (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {myRole === "owner" && !pt && (
+                  <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => sendTransfer(row)}>ส่งคำขอโอนเจ้าของ</button>
+                )}
+                <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id || !!pt} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );

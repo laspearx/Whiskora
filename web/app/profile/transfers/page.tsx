@@ -40,13 +40,18 @@ export default function MyTransfersPage() {
   useEffect(() => { load(); }, []);
 
   const respond = async (row: TransferRow, status: "accepted" | "declined") => {
+    if (busyId !== null) return; // กันกดซ้ำ
     setBusyId(row.transfer_id);
     setError("");
     try {
+      // อัปเดตเฉพาะแถวที่ยัง pending — กดซ้ำหรือถูกยกเลิกไปก่อนจะไม่เปลี่ยนสถานะทับ
+      // การเปลี่ยนเจ้าของ (และการเปลี่ยนการจองเป็น converted) ทำโดย trigger ใน transaction เดียวกัน
+      // (ไม่ใช้ .select() ต่อท้าย เพราะผู้รับอ่านคำขอผ่าน RPC get_my_pending_transfers — อาจไม่มีสิทธิ์ select ตรง)
       const { error: updErr } = await supabase
         .from("pet_ownership_transfers")
         .update({ status })
-        .eq("id", row.transfer_id);
+        .eq("id", row.transfer_id)
+        .eq("status", "pending");
       if (updErr) throw updErr;
       if (status === "accepted") {
         router.push(`/pets/${row.pet_id}`);
