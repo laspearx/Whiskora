@@ -56,3 +56,21 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
 --   * Auth providers (Google, LINE custom), Site URL / redirect URLs, email templates, SMTP
 --   * pg_cron job (1 on production) — intentionally not copied so staging never calls production
 --   * Edge Function secrets
+
+-- pg_dump only emits "REVOKE ... FROM PUBLIC" relative to the target's default ACL, so a revoke from
+-- anon/authenticated on production does not survive the restore (Supabase default privileges re-grant it).
+revoke all on function public.protect_profile_role() from public, anon, authenticated;
+
+-- reference data (no user data): visibility field groups used by viewer_can_see(). Copied from production.
+insert into public.field_groups (key, label_th, label_en, resource_type, default_tier, sort_order) values
+  ('overview','ภาพรวม','Overview','pet','public',0),
+  ('pedigree','สายเลือด','Pedigree','pet','owner',1),
+  ('health','สุขภาพ','Health','pet','owner',2),
+  ('vaccination','วัคซีน','Vaccination','pet','engaged',3),
+  ('weight','น้ำหนัก','Weight History','pet','engaged',4),
+  ('dna','ผล DNA','DNA Results','pet','private',5),
+  ('medical_notes','บันทึกทางการแพทย์','Medical Notes','pet','private',6),
+  ('documents','เอกสาร','Documents','pet','private',7),
+  ('certificates','ใบรับรอง','Certificates','pet','owner',8),
+  ('timeline','ไทม์ไลน์','Timeline','pet','registered',9)
+on conflict (key) do nothing;

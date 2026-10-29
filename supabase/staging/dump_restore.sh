@@ -9,7 +9,7 @@
 # Both files must be chmod 600 and live outside the repo.
 set -euo pipefail
 cd "$(dirname "$0")"
-MODE=${1:?usage: dump_restore.sh dump|restore}
+MODE=${1:?usage: dump_restore.sh check|dump|restore}
 OUT=${OUT:-/tmp/whiskora-staging}
 CLI=${SUPABASE_CLI:-supabase}
 mkdir -p "$OUT"; chmod 700 "$OUT"
@@ -18,15 +18,23 @@ envfile_from() {   # $1 = url file → prints path of a 600 env-file with PG* va
   local f="$1"; [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
   [ "$(stat -c %a "$f")" = "600" ] || { echo "$f must be chmod 600" >&2; exit 1; }
   local e; e=$(mktemp); chmod 600 "$e"
-  python3 - "$f" "$e" <<'PY'
+  python3 - "$f" "$e" <<'PY' || { rm -f "$e"; return 1; }
 import sys, urllib.parse
-u = urllib.parse.urlsplit(open(sys.argv[1]).read().strip())
-assert u.scheme.startswith('postgres'), 'not a postgres URI'
-q = dict(urllib.parse.parse_qsl(u.query))
+s = open(sys.argv[1]).read().strip()
+assert s.startswith(('postgres://', 'postgresql://')), 'not a postgres URI'
+rest = s.split('://', 1)[1]
+cred, hostpart = rest.rsplit('@', 1)           # password may contain '@' etc.; host part never does
+user, pw = cred.split(':', 1)
+if pw.startswith('[') and pw.endswith(']'):    # template brackets from "[YOUR-PASSWORD]"
+    pw = pw[1:-1]
+assert '://' not in pw and pw != 'YOUR-PASSWORD', 'password slot does not look like a single password'
+hostport, _, tail = hostpart.partition('/')
+host, _, port = hostport.partition(':')
+db, _, query = tail.partition('?')
+q = dict(urllib.parse.parse_qsl(query))
 with open(sys.argv[2], 'w') as o:
-    o.write(f"PGHOST={u.hostname}\nPGPORT={u.port or 5432}\nPGUSER={urllib.parse.unquote(u.username)}\n")
-    o.write(f"PGPASSWORD={urllib.parse.unquote(u.password or '')}\nPGDATABASE={u.path.lstrip('/') or 'postgres'}\n")
-    o.write(f"PGSSLMODE={q.get('sslmode', 'require')}\n")
+    o.write(f"PGHOST={host}\nPGPORT={port or 5432}\nPGUSER={urllib.parse.unquote(user)}\n")
+    o.write(f"PGPASSWORD={urllib.parse.unquote(pw)}\nPGDATABASE={db or 'postgres'}\nPGSSLMODE={q.get('sslmode', 'require')}\n")
 PY
   echo "$e"
 }
@@ -45,12 +53,19 @@ case "$MODE" in
     ;;
   restore)
     E=$(envfile_from ~/.whiskora/staging_db_url); trap 'rm -f "$E"' EXIT
-    grep -q 'wpxcukrwmegwzfccbbga' <(python3 -c "import urllib.parse,sys;print(urllib.parse.urlsplit(open('$HOME/.whiskora/staging_db_url').read()).username)") \
+    grep -q '^PGUSER=postgres.wpxcukrwmegwzfccbbga$' "$E" \
       || { echo "refusing: staging_db_url is not whiskora-staging (wpxcukrwmegwzfccbbga)" >&2; exit 1; }
     cp platform_objects.sql "$OUT/"
     docker run --rm --env-file "$E" -v "$OUT:/w" postgres:17 \
       psql -v ON_ERROR_STOP=1 -q -1 -f /w/schema.sql -f /w/platform_objects.sql
     echo "restore finished"
     ;;
-  *) echo "usage: dump_restore.sh dump|restore" >&2; exit 2 ;;
+  check)   # connectivity only: prints which project each file points to, never the password
+    for t in prod staging; do
+      if ! E=$(envfile_from ~/.whiskora/${t}_db_url 2>/dev/null); then echo "$t: URL file not usable (re-create it)"; continue; fi
+      docker run --rm --env-file "$E" postgres:17 psql -qtAc "select '$t ok: ' || current_user || ' pg ' || current_setting('server_version')" 2>&1 | tail -1 || true
+      rm -f "$E"
+    done
+    ;;
+  *) echo "usage: dump_restore.sh check|dump|restore" >&2; exit 2 ;;
 esac

@@ -1,8 +1,24 @@
 # Privacy fix — staging & production rollout
 
-Status 2026-10-30: **nothing applied anywhere.** Supabase MCP connected; production inventory done read-only (see overview → Known gaps). Org LaspearX is on the free plan with a single project (production) and no branches. Migrations validated only on a local
-synthetic Postgres (`supabase/tests/`, 64/64 checks + concurrency). The production leak
-(anon can read `profiles.email/phone/address` and `pets` health columns) is still open.
+Status 2026-10-30: **applied on staging only** (`whiskora-staging`, ref `wpxcukrwmegwzfccbbga`). Production
+(`vhudldcizmbpujedojei`) has only the role hotfix; the read leak (anon can read `profiles.email/phone/address`
+and `pets` health columns) is **still open on production**.
+
+## Staging result (2026-10-30)
+- Schema: production schema dump + `supabase/staging/platform_objects.sql`; grants, column grants, RLS,
+  124 policies, 25 functions (md5 of full definition), 12 triggers, buckets and default ACLs diffed against
+  production — identical except pg_net 0.19.5 vs 0.20.4 (platform-managed).
+- Synthetic data: `supabase/staging/seed_synthetic.sql` (owner, manager, staff, viewer, buyer, unrelated,
+  admin, new user; `@example.com`, password only in `~/.whiskora/staging_qa_password`).
+- Pre-checks of the migration: all pass (invoker functions touching profiles/pets read only kept columns;
+  column lists match; no views; edge function uses service role).
+- `supabase/tests/staging_api_checks.py` over the real API: before 80 pass / 23 fail (= the leak + missing
+  RPCs), after **107 / 0 / 0 skipped**. Role trigger re-verified in a rolled-back transaction with the
+  column grant temporarily restored.
+- App built with staging env only (bundle has no production ref/key), E2E **50 passed / 0 failed / 0 skipped**
+  (desktop + mobile), server log without errors.
+- Not covered: email-confirmation signup (staging rejects `@example.com`; needs a real test inbox),
+  Google/LINE login, push/email notifications (deliberately off), reservation migration (step 7).
 
 ## What is needed from the project owner
 1. **DB access for Claude**: run `/mcp` in Claude Code → "claude.ai Supabase" → authorize the org that owns the Whiskora project. (Read-only checks first; nothing is changed on production without an explicit go-ahead.)

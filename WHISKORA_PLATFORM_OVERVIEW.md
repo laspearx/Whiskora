@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (DB inventory)
+**Last updated:** 2026-10-30 (privacy migration verified on staging)
 
 ## What Whiskora is
 
@@ -131,12 +131,15 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
 - Stray `#FDF6F8` background color still present in 13 files (see above).
-- **Privacy (DB) — STILL OPEN in production** (read-only inventory 2026-10-30 via Supabase MCP; project `vhudldcizmbpujedojei` is the only project = production, free plan, no staging/branches):
+- **Privacy (DB) — STILL OPEN in production** (read-only inventory 2026-10-30 via Supabase MCP; production `vhudldcizmbpujedojei`; staging `whiskora-staging` = `wpxcukrwmegwzfccbbga`, schema-only copy + synthetic QA data, see `supabase/staging/`):
   - anon + authenticated have table-level ALL on `profiles`/`pets`; `profiles` RLS SELECT `using (true)` → email/phone/address readable by anyone; `pets` health columns readable on public/available pets.
   - **Role self-escalation — HOTFIXED on production 2026-10-30**: trigger `trg_profiles_protect_role` (BEFORE INSERT OR UPDATE) rejects any role set/change by `anon`/`authenticated` (42501); SECURITY DEFINER code, service_role and the dashboard can still change roles. Grants are unchanged (column privilege still exists, the trigger enforces). Role counts unchanged (1 admin, 104 user) — owner should confirm the admin account is theirs.
-  - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). **Not applied.** Passes 63 synthetic checks on a stub mirroring production types/trigger/ACLs; needs a real staging run.
+  - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). **Applied on staging only** (2026-10-30): API checks 107/107 (`supabase/tests/staging_api_checks.py`), E2E 50/50 desktop+mobile, 0 skipped. **Not applied on production.**
+  - Deploy order matters: the app on `main` still has ~29 queries that fail after the migration (`select('*')` on pets/profiles, email columns, profile upserts) → deploy this branch's app first, then the migration (`docs/PRIVACY_ROLLOUT.md`).
   - Fine as is: vaccines/activities/weights/documents SELECT via `viewer_can_see()`; buckets `pet-documents`, `verification-docs` are private (so `getPublicUrl` links for verification docs do not open — admin viewing bug).
   - Also open (separate): `pet_reservations` UPDATE policy allows any farm-team member (incl. staff/viewer) and co-owners; default privileges grant ALL on new tables to anon; leaked-password protection off; 7 functions without `search_path`.
+- `admin_get_users` has two overloads (no-arg and `p_search,p_limit,p_offset`); calling it without args returns PGRST203, so `/admin/users` and verification emails are empty on the current production app. Fixed on this branch by always passing args; dropping the no-arg overload is a separate DB change.
+- `pet-documents` INSERT policy lets any signed-in user upload into any folder of the bucket (reads are folder-scoped, so no read leak); `verification-docs` has no UPDATE/DELETE policy.
 - Verification documents are uploaded with `getPublicUrl` on bucket `verification-docs` — confirm the bucket is private.
 - Knowledge hub (`pet-knowledge/articles.ts`) has summaries only — no full-article route yet; cards say so.
 - Terms of Service page is a placeholder ("อยู่ระหว่างจัดทำ") until real legal text exists.
@@ -148,6 +151,10 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Staging `whiskora-staging` created from a production schema dump (+ `platform_objects.sql`: storage, auth trigger, `field_groups` seed, function ACL the dump drops); definitions diffed against production (only pg_net version differs).
+- Privacy migration applied and verified on staging (API 107/107, E2E 50/50, 0 skipped); production untouched.
+- Fix: 8 pages still did `pets.select('*')` despite the earlier readiness commit (`PET_COLUMNS` is now one string literal so supabase-js can type it); profile photo used `upsert` (fails after migration and the error was ignored) → `update` + error check; admin pages call `admin_get_users` with args.
+- E2E: privacy/profile/health/QR/roles/admin tests added to `signed-in.spec.ts`; `signIn` clicks the visible email toggle; reservation chain waits for its own row and uses a separate pet per viewport.
 - PRODUCTION HOTFIX applied: `20261029050000_hotfix_profile_role_guard.sql` (role guard trigger only). Verified via catalog + rolled-back probe with a non-existent user id. Read leaks still open.
 - Reservation migration no longer adds a converted-trigger (existing `sync_pet_owner_on_transfer_accept` already does it when `reservation_id` is set).
 - Migrations split: privacy `20261029100000` (apply first, independent) and reservation `20261029200000`; both idempotent with rollback; local synthetic tests in `supabase/tests/` (64/64 + concurrency) — not real staging.
