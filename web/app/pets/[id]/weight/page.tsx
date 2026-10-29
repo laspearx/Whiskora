@@ -25,9 +25,9 @@ const Icon = {
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
 // Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
-const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
-const fmtWeightVal = (g: number) => useKgFor(g) ? (g / 1000).toFixed(2) : `${g}`;
-const fmtWeightUnit = (g: number) => useKgFor(g) ? 'กก.' : 'กรัม';
+const shouldUseKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightVal = (g: number) => shouldUseKgFor(g) ? (g / 1000).toFixed(2) : `${g}`;
+const fmtWeightUnit = (g: number) => shouldUseKgFor(g) ? 'กก.' : 'กรัม';
 const fmtWeightDiff = (deltaGrams: number, useKg: boolean) =>
   useKg ? `${deltaGrams >= 0 ? '+' : ''}${(deltaGrams / 1000).toFixed(2)} กก.` : `${deltaGrams >= 0 ? '+' : ''}${deltaGrams} กรัม`;
 
@@ -93,7 +93,7 @@ export default function PetWeightPage() {
   const latestWeight = weights[0]?.weight;
   const prevWeight = weights[1]?.weight;
   const weightDiff = latestWeight && prevWeight ? (latestWeight - prevWeight) : null;
-  const useKgForm = unitOverride ?? useKgFor(latestWeight);
+  const useKgForm = unitOverride ?? shouldUseKgFor(latestWeight);
 
   return (
     <>
@@ -169,7 +169,7 @@ export default function PetWeightPage() {
                     <div className="pw-weight-current">{fmtWeightVal(latestWeight)} <span className="pw-weight-unit">{fmtWeightUnit(latestWeight)}</span></div>
                     {weightDiff !== null && (
                       <span className={`pw-weight-diff ${weightDiff >= 0 ? 'up' : 'down'}`}>
-                        {fmtWeightDiff(weightDiff, useKgFor(latestWeight))} จากครั้งก่อน
+                        {fmtWeightDiff(weightDiff, shouldUseKgFor(latestWeight))} จากครั้งก่อน
                       </span>
                     )}
                   </>
@@ -231,7 +231,7 @@ export default function PetWeightPage() {
                         <span className="pw-entry-unit"> {fmtWeightUnit(w.weight)}</span>
                         {diff !== null && (
                           <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: diff >= 0 ? F.green : '#EF4444' }}>
-                            {fmtWeightDiff(diff, useKgFor(w.weight))}
+                            {fmtWeightDiff(diff, shouldUseKgFor(w.weight))}
                           </span>
                         )}
                       </div>

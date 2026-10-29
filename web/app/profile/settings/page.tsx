@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from "@/lib/profile";
 import PageLoader from "@/app/components/PageLoader";
+import { getExistingSubscription, getNotifPermission, getOrCreateSubscription, registerSW } from "@/lib/push-client";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -21,6 +23,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<"line" | "email" | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  // Web Push บนอุปกรณ์นี้ — ใช้ส่งเตือนวัคซีนที่ถึงกำหนด (Edge Function send-push-notifications)
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushNote, setPushNote] = useState("");
 
   useEffect(() => {
     const init = async () => {
@@ -28,12 +34,11 @@ export default function SettingsPage() {
       if (!session) { router.push("/login?redirect=/profile/settings"); return; }
       setUser(session.user);
 
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("notif_line, notif_email, email")
-        .eq("id", session.user.id)
-        .single();
+      // อีเมลและการตั้งค่าแจ้งเตือนเป็นข้อมูลส่วนตัว — อ่านผ่าน get_my_profile()
+      const prof = await getMyProfile(session.user.id);
       setProfile(prof);
+      const existing = await getExistingSubscription();
+      setPushOn(!!existing && getNotifPermission() === "granted");
       setLoading(false);
     };
     init();
@@ -51,6 +56,41 @@ export default function SettingsPage() {
     if (!error) setProfile((p: any) => ({ ...p, [field]: next }));
     setSaving(null);
   }, [user, profile, saving]);
+
+  const togglePush = async () => {
+    if (!user || pushBusy) return;
+    setPushBusy(true);
+    setPushNote("");
+    try {
+      if (pushOn) {
+        // ปิด: ยกเลิกบนอุปกรณ์ และลบแถวออก เพื่อไม่ให้ Edge Function ส่งมาอีก
+        const sub = await getExistingSubscription();
+        if (sub) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          await sub.unsubscribe();
+        }
+        setPushOn(false);
+        return;
+      }
+      if (getNotifPermission() === "unsupported") { setPushNote("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน"); return; }
+      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) { setPushNote("ระบบแจ้งเตือนยังไม่ได้ตั้งค่า กรุณาลองใหม่ภายหลัง"); return; }
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { setPushNote("ต้องอนุญาตการแจ้งเตือนในเบราว์เซอร์ก่อน"); return; }
+      await registerSW();
+      const sub = await getOrCreateSubscription();
+      const json = sub?.toJSON();
+      if (!sub || !json?.keys?.p256dh || !json.keys.auth) { setPushNote("เปิดการแจ้งเตือนไม่สำเร็จ"); return; }
+      // ลบแถวเดิมของ endpoint นี้ก่อน (กันซ้ำเมื่อกดเปิดหลายครั้ง) แล้วค่อยบันทึกใหม่
+      await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+      const { error } = await supabase.from("push_subscriptions").insert({
+        user_id: user.id, endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth,
+      });
+      if (error) { setPushNote("บันทึกการแจ้งเตือนไม่สำเร็จ: " + error.message); return; }
+      setPushOn(true);
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -137,6 +177,22 @@ export default function SettingsPage() {
           <div className="ps-section">
             <div className="ps-section-label">การแจ้งเตือน</div>
 
+            <div className="ps-card" style={{ marginBottom: 12 }}>
+              <div className="ps-row">
+                <div className="ps-row-icon green">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div className="ps-row-text">
+                  <span className="ps-row-title">เตือนนัดวัคซีนบนอุปกรณ์นี้</span>
+                  <span className="ps-row-desc">{pushNote || (pushOn ? "เปิดอยู่ — เตือนวันก่อนและวันที่ถึงกำหนด" : "ปิดอยู่")}</span>
+                </div>
+                <label className="ps-toggle" aria-label="เปิด/ปิดการแจ้งเตือนบนอุปกรณ์นี้">
+                  <input type="checkbox" checked={pushOn} disabled={pushBusy} onChange={togglePush} />
+                  <span className="ps-toggle-track" />
+                </label>
+              </div>
+            </div>
+
             {!hasAnyChannel ? (
               <div className="ps-notice">
                 <div className="ps-notice-icon">
@@ -193,6 +249,12 @@ export default function SettingsPage() {
                     </label>
                   </div>
                 )}
+              </div>
+            )}
+            {/* notifyUser() (LINE/อีเมล) มีโค้ดแล้วแต่ยังไม่มีงานตั้งเวลาที่เรียกใช้ — บอกสถานะจริงแทนการให้เข้าใจว่าส่งแล้ว */}
+            {hasAnyChannel && (
+              <div style={{ fontSize: 12, color: F.muted, marginTop: 8, lineHeight: 1.6 }}>
+                การตั้งค่า LINE และอีเมลจะใช้กับการแจ้งเตือนจาก Whiskora — ตอนนี้การเตือนนัดวัคซีนอัตโนมัติส่งผ่านการแจ้งเตือนบนอุปกรณ์เท่านั้น
               </div>
             )}
           </div>

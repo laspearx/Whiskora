@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { speciesTh } from "@/lib/species";
@@ -61,7 +62,8 @@ export default function FarmPetsPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { router.push(`/login?redirect=${encodeURIComponent(`/farm-dashboard/${farmId}/pets`)}`); return; }
 
-        let query = supabase.from("pets").select("*").eq("farm_id", farmId).eq("user_id", session.user.id).order("created_at", { ascending: false });
+        // สมาชิกทุกบทบาทดูรายชื่อสัตว์ในฟาร์มได้ (layout ตรวจสิทธิ์แล้ว, RLS คุมการอ่านจริง)
+        let query = supabase.from("pets").select(PET_COLUMNS).eq("farm_id", farmId).order("created_at", { ascending: false });
 
         if (groupFilter === 'pregnant') {
           const { data: littersData } = await supabase

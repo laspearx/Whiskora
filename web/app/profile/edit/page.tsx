@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from '@/lib/profile';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
@@ -25,6 +26,7 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
 
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
@@ -43,7 +45,8 @@ export default function EditProfilePage() {
     const fetchProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent('/profile/edit')}`); return; }
-      const { data } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
+      const { data } = await getMyProfile(session.user.id).then(data => ({ data }));
+      setProfileExists(!!data);
       if (data) {
         setUsername(data.username || "");
         setFullName(data.full_name || "");
@@ -105,16 +108,22 @@ export default function EditProfilePage() {
     e?.preventDefault();
     setSaving(true);
     const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from("profiles").upsert({
-      id: session?.user.id,
+    // update/insert แยกกันแทน upsert: ON CONFLICT DO UPDATE ต้องมีสิทธิ์ SELECT คอลัมน์ที่เขียน
+    // ซึ่งคอลัมน์ส่วนตัว (phone/address) ถูกปิดไว้ใน migration 20261029100000_private_columns.sql
+    const payload = {
       username, full_name: fullName, avatar_url: avatarUrl, phone,
       address: composeAddress(addr),
       house_no: addr.house_no || null, room_no: addr.room_no || null,
       moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
       sub_district: addr.sub_district || null, district: addr.district || null,
       province: addr.province || null, postal_code: addr.postal_code || null,
-      updated_at: new Date(),
-    });
+      updated_at: new Date().toISOString(),
+    };
+    const uid = session?.user.id;
+    const { error } = profileExists
+      ? await supabase.from("profiles").update(payload).eq("id", uid)
+      : await supabase.from("profiles").insert({ id: uid, ...payload });
+    if (!error) setProfileExists(true);
     if (error) {
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);

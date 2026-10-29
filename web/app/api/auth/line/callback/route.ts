@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
+import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
 
 function makeAdmin() {
   return createClient(
@@ -18,6 +19,7 @@ export async function GET(request: Request) {
 
   // ── resolve origin from cookie (saved when user clicked the LINE button) ──
   const cookieStore = await cookies()
+  const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value)
   const PRODUCTION_URL = 'https://www.whiskora.pet'
   const rawOrigin = cookieStore.get('line_origin')?.value || ''
   // Vercel internal compute-instance URLs look like "whiskora-f74p5-laspearxs-projects.vercel.app"
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
   const siteUrl = (rawOrigin && !isVercelInternal) ? rawOrigin.replace(/\/$/, '') : PRODUCTION_URL
 
   const fail = (msg: string) =>
-    NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
+    NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(msg)}`)
 
   if (lineErr) return fail(lineErr)
   if (!code)   return fail('missing_code')
@@ -44,9 +46,7 @@ export async function GET(request: Request) {
 
   if (!savedState || savedState !== stateBack) return fail('state_mismatch')
 
-  const safeNext = nextPath.startsWith('/') ? nextPath : '/profile'
-  const finalDest = safeNext.startsWith('/th/') || safeNext.startsWith('/en/')
-    ? safeNext : `/th${safeNext}`
+  const finalDest = withLocale(safeInternalPath(nextPath), locale)
 
   try {
     // ── 1. exchange code for LINE tokens ─────────────────────────────────────
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       )
       if (alreadyOwned) {
         return NextResponse.redirect(
-          `${siteUrl}/th/profile/connections?link_error=${encodeURIComponent('LINE บัญชีนี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว')}`,
+          `${siteUrl}/${locale}/profile/connections?link_error=${encodeURIComponent('LINE บัญชีนี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว')}`,
         )
       }
 
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
         },
       })
 
-      return NextResponse.redirect(`${siteUrl}/th/profile/connections?linked=line`)
+      return NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?linked=line`)
     }
 
     // ── 4b. LOGIN MODE — หา / สร้าง user แล้วสร้าง session ─────────────────

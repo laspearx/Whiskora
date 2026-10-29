@@ -30,7 +30,7 @@ function SearchResults() {
     const fetchResults = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('farms').select('*').ilike('farm_name', `%${query}%`);
+        const { data, error } = await supabase.from('farms').select('id, farm_name, species, bio, image_url').ilike('farm_name', `%${query}%`);
         if (error) throw error;
         setFarms(data || []);
       } catch (error) {

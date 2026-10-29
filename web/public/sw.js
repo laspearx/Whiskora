@@ -20,8 +20,11 @@ self.addEventListener('notificationclick', (event) => {
   const url = event.notification.data?.url || '/profile';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      // เปิดหน้าที่เกี่ยวข้องกับการแจ้งเตือน (เช่นหน้าวัคซีนของสัตว์ตัวนั้น) ไม่ใช่แค่โฟกัสแท็บเดิม
       for (const client of list) {
-        if ('focus' in client) return client.focus();
+        if ('navigate' in client && 'focus' in client) {
+          return client.navigate(url).then((c) => (c || client).focus());
+        }
       }
       return clients.openWindow(url);
     })

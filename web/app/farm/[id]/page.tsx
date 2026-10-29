@@ -6,6 +6,8 @@ import { speciesTh } from '@/lib/species';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
+import { PET_STATUS } from '@/lib/constants';
+import { TRUST_COPY, isPublicListing } from '@/lib/trust';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -56,7 +58,10 @@ export default function PublicFarmProfile() {
     const fetchFarmProfile = async () => {
       try {
         const { data: farmData, error: farmError } = await supabase
-          .from('farms').select('*').eq('id', farmId).single();
+          .from('farms')
+          // ระบุคอลัมน์ที่หน้านี้ใช้จริง — ไม่ดึงทั้งแถว (ข้อมูลยืนยันตัวตน/ที่อยู่ละเอียดของเจ้าของไม่ควรติดไปกับหน้าสาธารณะ)
+          .select('id, user_id, farm_name, species, bio, image_url, cover_url, phone, is_verified, owner_name, address, lat, lng, created_at')
+          .eq('id', farmId).single();
         if (farmError) throw farmError;
         setFarm(farmData);
 
@@ -84,13 +89,13 @@ export default function PublicFarmProfile() {
         // เจ้าของฟาร์ม (ชื่อ/อีเมล/ที่อยู่)
         if (farmData.user_id) {
           const { data: ownerData } = await supabase
-            .from('profiles').select('full_name, username, email, address')
+            .from('profiles').select('full_name, username')
             .eq('id', farmData.user_id).maybeSingle();
           if (ownerData) setOwner(ownerData);
         }
 
         const { data: petsData } = await supabase
-          .from('pets').select('id, name, breed, image_url, gender, status, price, birth_date')
+          .from('pets').select('id, name, breed, image_url, gender, status, price, birth_date, is_public')
           .eq('farm_id', farmId);
         if (petsData) setPets(petsData);
       } catch (error) {
@@ -107,10 +112,11 @@ export default function PublicFarmProfile() {
   const isMale = (g: string) => g === 'male' || g === 'ตัวผู้';
   const isFemale = (g: string) => g === 'female' || g === 'ตัวเมีย';
 
-  // ─── สถานะการยืนยัน: verified = ฟาร์มคุณภาพ / ไม่ verified = โฮมบรีด ───
+  // ─── สถานะการยืนยัน: farms.is_verified = แอดมินอนุมัติเอกสารยืนยันตัวตนแล้ว (ไม่ใช่การรับรองคุณภาพสัตว์) ───
   const isVerified = !!farm?.is_verified;
 
-  const readyPets = pets.filter(p => p.status === 'พร้อมย้ายบ้าน');
+  // ใช้เงื่อนไขเดียวกับการ์ดใน farm-hub เพื่อให้จำนวนตรงกัน
+  const readyPets = pets.filter(isPublicListing);
 
   const calcAge = (b?: string | null) => {
     if (!b) return '';
@@ -137,7 +143,8 @@ export default function PublicFarmProfile() {
   if (!farm) return null;
 
   const ownerName = farm?.owner_name || owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
-  const farmLocation = farm?.address || owner?.address || null;
+  // ใช้เฉพาะที่อยู่ที่ฟาร์มกรอกเพื่อแสดงสาธารณะ ไม่ fallback ไปที่อยู่ส่วนตัวในโปรไฟล์เจ้าของ
+  const farmLocation = farm?.address || null;
   const uniqueBreeds = [...new Set(pets.map(p => extractThai(p.breed)).filter(Boolean))].slice(0, 4);
   const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
   const bioIsLong = bioText.length > 120;
@@ -261,7 +268,7 @@ export default function PublicFarmProfile() {
               <button className="fp-cover-btn" onClick={handleShare} aria-label="แชร์"><Icon.Share /></button>
             </div>
             {isVerified && (
-              <div className="fp-cover-verified" title="Whiskora Verified">
+              <div className="fp-cover-verified" title={TRUST_COPY.farmVerified.hint}>
                 <svg viewBox="0 0 100 100" fill="none">
                   <circle cx="50" cy="50" r="46" fill="white" stroke={F.pinkBorder} strokeWidth="2"/>
                   <circle cx="50" cy="50" r="40" fill="none" stroke={F.pink} strokeWidth="1.5" strokeDasharray="3 3"/>
@@ -279,7 +286,7 @@ export default function PublicFarmProfile() {
               <div className="fp-id-main">
                 <h1 className="fp-name">
                   {farm.farm_name}
-                  {isVerified && <Icon.Verified />}
+                  {isVerified && <span title={TRUST_COPY.farmVerified.hint} style={{ display: 'inline-flex' }}><Icon.Verified /></span>}
                 </h1>
                 <p className="fp-tagline">ฟาร์ม{speciesLabel(farm.species)}</p>
                 <div className="fp-meta-row">
@@ -306,8 +313,8 @@ export default function PublicFarmProfile() {
                   <img src={isVerified ? '/icons/icon-verified-badge.png' : '/icons/icon-non-verified.png'} alt="" style={{ width: 44, height: 44, objectFit: 'contain' }} />
                 </div>
                 <div>
-                  <div className="fp-quality-title">{isVerified ? 'ฟาร์มคุณภาพ' : 'ฟาร์มโฮมบรีด'}</div>
-                  <div className="fp-quality-sub">{isVerified ? 'ได้รับการยืนยันโดย Whiskora' : 'ฟาร์มทั่วไป ยังไม่ได้ยืนยันตัวตน'}</div>
+                  <div className="fp-quality-title">{isVerified ? TRUST_COPY.farmVerified.label : TRUST_COPY.farmUnverified.label}</div>
+                  <div className="fp-quality-sub">{isVerified ? TRUST_COPY.farmVerified.hint : TRUST_COPY.farmUnverified.hint}</div>
                 </div>
               </div>
             </div>
@@ -346,8 +353,8 @@ export default function PublicFarmProfile() {
                 </div>
                 <div className="fp-info-row">
                   <span className="fp-info-icon"><img src="/icons/icon-insurance.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /></span>
-                  <span className="fp-info-label">มาตรฐานที่ได้รับ</span>
-                  <span className={`fp-info-val ${isVerified ? 'verified' : ''}`}>{isVerified ? 'Whiskora Verified' : 'ฟาร์มโฮมบรีด (ยังไม่ยืนยัน)'}</span>
+                  <span className="fp-info-label">การยืนยันตัวตน</span>
+                  <span className={`fp-info-val ${isVerified ? 'verified' : ''}`}>{isVerified ? TRUST_COPY.farmVerified.label : TRUST_COPY.farmUnverified.label}</span>
                 </div>
               </div>
             </div>
@@ -357,17 +364,17 @@ export default function PublicFarmProfile() {
           <div className="fp-section">
             <div className="fp-section-card">
               <div className="fp-section-head">
-                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> สัตว์เลี้ยงพร้อมย้ายบ้าน</div>
+                <div className="fp-section-title"><img src="/icons/icon-foster-home.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} /> สัตว์เลี้ยงพร้อมย้ายบ้านและเปิดจอง{readyPets.length > 0 && ` (${readyPets.length})`}</div>
               </div>
               {readyPets.length === 0 ? (
-                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้าน</div>
+                <div className="fp-empty">ตอนนี้ยังไม่มี{speciesLabel(farm.species)}พร้อมย้ายบ้านหรือเปิดจอง</div>
               ) : (
                 <div className="fp-pets-grid">
                   {readyPets.map(pet => (
                     <Link key={pet.id} href={`/p/${pet.id}`} className="fp-pet-card">
                       <div className="fp-pet-img">
                         {pet.image_url ? <img src={pet.image_url} alt={pet.name} /> : <img src={isMale(pet.gender) ? '/icons/icon-men.png' : '/icons/icon-women.png'} alt="" style={{width:'60%',height:'60%',objectFit:'contain',opacity:0.4}} />}
-                        <span className="fp-pet-ready-tag">พร้อมย้าย</span>
+                        <span className="fp-pet-ready-tag" style={pet.status === PET_STATUS.OPEN_RESERVE ? { background: '#2563EB' } : undefined}>{pet.status === PET_STATUS.OPEN_RESERVE ? 'เปิดจอง' : 'พร้อมย้าย'}</span>
                       </div>
                       <div className="fp-pet-info">
                         <div className="fp-pet-name">

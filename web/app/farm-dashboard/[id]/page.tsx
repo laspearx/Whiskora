@@ -4,10 +4,12 @@ import React, { useCallback, useEffect, useState, useRef, Suspense } from "react
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import { useFarmAccess, canEditFarmProfile } from '@/app/farm-dashboard/[id]/layout';
 
 /* ── Design tokens ── */
 const F = {
@@ -117,6 +119,8 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200):
    Main Component
 ───────────────────────────────────────────────────────────── */
 function FarmDashboardContent() {
+  const { myRole } = useFarmAccess();
+  const canEdit = canEditFarmProfile(myRole);
   const router      = useRouter();
   const params      = useParams();
   const searchParams = useSearchParams();
@@ -151,13 +155,14 @@ function FarmDashboardContent() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
 
+      // layout ตรวจสิทธิ์สมาชิก workspace แล้ว — ไม่กรอง farms.user_id ซ้ำ ไม่งั้น manager/staff/viewer ถูกเด้งออก
       const { data: farmData } = await supabase
-        .from('farms').select('*').eq('id', farmId).eq('user_id', session.user.id).single();
+        .from('farms').select('*').eq('id', farmId).single();
       if (!farmData) { router.push('/partner'); return; }
       setFarm(farmData);
 
       const [petsRes, littersRes] = await Promise.all([
-        supabase.from('pets').select('*').eq('farm_id', farmId),
+        supabase.from('pets').select(PET_COLUMNS).eq('farm_id', farmId),
         supabase.from('litters')
           .select('*, sire:pets!sire_id(id,name,image_url), dam:pets!dam_id(id,name,image_url,species)')
           .eq('farm_id', farmId).order('mating_date', { ascending: false }),
@@ -545,9 +550,9 @@ function FarmDashboardContent() {
             <img className="fd-cover-img" src={farm.cover_url} alt={farm.farm_name} />
           )}
           <div className="fd-cover-overlay" />
-          <button className="fd-cover-cam" onClick={() => coverInputRef.current?.click()} aria-label="เปลี่ยนรูปปก">
+          {canEdit && <button className="fd-cover-cam" onClick={() => coverInputRef.current?.click()} aria-label="เปลี่ยนรูปปก">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          </button>
+          </button>}
           {uploadingCover && <div className="fd-cover-spin">กำลังอัพโหลด...</div>}
           <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "cover"); if (coverInputRef.current) coverInputRef.current.value = ""; }} />
@@ -557,15 +562,15 @@ function FarmDashboardContent() {
         <div className="fd-identity">
           <div className="fd-id-row">
             <div className="fd-avatar-wrap">
-              <div className="fd-avatar" onClick={() => avatarInputRef.current?.click()}>
+              <div className="fd-avatar" onClick={() => canEdit && avatarInputRef.current?.click()}>
                 {farm.image_url
                   ? <img src={farm.image_url} alt={farm.farm_name} />
                   : <img src="/icons/icon-farm.png" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />}
                 {uploadingAvatar && <div className="fd-avatar-spin"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={F.pink} strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>}
               </div>
-              <div className="fd-avatar-edit">
+              {canEdit && <div className="fd-avatar-edit">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              </div>
+              </div>}
               <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "avatar"); if (avatarInputRef.current) avatarInputRef.current.value = ""; }} />
             </div>
@@ -589,14 +594,14 @@ function FarmDashboardContent() {
                 <Link href={`/farm/${farmId}`} className="fd-view-btn">
                   <Icon.Eye /> ดูหน้าฟาร์ม
                 </Link>
-                <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-edit-icon" aria-label="แก้ไขโปรไฟล์">
+                {canEdit && <Link href={`/farm-dashboard/${farmId}/edit`} className="fd-edit-icon" aria-label="แก้ไขโปรไฟล์">
                   <img src="/icons/icon-setting.png" style={{ width: 36, height: 36 }} alt="ตั้งค่า" />
-                </Link>
+                </Link>}
               </div>
             </div>
           </div>
 
-          {!farm.is_verified && farm.verification_status !== 'pending' && (
+          {canEdit && !farm.is_verified && farm.verification_status !== 'pending' && (
             <Link href={`/farm-dashboard/${farmId}/verify`} className="fd-verify-btn">
               <img src="/icons/icon-non-verified.png" alt="" />
               <div className="fd-verify-btn-text">

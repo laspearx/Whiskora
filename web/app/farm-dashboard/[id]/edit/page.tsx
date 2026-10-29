@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from '@/lib/profile';
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from "@/app/components/PageLoader";
@@ -60,7 +61,7 @@ export default function EditFarmPage() {
 
       const [farmRes, profileRes] = await Promise.all([
         supabase.from("farms").select("*").eq("id", farmId).eq("user_id", session.user.id).single(),
-        supabase.from("profiles").select("full_name, phone, house_no, room_no, moo, soi, road, sub_district, district, province, postal_code").eq("id", session.user.id).single(),
+        getMyProfile(session.user.id).then(data => ({ data })),
       ]);
 
       if (!farmRes.data) { router.push("/partner"); return; }

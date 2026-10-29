@@ -20,11 +20,11 @@ const PRIMARY: { key: string; label: string; href: Href }[] = [
   { key: 'partner',   label: 'พาร์ทเนอร์', href: '/partner' },
 ];
 
-const EXPLORE: { key: string; label: string; sub: string; href: Href }[] = [
-  { key: 'farm',        label: 'ฟาร์มสัตว์เลี้ยง',   sub: 'ค้นหาฟาร์มที่ตรวจสอบแล้ว',      href: '/farm-hub' },
-  { key: 'marketplace', label: 'เพ็ทช็อป',           sub: 'ซื้อขายจากผู้ขายที่ยืนยัน',      href: '/marketplace' },
-  { key: 'services',    label: 'คลินิกและบริการ',     sub: 'จองคลินิก กรูมมิ่ง ฝากเลี้ยง',   href: '/service-hub' },
-  { key: 'community',   label: 'ชุมชนคนรักสัตว์',    sub: 'แชร์ประสบการณ์ ขอคำแนะนำ',       href: '/community' },
+const EXPLORE: { key: string; label: string; sub: string; href: Href; badge?: string }[] = [
+  { key: 'farm',        label: 'ฟาร์มสัตว์เลี้ยง',   sub: 'ฟาร์มในระบบและสัตว์พร้อมย้ายบ้าน', href: '/farm-hub' },
+  { key: 'marketplace', label: 'เพ็ทช็อป',           sub: 'สินค้าจากร้านค้าในระบบ',          href: '/marketplace' },
+  { key: 'services',    label: 'คลินิกและบริการ',     sub: 'ค้นหาคลินิก กรูมมิ่ง ฝากเลี้ยง',  href: '/service-hub' },
+  { key: 'community',   label: 'ชุมชนคนรักสัตว์',    sub: 'กำลังพัฒนา ยังไม่เปิดใช้งาน',      href: '/community', badge: 'เร็วๆ นี้' },
   { key: 'tools',       label: 'เครื่องมือ',          sub: 'คำนวณอายุ แคลอรี วันคลอด',        href: '/pet-tools' },
   { key: 'about',       label: 'เกี่ยวกับ Whiskora',  sub: 'พันธกิจ ทีมงาน และวิสัยทัศน์',    href: '/about' },
 ];
@@ -214,6 +214,7 @@ export default function Navbar() {
                       >
                         <div className={`text-sm font-semibold leading-tight ${active(item.href) ? 'text-pink-500' : 'text-gray-700 group-hover:text-pink-500'}`}>
                           {item.label}
+                          {item.badge && <span className="ml-1.5 align-middle text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-500">{item.badge}</span>}
                         </div>
                         <div className="text-xs text-gray-400 mt-0.5 leading-tight">{item.sub}</div>
                       </Link>
@@ -406,6 +407,7 @@ export default function Navbar() {
                   className={dropItem(active(item.href))}
                 >
                   {item.label}
+                  {item.badge && <span className="ml-1.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-500">{item.badge}</span>}
                 </button>
               ))}
             </div>

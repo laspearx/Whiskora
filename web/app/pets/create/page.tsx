@@ -167,7 +167,7 @@ function CreatePetContent() {
       allergies: allergies.trim() || null,
       traits: traits.trim() || null,
       is_public: true,
-    }).select();
+    }).select('id'); // ไม่ใช้ RETURNING * — คอลัมน์สุขภาพไม่อนุญาตให้ SELECT ตรง
 
     if (error) {
       alert("บันทึกไม่สำเร็จ: " + error.message);

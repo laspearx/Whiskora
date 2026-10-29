@@ -188,6 +188,10 @@ export default function PetIdCardLandingPage() {
               >
                 <Icon.Plus /> เพิ่มสัตว์เลี้ยง
               </Link>
+              {/* ตัวอย่างใช้ข้อมูลสาธิต — route นี้ไม่มี locale prefix (middleware ข้ามไว้) จึงใช้ next/link ตรงๆ */}
+              <Link href="/pet-id-card-preview" style={{ display: 'block', marginTop: 12, fontSize: 13, fontWeight: 700, color: '#E84677' }}>
+                ดูตัวอย่างบัตรและหน้าโปรไฟล์ QR →
+              </Link>
             </div>
           )}
 

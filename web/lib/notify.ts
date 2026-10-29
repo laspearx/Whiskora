@@ -33,12 +33,16 @@ export async function sendLineMessage(lineUserId: string, text: string) {
 export async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error('RESEND_API_KEY not configured')
+  // ผู้ส่งต้องเป็นโดเมนที่ยืนยันใน Resend แล้วเท่านั้น — whiskora.com ไม่ใช่โดเมนของเรา (DNS ชี้ไป Afternic)
+  // และ whiskora.pet ยังไม่มี DKIM ของ Resend (ตรวจ 2026-10-29) จึงไม่ hard-code ผู้ส่ง
+  const from = process.env.RESEND_FROM
+  if (!from) throw new Error('RESEND_FROM not configured (must be a Resend-verified sender)')
 
   const { Resend } = await import('resend')
   const resend = new Resend(apiKey)
 
   const { error } = await resend.emails.send({
-    from: 'Whiskora <noreply@whiskora.com>',
+    from,
     to,
     subject,
     html,

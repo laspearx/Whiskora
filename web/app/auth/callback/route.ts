@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -9,14 +10,14 @@ export async function GET(request: Request) {
   const oauthError = searchParams.get('error')
   const oauthErrorDesc = searchParams.get('error_description')
 
-  const nextParam = searchParams.get('next') || '/profile'
-  const rawNext = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/profile'
-  const next = rawNext.startsWith('/th/') || rawNext.startsWith('/en/') ? rawNext : `/th${rawNext}`
+  // กลับไปภาษาที่ผู้ใช้เลือกไว้ล่าสุด (cookie จาก middleware) แทนการบังคับ /th
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
+  const next = withLocale(safeInternalPath(searchParams.get('next')), locale)
 
   // LINE (or any OAuth provider) returned an error — redirect to login with message
   if (oauthError) {
     const msg = oauthErrorDesc || oauthError
-    return NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(msg)}`)
+    return NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(msg)}`)
   }
 
   if (code) {
@@ -39,10 +40,10 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
-      return NextResponse.redirect(`${siteUrl}/th/login?auth_error=${encodeURIComponent(error.message)}`)
+      return NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(error.message)}`)
     }
     return NextResponse.redirect(`${siteUrl}${next}`)
   }
 
-  return NextResponse.redirect(`${siteUrl}/th/login?auth_error=missing_code`)
+  return NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=missing_code`)
 }

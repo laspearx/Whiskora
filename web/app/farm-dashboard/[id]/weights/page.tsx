@@ -23,9 +23,9 @@ const BREEDER_STATUSES = ['พ่อพันธุ์ / แม่พันธ�
 
 // Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
 // With no prior record to go by, fall back to defaultKg (adult breeders default to kg, babies default to grams).
-const useKgFor = (lastKnownGrams: number | null | undefined, defaultKg = false) =>
+const shouldUseKgFor = (lastKnownGrams: number | null | undefined, defaultKg = false) =>
   lastKnownGrams != null ? lastKnownGrams >= 1000 : defaultKg;
-const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
+const fmtWeightHint = (g: number) => shouldUseKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
 
 export default function FarmWeightsPage() {
   const router = useRouter();
@@ -105,7 +105,7 @@ export default function FarmWeightsPage() {
     try {
       const inserts = entries.map(([petId, w]) => {
         const pid = parseInt(petId);
-        const useKg = unitOverrides[pid] ?? useKgFor(latestWeightByPet.get(pid), defaultKgForPet(petById.get(pid)));
+        const useKg = unitOverrides[pid] ?? shouldUseKgFor(latestWeightByPet.get(pid), defaultKgForPet(petById.get(pid)));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -128,7 +128,7 @@ export default function FarmWeightsPage() {
     const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
     const val = weights[pet.id] ?? '';
     const latestWeight = latestWeightByPet.get(pet.id);
-    const useKg = unitOverrides[pet.id] ?? useKgFor(latestWeight, defaultKgForPet(pet));
+    const useKg = unitOverrides[pet.id] ?? shouldUseKgFor(latestWeight, defaultKgForPet(pet));
     return (
       <div key={pet.id} className={`fw-pet-row ${val.trim() ? 'filled' : ''}`}>
         <div className="fw-pet-photo">

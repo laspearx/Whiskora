@@ -1,3 +1,14 @@
 tools/
-tmp/pydeps/
-tmp/pydeps_img/
+tmp/
+
+# dependencies / build output (root level — web/ has its own .gitignore)
+node_modules/
+.next/
+*.tsbuildinfo
+
+# logs & OS junk
+*.log
+.DS_Store
+
+# local env files (web/.env.production is still tracked on purpose — see WHISKORA_PLATFORM_OVERVIEW.md)
+.env*.local

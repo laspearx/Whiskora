@@ -169,10 +169,24 @@ export default function ServiceHubPage() {
             ))}
           </div>
         ) : filteredServices.length === 0 ? (
-          <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+          <div className="py-20 px-6 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.Search /></div>
-            <p className="text-gray-500 font-semibold">ไม่พบสถานบริการที่คุณต้องการ</p>
-            <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+            {services.length === 0 && activeCategory === "ทั้งหมด" && activePetType === "ทั้งหมด" ? (
+              <>
+                {/* ยังไม่มีบริการเปิดในระบบเลย — ไม่ให้ผู้ใช้เข้าใจว่าแค่ค้นผิดคำ */}
+                <p className="text-gray-600 font-semibold">ยังไม่มีคลินิกหรือบริการเปิดในระบบ</p>
+                <p className="text-sm text-gray-400 mt-1">Whiskora กำลังรับสมัครผู้ให้บริการ ระหว่างนี้ยังจองบริการผ่านเว็บไม่ได้</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  <Link href="/partner/register-service" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>ลงทะเบียนบริการของคุณ</Link>
+                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">ดูฟาร์มในระบบ</Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 font-semibold">ไม่พบสถานบริการที่ตรงกับตัวกรอง</p>
+                <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">

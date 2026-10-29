@@ -171,17 +171,31 @@ export default function MarketplacePage() {
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+          <div className="py-20 px-6 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.Search /></div>
-            <p className="text-gray-500 font-semibold">ไม่พบสินค้าในหมวดหมู่นี้</p>
-            <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+            {products.length === 0 && activeCategory === "ทั้งหมด" && activePetType === "ทั้งหมด" ? (
+              <>
+                <p className="text-gray-600 font-semibold">ยังไม่มีสินค้าเปิดขายในระบบ</p>
+                <p className="text-sm text-gray-400 mt-1">ร้านค้าพาร์ทเนอร์กำลังทยอยเข้าร่วม</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  <Link href="/partner/register-shop" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>เปิดร้านค้ากับ Whiskora</Link>
+                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">ดูฟาร์มในระบบ</Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 font-semibold">ไม่พบสินค้าในหมวดหมู่นี้</p>
+                <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredProducts.map((product) => (
               <Link 
                 key={product.id} 
-                href={`/shops/${product.shops.id}/products/${product.id}`}
+                // ยังไม่มีหน้ารายละเอียดสินค้า — เปิดหน้าร้านแทนลิงก์ที่ 404
+                href={`/shops/${product.shops.id}`}
                 className="premium-card flex flex-col overflow-hidden group"
               >
                 {/* Product Image Wrapper */}

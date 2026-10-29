@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,12 +33,12 @@ export default function MyPetsPage() {
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return router.push("/login");
+      if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       const uid = session.user.id;
 
       const [{ data: farms }, { data: pets }] = await Promise.all([
         supabase.from("farms").select("id, farm_name").eq("user_id", uid),
-        supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+        supabase.from("pets").select(PET_COLUMNS).eq("user_id", uid).order("created_at", { ascending: false }),
       ]);
 
       const personal: any[] = [];

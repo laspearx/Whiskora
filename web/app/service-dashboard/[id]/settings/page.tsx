@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getMyProfile } from '@/lib/profile';
+import { useServiceAccess } from '@/app/service-dashboard/[id]/layout';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
@@ -41,6 +43,8 @@ export default function ServiceSettingsPage() {
   const params = useParams();
   const serviceId = params.id as string;
 
+  const { myRole } = useServiceAccess();
+  const canEdit = myRole === "owner" || myRole === "manager";
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,10 +64,12 @@ export default function ServiceSettingsPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(`/service-dashboard/${serviceId}/settings`)}`);
+      // staff/viewer เห็นปุ่มนี้ถูกซ่อนในหน้า overview แล้ว แต่เปิด URL ตรงได้ — กันซ้ำที่นี่ (RLS ยังเป็นด่านจริง)
+      if (!canEdit) return router.push(`/service-dashboard/${serviceId}`);
 
       const [serviceRes, profileRes] = await Promise.all([
         supabase.from('services').select('*').eq('id', serviceId).single(),
-        supabase.from('profiles').select('full_name, phone, house_no, room_no, moo, soi, road, sub_district, district, province, postal_code').eq('id', session.user.id).single(),
+        getMyProfile(session.user.id).then(data => ({ data })),
       ]);
 
       if (serviceRes.error || !serviceRes.data) return router.push('/partner');
@@ -91,7 +97,7 @@ export default function ServiceSettingsPage() {
       setLoading(false);
     };
     if (serviceId) load();
-  }, [serviceId, router]);
+  }, [serviceId, router, canEdit]);
 
   useEffect(() => {
     if (!mapVisible) return;

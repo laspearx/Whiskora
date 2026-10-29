@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {
@@ -57,7 +58,7 @@ export default function CalendarPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/login?redirect=/profile/calendar"); return; }
-      const { data: petsData } = await supabase.from("pets").select("*").eq("user_id", session.user.id);
+      const { data: petsData } = await supabase.from("pets").select(PET_COLUMNS).eq("user_id", session.user.id);
       if (petsData) {
         setPets(petsData);
         const petIds = petsData.map((p: any) => p.id);

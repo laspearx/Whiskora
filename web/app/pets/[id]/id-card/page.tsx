@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { PET_COLUMNS } from '@/lib/columns';
 import { useParams, useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
+import { neuteredText } from '@/lib/trust';
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -101,9 +103,12 @@ export default function PetIdCardPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
-      const { data: petData } = await supabase.from('pets').select('*').eq('id', petId).single();
+      const { data: petData } = await supabase.from('pets').select(PET_COLUMNS).eq('id', petId).single();
       if (!petData) { router.push('/'); return; }
-      setPet(petData as PetRecord);
+      // กรุ๊ปเลือดเป็นข้อมูลสุขภาพ — อ่านผ่าน RPC ที่ตรวจสิทธิ์ แทนคอลัมน์ตรง
+      const { data: h } = await supabase.rpc('get_pet_health', { p_pet_id: petData.id });
+      const health = Array.isArray(h) ? h[0] : h;
+      setPet({ ...(petData as PetRecord), blood_type: health?.blood_type ?? null });
       if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
         const { data: farmData } = await supabase.from('farms').select('farm_name').eq('id', petData.farm_id).maybeSingle();
         if (farmData) setFarm(farmData);
@@ -153,7 +158,7 @@ export default function PetIdCardPage() {
     { label: 'วันเกิด',   val: fmtDate(pet.birth_date), icon: '/icons/icon-calendar.png' },
     { label: 'อายุ',      val: calcAge(pet.birth_date), icon: '/icons/icon-pet-records.png' },
     { label: 'กรุ๊ปเลือด', val: pet.blood_type || '-',  icon: '/icons/icon-health.png' },
-    { label: 'ทำหมัน',   val: pet.is_neutered ? 'ทำหมันแล้ว' : 'ยังไม่ทำหมัน', icon: '/icons/icon-vaccine.png', isPill: true, pillOk: !!pet.is_neutered },
+    { label: 'ทำหมัน',   val: neuteredText(pet.is_neutered), icon: '/icons/icon-vaccine.png', isPill: true, pillOk: !!pet.is_neutered },
   ] : [];
 
   if (loading) return <PageLoader />;
@@ -372,7 +377,7 @@ export default function PetIdCardPage() {
                 {/* Footer */}
                 <div className="pc-footer">
                   <div className="pc-footer-icon"><img src="/icons/icon-paw-sparkle.png" alt="" /></div>
-                  <span className="pc-footer-txt">รับรองโดย Whiskora</span>
+                  <span className="pc-footer-txt">ลงทะเบียนกับ Whiskora</span>
                 </div>
 
               </div>

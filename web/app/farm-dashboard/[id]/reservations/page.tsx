@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
+import { useLocale, useTranslations } from "@/i18n/context";
 import { PET_STATUS } from "@/lib/constants";
+import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -15,10 +17,8 @@ const F = {
   line: "#F3F4F6", lineMid: "#E5E7EB", bg: "#fffafc",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", cancelled: "ยกเลิกแล้ว",
-  converted: "โอนย้ายแล้ว", expired: "หมดอายุ",
-};
+// ข้อความอยู่ใน messages/*.json → reservations.status_<status>
+const STATUS_KEYS = ["pending", "confirmed", "cancelled", "converted", "expired"];
 const STATUS_COLOR: Record<string, { bg: string; fg: string; bd: string }> = {
   pending:   { bg: F.amberSoft, fg: F.amber, bd: F.amberBorder },
   confirmed: { bg: F.greenSoft, fg: F.green, bd: F.greenBorder },
@@ -32,11 +32,13 @@ interface ReservationRow {
   pet_id: number;
   status: string;
   created_at: string;
-  pet: { id: number; name: string | null; image_url: string | null; status: string | null } | null;
+  pet: { id: number; name: string | null; image_url: string | null; status: string | null; user_id: string | null } | null;
   buyer: { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
 export default function FarmReservationsPage() {
+  const t = useTranslations("reservations");
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const farmId = params?.id as string;
@@ -45,6 +47,11 @@ export default function FarmReservationsPage() {
   const [rows, setRows] = useState<ReservationRow[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  // pet_id → transfer ที่ยัง pending (ใช้กันส่งคำขอโอนซ้ำ และแสดงสถานะรอผู้ซื้อยอมรับ)
+  const [pendingTransfers, setPendingTransfers] = useState<Record<number, { id: number; to_user_id: string; reservation_id: number | null }>>({});
+  const { myRole } = useFarmAccess();
+  // ตรงกับเงื่อนไขใน farm_set_reservation_status(): owner/manager เท่านั้น
+  const canDecide = myRole === "owner" || myRole === "manager";
 
   const load = async () => {
     const { data: pets } = await supabase.from("pets").select("id").eq("farm_id", farmId);
@@ -53,9 +60,18 @@ export default function FarmReservationsPage() {
 
     const { data } = await supabase
       .from("pet_reservations")
-      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status), buyer:buyer_id(id, full_name, username, avatar_url)")
+      .select("id, pet_id, status, created_at, pet:pet_id(id, name, image_url, status, user_id), buyer:buyer_id(id, full_name, username, avatar_url)")
       .in("pet_id", petIds)
       .order("created_at", { ascending: false });
+
+    const { data: transfers } = await supabase
+      .from("pet_ownership_transfers")
+      .select("id, pet_id, to_user_id, reservation_id")
+      .in("pet_id", petIds)
+      .eq("status", "pending");
+    const byPet: Record<number, { id: number; to_user_id: string; reservation_id: number | null }> = {};
+    (transfers || []).forEach(t => { byPet[t.pet_id] = { id: t.id, to_user_id: t.to_user_id, reservation_id: t.reservation_id }; });
+    setPendingTransfers(byPet);
 
     setRows((data || []) as unknown as ReservationRow[]);
     setLoading(false);
@@ -64,28 +80,76 @@ export default function FarmReservationsPage() {
   useEffect(() => { if (farmId) load(); }, [farmId]);
 
   const updateStatus = async (row: ReservationRow, status: "confirmed" | "cancelled") => {
+    if (busyId !== null) return; // กันกดซ้ำระหว่างรอผล
     setBusyId(row.id);
     setError("");
     try {
-      const { error: updErr } = await supabase
-        .from("pet_reservations")
-        .update({ status, confirmed_at: status === "confirmed" ? new Date().toISOString() : null })
-        .eq("id", row.id);
-      if (updErr) throw updErr;
+      // ทางหลัก: RPC อัปเดตการจอง + สถานะสัตว์ใน transaction เดียว (supabase/migrations/20261029200000_reservation_transfer_pipeline.sql)
+      const { error: rpcErr } = await supabase.rpc("farm_set_reservation_status", { p_reservation_id: row.id, p_status: status });
+      if (rpcErr && rpcErr.code !== "PGRST202") throw rpcErr;
 
-      if (status === "confirmed") {
-        await supabase.from("pets").update({ status: PET_STATUS.RESERVED }).eq("id", row.pet_id);
-      } else if (status === "cancelled" && row.status === "confirmed") {
-        await supabase.from("pets").update({ status: PET_STATUS.OPEN_RESERVE }).eq("id", row.pet_id);
+      if (rpcErr?.code === "PGRST202") {
+        // ยังไม่ได้ติดตั้ง migration — ใช้วิธีเดิม (ไม่ atomic) แต่ตรวจผลทุกขั้นและอิงสถานะจริงจาก DB ไม่ใช่ค่าในหน้าจอ
+        const { data: current, error: curErr } = await supabase.from("pet_reservations").select("status").eq("id", row.id).single();
+        if (curErr) throw curErr;
+        if (current.status === status) { await load(); return; }
+        const { error: updErr } = await supabase
+          .from("pet_reservations")
+          .update({ status, confirmed_at: status === "confirmed" ? new Date().toISOString() : null })
+          .eq("id", row.id)
+          .eq("status", current.status);
+        if (updErr) throw updErr;
+
+        const nextPetStatus = status === "confirmed" ? PET_STATUS.RESERVED
+          : current.status === "confirmed" ? PET_STATUS.OPEN_RESERVE : null;
+        if (nextPetStatus) {
+          const { error: petErr } = await supabase.from("pets").update({ status: nextPetStatus }).eq("id", row.pet_id);
+          if (petErr) {
+            // ย้อนรายการจองกลับ เพื่อไม่ให้เกิด "จองสำเร็จแต่สัตว์ยังพร้อมขาย"
+            await supabase.from("pet_reservations").update({ status: current.status }).eq("id", row.id);
+            throw petErr;
+          }
+        }
       }
 
       await load();
     } catch (e: any) {
       setError(
         e.message?.includes("one_confirmed_reservation")
-          ? "สัตว์ตัวนี้มีคนจองที่ยืนยันแล้วอยู่ก่อนแล้ว ยกเลิกรายการเดิมก่อนถึงจะยืนยันรายการใหม่ได้"
-          : "ทำรายการไม่สำเร็จ: " + e.message
+          ? t("errAlreadyConfirmed")
+          : e.message?.includes("forbidden")
+          ? t("errForbidden")
+          : t("errFailed") + e.message
       );
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // ─── จองยืนยันแล้ว → ส่งคำขอโอนเจ้าของให้ผู้จอง (ใช้ pet_ownership_transfers เดิม ผู้ซื้อต้องกดยอมรับเอง) ───
+  const sendTransfer = async (row: ReservationRow) => {
+    if (busyId !== null || !row.buyer || !row.pet?.user_id) return;
+    if (row.buyer.id === row.pet.user_id) { setError(t("errSelf")); return; }
+    setBusyId(row.id);
+    setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: existing } = await supabase.from("pet_ownership_transfers")
+        .select("id").eq("pet_id", row.pet_id).eq("status", "pending").maybeSingle();
+      if (existing) { await load(); return; } // มีคำขอค้างอยู่แล้ว ไม่สร้างซ้ำ
+      const { error: insErr } = await supabase.from("pet_ownership_transfers").insert({
+        pet_id: row.pet_id,
+        from_user_id: row.pet.user_id,
+        to_user_id: row.buyer.id,
+        initiated_by: session?.user.id,
+        status: "pending",
+        reservation_id: row.id,
+      });
+      if (insErr) throw insErr;
+      await load();
+    } catch (e) {
+      setError(t("errTransfer") + (e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)));
     } finally {
       setBusyId(null);
     }
@@ -97,7 +161,7 @@ export default function FarmReservationsPage() {
   const others = rows.filter(r => r.status !== "pending");
 
   const renderRow = (row: ReservationRow) => {
-    const buyerName = row.buyer?.full_name || row.buyer?.username || "ผู้ใช้ไม่ระบุชื่อ";
+    const buyerName = row.buyer?.full_name || row.buyer?.username || t("noBuyerName");
     const c = STATUS_COLOR[row.status] || STATUS_COLOR.pending;
     return (
       <div key={row.id} className="rv-row">
@@ -108,26 +172,37 @@ export default function FarmReservationsPage() {
           }
         </Link>
         <div className="rv-info">
-          <div className="rv-pet-name">{row.pet?.name || "ไม่ระบุชื่อ"}</div>
+          <div className="rv-pet-name">{row.pet?.name || t("noName")}</div>
           <div className="rv-buyer">
             <div className="rv-buyer-avatar">
               {row.buyer?.avatar_url ? <img src={row.buyer.avatar_url} alt="" /> : (buyerName[0] || "?")}
             </div>
             {buyerName}
           </div>
-          <div className="rv-date">{new Date(row.created_at).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+          <div className="rv-date">{new Date(row.created_at).toLocaleString((locale === "en" ? "en-GB" : "th-TH"), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
         </div>
         <div className="rv-actions">
-          <span className="rv-status" style={{ background: c.bg, color: c.fg, border: `1px solid ${c.bd}` }}>{STATUS_LABEL[row.status] || row.status}</span>
-          {row.status === "pending" && (
+          <span className="rv-status" style={{ background: c.bg, color: c.fg, border: `1px solid ${c.bd}` }}>{STATUS_KEYS.includes(row.status) ? t("status_" + row.status) : row.status}</span>
+          {canDecide && row.status === "pending" && (
             <div style={{ display: "flex", gap: 6 }}>
-              <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => updateStatus(row, "confirmed")}>ยืนยัน</button>
-              <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ปฏิเสธ</button>
+              <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => updateStatus(row, "confirmed")}>{t("confirm")}</button>
+              <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>{t("reject")}</button>
             </div>
           )}
-          {row.status === "confirmed" && (
-            <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id} onClick={() => updateStatus(row, "cancelled")}>ยกเลิกการจอง</button>
-          )}
+          {canDecide && row.status === "confirmed" && (() => {
+            const pt = pendingTransfers[row.pet_id];
+            if (pt && pt.to_user_id === row.buyer?.id) {
+              return <span className="rv-date">{t("transferSent")}</span>;
+            }
+            return (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {myRole === "owner" && !pt && (
+                  <button className="rv-btn rv-btn-confirm" disabled={busyId === row.id} onClick={() => sendTransfer(row)}>{t("sendTransfer")}</button>
+                )}
+                <button className="rv-btn rv-btn-cancel" disabled={busyId === row.id || !!pt} onClick={() => updateStatus(row, "cancelled")}>{t("cancel")}</button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -174,26 +249,26 @@ export default function FarmReservationsPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <div>
-              <div className="rv-title">การจองสัตว์เลี้ยง</div>
-              <div className="rv-sub">รายการจองจากผู้ซื้อ — ยืนยันเพื่อปลดล็อกข้อมูลระดับ &quot;ผู้ที่จองไว้&quot;</div>
+              <div className="rv-title">{t("title")}</div>
+              <div className="rv-sub">{t("sub")}</div>
             </div>
           </div>
 
           {error && <div className="rv-error">{error}</div>}
 
           {rows.length === 0 ? (
-            <div className="rv-empty">ยังไม่มีใครจองสัตว์เลี้ยงในฟาร์มนี้</div>
+            <div className="rv-empty">{t("empty")}</div>
           ) : (
             <>
               {pending.length > 0 && (
                 <>
-                  <div className="rv-sec-label">รอยืนยัน ({pending.length})</div>
+                  <div className="rv-sec-label">{t("status_pending")} ({pending.length})</div>
                   {pending.map(renderRow)}
                 </>
               )}
               {others.length > 0 && (
                 <>
-                  <div className="rv-sec-label">ประวัติ</div>
+                  <div className="rv-sec-label">{t("history")}</div>
                   {others.map(renderRow)}
                 </>
               )}

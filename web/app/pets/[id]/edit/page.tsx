@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesToId, speciesIcon } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
@@ -63,9 +64,12 @@ export default function EditPetPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [allergies, setAllergies] = useState("");
   const [traits, setTraits] = useState("");
-  const [isNeutered, setIsNeutered] = useState(false);
-  const [initialIsNeutered, setInitialIsNeutered] = useState(false);
+  // null = ยังไม่ได้ระบุ — ไม่แปลงเป็น "ยังไม่ทำหมัน" โดยอัตโนมัติ
+  const [isNeutered, setIsNeutered] = useState<boolean | null>(null);
+  const [initialIsNeutered, setInitialIsNeutered] = useState<boolean | null>(null);
   const [bloodType, setBloodType] = useState("");
+  // false = โหลดข้อมูลสุขภาพไม่ได้ (error/ไม่มีสิทธิ์) — ห้ามบันทึกทับด้วยค่าว่าง
+  const [healthLoaded, setHealthLoaded] = useState(false);
   const [microchip, setMicrochip] = useState("");
 
   const [status, setStatus] = useState("");
@@ -93,10 +97,10 @@ export default function EditPetPage() {
   useEffect(() => {
     const fetchPetData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return router.push("/login");
+      if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setUserId(session.user.id);
 
-      const { data, error } = await supabase.from("pets").select("*").eq("id", petId).eq("user_id", session.user.id).single();
+      const { data, error } = await supabase.from("pets").select(PET_COLUMNS).eq("id", petId).eq("user_id", session.user.id).single();
       if (error || !data) {
         router.push("/profile");
         return;
@@ -105,12 +109,17 @@ export default function EditPetPage() {
       setName(data.name || "");
       setPetName(data.name || "");
       setGender(data.gender || "male");
-      setBirthdate(data.birth_date || data.birthdate || "");
-      setAllergies(data.allergies || "");
-      setTraits(data.traits || "");
-      setIsNeutered(!!data.is_neutered);
-      setInitialIsNeutered(!!data.is_neutered);
-      setBloodType(data.blood_type || "");
+      setBirthdate(data.birth_date || "");
+      // สุขภาพส่วนตัวไม่อยู่ใน PET_COLUMNS — อ่านผ่าน RPC ที่ตรวจสิทธิ์ฝั่ง DB (เจ้าของได้ครบ)
+      const { data: healthRows, error: healthErr } = await supabase.rpc("get_pet_health", { p_pet_id: data.id });
+      const healthRow = Array.isArray(healthRows) ? healthRows[0] : healthRows;
+      setHealthLoaded(!healthErr && !!healthRow);
+      const health = healthRow || {};
+      setAllergies(health.allergies || "");
+      setTraits(health.traits || "");
+      setIsNeutered(data.is_neutered ?? null);
+      setInitialIsNeutered(data.is_neutered ?? null);
+      setBloodType(health.blood_type || "");
       setMicrochip(data.microchip_number || "");
       setSireId(data.sire_id ? String(data.sire_id) : "");
       setDamId(data.dam_id ? String(data.dam_id) : "");
@@ -225,9 +234,9 @@ export default function EditPetPage() {
     const { error } = await supabase.from("pets").update({
       name: name.trim(), species: finalSpecies, breed: finalBreed || null, color: finalColor || null, eye_color: finalEyeColor || null,
       gender, birth_date: birthdate || null, image_url: avatarUrl,
-      allergies: allergies || null, traits: traits || null,
+      // ส่งช่องสุขภาพเฉพาะเมื่อโหลดค่าเดิมได้จริง ไม่งั้นจะลบข้อมูลเดิมทิ้งโดยไม่ตั้งใจ
+      ...(healthLoaded ? { allergies: allergies || null, traits: traits || null, blood_type: bloodType || null } : {}),
       is_neutered: isNeutered,
-      blood_type: bloodType || null,
       microchip_number: microchip || null,
       sire_id: sireId ? Number(sireId) : null,
       dam_id: damId ? Number(damId) : null,
@@ -239,7 +248,7 @@ export default function EditPetPage() {
       alert("บันทึกไม่สำเร็จ: " + error.message);
       setSaving(false);
     } else {
-      if (isNeutered && !initialIsNeutered) {
+      if (isNeutered === true && initialIsNeutered !== true) {
         await supabase.from("pet_activities").insert({
           pet_id: parseInt(petId),
           activity_type: "ทำหมัน",
@@ -327,6 +336,8 @@ export default function EditPetPage() {
         .ep-gender-btn { border: 1.5px solid ${F.line}; background: white; border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: ${F.muted}; transition: all .15s; }
         .ep-gender-btn.male.active { border-color: #93C5FD; background: #EFF6FF; color: #2563EB; }
         .ep-gender-btn.female.active { border-color: ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; }
+        .ep-gender-btn.active:not(.male):not(.female) { border-color: ${F.pinkBorder}; background: ${F.pinkSoft}; color: ${F.pink}; }
+        .ep-neuter-row { grid-template-columns: repeat(3, 1fr) !important; }
 
         /* Neutered toggle */
         .ep-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; cursor: pointer; }
@@ -473,14 +484,16 @@ export default function EditPetPage() {
 
               <div className="ep-field" style={{ marginBottom: 0 }}>
                 <label className="ep-label">ทำหมัน</label>
-                <div className="ep-toggle-row" onClick={() => setIsNeutered(!isNeutered)}>
-                  <div>
-                    <div className="ep-toggle-label">{isNeutered ? 'ทำหมันแล้ว' : 'ยังไม่ทำหมัน'}</div>
-                    <div className="ep-toggle-sub">{isNeutered ? 'สัตว์เลี้ยงได้รับการทำหมัน' : 'กดเพื่อระบุว่าทำหมันแล้ว'}</div>
-                  </div>
-                  <div className={`ep-toggle-pill ${isNeutered ? 'on' : 'off'}`}>
-                    <div className={`ep-toggle-dot ${isNeutered ? 'on' : 'off'}`} />
-                  </div>
+                <div className="ep-gender-row ep-neuter-row">
+                  {([
+                    { val: true, label: 'ทำหมันแล้ว' },
+                    { val: false, label: 'ยังไม่ทำหมัน' },
+                    { val: null, label: 'ยังไม่ระบุ' },
+                  ] as const).map(opt => (
+                    <button key={String(opt.val)} type="button" className={`ep-gender-btn ${isNeutered === opt.val ? 'active' : ''}`} onClick={() => setIsNeutered(opt.val)}>
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -546,11 +559,16 @@ export default function EditPetPage() {
                 <img src="/icons/icon-health.png" alt="" />
                 สุขภาพ & ข้อมูลการแพทย์
               </div>
+              {!healthLoaded && (
+                <div style={{ fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '8px 12px', marginBottom: 12 }}>
+                  โหลดข้อมูลสุขภาพเดิมไม่ได้ — ช่องกรุ๊ปเลือด สิ่งที่แพ้ และนิสัย จะไม่ถูกบันทึกในครั้งนี้ เพื่อไม่ให้ข้อมูลเดิมถูกลบ
+                </div>
+              )}
 
               <div className="ep-grid2">
                 <div className="ep-field">
                   <label className="ep-label">กรุ๊ปเลือด</label>
-                  <select className="ep-select" value={bloodType} onChange={e => setBloodType(e.target.value)}>
+                  <select className="ep-select" disabled={!healthLoaded} value={bloodType} onChange={e => setBloodType(e.target.value)}>
                     <option value="">ไม่ทราบ...</option>
                     {BLOOD_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -563,12 +581,12 @@ export default function EditPetPage() {
 
               <div className="ep-field">
                 <label className="ep-label">สิ่งที่แพ้</label>
-                <input className="ep-input" type="text" value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="เช่น อาหารทะเล, ยา..." />
+                <input className="ep-input" type="text" disabled={!healthLoaded} value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="เช่น อาหารทะเล, ยา..." />
               </div>
 
               <div className="ep-field" style={{ marginBottom: 0 }}>
                 <label className="ep-label">นิสัย / หมายเหตุ</label>
-                <input className="ep-input" type="text" value={traits} onChange={e => setTraits(e.target.value)} placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
+                <input className="ep-input" type="text" disabled={!healthLoaded} value={traits} onChange={e => setTraits(e.target.value)} placeholder="เช่น ขี้อ้อน ชอบนอนตัก" />
               </div>
             </div>
 

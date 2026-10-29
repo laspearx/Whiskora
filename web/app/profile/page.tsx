@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from '@/lib/profile';
+import { PET_COLUMNS } from '@/lib/columns';
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {
@@ -87,8 +89,8 @@ export default function ProfilePage() {
         const uid = session.user.id;
 
         const [profRes, petsRes] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-          supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+          getMyProfile(uid).then(data => ({ data })),
+          supabase.from("pets").select(PET_COLUMNS).eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 
         if (profRes.data) setProfile(profRes.data);
@@ -156,7 +158,10 @@ export default function ProfilePage() {
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = `${publicUrl}?t=${Date.now()}`;
       const field = cropType === "cover" ? "cover_url" : "avatar_url";
-      await supabase.from("profiles").upsert({ id: user.id, [field]: url, updated_at: new Date() });
+      // update ไม่ใช่ upsert: ON CONFLICT DO UPDATE เขียนทับ id ด้วย ซึ่ง API ไม่มีสิทธิ์ (migration 20261029100000)
+      // แถว profiles มีเสมอเพราะ trigger ตอนสมัครสร้างให้
+      const { error: saveErr } = await supabase.from("profiles").update({ [field]: url, updated_at: new Date().toISOString() }).eq("id", user.id);
+      if (saveErr) throw saveErr;
       setProfile((p: any) => ({ ...p, [field]: url }));
       cancelCrop();
     } catch (err) {

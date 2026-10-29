@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useServiceAccess } from "@/app/service-dashboard/[id]/layout";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import PageLoader from "@/app/components/PageLoader";
 import { Suspense } from "react";
@@ -37,6 +38,9 @@ function ManageServicesContent() {
   const [service, setService] = useState<any>(null);
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { myRole } = useServiceAccess();
+  // ให้ตรงกับหน้า overview: owner/manager จัดการรายการบริการได้ (เดิมกรอง user_id ทำให้ manager เข้าไม่ได้)
+  const canEdit = myRole === "owner" || myRole === "manager";
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
 
@@ -47,8 +51,9 @@ function ManageServicesContent() {
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push("/login"); return; }
-      const { data: svc } = await supabase.from("services").select("*").eq("id", serviceId).eq("user_id", session.user.id).single();
+      if (!session) { router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
+      if (!canEdit) { router.push(`/service-dashboard/${serviceId}`); return; }
+      const { data: svc } = await supabase.from("services").select("*").eq("id", serviceId).single();
       if (!svc) { router.push("/partner"); return; }
       setService(svc);
       const { data: its } = await supabase.from("service_items").select("*").eq("service_id", serviceId).order("id");
@@ -56,7 +61,7 @@ function ManageServicesContent() {
       setLoading(false);
     };
     if (serviceId) load();
-  }, [serviceId, router]);
+  }, [serviceId, router, canEdit]);
 
   const openAdd = () => { setDraft(blankDraft()); setEditId(null); setShowForm(true); };
   const openEdit = (item: ServiceItem) => {
