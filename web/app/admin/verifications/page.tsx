@@ -38,8 +38,8 @@ interface Verification {
   bank_book_url: string | null;
   farm_photo_urls: string[] | null;
   house_registration_url: string | null;
-  farm: { name: string; image_url: string | null; };
-  profile: { display_name: string | null; email: string | null; };
+  farm: { farm_name: string; image_url: string | null; };
+  profile: { full_name: string | null; username: string | null; email?: string | null; };
 }
 
 const DOC_LABELS: { key: keyof Verification; label: string }[] = [
@@ -84,12 +84,18 @@ export default function AdminVerificationsPage() {
       .from('farm_verifications')
       .select(`
         *,
-        farm:farms!farm_id(name, image_url),
-        profile:profiles!user_id(display_name, email)
+        farm:farms!farm_id(farm_name, image_url),
+        profile:profiles!user_id(full_name, username)
       `)
       .order('submitted_at', { ascending: false });
-
-    if (!error && data) setVerifications(data as any);
+    // เดิม select farms.name / profiles.display_name ซึ่งไม่มีอยู่จริง → query error และรายการว่างเสมอ
+    // อีเมลผู้ยื่นมาจาก RPC admin_get_users (ตรวจสิทธิ์ admin ฝั่ง DB) แทนการอ่านคอลัมน์ email ตรง
+    if (error) console.error('fetch verifications failed:', error);
+    if (!error && data) {
+      const { data: users } = await supabase.rpc('admin_get_users');
+      const emailById = new Map<string, string>(((users || []) as { id: string; email: string }[]).map(u => [u.id, u.email]));
+      setVerifications((data as unknown as Verification[]).map(v => ({ ...v, profile: { ...v.profile, email: emailById.get(v.user_id) ?? null } })));
+    }
     setIsFetching(false);
   };
 
@@ -259,9 +265,9 @@ export default function AdminVerificationsPage() {
                         : <div className="av-farm-av-ph"><Icon.Farm /></div>
                       }
                       <div className="av-card-info">
-                        <div className="av-farm-name">{v.farm?.name || '(ไม่ทราบชื่อ)'}</div>
+                        <div className="av-farm-name">{v.farm?.farm_name || '(ไม่ทราบชื่อ)'}</div>
                         <div className="av-farm-meta">
-                          <span>{v.profile?.display_name || v.profile?.email || v.user_id.slice(0, 8)}</span>
+                          <span>{v.profile?.full_name || v.profile?.username || v.profile?.email || v.user_id.slice(0, 8)}</span>
                           <span>·</span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Icon.Clock /> {fmt(v.submitted_at)}</span>
                         </div>

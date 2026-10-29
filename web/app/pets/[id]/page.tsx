@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { findUserByEmail } from '@/lib/profile';
 import { speciesTh } from '@/lib/species';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -355,12 +356,8 @@ export default function PetDetailPage() {
     if (!transferEmail.trim()) { setTransferError('กรุณากรอกอีเมล'); return; }
     setTransferring(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('email', transferEmail.trim().toLowerCase())
-        .maybeSingle();
-      if (error) throw error;
+      // ค้นจากอีเมลแบบตรงตัวผ่าน RPC — ไม่อ่านคอลัมน์ email ของคนอื่นตรงๆ
+      const data = await findUserByEmail(transferEmail);
       if (!data) { setTransferError('ไม่พบผู้ใช้งานที่มีอีเมลนี้ในระบบ'); return; }
       // เทียบ user ID หลังค้นหา (เดิมเทียบอีเมลกับ user ID จึงไม่เคยกันได้จริง)
       if (data.id === sessionUserId || data.id === pet?.user_id) { setTransferError('ไม่สามารถโอนให้ตัวเองได้'); return; }
@@ -414,12 +411,7 @@ export default function PetDetailPage() {
     if (!coOwnerEmail.trim()) { setCoOwnerError('กรุณากรอกอีเมล'); return; }
     setAddingCoOwner(true);
     try {
-      const { data: targetUser, error: lookupErr } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('email', coOwnerEmail.trim().toLowerCase())
-        .maybeSingle();
-      if (lookupErr) throw lookupErr;
+      const targetUser = await findUserByEmail(coOwnerEmail);
       if (!targetUser) { setCoOwnerError('ไม่พบผู้ใช้งานที่มีอีเมลนี้ในระบบ'); return; }
       if (targetUser.id === sessionUserId) { setCoOwnerError('คุณคือเจ้าของหลักอยู่แล้ว'); return; }
       const { error: insertErr } = await supabase.from('pet_co_owners').insert({

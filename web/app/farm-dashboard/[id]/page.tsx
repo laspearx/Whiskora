@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState, useRef, Suspense } from "react
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";

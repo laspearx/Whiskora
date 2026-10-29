@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from "@/lib/profile";
 import PageLoader from "@/app/components/PageLoader";
 import { getExistingSubscription, getNotifPermission, getOrCreateSubscription, registerSW } from "@/lib/push-client";
 
@@ -33,11 +34,8 @@ export default function SettingsPage() {
       if (!session) { router.push("/login?redirect=/profile/settings"); return; }
       setUser(session.user);
 
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("notif_line, notif_email, email")
-        .eq("id", session.user.id)
-        .single();
+      // อีเมลและการตั้งค่าแจ้งเตือนเป็นข้อมูลส่วนตัว — อ่านผ่าน get_my_profile()
+      const prof = await getMyProfile(session.user.id);
       setProfile(prof);
       const existing = await getExistingSubscription();
       setPushOn(!!existing && getNotifPermission() === "granted");

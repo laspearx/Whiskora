@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { PET_COLUMNS } from '@/lib/columns';
 import { useParams, useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import { neuteredText } from '@/lib/trust';
@@ -104,7 +105,10 @@ export default function PetIdCardPage() {
       if (!session) { router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
       const { data: petData } = await supabase.from('pets').select('*').eq('id', petId).single();
       if (!petData) { router.push('/'); return; }
-      setPet(petData as PetRecord);
+      // กรุ๊ปเลือดเป็นข้อมูลสุขภาพ — อ่านผ่าน RPC ที่ตรวจสิทธิ์ แทนคอลัมน์ตรง
+      const { data: h } = await supabase.rpc('get_pet_health', { p_pet_id: petData.id });
+      const health = Array.isArray(h) ? h[0] : h;
+      setPet({ ...(petData as PetRecord), blood_type: health?.blood_type ?? null });
       if (petData.farm_id && petData.farm_id !== 'PERSONAL') {
         const { data: farmData } = await supabase.from('farms').select('farm_name').eq('id', petData.farm_id).maybeSingle();
         if (farmData) setFarm(farmData);

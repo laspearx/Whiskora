@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesToId, speciesIcon } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Cropper from "react-easy-crop";
@@ -107,11 +108,14 @@ export default function EditPetPage() {
       setPetName(data.name || "");
       setGender(data.gender || "male");
       setBirthdate(data.birth_date || data.birthdate || "");
-      setAllergies(data.allergies || "");
-      setTraits(data.traits || "");
+      // สุขภาพส่วนตัวไม่อยู่ใน PET_COLUMNS — อ่านผ่าน RPC ที่ตรวจสิทธิ์ฝั่ง DB (เจ้าของได้ครบ)
+      const { data: healthRows } = await supabase.rpc("get_pet_health", { p_pet_id: data.id });
+      const health = (Array.isArray(healthRows) ? healthRows[0] : healthRows) || {};
+      setAllergies(health.allergies || "");
+      setTraits(health.traits || "");
       setIsNeutered(data.is_neutered ?? null);
       setInitialIsNeutered(data.is_neutered ?? null);
-      setBloodType(data.blood_type || "");
+      setBloodType(health.blood_type || "");
       setMicrochip(data.microchip_number || "");
       setSireId(data.sire_id ? String(data.sire_id) : "");
       setDamId(data.dam_id ? String(data.dam_id) : "");

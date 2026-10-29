@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { supabase } from "@/lib/supabase";
+import { getMyProfile } from '@/lib/profile';
+import { PET_COLUMNS } from '@/lib/columns';
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {
@@ -87,7 +89,7 @@ export default function ProfilePage() {
         const uid = session.user.id;
 
         const [profRes, petsRes] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+          getMyProfile(uid).then(data => ({ data })),
           supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
         ]);
 

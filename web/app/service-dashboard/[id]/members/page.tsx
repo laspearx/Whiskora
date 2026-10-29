@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { searchUsersForInvite } from "@/lib/profile";
 import { useServiceAccess } from "@/app/service-dashboard/[id]/layout";
 import PageLoader from "@/app/components/PageLoader";
 
@@ -56,7 +57,7 @@ export default function ServiceMembersPage() {
       if (!ws) { setLoading(false); return; }
       setWorkspaceId(ws.id);
       const { data: rows } = await supabase.from("workspace_members")
-        .select("id, role, user_id, joined_at, profiles(full_name, username, email, avatar_url)")
+        .select("id, role, user_id, joined_at, profiles(full_name, username, avatar_url)")
         .eq("workspace_id", ws.id).order("joined_at");
       setMembers((rows as any) || []);
       setLoading(false);
@@ -74,8 +75,8 @@ export default function ServiceMembersPage() {
     const q = searchQ.trim(); if (!q) return;
     setSearching(true); setSearchResults([]);
     const existing = new Set(members.map((m) => m.user_id));
-    const { data } = await supabase.from("profiles").select("id, full_name, username, email, avatar_url")
-      .or(`username.ilike.%${q}%,email.ilike.%${q}%,full_name.ilike.%${q}%`).limit(5);
+    // ค้นด้วยอีเมลแบบเต็มหรือชื่อ/username — ไม่ค้นอีเมลบางส่วน (กันการไล่เดาอีเมลผู้ใช้)
+    const data = await searchUsersForInvite(q);
     setSearchResults(((data || []) as SearchResult[]).filter((p) => !existing.has(p.id)));
     setSearching(false);
   };
@@ -206,7 +207,7 @@ export default function ServiceMembersPage() {
               <>
                 <div className="svm-sec-title">เชิญสมาชิกใหม่</div>
                 <div className="svm-search-row">
-                  <input className="svm-input" placeholder="ชื่อ, username หรือ email" value={searchQ} onChange={(e) => setSearchQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchUsers()} />
+                  <input className="svm-input" placeholder="ชื่อ, username หรืออีเมลแบบเต็ม" value={searchQ} onChange={(e) => setSearchQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchUsers()} />
                   <button className="svm-search-btn" onClick={searchUsers} disabled={searching || !searchQ.trim()}>{searching ? "..." : "ค้นหา"}</button>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>

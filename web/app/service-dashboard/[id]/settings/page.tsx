@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getMyProfile } from '@/lib/profile';
 import { useServiceAccess } from '@/app/service-dashboard/[id]/layout';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
@@ -68,7 +69,7 @@ export default function ServiceSettingsPage() {
 
       const [serviceRes, profileRes] = await Promise.all([
         supabase.from('services').select('*').eq('id', serviceId).single(),
-        supabase.from('profiles').select('full_name, phone, house_no, room_no, moo, soi, road, sub_district, district, province, postal_code').eq('id', session.user.id).single(),
+        getMyProfile(session.user.id).then(data => ({ data })),
       ]);
 
       if (serviceRes.error || !serviceRes.data) return router.push('/partner');

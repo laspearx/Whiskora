@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { getMyProfile } from '@/lib/profile';
 import { OTHER_SPECIES } from '@/lib/species';
 import Cropper from 'react-easy-crop';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
@@ -55,7 +56,7 @@ export default function RegisterFarmPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return;
-      supabase.from('profiles').select('full_name,phone,house_no,room_no,moo,soi,road,sub_district,district,province,postal_code').eq('id', session.user.id).single().then(({ data }) => {
+      getMyProfile(session.user.id).then(data => ({ data })).then(({ data }) => {
         if (data) setProfileData(data);
       });
     });

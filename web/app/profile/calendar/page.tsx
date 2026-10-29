@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {

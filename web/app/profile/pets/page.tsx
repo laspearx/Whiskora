@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { PET_COLUMNS } from '@/lib/columns';
 import { speciesTh } from "@/lib/species";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

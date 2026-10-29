@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getMyProfile } from '@/lib/profile';
 import { useShopAccess } from '@/app/shop-dashboard/[id]/layout';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
@@ -60,7 +61,7 @@ export default function ShopEditPage() {
 
       const [shopRes, profileRes] = await Promise.all([
         supabase.from('shops').select('*').eq('id', shopId).single(),
-        supabase.from('profiles').select('full_name, phone, house_no, room_no, moo, soi, road, sub_district, district, province, postal_code').eq('id', session.user.id).single(),
+        getMyProfile(session.user.id).then(data => ({ data })),
       ]);
 
       if (shopRes.error || !shopRes.data) return router.push('/partner');

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getMyProfile } from '@/lib/profile';
 import { useRouter } from 'next/navigation';
 import Cropper from 'react-easy-crop';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
@@ -64,7 +65,7 @@ export default function RegisterShopPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return router.push(`/login?redirect=${encodeURIComponent('/partner/register-shop')}`);
       setUserId(session.user.id);
-      supabase.from('profiles').select('full_name,phone,house_no,room_no,moo,soi,road,sub_district,district,province,postal_code').eq('id', session.user.id).single().then(({ data }) => {
+      getMyProfile(session.user.id).then(data => ({ data })).then(({ data }) => {
         if (data) setProfileData(data);
       });
     });

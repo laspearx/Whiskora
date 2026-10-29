@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { searchUsersForInvite } from "@/lib/profile";
 import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
 import PageLoader from "@/app/components/PageLoader";
 
@@ -93,7 +94,7 @@ export default function FarmMembersPage() {
 
       const { data: rows } = await supabase
         .from("workspace_members")
-        .select("id, role, user_id, joined_at, profiles(full_name, username, email, avatar_url)")
+        .select("id, role, user_id, joined_at, profiles(full_name, username, avatar_url)")
         .eq("workspace_id", ws.id)
         .order("joined_at");
 
@@ -122,11 +123,8 @@ export default function FarmMembersPage() {
 
     const existing = new Set(members.map((m) => m.user_id));
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, username, email, avatar_url")
-      .or(`username.ilike.%${q}%,email.ilike.%${q}%,full_name.ilike.%${q}%`)
-      .limit(5);
+    // ค้นด้วยอีเมลแบบเต็มหรือชื่อ/username — ไม่ค้นอีเมลบางส่วน (กันการไล่เดาอีเมลผู้ใช้)
+    const data = await searchUsersForInvite(q);
 
     const filtered = (data || []).filter((p: any) => !existing.has(p.id));
     setSearchResults(filtered as SearchResult[]);
@@ -317,7 +315,7 @@ export default function FarmMembersPage() {
                 <div className="fm-search-row">
                   <input
                     className="fm-search-input"
-                    placeholder="ค้นหาด้วยชื่อ, username หรือ email"
+                    placeholder="ค้นหาด้วยชื่อ, username หรืออีเมลแบบเต็ม"
                     value={searchQ}
                     onChange={(e) => setSearchQ(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && searchUsers()}

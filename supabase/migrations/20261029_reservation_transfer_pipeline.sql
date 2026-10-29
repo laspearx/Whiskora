@@ -145,3 +145,13 @@ create unique index if not exists pet_ownership_transfers_one_pending_per_pet
 -- as staff/viewer: select * from farm_set_reservation_status(<res_id>, 'cancelled');  -- 42501 forbidden
 -- as owner:        insert transfer with reservation_id → buyer accepts → reservation = converted, pets.user_id = buyer
 -- as buyer:        decline instead → reservation stays confirmed, owner unchanged
+
+-- ─── Rollback ────────────────────────────────────────────────────────────────
+-- begin;
+--   drop trigger if exists trg_mark_reservation_converted on public.pet_ownership_transfers;
+--   drop function if exists public.mark_reservation_converted_on_transfer_accept();
+--   drop function if exists public.farm_set_reservation_status(bigint, text);  -- app falls back automatically
+--   alter table public.pet_ownership_transfers drop constraint if exists pet_ownership_transfers_not_self;
+--   drop index if exists public.pet_ownership_transfers_one_pending_per_pet;
+-- commit;
+-- Rows already set to 'converted' stay converted (correct: the transfer was accepted).

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { PET_COLUMNS } from '@/lib/columns';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
