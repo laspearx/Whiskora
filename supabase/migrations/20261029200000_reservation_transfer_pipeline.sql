@@ -1,6 +1,10 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Whiskora: reservation ↔ pet status (atomic) + reservation → ownership transfer
 -- STATUS: PROPOSED — NOT APPLIED.
+-- NOTE (production, 2026-10-30): RLS policy "reservations update by buyer or farm team" lets ANY farm
+-- team member (incl. staff/viewer) and co-owners update pet_reservations directly. This RPC restricts
+-- confirm/cancel to pet owner + farm owner/manager, but the direct-UPDATE path stays open until that
+-- policy is tightened (separate change — needs a decision on what buyers may update, e.g. self-cancel).
 -- INDEPENDENT of 20261029100000_private_columns.sql: both functions here are SECURITY DEFINER,
 -- so column-level grants on pets do not affect them. Apply the privacy migration first
 -- (higher priority); this one can follow later or be skipped without breaking the app. Written without DB access (schema could not be
@@ -53,7 +57,7 @@ begin
     from public.workspaces w
     join public.workspace_members m on m.workspace_id = w.id
     where w.type = 'farm'
-      and w.entity_id::text = v_pet.farm_id::text   -- text compare: legacy rows may hold 'PERSONAL'
+      and w.entity_id = v_pet.farm_id   -- both bigint on production
       and m.user_id = v_uid
       and m.role in ('owner', 'manager')
   ) into v_allowed;
@@ -103,33 +107,10 @@ $$;
 revoke all on function public.farm_set_reservation_status(bigint, text) from public, anon;
 grant execute on function public.farm_set_reservation_status(bigint, text) to authenticated;
 
--- 2) Mark the reservation converted only when the linked transfer is accepted.
---    Separate AFTER trigger: it runs in the same transaction as the existing
---    sync_pet_owner_on_transfer_accept trigger, so if the owner change fails the
---    conversion rolls back too. Declined/cancelled transfers leave the reservation as-is.
-create or replace function public.mark_reservation_converted_on_transfer_accept()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if new.status = 'accepted' and old.status is distinct from 'accepted' and new.reservation_id is not null then
-    update public.pet_reservations
-       set status = 'converted'
-     where id = new.reservation_id
-       and pet_id = new.pet_id
-       and buyer_id = new.to_user_id
-       and status = 'confirmed';
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_mark_reservation_converted on public.pet_ownership_transfers;
-create trigger trg_mark_reservation_converted
-  after update of status on public.pet_ownership_transfers
-  for each row execute function public.mark_reservation_converted_on_transfer_accept();
+-- 2) Converting the reservation on accept: NOT added here. The existing BEFORE UPDATE trigger
+--    trg_sync_pet_owner_on_transfer_accept → sync_pet_owner_on_transfer_accept() already sets
+--    pet_reservations.status = 'converted' when new.reservation_id is not null (checked on production
+--    2026-10-30). The app now sends reservation_id, so no new trigger is needed.
 
 -- 3) A transfer to yourself is never valid (the UI check compared email to user id
 --    and never fired). NOT VALID so existing rows are not re-checked on apply.
@@ -155,10 +136,7 @@ create unique index if not exists pet_ownership_transfers_one_pending_per_pet
 
 -- ─── Rollback ────────────────────────────────────────────────────────────────
 -- begin;
---   drop trigger if exists trg_mark_reservation_converted on public.pet_ownership_transfers;
---   drop function if exists public.mark_reservation_converted_on_transfer_accept();
 --   drop function if exists public.farm_set_reservation_status(bigint, text);  -- app falls back automatically
 --   alter table public.pet_ownership_transfers drop constraint if exists pet_ownership_transfers_not_self;
 --   drop index if exists public.pet_ownership_transfers_one_pending_per_pet;
 -- commit;
--- Rows already set to 'converted' stay converted (correct: the transfer was accepted).

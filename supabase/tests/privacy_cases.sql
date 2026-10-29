@@ -5,6 +5,7 @@
 \set X '''dddddddd-0000-0000-0000-000000000004'''
 \set ph '''' :phase ''''
 select pg_temp.check(:ph,'anon reads emails',            'anon', null, 'select email from profiles', :'exp_private');
+select pg_temp.check(:ph,'anon reads location (explicit col ACL)', 'anon', null, 'select location from profiles', :'exp_private');
 select pg_temp.check(:ph,'anon reads phone/address',     'anon', null, 'select phone, address from profiles', :'exp_private');
 select pg_temp.check(:ph,'anon reads public card',       'anon', null, 'select id, full_name, username, avatar_url, cover_url from profiles', 'rows=5');
 select pg_temp.check(:ph,'stranger reads other emails',  'authenticated', :X, 'select email from profiles where id <> auth.uid()', :'exp_private');
@@ -14,3 +15,5 @@ select pg_temp.check(:ph,'anon reads PET_COLUMNS list',  'anon', null, 'select i
 select pg_temp.check(:ph,'anon select * pets',           'anon', null, 'select * from pets', :'exp_private');
 select pg_temp.check(:ph,'owner health via RPC',         'authenticated', :O, 'select * from get_pet_health(1)', 'rows=1');
 select pg_temp.check(:ph,'stranger health via RPC',      'authenticated', :X, 'select * from get_pet_health(1)', 'rows=0');
+select pg_temp.check(:ph,'user makes self admin',        'authenticated', :X, $$update profiles set role='admin' where id = auth.uid()$$, :'exp_private');
+select pg_temp.check(:ph,'anon updates any profile',     'anon', null, $$update profiles set full_name='x'$$, :'exp_private_or_zero');

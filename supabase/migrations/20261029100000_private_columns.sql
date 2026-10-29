@@ -14,6 +14,20 @@
 -- lib/columns.ts + lib/profile.ts and falls back when these functions are missing, so the
 -- app can be deployed before or after this migration.
 --
+-- PRODUCTION INVENTORY (read-only, 2026-10-30, project vhudldcizmbpujedojei — the only project; no staging):
+--   * anon + authenticated have table-level ALL on profiles and pets; RLS: profiles SELECT using(true) x2,
+--     pets SELECT where is_public or status='พร้อมย้ายบ้าน' → every column of those rows is readable.
+--   * Explicit column ACLs already exist for anon on profiles (id, created_at, username, avatar_url,
+--     updated_at, full_name, location, cover_url) — ineffective while table-level SELECT exists, and
+--     the `location` one would SURVIVE a table-level revoke → revoked explicitly below.
+--   * All functions reading private columns are SECURITY DEFINER (owner postgres): get_pet_health,
+--     admin_get_users, handle_new_user, get_farm_dashboard_summary, can_manage_pet_visibility, …
+--     Only invoker function touching these tables: trigger whiskora_set_pet_code
+--     (UPDATE pets SET pet_code … WHERE id = new.id) → needs SELECT(id) + UPDATE, both kept.
+--   * RLS admin checks read profiles(id, role) as the caller → id and role stay readable.
+--   * vaccines / pet_activities / pet_weights / pet_documents SELECT is gated by viewer_can_see() —
+--     not changed here. Default privileges grant ALL on NEW public tables to anon (unchanged; review separately).
+--
 -- PRE-CHECKS on staging (must all pass before applying):
 --   1. get_pet_health / get_pet_pedigree / get_my_pet_access / admin_get_users / admin_get_stats
 --      and every trigger function touching profiles/pets are SECURITY DEFINER, otherwise they
@@ -34,8 +48,27 @@ begin;
 -- private (owner via get_my_profile only): email, phone, address, house_no, room_no, moo, soi,
 --   road, sub_district, district, province, postal_code, location, notif_line, notif_email
 revoke select on public.profiles from anon, authenticated;
+-- clear explicit column ACLs on private columns (a table-level revoke does not remove them)
+revoke select (email, phone, address, house_no, room_no, moo, soi, road, sub_district, district,
+               province, postal_code, location, notif_line, notif_email)
+  on public.profiles from anon, authenticated;
 grant select (id, full_name, username, avatar_url, cover_url, role, created_at, updated_at)
   on public.profiles to anon, authenticated;
+
+-- WRITE side: RLS lets a user UPDATE/INSERT their own row with no column limit and nothing guards
+-- `role` → a user could set role = 'admin' on themselves and then call admin_get_users (emails of
+-- everyone). Found from policies + grants on production 2026-10-30 (not exploited). Limit writable
+-- columns; role/id/created_at are no longer writable by API roles (admins change roles via SQL/service role).
+revoke insert, update on public.profiles from anon, authenticated;
+grant update (full_name, username, avatar_url, cover_url, phone, address, house_no, room_no, moo, soi,
+              road, sub_district, district, province, postal_code, location, notif_line, notif_email, updated_at)
+  on public.profiles to authenticated;
+grant insert (id, full_name, username, avatar_url, cover_url, phone, address, house_no, room_no, moo, soi,
+              road, sub_district, district, province, postal_code, location, notif_line, notif_email, updated_at)
+  on public.profiles to authenticated;
+-- anon never writes profiles; TRUNCATE/DELETE/REFERENCES/TRIGGER are not used by the app
+revoke delete, truncate, references, trigger on public.profiles from anon, authenticated;
+revoke truncate, references, trigger on public.pets from anon, authenticated;
 
 create or replace function public.get_my_profile()
 returns setof public.profiles
@@ -83,6 +116,7 @@ grant execute on function public.search_users_for_invite(text) to authenticated;
 -- private health (via get_pet_health, tier-checked): blood_type, allergies, chronic_diseases,
 -- health_notes, traits. Everything else stays readable subject to existing RLS.
 revoke select on public.pets from anon, authenticated;
+revoke select (blood_type, allergies, chronic_diseases, health_notes, traits) on public.pets from anon, authenticated;
 grant select (
   id, created_at, name, breed, species, gender, color, pattern, coat, ear, leg, eye_color, birth_date,
   status, price, image_url, cover_url, gallery_urls, user_id, farm_id, litter_id, sire_id, dam_id,
@@ -114,6 +148,7 @@ commit;
 -- ─── Rollback (restores the previous broad table-level SELECT) ───────────────
 -- begin;
 --   grant select on public.profiles to anon, authenticated;
+--   grant insert, update, delete on public.profiles to anon, authenticated;   -- re-opens role self-escalation
 --   grant select on public.pets to anon, authenticated;
 --   drop function if exists public.get_my_profile();
 --   drop function if exists public.find_user_by_email(text);

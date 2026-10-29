@@ -22,3 +22,6 @@ select pg_temp.check('after','pet insert returning id',          'authenticated'
 select pg_temp.check('after','pet insert returning * fails',     'authenticated', :O, $$insert into pets (name, user_id) values ('t4', auth.uid()) returning *$$, 'denied');
 select pg_temp.check('after','pet insert (no returning)',        'authenticated', :O, $$insert into pets (name, user_id, allergies) values ('t3', auth.uid(), 'none')$$, 'rows=1');
 select pg_temp.check('after','pet update health cols',           'authenticated', :O, $$update pets set allergies='dust' where id = 1$$, 'rows=1');
+select pg_temp.check('after','owner saves notif settings',        'authenticated', :O, $$update profiles set notif_line=false where id = auth.uid()$$, 'rows=1');
+select pg_temp.check('after','avatar upsert still works',         'authenticated', :O, $$insert into profiles (id, avatar_url, updated_at) values (auth.uid(), 'u', now()) on conflict (id) do update set avatar_url = excluded.avatar_url, updated_at = excluded.updated_at$$, 'rows=1');
+select pg_temp.check('after','admin RLS check reads role',        'authenticated', :O, $$select 1 from profiles where id = auth.uid() and role = 'admin'$$, 'rows=0');
