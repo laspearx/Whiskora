@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (privacy migration verified on staging)
+**Last updated:** 2026-10-29 (v1.5.0 live; privacy migration still staging-only — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -151,6 +151,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Released v1.5.0 (`74391b7`) to production; DB unchanged. Auth Site URL was a third-party host and Redirect URLs had `*.vercel.app/**` — both fixed by the owner (closed 19:49:59 UTC); session-revocation decision pending (`docs/STATUS.md`).
 - Privacy release prep: clean-checkout build of `45f6071` passes E2E 50/50 before and after the migration on staging; read-only precheck passes on production; pinned plan in `docs/PRIVACY_ROLLOUT.md`. Known: after a reservation → transfer is accepted the pet keeps status `ติดจอง`.
 - Staging `whiskora-staging` created from a production schema dump (+ `platform_objects.sql`: storage, auth trigger, `field_groups` seed, function ACL the dump drops); definitions diffed against production (only pg_net version differs).
 - Privacy migration applied and verified on staging (API 107/107, E2E 50/50, 0 skipped); production untouched.

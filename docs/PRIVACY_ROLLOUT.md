@@ -1,6 +1,6 @@
 # Privacy fix — staging & production rollout
 
-Status 2026-10-30: **applied on staging only** (`whiskora-staging`, ref `wpxcukrwmegwzfccbbga`). Production
+Status 2026-10-29 19:50 UTC: app step done (v1.5.0 `74391b7` live, see `docs/STATUS.md`); migration **applied on staging only** (`whiskora-staging`, ref `wpxcukrwmegwzfccbbga`). Production
 (`vhudldcizmbpujedojei`) has only the role hotfix; the read leak (anon can read `profiles.email/phone/address`
 and `pets` health columns) is **still open on production**. Nothing below has been done on production.
 
