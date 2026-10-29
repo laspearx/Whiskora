@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useShopAccess } from '@/app/shop-dashboard/[id]/layout';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
@@ -33,6 +34,8 @@ export default function ShopEditPage() {
   const params = useParams();
   const shopId = params.id as string;
 
+  const { myRole } = useShopAccess();
+  const canEdit = myRole === "owner" || myRole === "manager";
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -52,6 +55,8 @@ export default function ShopEditPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(`/shop-dashboard/${shopId}/edit`)}`);
+      // staff/viewer เห็นปุ่มนี้ถูกซ่อนในหน้า overview แล้ว แต่เปิด URL ตรงได้ — กันซ้ำที่นี่ (RLS ยังเป็นด่านจริง)
+      if (!canEdit) return router.push(`/shop-dashboard/${shopId}`);
 
       const [shopRes, profileRes] = await Promise.all([
         supabase.from('shops').select('*').eq('id', shopId).single(),
@@ -82,7 +87,7 @@ export default function ShopEditPage() {
       setLoading(false);
     };
     if (shopId) load();
-  }, [shopId, router]);
+  }, [shopId, router, canEdit]);
 
   useEffect(() => {
     if (!mapVisible) return;
