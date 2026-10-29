@@ -19,9 +19,9 @@ const Icon = {
 
 // Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
 // With no prior record to go by, default to kg — most personally-owned pets weighed here are grown pets.
-const useKgFor = (lastKnownGrams: number | null | undefined, defaultKg = true) =>
+const shouldUseKgFor = (lastKnownGrams: number | null | undefined, defaultKg = true) =>
   lastKnownGrams != null ? lastKnownGrams >= 1000 : defaultKg;
-const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
+const fmtWeightHint = (g: number) => shouldUseKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
 
 export default function WeighInPage() {
   const router = useRouter();
@@ -95,7 +95,7 @@ export default function WeighInPage() {
     try {
       const inserts = entries.map(([petId, w]) => {
         const pid = parseInt(petId);
-        const useKg = unitOverrides[pid] ?? useKgFor(latestWeightByPet.get(pid));
+        const useKg = unitOverrides[pid] ?? shouldUseKgFor(latestWeightByPet.get(pid));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: pid,
@@ -118,7 +118,7 @@ export default function WeighInPage() {
     const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
     const val = weights[pet.id] ?? '';
     const latestWeight = latestWeightByPet.get(pet.id);
-    const useKg = unitOverrides[pet.id] ?? useKgFor(latestWeight);
+    const useKg = unitOverrides[pet.id] ?? shouldUseKgFor(latestWeight);
     return (
       <div key={pet.id} className={`wi-pet-row ${val.trim() ? 'filled' : ''}`}>
         <div className="wi-pet-photo">

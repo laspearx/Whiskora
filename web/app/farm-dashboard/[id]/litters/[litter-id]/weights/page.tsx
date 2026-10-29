@@ -22,8 +22,8 @@ const Icon = {
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
 // Weight is always stored in grams. >= 1000g shows/accepts kg instead, purely a display/input convenience.
-const useKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
-const fmtWeightHint = (g: number) => useKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
+const shouldUseKgFor = (lastKnownGrams: number | null | undefined) => (lastKnownGrams ?? 0) >= 1000;
+const fmtWeightHint = (g: number) => shouldUseKgFor(g) ? `${(g / 1000).toFixed(2)} กก.` : `${g} กรัม`;
 
 interface PetWeight { petId: number; weight: string; }
 
@@ -90,7 +90,7 @@ export default function LitterWeightsPage() {
     try {
       const inserts = entries.map(([petId, w]) => {
         const pid = parseInt(petId);
-        const useKg = unitOverrides[pid] ?? useKgFor(latestWeightByPet.get(pid));
+        const useKg = unitOverrides[pid] ?? shouldUseKgFor(latestWeightByPet.get(pid));
         const weightInGrams = useKg ? Math.round(parseFloat(w) * 1000) : parseFloat(w);
         return {
           pet_id: parseInt(petId),
@@ -184,7 +184,7 @@ export default function LitterWeightsPage() {
               const isMale = baby.gender === 'male' || baby.gender === 'ตัวผู้';
               const val = weights[baby.id] ?? '';
               const latestWeight = latestWeightByPet.get(baby.id);
-              const useKg = unitOverrides[baby.id] ?? useKgFor(latestWeight);
+              const useKg = unitOverrides[baby.id] ?? shouldUseKgFor(latestWeight);
               return (
                 <div key={baby.id} className={`lw-pet-row ${val.trim() ? 'filled' : ''}`}>
                   <div className="lw-pet-photo">
