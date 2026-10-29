@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect } from "react";
+import NextLink from "next/link";
 import { useRouter } from "@/i18n/navigation";
 
 type IconName =
@@ -41,265 +41,116 @@ function IconImg({ name, size = 48 }: { name: IconName; size?: number }) {
 
 const siteUrl = "https://whiskora.pet";
 
-const trustStatements = [
-  {
-    title: "Profile-first data",
-    desc: "ข้อมูลสำคัญผูกกับสัตว์เลี้ยงแต่ละตัว ไม่กระจัดกระจายตามแชตหรือรูปถ่าย",
-  },
-  {
-    title: "Shareable by QR",
-    desc: "แชร์ข้อมูลที่จำเป็นให้ผู้ดูแล ฟาร์ม หรือบริการสัตว์เลี้ยงเข้าถึงได้เร็วขึ้น",
-  },
-  {
-    title: "Verification-ready",
-    desc: "รองรับข้อมูลฟาร์ม เพ็ดดิกรี เอกสาร และความโปร่งใสก่อนรับเลี้ยงหรือซื้อขาย",
-  },
-  {
-    title: "Care continuity",
-    desc: "ช่วยให้ประวัติสุขภาพและการดูแลต่อเนื่อง ไม่หายไประหว่างเจ้าของหรือผู้ให้บริการ",
-  },
-];
-
+// ─── ช่วยอะไร: ปัญหาจริงที่ Whiskora แก้ ─────────────────────────────────
 const problemCards = [
   {
     title: "ประวัติสุขภาพอยู่หลายที่",
-    desc: "วัคซีน ถ่ายพยาธิ ใบนัด และรูปเอกสารมักกระจายอยู่ในสมุด แชต อัลบั้มรูป หรือความจำของเจ้าของ",
+    desc: "วัคซีน น้ำหนัก ใบนัด และรูปเอกสารกระจายอยู่ในสมุด แชต และอัลบั้มรูป",
     icon: "health",
   },
   {
-    title: "ข้อมูลสำคัญถูกถามซ้ำ",
-    desc: "คลินิก โรงแรม อาบน้ำตัดขน และผู้ดูแลต้องถามข้อมูลเดิมซ้ำทุกครั้งที่สัตว์เลี้ยงเปลี่ยนมือ",
+    title: "ต้องเล่าข้อมูลเดิมซ้ำ",
+    desc: "ทุกครั้งที่ฝากเลี้ยง พาไปหาหมอ หรือเปลี่ยนผู้ดูแล ต้องบอกข้อมูลชุดเดิมใหม่",
     icon: "clinic",
   },
   {
-    title: "ความน่าเชื่อถือของฟาร์มดูยาก",
-    desc: "ผู้ซื้ออยากเห็นข้อมูลฟาร์ม สายเลือด สุขภาพ และความโปร่งใสก่อนตัดสินใจ แต่โพสต์ทั่วไปไม่พอ",
+    title: "ดูข้อมูลฟาร์มยาก",
+    desc: "ผู้รับเลี้ยงอยากเห็นข้อมูลฟาร์ม พ่อแม่พันธุ์ และสุขภาพก่อนตัดสินใจ แต่โพสต์ขายทั่วไปไม่พอ",
     icon: "breeder",
   },
   {
-    title: "การส่งต่อเจ้าของขาดบริบท",
-    desc: "เมื่อมีการรับเลี้ยง ซื้อขาย หรือฝากดูแล รายละเอียดสำคัญมักไม่ถูกส่งต่อครบถ้วน",
+    title: "ย้ายบ้านแล้วข้อมูลหาย",
+    desc: "เมื่อสัตว์มีเจ้าของใหม่ ประวัติที่ฟาร์มหรือเจ้าของเดิมเก็บไว้มักไม่ถูกส่งต่อ",
     icon: "transfer",
   },
 ] satisfies Array<{ title: string; desc: string; icon: IconName }>;
 
-const productPillars = [
+// ─── ประโยชน์สำหรับเจ้าของ (ทุกข้อเปิดใช้งานแล้ว) ──────────────────────────
+const ownerFeatures = [
   {
-    title: "Digital Pet Identity",
-    benefit: "ตัวตนดิจิทัลของสัตว์เลี้ยงแต่ละตัว",
-    desc: "สร้างโปรไฟล์และ Pet ID สำหรับเก็บข้อมูลพื้นฐาน รูปภาพ เจ้าของ และรายละเอียดที่จำเป็น",
+    title: "บัตร Pet ID พร้อม QR",
+    desc: "สร้างบัตรประจำตัวดิจิทัล ดาวน์โหลดเก็บในโทรศัพท์หรือพิมพ์ใช้งานได้",
     icon: "id",
   },
   {
-    title: "Health Records",
-    benefit: "สมุดสุขภาพที่ค้นหาและอัปเดตได้",
-    desc: "เก็บประวัติวัคซีน ถ่ายพยาธิ การรักษา นัดหมาย และหมายเหตุสุขภาพไว้ในโปรไฟล์เดียว",
-    icon: "health",
-  },
-  {
-    title: "QR Public Profile",
-    benefit: "แชร์ข้อมูลที่จำเป็นได้เร็ว",
-    desc: "ใช้ QR Code เพื่อให้ผู้เกี่ยวข้องเข้าถึงหน้าโปรไฟล์สาธารณะตามข้อมูลที่เจ้าของเลือกแชร์",
+    title: "หน้าโปรไฟล์เมื่อสแกน QR",
+    desc: "คนที่สแกนเห็นโปรไฟล์ได้โดยไม่ต้องสมัคร และเห็นเฉพาะข้อมูลที่เปิดไว้",
     icon: "qr",
   },
   {
-    title: "Verified Breeder Profile",
-    benefit: "สร้างความโปร่งใสให้ฟาร์ม",
-    desc: "ช่วยให้ฟาร์มแสดงข้อมูล พ่อแม่พันธุ์ ครอก และรายละเอียดที่ทำให้ผู้ซื้อมั่นใจขึ้น",
-    icon: "shield",
-  },
-  {
-    title: "Digital Pedigree",
-    benefit: "สายเลือดและข้อมูลพ่อแม่พันธุ์เป็นระบบ",
-    desc: "จัดเก็บผังสายเลือด ข้อมูลพ่อแม่ และข้อมูลฟาร์มสำหรับการเพาะพันธุ์ที่ต้องการมาตรฐาน",
-    icon: "tree",
-  },
-  {
-    title: "Service-ready Sharing",
-    benefit: "พร้อมต่อยอดกับคลินิกและบริการ",
-    desc: "วางโครงสร้างข้อมูลให้พร้อมสำหรับคลินิก โรงแรม อาบน้ำตัดขน และบริการสัตว์เลี้ยงในอนาคต",
-    icon: "care",
-  },
-] satisfies Array<{ title: string; benefit: string; desc: string; icon: IconName }>;
-
-const lifecycleSteps = [
-  {
-    title: "Create profile",
-    desc: "เริ่มจากข้อมูลพื้นฐาน รูปภาพ เจ้าของ และรายละเอียดประจำตัว",
-    icon: "id",
-  },
-  {
-    title: "Record health",
-    desc: "บันทึกวัคซีน ถ่ายพยาธิ การรักษา และเอกสารสำคัญ",
+    title: "สมุดสุขภาพ วัคซีน และน้ำหนัก",
+    desc: "บันทึกวัคซีน นัดหมาย น้ำหนัก และกิจกรรมดูแลไว้ในโปรไฟล์เดียว",
     icon: "health",
   },
   {
-    title: "Share safely",
-    desc: "แชร์ QR Profile ให้ผู้ดูแลหรือบริการที่จำเป็นต้องรู้ข้อมูล",
-    icon: "qr",
-  },
-  {
-    title: "Verify lineage",
-    desc: "เชื่อมข้อมูลฟาร์ม เพ็ดดิกรี พ่อแม่พันธุ์ และความโปร่งใส",
-    icon: "tree",
-  },
-  {
-    title: "Transfer ownership",
-    desc: "ส่งต่อข้อมูลสำคัญเมื่อสัตว์เลี้ยงย้ายบ้านหรือมีเจ้าของใหม่",
-    icon: "transfer",
-  },
-  {
-    title: "Continue care",
-    desc: "ให้คลินิก บริการ และผู้ดูแลในอนาคตเข้าใจข้อมูลได้ต่อเนื่อง",
-    icon: "clinic",
-  },
-] satisfies Array<{ title: string; desc: string; icon: IconName }>;
-
-const userGroups = [
-  {
-    label: "For Pet Owners",
-    title: "ดูแลข้อมูลสัตว์เลี้ยงโดยไม่ต้องจำทุกอย่างเอง",
-    desc: "จัดเก็บประวัติสุขภาพ เอกสาร และ QR Profile เพื่อให้การดูแลประจำวัน ฝากเลี้ยง หรือเหตุฉุกเฉินง่ายขึ้น",
-    icon: "owner",
-  },
-  {
-    label: "For Breeders",
-    title: "ทำให้ฟาร์มดูโปร่งใสและมีระบบมากกว่าโพสต์ขาย",
-    desc: "แสดงข้อมูลฟาร์ม ครอก พ่อแม่พันธุ์ เพ็ดดิกรี และประวัติที่ช่วยสร้างความเชื่อมั่นกับผู้ซื้อ",
-    icon: "breeder",
-  },
-  {
-    label: "For Clinics & Services",
-    title: "เห็นข้อมูลสำคัญเร็วขึ้น ลดคำถามซ้ำก่อนให้บริการ",
-    desc: "ช่วยให้คลินิก โรงแรม อาบน้ำตัดขน และผู้ดูแลเข้าถึงข้อมูลพื้นฐานและประวัติที่เกี่ยวข้องได้เป็นระบบ",
-    icon: "clinic",
-  },
-  {
-    label: "For Pet Businesses",
-    title: "เชื่อมบริการเข้ากับเจ้าของและโปรไฟล์สัตว์เลี้ยงจริง",
-    desc: "รองรับการค้นหา บริการ และความต้องการของเจ้าของสัตว์เลี้ยงผ่านข้อมูลที่ชัดเจนกว่าเดิม",
-    icon: "shop",
-  },
-] satisfies Array<{ label: string; title: string; desc: string; icon: IconName }>;
-
-const featureShowcase = [
-  {
-    title: "Free Pet ID Card",
-    desc: "บัตรประจำตัวดิจิทัลพร้อม QR สำหรับแชร์โปรไฟล์สัตว์เลี้ยง",
-    icon: "id",
-  },
-  {
-    title: "QR Public Pet Profile",
-    desc: "หน้าโปรไฟล์สาธารณะที่เจ้าของเลือกข้อมูลที่ต้องการเปิดเผยได้",
-    icon: "qr",
-  },
-  {
-    title: "Digital Health Book",
-    desc: "จัดเก็บวัคซีน ถ่ายพยาธิ นัดหมาย และประวัติการรักษา",
-    icon: "health",
-  },
-  {
-    title: "Documents",
-    desc: "รวมสมุดวัคซีน ใบรับรองสุขภาพ เพ็ดดิกรี และเอกสารสำคัญ",
+    title: "เอกสารสำคัญ",
+    desc: "เก็บรูปสมุดวัคซีน ใบรับรอง และเอกสารอื่นของสัตว์เลี้ยงแต่ละตัว",
     icon: "doc",
   },
-  {
-    title: "Breeder Profile",
-    desc: "โปรไฟล์ฟาร์มที่ช่วยสื่อสารข้อมูลอย่างเป็นระบบและตรวจสอบง่ายขึ้น",
-    icon: "shield",
-  },
-  {
-    title: "Digital Pedigree",
-    desc: "จัดการสายเลือด พ่อแม่พันธุ์ และข้อมูลครอกสำหรับฟาร์ม",
-    icon: "tree",
-  },
 ] satisfies Array<{ title: string; desc: string; icon: IconName }>;
 
-const trustLayer = [
-  "Registered breeder profiles",
-  "Transparent pet information",
-  "Digital health and document records",
-  "Review and verification readiness",
-  "Clinic and service integration foundation",
-];
-
-const farmHighlights = [
+// ─── ประโยชน์สำหรับฟาร์ม (ทุกข้อเปิดใช้งานแล้ว) ─────────────────────────────
+const farmFeatures = [
   {
-    title: "ข้อมูลฟาร์มที่อ่านง่าย",
-    desc: "รวมข้อมูลฟาร์ม สายพันธุ์ ครอก พ่อแม่พันธุ์ และเอกสารสำคัญไว้ในโปรไฟล์เดียว",
+    title: "โปรไฟล์ฟาร์มและสัตว์พร้อมย้ายบ้าน",
+    desc: "แสดงข้อมูลฟาร์มและรายการที่พร้อมย้ายบ้านหรือเปิดจองในหน้ารวมฟาร์ม",
     icon: "breeder",
   },
   {
-    title: "ตรวจสอบก่อนตัดสินใจ",
-    desc: "ช่วยให้ผู้รับสัตว์เลี้ยงเห็นข้อมูลสุขภาพ ประวัติวัคซีน และความโปร่งใสได้ชัดขึ้น",
-    icon: "shield",
+    title: "ครอก พ่อแม่พันธุ์ และสายเลือด",
+    desc: "บันทึกการผสม การคลอด น้ำหนักลูก และผังสายเลือดที่เชื่อมกันอัตโนมัติ",
+    icon: "tree",
   },
   {
-    title: "เชื่อมต่อกับเจ้าของใหม่",
-    desc: "ส่งต่อข้อมูลที่จำเป็นพร้อม Pet ID เพื่อให้การดูแลต่อเนื่องหลังย้ายบ้าน",
+    title: "รับจองและโอนเจ้าของ",
+    desc: "ผู้สนใจส่งคำขอจองได้ และโอนโปรไฟล์ให้เจ้าของใหม่กดยอมรับเอง",
     icon: "transfer",
+  },
+  {
+    title: "ยืนยันตัวตนฟาร์ม",
+    desc: "ส่งเอกสารให้ทีมงานตรวจ เมื่อผ่านแล้วฟาร์มจะได้ตรา \"ฟาร์มยืนยันตัวตนแล้ว\"",
+    icon: "shield",
   },
 ] satisfies Array<{ title: string; desc: string; icon: IconName }>;
 
-const knowledgeHighlights = [
-  {
-    tag: "เริ่มเลี้ยงสัตว์",
-    title: "รับลูกแมวหรือลูกสุนัขเข้าบ้าน ต้องเตรียมอะไรบ้าง",
-    desc: "เช็กลิสต์แรกสำหรับบ้านใหม่ ค่าใช้จ่ายเบื้องต้น และข้อมูลที่ควรบันทึกตั้งแต่วันแรก",
-  },
-  {
-    tag: "สุขภาพและวัคซีน",
-    title: "สมุดวัคซีนสัตว์เลี้ยงควรมีข้อมูลอะไรบ้าง",
-    desc: "อธิบายข้อมูลสุขภาพที่ควรเก็บ วิธีอ่านประวัติ และเหตุผลที่ข้อมูลดิจิทัลช่วยลดการตกหล่น",
-  },
-  {
-    tag: "ฟาร์มและความโปร่งใส",
-    title: "เลือกฟาร์มอย่างไรให้มั่นใจมากขึ้น",
-    desc: "คำถามที่ควรถาม เอกสารที่ควรเห็น และข้อมูลที่ช่วยให้การรับสัตว์เลี้ยงรับผิดชอบขึ้น",
-  },
-] satisfies Array<{ tag: string; title: string; desc: string }>;
+// ─── กำลังพัฒนา: แยกจากฟีเจอร์ที่ใช้ได้แล้วให้ชัด ───────────────────────────
+const roadmapItems = [
+  "จองคลินิกและบริการผ่าน Whiskora",
+  "คอมมูนิตี้คนรักสัตว์",
+  "บทความความรู้ฉบับเต็ม",
+];
 
 const seoFaqs = [
   {
     question: "Whiskora คืออะไร?",
     answer:
-      "Whiskora คือแพลตฟอร์ม pet-tech ที่ช่วยเชื่อมข้อมูลสัตว์เลี้ยง เจ้าของ ฟาร์ม สุขภาพ เอกสาร เพ็ดดิกรี และ QR Profile ให้อยู่ในระบบเดียว เพื่อให้ดูแลและแชร์ข้อมูลได้ง่ายขึ้น",
-  },
-  {
-    question: "Whiskora ต่างจากแค่สร้าง Pet ID อย่างไร?",
-    answer:
-      "Pet ID เป็นจุดเริ่มต้น แต่ Whiskora ออกแบบให้เป็นระบบข้อมูลสัตว์เลี้ยงระยะยาว ครอบคลุมสุขภาพ เอกสาร ฟาร์ม เพ็ดดิกรี การแชร์ QR และการต่อยอดกับบริการสัตว์เลี้ยง",
-  },
-  {
-    question: "QR Profile สัตว์เลี้ยงใช้ทำอะไร?",
-    answer:
-      "QR Profile ช่วยให้เจ้าของแชร์ข้อมูลที่จำเป็น เช่น ข้อมูลพื้นฐาน เจ้าของ ประวัติสุขภาพ หรือเอกสารบางส่วน ให้ผู้ดูแลหรือผู้เกี่ยวข้องเข้าถึงได้รวดเร็ว",
-  },
-  {
-    question: "ฟาร์มและผู้เพาะพันธุ์ใช้ Whiskora ได้อย่างไร?",
-    answer:
-      "ฟาร์มสามารถใช้ Whiskora เพื่อจัดการโปรไฟล์ฟาร์ม ข้อมูลสัตว์เลี้ยง ครอก พ่อแม่พันธุ์ เพ็ดดิกรี และข้อมูลที่ช่วยเพิ่มความโปร่งใสก่อนการตัดสินใจของผู้ซื้อ",
-  },
-  {
-    question: "Whiskora เหมาะกับคลินิกหรือบริการสัตว์เลี้ยงไหม?",
-    answer:
-      "Whiskora วางโครงสร้างข้อมูลให้พร้อมสำหรับคลินิก โรงแรม อาบน้ำตัดขน และบริการสัตว์เลี้ยง เพื่อให้ดูข้อมูลสำคัญของสัตว์เลี้ยงได้เร็วขึ้นและลดการถามข้อมูลซ้ำ",
+      "Whiskora คือระบบเก็บข้อมูลสัตว์เลี้ยงที่รวม Pet ID, QR Profile, ประวัติสุขภาพ เอกสาร และข้อมูลฟาร์มไว้ในที่เดียว เพื่อให้ดูแลและแชร์ข้อมูลได้ง่ายขึ้น",
   },
   {
     question: "เริ่มใช้งาน Whiskora ต้องเสียค่าใช้จ่ายไหม?",
     answer:
-      "เจ้าของสัตว์เลี้ยงสามารถเริ่มสร้างโปรไฟล์และ Pet ID ได้ฟรี เหมาะสำหรับการจัดข้อมูลพื้นฐาน แชร์ QR Profile และเริ่มเก็บประวัติสุขภาพของสัตว์เลี้ยง",
+      "เจ้าของสัตว์เลี้ยงสร้างโปรไฟล์และบัตร Pet ID ได้ฟรี ส่วนฟาร์ม ร้านค้า และบริการเปิดใช้ได้ฟรีในช่วง Genesis Program",
   },
-];
-
-const searchIntents = [
-  "Pet ID สัตว์เลี้ยง",
-  "QR Profile สัตว์เลี้ยง",
-  "สมุดสุขภาพสัตว์เลี้ยงออนไลน์",
-  "ประวัติวัคซีนสัตว์เลี้ยง",
-  "ฟาร์มแมวและฟาร์มสุนัข",
-  "เพ็ดดิกรีสัตว์เลี้ยง",
-  "โอนเจ้าของสัตว์เลี้ยง",
+  {
+    question: "คนที่สแกน QR จะเห็นข้อมูลอะไรบ้าง?",
+    answer:
+      "เห็นหน้าโปรไฟล์สาธารณะของสัตว์เลี้ยง ข้อมูลสุขภาพ สายเลือด และเอกสารจะแสดงตามระดับสิทธิ์ที่เจ้าของหรือฟาร์มตั้งไว้ และไม่แสดงที่อยู่ของเจ้าของ",
+  },
+  {
+    question: "ตรา \"ฟาร์มยืนยันตัวตนแล้ว\" หมายถึงอะไร?",
+    answer:
+      "หมายถึงทีม Whiskora ตรวจเอกสารยืนยันตัวตนของเจ้าของฟาร์มแล้ว ตรานี้ไม่ได้รับรองสุขภาพหรือสายเลือดของสัตว์แต่ละตัว ฟาร์มที่ยังไม่ผ่านจะแสดงว่ายังไม่ยืนยันตัวตน",
+  },
+  {
+    question: "QR ติดตามตำแหน่งสัตว์เลี้ยงได้ไหม?",
+    answer:
+      "ไม่ได้ QR เป็นลิงก์ไปหน้าโปรไฟล์ ไม่ใช่อุปกรณ์ GPS ผู้ที่พบสัตว์เลี้ยงต้องสแกนเองจึงจะเห็นข้อมูล",
+  },
+  {
+    question: "คลินิกหรือร้านบริการใช้ Whiskora ได้แล้วหรือยัง?",
+    answer:
+      "ผู้ให้บริการลงทะเบียนหน้าร้านได้แล้ว ส่วนการจองบริการผ่านเว็บยังอยู่ระหว่างพัฒนา ระหว่างนี้เจ้าของแชร์ข้อมูลสัตว์เลี้ยงให้คลินิกดูผ่าน QR ได้",
+  },
 ];
 
 const homeJsonLd = {
@@ -353,7 +204,7 @@ const homeJsonLd = {
         price: "0",
         priceCurrency: "THB",
       },
-      featureList: productPillars.map((pillar) => pillar.title),
+      featureList: [...ownerFeatures, ...farmFeatures].map((feature) => feature.title),
     },
     {
       "@type": "FAQPage",
@@ -1407,6 +1258,17 @@ export default function Home() {
           justify-content: center;
         }
 
+        #for-farms .farm-story-actions { margin-top: 24px; }
+        .roadmap-box {
+          margin-top: 28px;
+          border: 1px dashed rgba(239,62,123,.3);
+          border-radius: 20px;
+          background: rgba(255,255,255,.7);
+          padding: 18px 20px;
+        }
+        .roadmap-title { color: var(--muted); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .roadmap-box ul { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 14px; line-height: 1.8; }
+
         @media (max-width: 1120px) {
           .section-inner,
           .hero-inner,
@@ -1766,61 +1628,47 @@ export default function Home() {
       />
 
       <main className="home-page">
+        {/* 1. ช่วยอะไร */}
         <section className="hero-section" aria-label="Whiskora homepage hero">
           <div className="hero-inner">
             <div className="hero-copy-block">
               <div className="eyebrow">
                 <PawIcon />
-                TRUSTED PET LIFE PLATFORM
+                PET ID · QR PROFILE · HEALTH RECORDS
               </div>
               <h1 className="hero-title">
-                ข้อมูลสัตว์เลี้ยงที่เชื่อถือได้
-                <span>สำหรับทุกช่วงชีวิต</span>
+                เก็บข้อมูลสัตว์เลี้ยงไว้ที่เดียว
+                <span>แชร์ได้ด้วย QR</span>
               </h1>
               <p className="hero-copy">
-                Whiskora เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี และเอกสารสำคัญไว้ในระบบเดียว เพื่อให้เจ้าของ ฟาร์ม คลินิก และบริการสัตว์เลี้ยงดูแลต่อเนื่องได้ง่ายขึ้น
+                สร้าง Pet ID ฟรี บันทึกวัคซีน น้ำหนัก และเอกสาร แล้วให้คนที่ดูแลสแกน QR เพื่อดูข้อมูลที่คุณอนุญาต สำหรับทั้งเจ้าของและฟาร์ม
               </p>
               <div className="hero-actions">
                 <button className="primary-btn" onClick={() => router.push("/register")}>
                   <PawIcon color="#fff" />
                   สร้าง Pet ID ฟรี
                 </button>
-                <button className="secondary-btn" onClick={() => document.getElementById("platform-pillars")?.scrollIntoView({ behavior: "smooth" })}>
-                  สำรวจ Whiskora
-                </button>
+                {/* หน้า preview ไม่มี locale prefix (middleware ข้าม) จึงใช้ next/link ตรงๆ แทน router ที่เติม /th */}
+                <NextLink className="secondary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
+                  ดูตัวอย่าง Pet ID
+                </NextLink>
               </div>
-              <div className="hero-product-note" aria-label="Whiskora core product areas">
-                <div><IconImg name="qr" size={24} /> QR Public Profile</div>
-                <div><IconImg name="health" size={24} /> Health Records</div>
-                <div><IconImg name="shield" size={24} /> Breeder Trust</div>
+              <div className="hero-product-note" aria-label="สิ่งที่ใช้ได้ทันที">
+                <div><IconImg name="id" size={24} /> บัตร Pet ID ฟรี</div>
+                <div><IconImg name="qr" size={24} /> โปรไฟล์ QR</div>
+                <div><IconImg name="health" size={24} /> สมุดสุขภาพ</div>
               </div>
             </div>
-            <Image
-              src="/verified.png"
-              alt="Whiskora Verified"
-              width={300}
-              height={300}
-              className="verified-seal"
-            />
           </div>
-        </section>
-
-        <section className="trust-strip" aria-label="Whiskora trust principles">
-          {trustStatements.map((item) => (
-            <article className="trust-item" key={item.title} data-reveal>
-              <h3>{item.title}</h3>
-              <p>{item.desc}</p>
-            </article>
-          ))}
         </section>
 
         <section className="content-section" id="real-problems">
           <div className="section-inner">
             <SectionHeader
-              eyebrow="REAL PET DATA PROBLEMS"
+              eyebrow="WHY WHISKORA"
               title="ข้อมูลสัตว์เลี้ยงไม่ควรหายไป"
               highlight="ระหว่างสมุด แชต และความจำ"
-              copy="Whiskora เริ่มจากปัญหาที่เจ้าของ ฟาร์ม และผู้ให้บริการเจอจริง: ข้อมูลสำคัญอยู่หลายที่ ส่งต่อไม่ครบ และตรวจสอบยากในจังหวะที่ต้องใช้"
+              copy="Whiskora รวมข้อมูลที่ต้องใช้บ่อยไว้กับสัตว์เลี้ยงแต่ละตัว เปิดดูและส่งต่อได้ในจังหวะที่ต้องใช้"
             />
             <div className="problem-grid">
               {problemCards.map((problem) => (
@@ -1836,142 +1684,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="platform-band" aria-label="Whiskora platform introduction">
-          <div className="section-inner">
-            <div className="platform-copy" data-reveal="panel">
-              <div className="eyebrow">
-                <IconImg name="shield" size={20} />
-                ONE PLATFORM, EVERY PET LIFE
-              </div>
-              <h2 className="section-title">
-                Whiskora คือระบบกลาง
-                <span>ของข้อมูลสัตว์เลี้ยงที่ไว้ใจได้</span>
-              </h2>
-              <p className="section-copy">
-                จากโปรไฟล์แรกของลูกสัตว์ ไปจนถึงประวัติสุขภาพ ฟาร์ม เพ็ดดิกรี การส่งต่อเจ้าของ และการดูแลกับบริการต่าง ๆ Whiskora ทำให้ข้อมูลเดินทางไปพร้อมกับสัตว์เลี้ยงอย่างเป็นระบบ
-              </p>
-              <div className="platform-proof">
-                <div><IconImg name="id" size={24} /> เริ่มจาก Pet ID และโปรไฟล์ฟรี</div>
-                <div><IconImg name="health" size={24} /> เก็บข้อมูลสุขภาพและเอกสารต่อเนื่อง</div>
-                <div><IconImg name="tree" size={24} /> รองรับสายเลือด ฟาร์ม และครอก</div>
-                <div><IconImg name="clinic" size={24} /> พร้อมต่อยอดกับคลินิกและบริการ</div>
-              </div>
-              <button className="primary-btn" onClick={() => router.push("/register")}>
-                เริ่มสร้างโปรไฟล์สัตว์เลี้ยง
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="section-inner farm-directory-section" id="farm-directory" aria-labelledby="farm-directory-title">
-          <div className="farm-story-panel" data-reveal="panel">
-            <div className="farm-story-copy">
-              <SectionHeader
-                id="farm-directory-title"
-                eyebrow="VERIFIED FARM DIRECTORY"
-                title="ฟาร์มคุณภาพควรถูกค้นเจอ"
-                highlight="ด้วยข้อมูลที่ตรวจสอบได้"
-                copy="ทุกฟาร์มในไดเรกทอรีผ่านการตรวจสอบข้อมูลก่อนขึ้นแสดง เป็นพื้นที่คัดกรองที่ไว้ใจได้ ไม่ใช่แค่หน้ารวมโพสต์ขายสัตว์เลี้ยงทั่วไป"
-              />
-              <div className="farm-story-proof">
-                {farmHighlights.map((item) => (
-                  <article className="farm-proof-card" key={item.title} data-reveal>
-                    <div className="icon-box">
-                      <IconImg name={item.icon} />
-                    </div>
-                    <h3>{item.title}</h3>
-                    <p>{item.desc}</p>
-                  </article>
-                ))}
-              </div>
-              <div className="farm-story-actions">
-                <button className="primary-btn" onClick={() => router.push("/farm-hub")}>
-                  ดูฟาร์มในระบบ
-                </button>
-                <button className="secondary-btn" onClick={() => router.push("/partner/register-farm")}>
-                  สมัครฟาร์มกับ Whiskora
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="content-section" id="platform-pillars">
-          <div className="section-inner">
-            <SectionHeader
-              eyebrow="WHAT WHISKORA MAKES POSSIBLE"
-              title="เครื่องมือหลักที่เชื่อม"
-              highlight="ตัวตน สุขภาพ ฟาร์ม และการดูแล"
-              copy="แต่ละฟีเจอร์ถูกออกแบบให้เข้าใจง่ายสำหรับผู้ใช้ทั่วไป และยังมีโครงสร้างข้อมูลที่พร้อมขยายไปสู่ระบบฟาร์ม คลินิก และบริการสัตว์เลี้ยง"
-            />
-            <div className="pillar-grid">
-              {productPillars.map((pillar) => (
-                <article className="pillar-card" key={pillar.title} data-reveal>
-                  <div className="icon-box">
-                    <IconImg name={pillar.icon} />
-                  </div>
-                  <h3>{pillar.title}</h3>
-                  <div className="pillar-benefit">{pillar.benefit}</div>
-                  <p>{pillar.desc}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="section-inner lifecycle-section" id="pet-lifecycle" aria-labelledby="lifecycle-title">
-          <div className="lifecycle-header">
-            <SectionHeader
-              id="lifecycle-title"
-              eyebrow="EVERY STAGE OF PET LIFE"
-              title="ระบบเดียวที่เดินไปพร้อม"
-              highlight="ทุกช่วงชีวิตของสัตว์เลี้ยง"
-              copy="Whiskora ไม่ใช่แค่การกรอกข้อมูลครั้งเดียว แต่เป็นโครงสร้างข้อมูลที่ติดตามการดูแลสัตว์เลี้ยงต่อเนื่องในทุกช่วงชีวิต ทั้งน่าเชื่อถือและใช้งานได้จริง"
-            />
-          </div>
-          <div className="lifecycle-grid">
-            {lifecycleSteps.map((step, index) => (
-              <article className="lifecycle-step" key={step.title} data-reveal>
-                <span className="step-index">{index + 1}</span>
-                <IconImg name={step.icon} />
-                <h3>{step.title}</h3>
-                <p>{step.desc}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="content-section" id="user-groups">
-          <div className="section-inner">
-            <SectionHeader
-              eyebrow="BUILT FOR THE PET ECOSYSTEM"
-              title="ไม่ใช่แค่เจ้าของสัตว์เลี้ยง"
-              highlight="แต่เชื่อมทั้งระบบรอบตัวสัตว์"
-              copy="เจ้าของสัตว์เลี้ยง ฟาร์ม และผู้ให้บริการ ต่างเข้าถึงข้อมูลชุดเดียวกันได้ในมุมมองที่เหมาะกับงานของตัวเอง"
-            />
-            <div className="audience-grid">
-              {userGroups.map((group) => (
-                <article className="audience-card" key={group.label} data-reveal>
-                  <div className="icon-box">
-                    <IconImg name={group.icon} />
-                  </div>
-                  <div className="audience-label">{group.label}</div>
-                  <h3>{group.title}</h3>
-                  <p>{group.desc}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="section-inner feature-showcase" id="feature-showcase" aria-labelledby="feature-showcase-title">
-          <div className="product-preview" aria-label="Whiskora product preview" data-reveal="panel">
+        {/* 2. ตัวอย่างระบบ */}
+        <section className="section-inner feature-showcase" id="product-preview" aria-labelledby="product-preview-title">
+          <div className="product-preview" aria-label="ตัวอย่างหน้าโปรไฟล์ (ข้อมูลสาธิต)" data-reveal="panel">
             <div className="preview-phone">
               <div className="preview-screen">
                 <div className="pet-hero-card">
                   <div className="pet-avatar" />
                   <div className="pet-name">LUNA</div>
-                  <div className="pet-sub">Scottish Fold / Verified Pet</div>
+                  <div className="pet-sub">Scottish Fold · ข้อมูลสาธิต</div>
                 </div>
                 <div className="preview-tabs">
                   <span>Profile</span>
@@ -1981,10 +1702,10 @@ export default function Home() {
                 </div>
                 <div className="preview-list">
                   {[
-                    ["Birth Date", "10 Mar 2024"],
-                    ["Breed", "Scottish Fold"],
-                    ["Last Vaccine", "Updated"],
-                    ["Owner Contact", "Shared by QR"],
+                    ["วันเกิด", "10 มี.ค. 2567"],
+                    ["สายพันธุ์", "Scottish Fold"],
+                    ["วัคซีนล่าสุด", "บันทึกแล้ว"],
+                    ["ติดต่อเจ้าของ", "ตามที่เจ้าของเลือก"],
                   ].map(([label, value]) => (
                     <div className="preview-row" key={label}>
                       <span>{label}</span>
@@ -1995,7 +1716,7 @@ export default function Home() {
                     <div className="qr-mark" />
                     <div>
                       <h4>QR Public Profile</h4>
-                      <p>แชร์ข้อมูลที่จำเป็นให้ผู้ดูแลหรือบริการสัตว์เลี้ยงเข้าถึงได้เร็วขึ้น</p>
+                      <p>สแกนแล้วเห็นเฉพาะข้อมูลที่เจ้าของเปิดไว้</p>
                     </div>
                   </div>
                 </div>
@@ -2005,18 +1726,39 @@ export default function Home() {
 
           <div>
             <SectionHeader
-              id="feature-showcase-title"
-              eyebrow="FEATURE SHOWCASE"
-              title="เริ่มจาก Pet ID ฟรี"
-              highlight="แล้วต่อยอดเป็นโปรไฟล์ชีวิตจริง"
-              copy="ฟีเจอร์สำคัญถูกเขียนให้ผู้ใช้เข้าใจทันทีว่าช่วยอะไร ไม่ใช่แค่รายชื่อเมนูในระบบ"
+              id="product-preview-title"
+              eyebrow="SEE IT IN ACTION"
+              title="ดูหน้าตาจริงก่อนสมัคร"
+              highlight="บัตร Pet ID และหน้าโปรไฟล์ QR"
+              copy="ลองดูบัตรตัวอย่าง เลือกธีม และดูว่าคนที่สแกน QR จะเห็นอะไร โดยใช้ข้อมูลสาธิตทั้งหมด ไม่ต้องเข้าสู่ระบบ"
             />
-            <div className="feature-grid">
-              {featureShowcase.map((feature) => (
-                <article className="feature-card" key={feature.title} data-reveal>
+            <div className="farm-story-actions">
+              <NextLink className="primary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
+                ดูตัวอย่าง Pet ID
+              </NextLink>
+              <button className="secondary-btn" onClick={() => router.push("/register")}>
+                สร้างของจริงฟรี
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. ประโยชน์สำหรับเจ้าของ */}
+        <section className="content-section" id="for-owners">
+          <div className="section-inner">
+            <SectionHeader
+              eyebrow="FOR PET OWNERS"
+              title="สำหรับเจ้าของสัตว์เลี้ยง"
+              highlight="ใช้ได้แล้ววันนี้"
+              copy="เริ่มจากโปรไฟล์หนึ่งตัว แล้วค่อยเติมข้อมูลสุขภาพและเอกสารเมื่อสะดวก"
+            />
+            <div className="audience-grid">
+              {ownerFeatures.map((feature) => (
+                <article className="audience-card" key={feature.title} data-reveal>
                   <div className="icon-box">
                     <IconImg name={feature.icon} />
                   </div>
+                  <div className="audience-label">พร้อมใช้งาน</div>
                   <h3>{feature.title}</h3>
                   <p>{feature.desc}</p>
                 </article>
@@ -2025,66 +1767,40 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section-inner trust-section" aria-labelledby="trust-title" data-reveal="panel">
-          <Image
-            src="/verified.png"
-            alt="Whiskora Verified"
-            width={300}
-            height={300}
-            className="seal-image"
-          />
-          <div>
-            <SectionHeader
-              id="trust-title"
-              eyebrow="TRUST LAYER"
-              title="ความน่าเชื่อถือที่ค่อย ๆ สะสม"
-              highlight="จากข้อมูลที่โปร่งใสและตรวจสอบง่าย"
-              copy="Whiskora ไม่ขายความน่าเชื่อถือด้วยคำโฆษณา แต่สร้างพื้นที่ให้ข้อมูลฟาร์ม สุขภาพ เอกสาร และประวัติของสัตว์เลี้ยงถูกจัดเก็บและแชร์อย่างมีระบบ"
-            />
-            <div className="trust-layer-list">
-              {trustLayer.map((item) => (
-                <div className="trust-layer-card" key={item} data-reveal>
-                  <IconImg name="shield" size={24} />
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="knowledge-preview-section" id="knowledge-preview" aria-labelledby="knowledge-preview-title">
+        {/* 4. ประโยชน์สำหรับฟาร์ม */}
+        <section className="content-section" id="for-farms">
           <div className="section-inner">
             <SectionHeader
-              id="knowledge-preview-title"
-              eyebrow="PET KNOWLEDGE CENTER"
-              title="ความรู้สัตว์เลี้ยงที่พาคนใช้ข้อมูลจริง"
-              highlight="ไม่ใช่บทความลอย ๆ"
-              copy="บทความแต่ละชิ้นโยงกลับไปยัง Pet ID วัคซีน ฟาร์ม และการดูแลต่อเนื่อง ให้ความรู้ที่อ่านแล้วใช้ได้จริงกับสัตว์เลี้ยงของคุณ"
+              eyebrow="FOR BREEDERS & FARMS"
+              title="สำหรับฟาร์มและผู้เพาะพันธุ์"
+              highlight="ข้อมูลที่ผู้รับเลี้ยงตรวจดูได้"
+              copy="ฟาร์มที่มีตรา “ฟาร์มยืนยันตัวตนแล้ว” ผ่านการตรวจเอกสารยืนยันตัวตนจากทีมงาน ส่วนฟาร์มที่ยังไม่ผ่านจะแสดงสถานะให้เห็นชัดทุกหน้า"
             />
-            <div className="knowledge-layout">
-              <article className="knowledge-featured" data-reveal="panel">
-                <div className="knowledge-featured-content">
-                  <span className="article-tag">Pet ID & Care Continuity</span>
-                  <h3>ข้อมูลอะไรควรอยู่ในโปรไฟล์สัตว์เลี้ยง เพื่อให้ดูแลต่อได้จริง</h3>
-                  <p>
-                    ใช้บทความเป็นประตูให้เจ้าของเข้าใจว่าการสร้างโปรไฟล์ไม่ใช่แค่ทำบัตรสวย ๆ แต่คือการจัดระเบียบข้อมูลสุขภาพ เอกสาร และการแชร์กับคนที่ดูแลสัตว์เลี้ยง
-                  </p>
-                  <div className="farm-story-actions">
-                    <button className="primary-btn" onClick={() => router.push("/pet-knowledge")}>
-                      อ่านบทความทั้งหมด
-                    </button>
+            <div className="audience-grid">
+              {farmFeatures.map((feature) => (
+                <article className="audience-card" key={feature.title} data-reveal>
+                  <div className="icon-box">
+                    <IconImg name={feature.icon} />
                   </div>
-                </div>
-              </article>
-              <div className="knowledge-list">
-                {knowledgeHighlights.map((article) => (
-                  <article className="knowledge-card" key={article.title} data-reveal>
-                    <span className="article-tag">{article.tag}</span>
-                    <h3>{article.title}</h3>
-                    <p>{article.desc}</p>
-                  </article>
-                ))}
-              </div>
+                  <div className="audience-label">พร้อมใช้งาน</div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.desc}</p>
+                </article>
+              ))}
+            </div>
+            <div className="farm-story-actions">
+              <button className="primary-btn" onClick={() => router.push("/farm-hub")}>
+                ดูฟาร์มในระบบ
+              </button>
+              <button className="secondary-btn" onClick={() => router.push("/partner/register-farm")}>
+                สมัครฟาร์มกับ Whiskora
+              </button>
+            </div>
+            <div className="roadmap-box" data-reveal>
+              <div className="roadmap-title">กำลังพัฒนา (ยังไม่เปิดใช้งาน)</div>
+              <ul>
+                {roadmapItems.map((item) => <li key={item}>{item}</li>)}
+              </ul>
             </div>
           </div>
         </section>
@@ -2092,18 +1808,10 @@ export default function Home() {
         <section className="section-inner faq-section" id="faq" aria-labelledby="whiskora-faq-title">
           <SectionHeader
             id="whiskora-faq-title"
-            eyebrow="ANSWERS FOR SEARCH AND AI"
-            title="คำตอบสำคัญเกี่ยวกับ"
-            highlight="Whiskora, Pet ID และ QR Profile"
-            copy="รวมคำถามที่คนถามบ่อยเกี่ยวกับ Whiskora พร้อมคำตอบจากข้อมูลจริงในระบบ ให้เจอสิ่งที่ต้องการรู้ได้เร็วขึ้น"
+            eyebrow="FAQ"
+            title="คำถามที่พบบ่อย"
+            copy="คำตอบสั้นๆ ก่อนเริ่มใช้งาน หากมีคำถามเพิ่มเติม ติดต่อทีมงานได้จากหน้าติดต่อ"
           />
-          <div className="intent-chips" aria-label="หัวข้อที่ผู้ใช้มักค้นหา">
-            {searchIntents.map((intent) => (
-              <span className="intent-chip" key={intent}>
-                {intent}
-              </span>
-            ))}
-          </div>
           <div className="faq-grid">
             {seoFaqs.map((faq) => (
               <article className="faq-card" key={faq.question} data-reveal>
@@ -2114,20 +1822,21 @@ export default function Home() {
           </div>
         </section>
 
+        {/* 5. เริ่มใช้งาน */}
         <section className="cta-band" aria-label="Start using Whiskora" data-reveal="panel">
           <div className="section-inner">
             <h2>เริ่มต้นจากโปรไฟล์สัตว์เลี้ยงหนึ่งตัว</h2>
             <p>
-              สร้าง Pet ID ฟรี แล้วค่อย ๆ เติมข้อมูลสุขภาพ เอกสาร และรายละเอียดที่ทำให้การดูแลสัตว์เลี้ยงของคุณต่อเนื่องและน่าเชื่อถือขึ้น
+              สร้าง Pet ID ฟรี แล้วค่อย ๆ เติมข้อมูลสุขภาพและเอกสาร เมื่อพร้อมก็แชร์ QR ให้คนที่ดูแลสัตว์เลี้ยงของคุณ
             </p>
             <div className="cta-actions">
               <button className="secondary-btn" onClick={() => router.push("/register")}>
                 <PawIcon />
                 สร้าง Pet ID ฟรี
               </button>
-              <button className="secondary-btn" onClick={() => router.push("/pet-id-card")}>
+              <NextLink className="secondary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
                 ดูตัวอย่าง Pet ID
-              </button>
+              </NextLink>
             </div>
           </div>
         </section>

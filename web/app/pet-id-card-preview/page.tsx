@@ -168,7 +168,8 @@ export default function PetIdCardPreviewPage() {
   useEffect(() => {
     let active = true;
 
-    QRCode.toDataURL("https://whiskora.pet/p/luna-demo", {
+    // QR ตัวอย่างชี้กลับมาที่ส่วนโปรไฟล์สาธิตในหน้านี้ — ไม่ชี้ไปโปรไฟล์ของสัตว์จริง
+    QRCode.toDataURL("https://whiskora.pet/pet-id-card-preview#demo-profile", {
       width: 220,
       margin: 1,
       color: { dark: "#111827", light: "#FFFFFF" },
@@ -1090,6 +1091,41 @@ export default function PetIdCardPreviewPage() {
           font-size: 9px;
           font-weight: 700;
         }
+        .preview-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+        .preview-actions.is-center { justify-content: center; }
+        .preview-cta {
+          display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px;
+          border-radius: 14px; background: #E84677; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none;
+          box-shadow: 0 14px 30px rgba(232,70,119,0.22);
+        }
+        .preview-cta.is-secondary { background: #fff; color: #E84677; border: 1px solid #FBCFE8; box-shadow: none; }
+        .demo-profile { margin-top: 56px; scroll-margin-top: 24px; }
+        .demo-profile-head { text-align: center; max-width: 620px; margin: 0 auto 20px; }
+        .demo-profile-head h2 { font-size: 26px; font-weight: 800; color: #171331; margin: 0 0 8px; }
+        .demo-profile-head p { color: #6D647B; font-size: 14px; line-height: 1.7; margin: 0; }
+        .demo-profile-card {
+          position: relative; max-width: 460px; margin: 0 auto; background: #fff; border: 1px solid #F4D6E1;
+          border-radius: 22px; padding: 44px 20px 20px; box-shadow: 0 16px 38px rgba(17,24,39,0.06); overflow: hidden;
+        }
+        .demo-ribbon {
+          position: absolute; top: 0; left: 0; right: 0; background: #FEF3C7; color: #92400E;
+          font-size: 12px; font-weight: 700; text-align: center; padding: 7px 10px;
+        }
+        .demo-profile-top { display: flex; gap: 14px; align-items: center; }
+        .demo-avatar {
+          width: 76px; height: 76px; border-radius: 18px; background: #FDF2F5; color: #E84677;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .demo-chip { display: inline-block; font-size: 11px; font-weight: 700; color: #E84677; margin-bottom: 4px; }
+        .demo-name { font-size: 20px; font-weight: 800; color: #171331; }
+        .demo-sub { font-size: 13px; color: #6D647B; margin-top: 2px; }
+        .demo-code { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; font-family: monospace; color: #fff; background: #E84677; padding: 3px 10px; border-radius: 8px; }
+        .demo-rows { margin-top: 16px; }
+        .demo-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+        .demo-row span { color: #6D647B; font-weight: 600; }
+        .demo-row strong { color: #171331; text-align: right; }
+        .demo-row strong.is-muted { color: #B0A8BA; font-weight: 500; }
+        .demo-contact { margin-top: 14px; font-size: 12px; color: #6D647B; background: #F9FAFB; border-radius: 12px; padding: 10px 12px; }
         @media (max-width: 900px) {
           .preview-hero {
             grid-template-columns: 1fr;
@@ -1175,29 +1211,34 @@ export default function PetIdCardPreviewPage() {
             <div className="preview-copy">
               <div className="preview-eyebrow">
                 <Icon.Shield />
-                Pet ID Card Preview
+                ตัวอย่าง Pet ID
               </div>
               <h1 className="preview-title">
-                ตัวอย่างหน้าบัตรประจำตัวสัตว์เลี้ยง <span>พร้อมเลือกธีมได้</span>
+                ดูตัวอย่างบัตร Pet ID <span>และหน้าโปรไฟล์ QR</span>
               </h1>
               <p className="preview-desc">
-                หน้านี้เป็น preview สำหรับดูหน้าตาของบัตร Whiskora ก่อนใช้งานจริง
-                ข้อมูลในบัตรเป็นข้อมูลตัวอย่าง ส่วนระบบจริงจะดึงรูปสัตว์ ข้อมูลเจ้าของ
-                QR Profile และตรารับรองจากฐานข้อมูลของแต่ละโปรไฟล์
+                บัตรและโปรไฟล์ในหน้านี้ใช้<b>ข้อมูลสาธิต</b> (น้องลูน่า ไม่ใช่สัตว์จริง)
+                เมื่อสร้างบัตรของคุณเอง ระบบจะใช้รูปและข้อมูลจากโปรไฟล์สัตว์เลี้ยงของคุณ
+                และ QR จะเปิดหน้าโปรไฟล์ที่แสดงเฉพาะข้อมูลที่คุณอนุญาต
               </p>
 
-              <div className="preview-notes" aria-label="Preview notes">
+              <div className="preview-actions">
+                <Link href="/th/register?redirect=%2Fpets%2Fcreate" className="preview-cta">สร้าง Pet ID ฟรี</Link>
+                <a href="#demo-profile" className="preview-cta is-secondary">ดูหน้าโปรไฟล์เมื่อสแกน QR</a>
+              </div>
+
+              <div className="preview-notes" aria-label="สิ่งที่ได้จากบัตร Pet ID">
                 <div className="preview-note">
-                  <b>ใช้พื้นหลังจริง</b>
-                  <span>ธีมทั้งหมดใช้ไฟล์เดียวกับระบบบัตร Pet ID จริง</span>
+                  <b>บัตรดิจิทัล</b>
+                  <span>ดาวน์โหลดเป็นรูปเก็บในโทรศัพท์ หรือพิมพ์ใช้งานได้</span>
                 </div>
                 <div className="preview-note">
-                  <b>รองรับมือถือ</b>
-                  <span>หน้าตัวอย่างถูกจัดให้อ่านง่ายบนจอมือถือเป็นหลัก</span>
+                  <b>QR โปรไฟล์</b>
+                  <span>คนที่สแกนเห็นหน้าโปรไฟล์ได้โดยไม่ต้องสมัคร</span>
                 </div>
                 <div className="preview-note">
-                  <b>พร้อมต่อยอด</b>
-                  <span>เลือกธีมแล้วนำ logic เดียวกันไปใช้กับหน้าใช้งานจริงได้</span>
+                  <b>คุณเลือกเองว่าจะเปิดอะไร</b>
+                  <span>ข้อมูลสุขภาพและสายเลือดแสดงตามสิทธิ์ที่ตั้งไว้</span>
                 </div>
               </div>
             </div>
@@ -1229,14 +1270,11 @@ export default function PetIdCardPreviewPage() {
                       <div className="sample-photo-art">
                         <Icon.Cat />
                       </div>
-                      <div className="sample-stamp">
-                        <img src="/verified.png" alt="Whiskora verified" />
-                      </div>
                     </div>
                     <div className="sample-identity">
                       <div className="sample-status">
                         <Icon.Shield />
-                        Verified
+                        Demo
                       </div>
                       <div className="sample-name">LUNA</div>
                       <div className="sample-meta">Scottish Fold • Cream Tabby</div>
@@ -1293,7 +1331,7 @@ export default function PetIdCardPreviewPage() {
 
                     <div className="sample-footer">
                       <Icon.Shield />
-                      <span>รับรองโดย <b>Whiskora</b></span>
+                      <span>ลงทะเบียนกับ <b>Whiskora</b></span>
                     </div>
                   </div>
                 </div>
@@ -1329,6 +1367,42 @@ export default function PetIdCardPreviewPage() {
                   ))}
                 </div>
               </section>
+            </div>
+          </section>
+
+          <section id="demo-profile" className="demo-profile" aria-labelledby="demo-profile-title">
+            <div className="demo-profile-head">
+              <h2 id="demo-profile-title">หน้าที่เปิดเมื่อมีคนสแกน QR</h2>
+              <p>ตัวอย่างนี้แสดงมุมมองของคนทั่วไปที่ไม่ได้เข้าสู่ระบบ ข้อมูลที่เจ้าของไม่ได้เปิดจะถูกซ่อน</p>
+            </div>
+            <div className="demo-profile-card">
+              <div className="demo-ribbon">ข้อมูลสาธิต — ไม่ใช่สัตว์จริง</div>
+              <div className="demo-profile-top">
+                <div className="demo-avatar"><Icon.Cat /></div>
+                <div>
+                  <div className="demo-chip">ลงทะเบียน Pet ID แล้ว</div>
+                  <div className="demo-name">ลูน่า (LUNA)</div>
+                  <div className="demo-sub">สกอตติช โฟลด์ · ครีมแท็บบี้ · ตัวเมีย</div>
+                  <div className="demo-code">WSK-24-000123</div>
+                </div>
+              </div>
+              <div className="demo-rows">
+                {([
+                  ["วันเกิด", "10 มี.ค. 2567", true],
+                  ["ทำหมัน", "ยังไม่ทำหมัน", true],
+                  ["กรุ๊ปเลือด", "ยังไม่ได้ระบุ", false],
+                  ["ข้อมูลสุขภาพ / สายเลือด", "เจ้าของจำกัดการเข้าถึง", false],
+                ] as const).map(([label, value, shown]) => (
+                  <div className="demo-row" key={label}>
+                    <span>{label}</span>
+                    <strong className={shown ? "" : "is-muted"}>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="demo-contact">ปุ่มติดต่อเจ้าของจะแสดงเฉพาะช่องทางที่เจ้าของเลือกไว้</div>
+            </div>
+            <div className="preview-actions is-center">
+              <Link href="/th/register?redirect=%2Fpets%2Fcreate" className="preview-cta">เริ่มสร้าง Pet ID ของคุณ</Link>
             </div>
           </section>
         </div>
