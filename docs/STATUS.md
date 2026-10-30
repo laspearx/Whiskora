@@ -245,6 +245,43 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 **Not tested on production:** the happy path (reserve → confirm → transfer → accept/decline) and farm-role UI — production has no QA farm and real rows were not to be created; those rely on staging (E2E 58/58 on the real Preview, API 53/53, concurrency). No real transfer was performed on production.
 Recovery if needed: `supabase/emergency/reservation_transfer_freeze.sql` → fix forward → unfreeze (never the staging-only rollback, never an app rollback below v1.7.0).
 
+## 2026-10-30 — Pet privacy audit + fix on staging (branch `fix/pet-privacy`, not merged; ICT = UTC+7)
+Rule applied (owner-approved principle): when a pet is set to not public (`is_public = false`), neither a sale status
+nor a field-group tier opens it to anyone who is not its owner / co-owner / farm team / admin (or an access grant).
+
+Read-only audit (catalog on staging = production by md5; production counts only, no data values):
+| Path | Finding before | Production today |
+| --- | --- | --- |
+| pets RLS | `Public can view available pets` (status = พร้อมย้ายบ้าน) returned private pets to anyone, incl. listing queries (farm-hub) | 0 private pets (all 137 public; the app has no control to set private) |
+| `viewer_can_see()` (health, pedigree, vaccination, weight, timeline, documents, medical notes) | ignored `is_public`: tier alone decided — anon got the allergies of a private pet with tier public | 1 farm has rows (10): health / medical_notes / documents / dna / pedigree / vaccination / weight = registered — a farm choice; rows kept as they are |
+| `get_pet_pedigree()` | walked into private ancestors (name, photo, breed) of a public pet | 0 private ancestors |
+| pedigree columns | anon could read sire_id / dam_id / pedigree_number / pedigree_image_url / grand-parent names directly (bypasses tier "owner") | **live leak:** anon read → 200; 25 readable pets have pedigree values |
+| storage `pet-photos` | anyone could LIST every user folder + file name (also photos of private pets) | **live leak:** anon list → 60 user folders, 170 objects |
+| privacy settings writes | any farm member (staff / viewer) and co-owners could change farm / per-pet tiers via API (UI says read-only) | possible on production now (staging: viewer set farm health tier to public) |
+| co-owner / farm team rows | co-owners could not read a private pet row; team only saw farm pets because all are public | — |
+| owner controls | no UI for `is_public`; no per-pet tier UI (`pet_visibility_settings` unused); farm privacy page only for farm pets | — |
+
+Fix: migration `20261030140000_pet_privacy_is_public.sql` (sha256 `837a8e3f323ac1702ed67cf65e2356fb63db65bc5782ff83cc3ec5d324f2f3d3`), staging
+12:27–12:31 UTC (applied, exact staging-only revert, re-applied twice). App: owner notice text (private pet stays hidden even
+when "พร้อมย้ายบ้าน"); E2E for it updated. Column grants: only removals (2619 → 2611 = 8 anon pedigree columns); no grant
+widened; revert returns every catalog hash to the pre-migration baseline (functions, policies incl. storage, grants, triggers).
+
+Tests (synthetic accounts: anon, stranger, buyer, owner, co-owner, farm manager / staff / viewer):
+| Suite | Before | After |
+| --- | --- | --- |
+| `supabase/tests/pet_privacy_checks.cjs --transfer` (rows, listing, health / pedigree RPC, private ancestor, pedigree columns, storage list/upsert/delete/public URL, settings writes, after transfer) | 32 passed / **26 failed** (each a leak or role gap above) | **58 / 58** |
+| Real Preview `whiskora-2twqry63h` (`1dbcb41`, staging env, protection kept) E2E, 19:38–19:45 ICT | — | **58 / 58** |
+| `reservation_api_checks.cjs` | — | 53 / 53 (R2b now asserts the private listed pet is hidden) |
+| Preview bundle | — | staging ref only, production ref 0 |
+| Precheck `pet_privacy_precheck.sql` | production (read-only): `state: before`, all ok, no WARN | staging: `after`, WARN rows = the synthetic fixtures |
+
+Decisions for the owner (not done in this PR):
+1. Owner control: add an "แสดงในหน้าสาธารณะ" (is_public) toggle on the pet edit page? Per-pet tier UI? (today: API only)
+2. After a transfer, co-owners and per-pet tiers set by the previous owner stay (co-owner still sees health). Remove them on accept, show them to the new owner, or keep?
+3. Signed-in users can still read pedigree columns of readable pets directly (farm dashboard / owner pages read `PET_COLUMNS`). Close with an owner/team RPC + page refactor, or accept?
+4. `pet-photos` stays a public bucket: a known photo URL of a private pet still loads (listing is closed). Move private pets' photos to a private bucket with signed URLs, or accept?
+5. Separate small items: `pet-documents` upload policy has no folder check (no overwrite possible); `verification-docs` uses `getPublicUrl` on a private bucket; microchip numbers are shown on public pages by design (2 pets).
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -262,7 +299,7 @@ Recovery if needed: `supabase/emergency/reservation_transfer_freeze.sql` → fix
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
 - Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
 - Reservation/transfer write holes: **closed on production 2026-10-30 12:17 UTC** (`20261030121715`). No rows existed at that time; that alone does not prove they were never used (not investigated).
-- **Next privacy task:** pets policy "Public can view available pets" makes any `พร้อมย้ายบ้าน` pet readable by anyone even with `is_public = false` (0 such pets on production now; app shows a notice to owners). Decide whether sale status should override `is_public`.
+- **Pet privacy (fix on branch `fix/pet-privacy`, not on production):** live on production until applied — anon can read pedigree columns directly and list all `pet-photos` folders; staff/viewer can change farm privacy tiers via API. Decisions 1–5 in the section above.
 - Small follow-ups: `get_my_pending_transfers` is executable by anon (returns 0 rows) — could be limited to `authenticated`; RPC "not found" errors (P0002) surface as HTTP 500; remove PGRST202 fallbacks after a stable week.
 - Other DB items: `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
@@ -276,7 +313,7 @@ Recovery if needed: `supabase/emergency/reservation_transfer_freeze.sql` → fix
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 12:20 UTC continuous, app errors 0 (all errors = QA tests).
-3. Reservation → transfer: live (v1.7.0 + `20261030121715`). Watch logs; production happy path untested (staging only).
-4. Next privacy task: `is_public` vs `พร้อมย้ายบ้าน` visibility.
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 12:50 UTC continuous, app errors 0 (all errors = QA tests).
+3. Reservation → transfer: live (v1.7.0 + `20261030121715`, 19:17:15 ICT). Logs checked 12:17:15 → 12:50 UTC: errors only from the QA denial probes (≤ 12:18 UTC), 0 deadlocks. Production happy path untested (staging only).
+4. Pet privacy PR: owner review + decisions 1–5, then production plan in the PR.
 5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

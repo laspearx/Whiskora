@@ -127,7 +127,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Pets policy "Public can view available pets": a `พร้อมย้ายบ้าน` pet is readable by anyone even with `is_public = false` (not reservable; owners see a notice). Next privacy task. No per-pet privacy setting UI exists (`pet_visibility_settings` unused).
+- Pet privacy (branch `fix/pet-privacy`, migration `20261030140000`, staging only): until applied, production lets anon read pedigree columns directly, list `pet-photos`, and lets staff/viewer change farm privacy tiers via API; `is_public = false` would be overridden by `พร้อมย้ายบ้าน` and by tiers (0 private pets exist today). No UI to set `is_public` or per-pet tiers.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -152,6 +152,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Pet privacy fix on staging (`fix/pet-privacy`): not public wins over sale status / tiers / pedigree; anon pedigree columns and `pet-photos` listing closed; privacy-settings writes owner/manager only.
 - v1.7.0 (PR #12) + migration `20261030121715` on production: reservation/transfer writes only through role-checked RPCs; one lock order; pet leaves sale status after transfer; inbox shows what accepting does.
 - Reservation → transfer hardening (branch `feat/reservation-transfer-staging`, staging only): RPC-only writes, role checks in the DB, pet leaves sale status after transfer; replaces draft `20261029200000`.
 - v1.6.0 (PR #10): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`; tracked `web/.env.production` removed (Production uses Vercel vars). Preview = staging, verified on a no-cache Preview and on Production.
