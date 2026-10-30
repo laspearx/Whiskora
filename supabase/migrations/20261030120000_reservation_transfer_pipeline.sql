@@ -2,7 +2,8 @@
 -- Whiskora: reservation → ownership transfer, role checks in the database
 -- Replaces the unapplied draft 20261029200000_reservation_transfer_pipeline.sql.
 -- Checked against production + staging schema 2026-10-30 (identical: same policies, same trigger,
--- same function bodies by md5). Production had 0 reservations and 0 transfers at that time.
+-- same function bodies by md5). Production had no reservation or transfer rows at that time (that alone does not
+-- prove the holes below were never used; not investigated further).
 --
 -- Fixes (all reproduced on staging through the REST API before this migration):
 --   * pet_reservations UPDATE was open to the buyer and to every farm team member / co-owner:
@@ -16,17 +17,23 @@
 --   * After acceptance the pet kept 'ติดจอง' (reserved) under the new owner.
 --
 -- Roles (as the app already shows them; staff/viewer are read-only):
---   create reservation   any signed-in user except the pet owner, only on a listed pet
---                        (status พร้อมย้ายบ้าน / เปิดจอง, visible publicly), status pending only
+--   create reservation   any signed-in user except the pet owner, only on a listed pet = the app's
+--                        isPublicListing(): status พร้อมย้ายบ้าน / เปิดจอง AND is_public is not false; pending only
 --   confirm / cancel     pet owner, farm owner, farm manager            → farm_set_reservation_status()
 --   send transfer        pet owner, farm owner                          → INSERT (checked by policy)
 --   accept / decline     the receiver only                              → respond_pet_transfer()
 --   cancel transfer      the initiator, pet owner or farm owner         → respond_pet_transfer()
 --   staff / viewer       read reservations of their farm, nothing else
 --
+-- Row locks: every write path locks in the same order — pets row → pet_reservations row(s) → pet_ownership_transfers
+-- row(s) — and re-reads status after the lock (no deadlock between confirm/cancel/accept; the loser sees the
+-- winner's committed state). Locks are FOR NO KEY UPDATE so FK checks of concurrent inserts are not blocked.
 -- Deploy order: app first (it calls the RPCs and falls back to the old direct writes on PGRST202),
 -- then this migration. Old app + this migration would break transfer accept/cancel (no UPDATE policy).
--- Rollback: supabase/rollback/20261030120000_reservation_transfer_pipeline_down.sql
+-- Gate: supabase/tests/reservation_precheck.sql (read-only; STOP rows block the apply — never edit or delete real
+-- rows to make it pass). Production recovery: supabase/emergency/reservation_transfer_freeze.sql (blocks new
+-- reservation/transfer writes, keeps reads + privacy), then fix forward. The exact-previous-state script
+-- supabase/tests/staging_only/…_down_STAGING_ONLY.sql re-opens the holes and is NOT a production recovery step.
 -- Does not touch pets column grants (privacy migration) or default privileges.
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -66,14 +73,16 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
--- listed for reservation, publicly visible, and not the caller's own pet
+-- listed for reservation (same rule as the app's isPublicListing in web/lib/trust.ts) and not the caller's own pet.
+-- Note: the existing pets policy "Public can view available pets" makes a พร้อมย้ายบ้าน pet readable by anyone even
+-- with is_public = false; such a pet is still NOT reservable here (private stays private for selling).
 create or replace function public.pet_is_reservable(p_pet_id bigint, p_uid uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select p_uid is not null and exists (
     select 1 from pets p
     where p.id = p_pet_id
       and p.status in ('พร้อมย้ายบ้าน', 'เปิดจอง')
-      and (p.is_public is true or p.status = 'พร้อมย้ายบ้าน')
+      and p.is_public is not false
       and p.user_id is distinct from p_uid
   );
 $$;
@@ -125,14 +134,18 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_res public.pet_reservations%rowtype;
   v_pet public.pets%rowtype;
+  v_pet_id bigint;
   v_uid uuid := auth.uid();
 begin
   if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
   if p_status not in ('confirmed', 'cancelled') then raise exception 'invalid_status' using errcode = '22023'; end if;
 
-  select * into v_res from public.pet_reservations where id = p_reservation_id for update;
+  -- lock order: pet → reservation → transfers; read the row again after each lock
+  select r.pet_id into v_pet_id from public.pet_reservations r where r.id = p_reservation_id;
   if not found then raise exception 'reservation_not_found' using errcode = 'P0002'; end if;
-  select * into v_pet from public.pets where id = v_res.pet_id for update;
+  select * into v_pet from public.pets where id = v_pet_id for no key update;
+  select * into v_res from public.pet_reservations where id = p_reservation_id for no key update;
+  if not found or v_res.pet_id <> v_pet_id then raise exception 'concurrent_change' using errcode = '40001'; end if;
 
   if not public.can_decide_pet_reservation(v_pet.id, v_uid) then
     raise exception 'forbidden' using errcode = '42501';
@@ -145,6 +158,9 @@ begin
   if p_status = 'confirmed' and v_res.status <> 'pending' then
     raise exception 'invalid_transition:%->confirmed', v_res.status using errcode = '22023';
   end if;
+  if p_status = 'confirmed' and (v_pet.status is null or v_pet.status not in ('พร้อมย้ายบ้าน', 'เปิดจอง')) then
+    raise exception 'pet_not_listed' using errcode = '22023';  -- e.g. already ติดจอง, transferred, or delisted
+  end if;
   if p_status = 'cancelled' and v_res.status not in ('pending', 'confirmed') then
     raise exception 'invalid_transition:%->cancelled', v_res.status using errcode = '22023';
   end if;
@@ -156,7 +172,9 @@ begin
   if p_status = 'confirmed' then
     update public.pets set status = 'ติดจอง' where id = v_pet.id;
   elsif v_res.status = 'confirmed' then
-    -- a cancelled reservation cannot be accepted any more
+    -- a cancelled reservation cannot be accepted any more (transfers are locked last)
+    perform 1 from public.pet_ownership_transfers t
+     where t.reservation_id = v_res.id and t.status = 'pending' for no key update;
     update public.pet_ownership_transfers t set status = 'cancelled'
      where t.reservation_id = v_res.id and t.status = 'pending';
     if not exists (select 1 from public.pet_reservations
@@ -204,6 +222,8 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_t public.pet_ownership_transfers%rowtype;
   v_pet public.pets%rowtype;
+  v_pet_id bigint;
+  v_res_id bigint;
   v_uid uuid := auth.uid();
   v_new text := case p_action when 'accept' then 'accepted' when 'decline' then 'declined'
                               when 'cancel' then 'cancelled' end;
@@ -211,9 +231,17 @@ begin
   if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
   if v_new is null then raise exception 'invalid_action' using errcode = '22023'; end if;
 
-  select * into v_t from public.pet_ownership_transfers where id = p_transfer_id for update;
+  -- lock order: pet → reservation(s) → transfer (same as farm_set_reservation_status); re-read after locking
+  select t.pet_id, t.reservation_id into v_pet_id, v_res_id
+    from public.pet_ownership_transfers t where t.id = p_transfer_id;
   if not found then raise exception 'transfer_not_found' using errcode = 'P0002'; end if;
-  select * into v_pet from public.pets where id = v_t.pet_id for update;
+  select * into v_pet from public.pets where id = v_pet_id for no key update;
+  -- the accept trigger converts the linked reservation and cancels the pet's other open ones: lock them now
+  perform 1 from public.pet_reservations r
+   where r.pet_id = v_pet_id and (r.id = v_res_id or r.status in ('pending', 'confirmed'))
+   order by r.id for no key update;
+  select * into v_t from public.pet_ownership_transfers where id = p_transfer_id for no key update;
+  if not found or v_t.pet_id <> v_pet_id then raise exception 'concurrent_change' using errcode = '40001'; end if;
 
   if p_action in ('accept', 'decline') then
     if v_t.to_user_id <> v_uid then raise exception 'forbidden' using errcode = '42501'; end if;
@@ -271,4 +299,22 @@ begin
   end if;
   return new;
 end;
+$$;
+
+-- Inbox RPC (existing): adds what the receiver should see before accepting — whether the pet page is public
+-- (kept as is after the transfer) and the farm it leaves. Same name, same grants; extra columns only.
+drop function if exists public.get_my_pending_transfers();
+create function public.get_my_pending_transfers()
+returns table (transfer_id bigint, pet_id bigint, pet_name text, pet_image_url text, pet_breed text,
+               from_user_id uuid, from_name text, initiated_at timestamptz,
+               pet_is_public boolean, pet_status text, from_farm_name text)
+language sql stable security definer set search_path = public as $$
+  select t.id, p.id, p.name, p.image_url, p.breed, t.from_user_id, pr.full_name, t.initiated_at,
+         p.is_public, p.status, f.farm_name
+  from pet_ownership_transfers t
+  join pets p on p.id = t.pet_id
+  left join profiles pr on pr.id = t.from_user_id
+  left join farms f on f.id = p.farm_id
+  where t.to_user_id = auth.uid() and t.status = 'pending'
+  order by t.initiated_at desc;
 $$;

@@ -117,6 +117,8 @@ export default function FarmReservationsPage() {
       setError(
         e.message?.includes("one_confirmed_reservation")
           ? t("errAlreadyConfirmed")
+          : e.message?.includes("pet_not_listed")
+          ? (row.pet?.status === "ติดจอง" ? t("errAlreadyConfirmed") : t("errNotListed"))
           : e.message?.includes("forbidden")
           ? t("errForbidden")
           : t("errFailed") + e.message

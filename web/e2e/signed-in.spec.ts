@@ -84,6 +84,12 @@ test.describe('reservation → transfer', () => {
 
   test('buyer declines: owner and reservation unchanged, farm can send again', async ({ page }) => {
     await signIn(page, env.E2E_BUYER_EMAIL!, env.E2E_BUYER_PASSWORD!, '/profile/transfers');
+    // the receiver sees what accepting does before deciding
+    const effects = page.locator('.tf-effects').first();
+    await expect(effects).toContainText('เมื่อยืนยันรับสิทธิ์');
+    await expect(effects).toContainText('สถานะขาย/ติดจองจะถูกล้าง');
+    await expect(effects).toContainText('ยังเปิดให้ทุกคนดูเหมือนเดิม');
+    if (env.E2E_FARM_NAME) await expect(effects).toContainText(env.E2E_FARM_NAME);
     await page.getByRole('button', { name: 'ปฏิเสธ' }).first().dblclick();
     await expect(page.getByRole('button', { name: 'ปฏิเสธ' })).toHaveCount(0);
     await page.context().clearCookies({ name: /^sb-/ });
@@ -114,6 +120,23 @@ test.describe('reservation → transfer', () => {
     await expect(v.locator('.fp-pet-card').first()).toBeVisible(); // farm list loaded (farm still has other pets)
     await expect(v.locator(`a[href$="/p/${PET}"]`)).toHaveCount(0);
     await visitor.close();
+  });
+});
+
+test.describe('listed but not public', () => {
+  // E2E_PRIVATE_LISTED_PET_ID: owner's pet with status พร้อมย้ายบ้าน and is_public = false (staging fixture P6)
+  test.skip(!has('E2E_PRIVATE_LISTED_PET_ID', 'E2E_OWNER_EMAIL', 'E2E_OWNER_PASSWORD', 'E2E_BUYER_EMAIL', 'E2E_BUYER_PASSWORD'), 'private listed pet not configured');
+  const PET = env.E2E_PRIVATE_LISTED_PET_ID!;
+
+  test('buyer gets no reserve button; owner is told the page is public because of the status', async ({ page }) => {
+    await signIn(page, env.E2E_BUYER_EMAIL!, env.E2E_BUYER_PASSWORD!, `/p/${PET}`);
+    await expect(page.getByText(/WSK-/).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /จองสัตว์ตัวนี้/ })).toHaveCount(0);
+    await expect(page.getByText('ทำให้ทุกคนเปิดหน้านี้ได้')).toHaveCount(0);
+    await page.context().clearCookies({ name: /^sb-/ });
+    await page.evaluate(() => localStorage.clear());
+    await signIn(page, env.E2E_OWNER_EMAIL!, env.E2E_OWNER_PASSWORD!, `/p/${PET}`);
+    await expect(page.getByText(/ทำให้ทุกคนเปิดหน้านี้ได้/)).toBeVisible();
   });
 });
 

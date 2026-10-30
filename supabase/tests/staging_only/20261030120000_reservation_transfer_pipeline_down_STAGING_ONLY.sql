@@ -1,9 +1,19 @@
+-- ██ STAGING ONLY — NOT A PRODUCTION RECOVERY STEP ██
+-- Restores the exact pre-migration state to test rollback on whiskora-staging. It RE-OPENS the write holes
+-- (farm team taking pets, initiator self-accept, receiver pet_id swap, buyer self-confirm). For production use
+-- supabase/emergency/reservation_transfer_freeze.sql and fix forward. Never run this on production.
 -- Rollback of 20261030120000_reservation_transfer_pipeline.sql — restores the exact previous state
 -- (policies, trigger function body). WARNING: this re-opens the direct-API holes listed in the migration
 -- header (team members taking farm pets, initiator self-accept, receiver pet_id swap). Use only if the
 -- new path is broken; the app keeps working (it falls back to direct writes when the RPCs are gone).
 -- Does not touch pets column grants (privacy migration) — check with the privacy postcheck afterwards.
 begin;
+-- guard: whiskora-staging has the synthetic QA seed (supabase/staging/seed_synthetic.sql); production does not
+do $$ begin
+  if not exists (select 1 from public.profiles where id = 'a0000000-0000-4000-8000-000000000001') then
+    raise exception 'refusing: staging QA seed not found — this is not whiskora-staging';
+  end if;
+end $$;
 
 drop function if exists public.respond_pet_transfer(bigint, text);
 drop function if exists public.farm_set_reservation_status(bigint, text);
@@ -27,6 +37,21 @@ drop function if exists public.pet_transfer_insert_ok(bigint, uuid, uuid, bigint
 drop function if exists public.pet_is_reservable(bigint, uuid);
 drop function if exists public.can_transfer_pet(bigint, uuid);
 drop function if exists public.can_decide_pet_reservation(bigint, uuid);
+
+drop function if exists public.get_my_pending_transfers();
+create function public.get_my_pending_transfers()
+ returns table(transfer_id bigint, pet_id bigint, pet_name text, pet_image_url text, pet_breed text, from_user_id uuid, from_name text, initiated_at timestamp with time zone)
+ language sql
+ stable security definer
+ set search_path to 'public'
+as $function$
+  select t.id, p.id, p.name, p.image_url, p.breed, t.from_user_id, pr.full_name, t.initiated_at
+  from pet_ownership_transfers t
+  join pets p on p.id = t.pet_id
+  left join profiles pr on pr.id = t.from_user_id
+  where t.to_user_id = auth.uid() and t.status = 'pending'
+  order by t.initiated_at desc;
+$function$;
 
 create or replace function public.sync_pet_owner_on_transfer_accept()
  returns trigger

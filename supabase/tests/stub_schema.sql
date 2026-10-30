@@ -31,7 +31,7 @@ create table public.pets (
   maternal_grandsire text, maternal_granddam text,
   blood_type text, allergies text, chronic_diseases text, health_notes text, traits text
 );
-create table public.farms (id bigint primary key, user_id text);  -- production: farms.user_id is text
+create table public.farms (id bigint primary key, user_id text, farm_name text);  -- production: farms.user_id is text
 create table public.workspaces (id uuid primary key default gen_random_uuid(), type text, entity_id bigint);
 create table public.workspace_members (id uuid primary key default gen_random_uuid(), workspace_id uuid references public.workspaces, user_id uuid, role text);
 create table public.pet_reservations (

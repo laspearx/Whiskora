@@ -10,7 +10,7 @@ select pg_temp.check('resv','stranger cannot confirm',         'authenticated', 
 select pg_temp.check('resv','anon cannot call',                'anon', null,  $$select * from farm_set_reservation_status(101,'confirmed')$$, 'denied');
 select pg_temp.check('resv','owner confirms',                  'authenticated', :O, $$select * from farm_set_reservation_status(101,'confirmed') where reservation_status='confirmed' and pet_status='ติดจอง'$$, 'rows=1');
 select pg_temp.check('resv','confirm again is a no-op',        'authenticated', :O, $$select * from farm_set_reservation_status(101,'confirmed') where reservation_status='confirmed'$$, 'rows=1');
-select pg_temp.check('resv','second buyer cannot be confirmed','authenticated', :M, $$select * from farm_set_reservation_status(102,'confirmed')$$, 'error:23505 duplicate key value violates unique constraint "one_confirmed_reservation_per_pet');
+select pg_temp.check('resv','second buyer cannot be confirmed','authenticated', :M, $$select * from farm_set_reservation_status(102,'confirmed')$$, 'error:22023 pet_not_listed');  -- pet is ติดจอง after the first confirm
 select pg_temp.check('resv','failed confirm left pet reserved','authenticated', :O, $$select 1 from pets where id=1 and status='ติดจอง'$$, 'rows=1');
 select pg_temp.check('resv','invalid status rejected',         'authenticated', :O, $$select * from farm_set_reservation_status(102,'converted')$$, 'error:22023 invalid_status');
 select pg_temp.check('resv','manager cancels confirmed',       'authenticated', :M, $$select * from farm_set_reservation_status(101,'cancelled') where pet_status='เปิดจอง'$$, 'rows=1');

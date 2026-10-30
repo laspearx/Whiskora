@@ -21,6 +21,10 @@ interface TransferRow {
   from_user_id: string;
   from_name: string | null;
   initiated_at: string;
+  // from get_my_pending_transfers after migration 20261030120000 (undefined before it)
+  pet_is_public?: boolean | null;
+  pet_status?: string | null;
+  from_farm_name?: string | null;
 }
 
 export default function MyTransfersPage() {
@@ -102,6 +106,11 @@ export default function MyTransfersPage() {
         .tf-from b { color: ${F.pink}; }
         .tf-date { font-size: 10.5px; color: ${F.muted}; margin-top: 2px; }
 
+        .tf-effects { list-style: none; margin: 12px 0 0; padding: 10px 12px; background: ${F.pinkSoft}; border-radius: 12px; font-size: 12px; color: ${F.inkSoft}; line-height: 1.5; }
+        .tf-effects li { padding-left: 12px; position: relative; }
+        .tf-effects li::before { content: "•"; position: absolute; left: 0; color: ${F.pink}; }
+        .tf-effects .tf-effects-title { padding-left: 0; font-weight: 700; color: ${F.ink}; }
+        .tf-effects .tf-effects-title::before { content: none; }
         .tf-actions { display: flex; gap: 10px; margin-top: 14px; }
         .tf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
         .tf-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -144,6 +153,14 @@ export default function MyTransfersPage() {
                     <div className="tf-date">{new Date(row.initiated_at).toLocaleDateString((locale === "en" ? "en-GB" : "th-TH"), { day: "numeric", month: "short", year: "numeric" })}</div>
                   </div>
                 </div>
+                <ul className="tf-effects" aria-label={t("effTitle")}>
+                  <li className="tf-effects-title">{t("effTitle")}</li>
+                  <li>{t("effOwner")}</li>
+                  {row.from_farm_name && <li>{t("effFarm")} <b>{row.from_farm_name}</b></li>}
+                  <li>{t("effStatus")}</li>
+                  {row.pet_is_public !== undefined && <li>{row.pet_is_public === false ? t("effPrivate") : t("effPublic")}</li>}
+                  <li>{t("effManage")}</li>
+                </ul>
                 <div className="tf-actions">
                   <button className="tf-btn tf-btn-decline" disabled={busyId === row.transfer_id} onClick={() => respond(row, "declined")}>{t("decline")}</button>
                   <button className="tf-btn tf-btn-accept" disabled={busyId === row.transfer_id} onClick={() => respond(row, "accepted")}>

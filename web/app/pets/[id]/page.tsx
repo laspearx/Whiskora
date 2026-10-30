@@ -1212,6 +1212,11 @@ export default function PetDetailPage() {
                   ))}
                 </div>
               </div>
+              {isOwner && pet.status === 'พร้อมย้ายบ้าน' && pet.is_public === false && (
+                <div style={{ margin: '8px 0', padding: '8px 12px', borderRadius: 12, background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E', fontSize: 12 }}>
+                  สถานะ &quot;พร้อมย้ายบ้าน&quot; ทำให้ทุกคนเปิดหน้าสาธารณะของสัตว์ตัวนี้ได้ แม้ตั้งไม่เป็นสาธารณะ (ยังจองไม่ได้)
+                </div>
+              )}
               <div className="pet-id-card">
                 <div className="pet-id-left">
                   <div className="pet-id-label"><img src="/icons/paw.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> PET ID</div>

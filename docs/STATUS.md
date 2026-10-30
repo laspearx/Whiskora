@@ -171,14 +171,14 @@ Limits: Vercel variable *values* were not read (no access) — presence/ref prov
 ## 2026-10-30 — Reservation → transfer on staging (branch `feat/reservation-transfer-staging`; ICT = UTC+7)
 Migration `20261030120000_reservation_transfer_pipeline.sql` (replaces the never-applied draft `20261029200000`), applied on
 **staging only** (10:17 UTC, re-applied 10:19 after a fix, rolled back 10:38, re-applied 10:43). Production untouched
-(read-only checks only). Details, role table and rollback: migration header + `supabase/rollback/…_down.sql`.
+(read-only checks only). Details and role table: migration header. Production recovery = freeze + fix forward (see review round 2).
 
 Schema check (read-only, both projects): tables, constraints, indexes, policies, the single trigger
 `trg_sync_pet_owner_on_transfer_accept` and function bodies (md5) were identical on staging and production. The existing
 trigger already sets `converted`; the migration replaces that function's body (same trigger, no second one).
 
-Holes reproduced on staging **before** the migration (REST API, synthetic accounts; production had 0 reservations and
-0 transfers, so nothing to exploit there yet — still open on production):
+Holes reproduced on staging **before** the migration (REST API, synthetic accounts). On production no reservation or transfer rows exist at present; that alone does not
+prove the holes were never used (not investigated further). The holes stay open on production until the migration:
 | Case | Before |
 | --- | --- |
 | staff inserts a transfer of a farm pet to self, then accepts it | 201, 200 → staff became the owner |
@@ -197,17 +197,29 @@ Tests after the migration (staging, synthetic only):
 | Same, after strengthening the "after transfer" check (waits for the pet data, asserts no status pill), 17:43–17:49 ICT | **56/56 passed** |
 | `preview_qa` on that Preview (17:37 ICT) | bundle staging-only, LINE/notify off, profile save/restore on staging, 22 Supabase requests all staging |
 | Production edge logs 09:39–10:51 UTC | 0 requests (none from the Preview) |
-| Rollback on staging (10:38 UTC) | functions / policies / triggers hashes = pre-migration baseline; trigger body md5 = production's; privacy column + table grants unchanged before, during and after |
+| Staging-only exact rollback (10:38 UTC; not a production step) | functions / policies / triggers hashes = pre-migration baseline; trigger body md5 = production's; privacy column + table grants unchanged before, during and after |
 | App on the rolled-back DB (Preview, reservation E2E) | 13/14 — fallback path works (deploy order app → migration is safe); the 1 failure is the expected one: pet stays `ติดจอง` without the migration |
 | Production read-only precheck `reservation_precheck.sql` | `state: before`, all ok; counts 0 reservations / 0 transfers / 5 pets `ติดจอง` (set by owners, not touched) |
 
-Decisions for the owner (current choice in brackets):
+Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-cancel not added this round):
 1. Pet status after an accepted transfer: sale statuses → NULL "not specified", other statuses kept [NULL].
 2. Other open reservations of the pet on accept [cancelled].
 3. Buyer self-cancel: no UI today; direct UPDATE is now closed for buyers too [not possible — add an RPC if wanted].
 4. Co-owners and admins: had write access through `can_manage_pet_visibility`; now read-only for reservations/transfers [read-only].
 5. Manager: confirm/cancel yes, send transfer no (matches the UI) [as is].
 6. `is_public` after transfer [kept as is].
+
+### Review round 2 (owner review of PR #12; staging only; ICT = UTC+7)
+| Item | Change | Result |
+| --- | --- | --- |
+| Recovery plan | `_down.sql` moved to `supabase/tests/staging_only/…_down_STAGING_ONLY.sql` (warning + refuses without the staging QA seed); production recovery = `supabase/emergency/reservation_transfer_freeze.sql` (2 restrictive insert policies + revoke EXECUTE on the 2 write RPCs) → fix forward → `…_unfreeze.sql` | freeze on staging 18:23 ICT: 4/4 writes blocked, 7/7 reads + privacy probes unchanged; catalog: column/table grants, functions, triggers unchanged, only the 2 freeze policies added; unfreeze → identical to before; open-state run 11/11 |
+| Lock order | every write path now locks pets → reservations → transfers (FOR NO KEY UPDATE) and re-reads after locking; confirm also requires the pet to be listed (`pet_not_listed`) | **before the change** (same harness): stress 45 runs → 12 deadlocks (`40P01`); **after**: controlled-timing 6/6 consistent (3 scenarios × both orders), stress 4 × 45 runs → 0 deadlocks, 0 inconsistent states |
+| `pet_is_reservable` | was `is_public or status = พร้อมย้ายบ้าน` (copied from the pets policy "Public can view available pets"); now the app's `isPublicListing` rule: listed status **and** `is_public is not false` | API: P6 (พร้อมย้ายบ้าน, is_public=false) readable anonymously (existing design, documented) but not reservable; `/p` shows no reserve button; owner sees a notice that the status makes the page public. Production: 0 such pets now |
+| Transfer inbox | `get_my_pending_transfers` also returns `pet_is_public`, `pet_status`, `from_farm_name`; card lists: becomes owner, leaves farm X, sale status cleared (no relist), public page stays as is, manage from the pet page. There is no per-pet privacy setting UI in the app today to link to | E2E checks the notice |
+| PR wording | "no rows now ≠ never exploited" | updated |
+| Precheck | md5 of all changed bodies; STOP for half-applied state and for data that breaks the new unique indexes; WARN with counts for existing rows the new rules treat differently; never edit real rows to pass | staging before-state + injected synthetic duplicates → STOP/WARN as designed; forced apply aborted as one transaction (state stayed `before`); clean → `after`, all ok except a seed drift WARN (staging reservation 1) |
+| Migration checksum | sha256 `00b7cd438e40b3106eebb1e24e0d8a74fec48ccb56b043283424e48dca4bf0f8` (applied on staging 11:25:13 UTC) | |
+| Tests | API checks 53/53; Docker stub 13+37+11+13 pass, concurrency script ok; E2E local preview-mode build 58/58 | Preview run: see PR |
 
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
