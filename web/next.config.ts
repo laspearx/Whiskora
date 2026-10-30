@@ -1,7 +1,7 @@
 import { loadEnvConfig } from '@next/env';
 import { assertDeployEnv } from './lib/deploy-env-guard.mjs';
 
-// โหลด .env* ก่อนตรวจ เพื่อจับกรณี Preview ไม่มีค่าแล้ว fallback ไปค่าใน web/.env.production (production)
+// โหลด .env* (เช่น .env.local ในเครื่อง) ก่อนตรวจ เพื่อให้ตรวจค่าเดียวกับที่ next build จะใช้
 loadEnvConfig(process.cwd(), process.env.NODE_ENV === 'development');
 assertDeployEnv();
 

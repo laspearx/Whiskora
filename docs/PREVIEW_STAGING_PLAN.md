@@ -7,10 +7,10 @@ promotion is changed by anything here.
 | Part | State |
 | --- | --- |
 | Code: build guard + LINE/notify off on Preview + LINE origin allow-list | **done** on the branch; local tests passed (below) |
-| Vercel Preview variables | **waiting for the owner** — this workspace has no Vercel CLI/token, so they can't be read or set from here |
-| Staging Auth Redirect URLs | **waiting for the owner** — no Supabase management token here (MCP has no auth-config tool) |
-| Real Preview check (bundle, network, login/profile on staging) | **not done yet** — runs after the two items above (`preview_qa` script, see Verify) |
-| Remove `NEXT_PUBLIC_*` from `web/.env.production` | **not done, on purpose** — needs the owner to confirm Production-scope vars exist first. Not needed for safety: the guard already fails a Preview that falls back to the file |
+| Vercel Preview variables | **set by the owner** 2026-10-30 (staging URL + publishable key; production secrets removed from Preview). `NEXT_PUBLIC_VAPID_PUBLIC_KEY` could not be split (Vercel refuses for public-prefixed vars) → handled in code |
+| Staging Auth Redirect URLs | **set by the owner** (not readable from here) |
+| Real Preview check (bundle, network, login/profile on staging) | **passed** 15:30 ICT on `b0f9d9a` (see `docs/STATUS.md`) |
+| Remove `NEXT_PUBLIC_*` from `web/.env.production` | **done on the branch** (file deleted — it held only those two) after the owner confirmed Production has both vars. Guard now also fails a Production build if they are missing or not the production project |
 
 ## What the code does
 - `web/lib/deploy-env-guard.mjs` (run from `next.config.ts` after loading `.env*`), when `VERCEL_ENV=preview`:

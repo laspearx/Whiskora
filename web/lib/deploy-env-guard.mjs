@@ -51,6 +51,15 @@ export function checkDeployEnv(env = process.env) {
     problems.push('NEXT_PUBLIC_SUPABASE_ANON_KEY is a secret/service-role key (would be shipped to browsers)')
   }
 
+  if (target === 'production') {
+    // web/.env.production ไม่มีค่า Supabase แล้ว — Production ต้องได้จาก Vercel (Production scope) และต้องเป็นโปรเจกต์ production
+    if (!url) problems.push('NEXT_PUBLIC_SUPABASE_URL is missing (set it in Vercel, Production scope)')
+    if (!key) problems.push('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing (set it in Vercel, Production scope)')
+    if (url && supabaseRef(url) !== PRODUCTION_SUPABASE_REF) problems.push('NEXT_PUBLIC_SUPABASE_URL is not the production Supabase project')
+    const keyRef = key ? jwtPayload(key)?.ref : undefined
+    if (keyRef && keyRef !== PRODUCTION_SUPABASE_REF) problems.push('NEXT_PUBLIC_SUPABASE_ANON_KEY belongs to another project')
+  }
+
   if (target === 'preview') {
     if (!url) problems.push('NEXT_PUBLIC_SUPABASE_URL is missing')
     if (!key) problems.push('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing')

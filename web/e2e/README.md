@@ -12,7 +12,7 @@ E2E_BASE_URL=https://<staging-url> npm run test:e2e   # against a deployed stagi
 - Staging run (accounts from `supabase/staging/seed_synthetic.sql`): `E2E_{OWNER,MANAGER,STAFF,VIEWER,BUYER,STRANGER,NEW,ADMIN}_{EMAIL,PASSWORD}`,
   `E2E_FARM_ID=9001 E2E_LISTED_PET_ID=900004 E2E_LISTED_PET_ID_MOBILE=900005 E2E_FARM_PET_ID=900001 E2E_PRIVATE_PET_ID=900002
   E2E_PRIVATE_PET_ALLERGIES=QA-ALLERGY-P2`, and for the public spec `E2E_PET_ID=900001 E2E_FARM_NAME="QA Farm"`.
-  Build/start with `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` of staging in the environment (they override `.env.production`).
+  Build/start with `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` of staging in the environment (there is no tracked `.env` file any more; without them the app has no Supabase URL).
   The reservation chain transfers P4/P5 away — reset them before re-running.
 - If pages stay on the "Loading" spinner, a stale `next start`/`next-server` from an older build is probably still on port 3123 — stop it and rerun.
 

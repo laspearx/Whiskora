@@ -136,7 +136,11 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 | E2E against that build (staging) | **50/50, 0 skipped** (P4/P5 reset first; chain leaves them transferred as before) |
 | `tsc --noEmit`, eslint on changed files | passed |
 | Push `3fe70de` 13:52 ICT → Vercel Preview | **blocked by the guard as intended** (owner-supplied build log, 13:53:00): 9 problems, names only, no values — Supabase URL + key are production; `SUPABASE_SERVICE_ROLE_KEY`, `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `RESEND_API_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` are set for Preview today. So every earlier Preview ran with production secrets. Build used a restored cache → redeploy without cache after the vars change |
-| Real Preview (bundle, network, login/profile) | **skipped — waiting** for Vercel Preview vars, staging Redirect URLs, bypass secret, rebuild without cache |
+| Owner set Preview vars + staging Redirect URLs + bypass; redeploy `c5191f3` **without cache** (14:59 ICT) | blocked by the guard on 1 item only: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel refuses to remove Preview from a public-prefixed var). Fix `b0f9d9a`: guard allows that public key; `lib/push-client.ts` blanks it on Preview |
+| Real Preview `b0f9d9a` (`whiskora-ett6yn8oz-…`, push build) 15:30:09–15:30:43 ICT, via Protection Bypass | **passed** — served HTML + 16 JS: staging ref 1, production ref 0, production keys 0, staging key present; production VAPID key not in the bundle; LINE GET/callback 307 to the preview's own login (`LINE_DISABLED_ON_PREVIEW`); notify 503; login `qa+viewer` (email/password) → profile phone change → save → refresh → restore: PATCH 204 ×2 to staging, staging held then restored the value; 20 Supabase requests in the browser, all staging, 0 production |
+| Logs for that window (08:28–08:32 UTC) | staging edge: 30 requests, 26 carry the preview host, 2 `PATCH /rest/v1/profiles`; production edge: **0 requests** |
+| Production after that (15:33 ICT, read-only) | latest Production deployment still `3f37410` (2026-10-30 05:34 UTC); `www.whiskora.pet`: v1.5.1, production ref 1, staging ref 0. Nothing promoted |
+| `web/.env.production` removed (owner confirmed Production has both Supabase vars); guard also checks Production builds | local: Production build without vars → **fails** (missing), with production vars → ok; guard cases 13/13 + 4 production cases pass. Takes effect for Production only when the branch is merged (not approved yet) |
 | Production read-only after push (13:57 ICT) | passed — latest Production deployment still `3f37410` (v1.5.1); `www.whiskora.pet` bundle: production ref 1, staging ref 0. Nothing promoted |
 | Deployment Protection on Preview | on (anonymous → 302 Vercel SSO); kept. Automated check needs "Protection Bypass for Automation" saved by the owner to `~/.whiskora/vercel_bypass` |
 
@@ -170,5 +174,5 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
 2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
-3. Preview → staging: owner sets Preview vars / staging Redirect URLs / bypass (`docs/PREVIEW_STAGING_PLAN.md`), redeploy without cache, then run `preview_qa` on the real Preview + production read-only check.
+3. Preview → staging: verified on a real Preview. Remaining: re-check on a **no-cache** redeploy of the branch head; owner decides on PR/merge (production build then needs the Production Supabase vars — confirmed present).
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
