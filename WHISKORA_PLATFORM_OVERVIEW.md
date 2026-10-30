@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (v1.6.0 live; reservation→transfer migration `20261030120000` on staging only — see `docs/STATUS.md`)
+**Last updated:** 2026-10-30 (v1.7.0 live; reservation→transfer migration `20261030121715` applied 12:17 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -65,7 +65,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - Confirming/cancelling a reservation **now syncs the pet's own `status`** to `ติดจอง` (reserved) / back to `เปิดจอง` (fixed 2026-07-24 — previously only the reservation row changed, the pet's status field was left stale).
 - `pet_ownership_transfers`: owner-initiated from `/pets/[id]`, accepted/declined by the recipient at `/profile/transfers` (inbox via RPC `get_my_pending_transfers`). Acceptance is handled by a **DB trigger** (`sync_pet_owner_on_transfer_accept`) that reassigns `pets.user_id` and clears `pets.farm_id` — not client-side code.
 - Reservation → transfer: a confirmed reservation has "ส่งคำขอโอนเจ้าของ" (farm owner only), which inserts a pending `pet_ownership_transfers` row with `reservation_id` and `to_user_id = buyer`. The existing trigger sets the reservation `converted` on accept.
-- Migration `20261030120000_reservation_transfer_pipeline.sql` (staging only, not on production yet): writes go through RPCs — `farm_set_reservation_status` (pet owner / farm owner / manager; atomic, row-locked, idempotent; cancelling a confirmed reservation cancels its pending transfer) and `respond_pet_transfer` (accept/decline = receiver only, cancel = initiator / pet owner / farm owner). No direct UPDATE policy on either table; INSERT policies check status `pending`, listed + public pet, sender = current owner, reservation buyer = receiver. On accept the trigger also clears sale statuses (→ NULL) and cancels other open reservations. Staff/viewer: read-only. Row locks always pets → reservations → transfers. Reservable = `isPublicListing` (listed status and `is_public` not false); note the pets policy "Public can view available pets" makes any `พร้อมย้ายบ้าน` pet readable even when `is_public = false`. App calls the RPCs and falls back to direct writes on PGRST202 (deploy app before the migration). Production recovery: `supabase/emergency/reservation_transfer_freeze.sql`, then fix forward (the exact rollback is staging-only).
+- Migration `20261030120000_reservation_transfer_pipeline.sql` (production `20261030121715`, 2026-10-30): writes go through RPCs — `farm_set_reservation_status` (pet owner / farm owner / manager; atomic, row-locked, idempotent; cancelling a confirmed reservation cancels its pending transfer) and `respond_pet_transfer` (accept/decline = receiver only, cancel = initiator / pet owner / farm owner). No direct UPDATE policy on either table; INSERT policies check status `pending`, listed + public pet, sender = current owner, reservation buyer = receiver. On accept the trigger also clears sale statuses (→ NULL) and cancels other open reservations. Staff/viewer: read-only. Row locks always pets → reservations → transfers. Reservable = `isPublicListing` (listed status and `is_public` not false); note the pets policy "Public can view available pets" makes any `พร้อมย้ายบ้าน` pet readable even when `is_public = false`. App calls the RPCs and falls back to direct writes on PGRST202 (deploy app before the migration). Production recovery: `supabase/emergency/reservation_transfer_freeze.sql`, then fix forward (the exact rollback is staging-only).
 
 ### Farm / shop / service dashboards
 - Farm dashboard: overview, edit, verify (→ `farm_verifications`, admin-approved), members (workspace roles), privacy, data-check (incomplete-data checklist with inline fixes), pets (roster/create/bulk-create), litters, babies, weights, activities, appointments, reservations.
@@ -127,7 +127,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- **Production (until `20261030120000` is applied):** any farm team member / co-owner can create a transfer of a farm pet to themselves and accept it via the API; the initiator can mark a transfer accepted; the receiver can change `pet_id` before accepting; any team member can confirm/cancel reservations; buyers can insert `confirmed` reservations. Reproduced on staging 2026-10-30; production had 0 reservations / 0 transfers then. After accept the pet keeps `ติดจอง`.
+- Pets policy "Public can view available pets": a `พร้อมย้ายบ้าน` pet is readable by anyone even with `is_public = false` (not reservable; owners see a notice). Next privacy task. No per-pet privacy setting UI exists (`pet_visibility_settings` unused).
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -152,6 +152,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- v1.7.0 (PR #12) + migration `20261030121715` on production: reservation/transfer writes only through role-checked RPCs; one lock order; pet leaves sale status after transfer; inbox shows what accepting does.
 - Reservation → transfer hardening (branch `feat/reservation-transfer-staging`, staging only): RPC-only writes, role checks in the DB, pet leaves sale status after transfer; replaces draft `20261029200000`.
 - v1.6.0 (PR #10): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`; tracked `web/.env.production` removed (Production uses Vercel vars). Preview = staging, verified on a no-cache Preview and on Production.
 - v1.5.1 (PR #9): profile save no longer 409s for users without a username (blank → null, duplicates get a clear message); `/admin/verifications` loads (applicant from `admin_get_users`, no FK embed). Staging E2E 50/50; production QA passed.
