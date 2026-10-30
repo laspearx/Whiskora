@@ -27,12 +27,47 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Staging after privacy migration | API 107/0; E2E 50/50; postcheck 16/16 |
 | Production public smoke (`e2e/public.spec.ts`) on v1.5.0 | 18/18 |
 | Production Supabase edge logs after deploy | all 200, no 4xx/5xx, no `42501` |
-| Owner manual login (email, Google, LINE with already-linked accounts) | **pending — owner testing** |
+| Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
+## 2026-10-30 — privacy migration on production (owner-approved, steps 4–7 of `docs/PRIVACY_ROLLOUT.md`)
+| Step | Result |
+| --- | --- |
+| Gate (03:35 UTC) | project `vhudldcizmbpujedojei` ACTIVE_HEALTHY; live app v1.5.0 = deploy `74391b7` (success), bundle has the production ref only; Redirect URLs probe: only `www.whiskora.pet/**` accepted |
+| Precheck before (03:35 and again 03:42) | 6/6 ok, `state: before`, `get_my_profile missing` |
+| File | sha256 `b7338da6…7f7e`; non-comment SQL identical to `45f6071` (staging). Body between `begin;`/`commit;` sent via MCP `apply_migration` (which wraps its own transaction) |
+| Applied | **03:43:48 UTC**, recorded as `20261030034348 private_columns` (63 migrations). Only this file — reservation migration not applied |
+| Precheck after | `state: after`, `get_my_profile present`; anon/authenticated have no SELECT on email/allergies, no UPDATE on role |
+| Anon over HTTP (03:44) | `profiles?select=email`, `phone,address`, `*` → 401; `pets?select=allergies`, `blood_type`, `*` → 401; rpc `find_user_by_email` / `get_my_profile` → 401; `profiles?select=id,full_name` and `pets?select=id,name` → 200 |
+| Postcheck (rolled back via final `raise exception`; counts only) | **17/17 ok** — 16 rows of `privacy_postcheck.sql` + stranger `get_pet_health(owner's pet)` → 0 rows |
+
+Postcheck accounts: owner = owner's own account (role **admin**), pet = owner's pet (id 10, has health data, no co-owners),
+stranger = synthetic QA account (below). **Limit:** the owner account is an admin, so the owner rows do not prove access
+for an ordinary (non-admin) owner — that case is covered by the staging postcheck (16/16, synthetic non-admin owner) and
+staging E2E 50/50. Denials on production were checked with the ordinary-user stranger account.
+
+### Owner re-test after migration (owner-confirmed, 10:50 ICT = 03:50 UTC, account = owner's admin account)
+Confirmed passing by the owner: profile and existing data complete; edit + save + restore succeeded; Jessica's health data
+shows as before; `/admin/users` lists users. (Admin account — see the limit above.)
+
+### Synthetic QA account (production) — keep until the owner decides; not deleted automatically
+- user id `605f176a-dd3f-4cc7-b4c9-9d814a56f93a`, email `whiskora-qa-stranger-20261030@example.com`, name "Whiskora QA Stranger (postcheck)".
+- Created 03:41 UTC via public `/auth/v1/signup` (autoconfirm on → no email sent); role `user`; only its auto-created personal
+  workspace; no farm membership, pets or co-ownership; signup session revoked right away (0 sessions). Password stored only
+  in `~/.whiskora/prod_qa_stranger_password` (codespace, mode 600).
+
+### Logs
+- Baseline 2026-10-29 03:36 → 10-30 03:36 UTC: edge 0 permission errors; postgres 2 `42501` = role-hotfix apply/probe (intentional).
+- After apply, checked through 03:44:05 UTC (latest ingested): edge 10 requests = my anon probes; postgres 8 `permission denied`
+  = those intended anon probes (03:44:04–05).
+- 03:44:06 → 03:50:13 UTC (latest ingested at 03:53 check; covers the owner re-test): edge 57 requests, all 2xx (incl.
+  `rpc/get_my_profile`, `rpc/get_pet_health` ×4, `rpc/admin_get_users`, `rpc/admin_get_stats`, `GET profiles` ×2, `PATCH pets` ×2 → 204);
+  postgres 4 lines = the postcheck itself (intended, rolled back) + checkpoint. No `PATCH profiles` request appears in this window.
+- **App permission errors: 0 so far. 24 h watch NOT complete** — checked only up to 03:50:13 UTC; continue until ≥ 2026-10-31 03:44 UTC
+  (query `edge_logs` status ≥ 400 and `postgres_logs` `42501`/`permission denied`, excluding the probes listed above).
+
 ## Still open
-- **Privacy read leak on production** (anon can read `profiles.email/phone/address`, pet health columns) until
-  `20261029100000_private_columns.sql` is applied — needs separate approval; plan in `docs/PRIVACY_ROLLOUT.md`.
+- Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
   (14, 25, 29, 30 Aug) all used `redirect_to=www.whiskora.pet` and the session reached www. Before Aug: no logs.
   The wildcard and third-party Site URL were open until 19:49:59 UTC today.
