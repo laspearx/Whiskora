@@ -31,6 +31,7 @@ create table public.pets (
   maternal_grandsire text, maternal_granddam text,
   blood_type text, allergies text, chronic_diseases text, health_notes text, traits text
 );
+create table public.farms (id bigint primary key, user_id text, farm_name text);  -- production: farms.user_id is text
 create table public.workspaces (id uuid primary key default gen_random_uuid(), type text, entity_id bigint);
 create table public.workspace_members (id uuid primary key default gen_random_uuid(), workspace_id uuid references public.workspaces, user_id uuid, role text);
 create table public.pet_reservations (
@@ -78,8 +79,13 @@ create policy p_own_upd on public.profiles for update using (id = auth.uid());
 create policy p_own_ins on public.profiles for insert with check (id = auth.uid());
 create policy pets_read on public.pets for select using (is_public or user_id = auth.uid());
 create policy pets_own on public.pets for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy res_rw on public.pet_reservations for all using (true) with check (true);
-create policy tr_rw on public.pet_ownership_transfers for all using (true) with check (true);
+-- same names / effect as the production policies before 20261030120000 (team check simplified to "anyone")
+create policy "reservations create by buyer" on public.pet_reservations for insert with check (buyer_id = auth.uid());
+create policy "reservations read by buyer or farm team" on public.pet_reservations for select using (true);
+create policy "reservations update by buyer or farm team" on public.pet_reservations for update using (true);
+create policy "transfers create by pet manager" on public.pet_ownership_transfers for insert with check (initiated_by = auth.uid());
+create policy "transfers read by involved parties" on public.pet_ownership_transfers for select using (true);
+create policy "transfers update by buyer or initiator" on public.pet_ownership_transfers for update using (to_user_id = auth.uid() or initiated_by = auth.uid());
 
 -- synthetic users / data (no real people)
 insert into public.profiles (id, full_name, username, email, phone, address) values
@@ -90,6 +96,7 @@ insert into public.profiles (id, full_name, username, email, phone, address) val
  ('eeeeeeee-0000-0000-0000-000000000005','Test Manager','manager_t','manager@example.test','000-000-0005','5 Test Rd');
 insert into public.pets (id, name, status, user_id, farm_id, is_public, blood_type, allergies) values
  (1,'Synthetic Cat','เปิดจอง','aaaaaaaa-0000-0000-0000-000000000001',99,true,'A','seafood');
+insert into public.farms (id, user_id) values (99, 'aaaaaaaa-0000-0000-0000-000000000001');
 insert into public.workspaces (id, type, entity_id) values ('99999999-0000-0000-0000-000000000099','farm',99);
 insert into public.workspace_members (workspace_id, user_id, role) values
  ('99999999-0000-0000-0000-000000000099','aaaaaaaa-0000-0000-0000-000000000001','owner'),

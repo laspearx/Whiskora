@@ -84,7 +84,7 @@ export default function FarmReservationsPage() {
     setBusyId(row.id);
     setError("");
     try {
-      // ทางหลัก: RPC อัปเดตการจอง + สถานะสัตว์ใน transaction เดียว (supabase/migrations/20261029200000_reservation_transfer_pipeline.sql)
+      // ทางหลัก: RPC อัปเดตการจอง + สถานะสัตว์ใน transaction เดียว (supabase/migrations/20261030120000_reservation_transfer_pipeline.sql)
       const { error: rpcErr } = await supabase.rpc("farm_set_reservation_status", { p_reservation_id: row.id, p_status: status });
       if (rpcErr && rpcErr.code !== "PGRST202") throw rpcErr;
 
@@ -117,6 +117,8 @@ export default function FarmReservationsPage() {
       setError(
         e.message?.includes("one_confirmed_reservation")
           ? t("errAlreadyConfirmed")
+          : e.message?.includes("pet_not_listed")
+          ? (row.pet?.status === "ติดจอง" ? t("errAlreadyConfirmed") : t("errNotListed"))
           : e.message?.includes("forbidden")
           ? t("errForbidden")
           : t("errFailed") + e.message

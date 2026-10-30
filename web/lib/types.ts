@@ -33,6 +33,7 @@ export interface Pet {
   breed?: string | null;
   gender?: string | null;
   status?: string | null;
+  is_public?: boolean | null;
   birth_date?: string | null;
   color?: string | null;
   pattern?: string | null;

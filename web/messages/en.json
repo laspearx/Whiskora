@@ -355,6 +355,7 @@
     "reserving": "Reserving...",
     "reserve": "📌 Reserve this pet",
     "signInToReserve": "Sign in to reserve",
+    "availableMakesPublic": "\"Ready for a new home\" makes this page visible to everyone, even though this pet is set to not public (it still cannot be reserved)",
     "contactFarm": "Contact farm",
     "contactOwner": "Contact owner",
     "viewFarm": "View farm profile",
@@ -398,7 +399,14 @@
     "user": "a user",
     "decline": "Decline",
     "accepting": "Accepting...",
-    "accept": "Accept ownership"
+    "accept": "Accept ownership",
+    "effTitle": "When you accept",
+    "effOwner": "You become the owner; the sender can no longer manage this pet",
+    "effFarm": "The pet leaves the farm",
+    "effStatus": "Sale/reserved status is cleared and the pet is not relisted automatically",
+    "effPublic": "The pet's public page stays visible to everyone as before (private data such as health follows access rules)",
+    "effPrivate": "The pet's public page stays hidden as before",
+    "effManage": "Manage the pet from your pet page after accepting"
   },
   "reservations": {
     "status_pending": "Pending",
@@ -408,6 +416,7 @@
     "status_expired": "Expired",
     "errAlreadyConfirmed": "This pet already has a confirmed reservation. Cancel it before confirming another.",
     "errForbidden": "Your role cannot confirm or cancel reservations",
+    "errNotListed": "This pet is no longer listed (transferred or delisted), so the reservation cannot be confirmed",
     "errFailed": "Something went wrong: ",
     "errSelf": "The buyer already owns this pet",
     "errTransfer": "Could not send the transfer request: ",

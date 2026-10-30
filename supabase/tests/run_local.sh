@@ -16,7 +16,7 @@ cat stub_schema.sql | psql >/dev/null
   cat ../migrations/20261029100000_private_columns.sql
   echo "\\set phase after"; echo "\\set exp_private denied"; echo "\\set exp_private_or_zero denied"; cat privacy_cases.sql
   cat privacy_cases_after.sql
-  [ -f reservation_cases.sql ] && { cat ../migrations/20261029200000_reservation_transfer_pipeline.sql; cat reservation_cases.sql; }
+  [ -f reservation_cases.sql ] && { cat ../migrations/20261030120000_reservation_transfer_pipeline.sql; cat reservation_cases.sql; }
   echo "select phase, name, expected, got, case when pass then 'PASS' else 'FAIL' end as result from results order by phase desc, name;"
   echo "select phase, count(*) filter (where pass) as passed, count(*) filter (where not pass) as failed from results group by phase order by phase desc;"
 } | psql -P pager=off

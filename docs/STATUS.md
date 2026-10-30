@@ -146,6 +146,84 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 | Production read-only after push (13:57 ICT) | passed — latest Production deployment still `3f37410` (v1.5.1); `www.whiskora.pet` bundle: production ref 1, staging ref 0. Nothing promoted |
 | Deployment Protection on Preview | on (anonymous → 302 Vercel SSO); kept. Automated check needs "Protection Bypass for Automation" saved by the owner to `~/.whiskora/vercel_bypass` |
 
+## 2026-10-30 — PR #10 deployed (v1.6.0): Preview → staging closed (ICT = UTC+7)
+| | |
+| --- | --- |
+| Pre-merge | main `3f37410`; PR head `d97fe2705b0553628bfd16da362e79c796a64518`; `web/` identical to `941b1a1` (no-cache Preview tested); only PR #10. Owner confirmed Production scope on both Supabase vars |
+| Merge | pinned to that head, 16:32:14 ICT → merge `ffa4319`; bot bump `8973463` (v1.6.0, only `web/lib/version.ts` + `web/package.json`) |
+| Deploy | Production `8973463` success 16:35:35 ICT (`ffa4319` also built OK first). Built from Vercel Production env — the guard's production check passed, so both Supabase vars are present and point to production. No Preview promoted |
+
+Post-deploy checks (16:36 ICT):
+| Check | Result |
+| --- | --- |
+| Served version / bundle (3 pages + 14 JS) | passed — `1.6.0`; production ref 1, staging ref 0, production publishable key present, staging key 0; VAPID public key present; Preview-only strings absent |
+| `/api/auth/line` (not followed) | passed — 307 → `access.line.me/oauth2/v2.1/authorize`, `redirect_uri=https://www.whiskora.pet/api/auth/line/callback`, client_id + state set |
+| `/api/notify/send` without secret | passed — 401 `unauthorized` (not 503); nothing sent |
+| QA stranger profile save → change → reload → restore | passed 16:36:45 — PATCH 204 ×3 (16:36:35 / :38 / :42), value persisted then restored, username stays NULL |
+| Ordinary user → admin | passed 16:36:46 — redirected, `admin_get_users` 400/P0001 (intended) |
+| Push setting on Production | passed 16:36:55 — toggle goes past the key check to the permission step ("ต้องอนุญาตการแจ้งเตือนในเบราว์เซอร์ก่อน", not "ยังไม่ได้ตั้งค่า"); permission never granted, `subscribe` stubbed: 0 calls, 0 `push_subscriptions` writes; stranger has 0 push subscriptions |
+| Logs 09:24–09:39 UTC | edge 69 / auth 10 / postgres 1, all 09:36:30–09:36:55 = the QA run. Only ≥400/ERROR: 09:36:47 `admin_get_users` 400 + postgres "Access denied" = intended QA denial. App errors 0 |
+| QA stranger after | role user, 0 sessions, 0 live refresh tokens; admins on production: 1 |
+
+Limits: Vercel variable *values* were not read (no access) — presence/ref proven by the guard passing in the Production build and by the served bundle. LINE login was not completed (not followed). Push delivery not tested by design.
+**Preview → staging: closed.** Branch Previews now build against staging; production values are not given back to Preview (see rollback in `docs/PREVIEW_STAGING_PLAN.md`).
+
+## 2026-10-30 — Reservation → transfer on staging (branch `feat/reservation-transfer-staging`; ICT = UTC+7)
+Migration `20261030120000_reservation_transfer_pipeline.sql` (replaces the never-applied draft `20261029200000`), applied on
+**staging only** (10:17 UTC, re-applied 10:19 after a fix, rolled back 10:38, re-applied 10:43). Production untouched
+(read-only checks only). Details and role table: migration header. Production recovery = freeze + fix forward (see review round 2).
+
+Schema check (read-only, both projects): tables, constraints, indexes, policies, the single trigger
+`trg_sync_pet_owner_on_transfer_accept` and function bodies (md5) were identical on staging and production. The existing
+trigger already sets `converted`; the migration replaces that function's body (same trigger, no second one).
+
+Holes reproduced on staging **before** the migration (REST API, synthetic accounts). On production no reservation or transfer rows exist at present; that alone does not
+prove the holes were never used (not investigated further). The holes stay open on production until the migration:
+| Case | Before |
+| --- | --- |
+| staff inserts a transfer of a farm pet to self, then accepts it | 201, 200 → staff became the owner |
+| receiver changes `pet_id` of a transfer to another (private) pet and accepts | 200 → receiver owns the other pet |
+| initiator marks a transfer `accepted` (receiver never agreed) | 200 → ownership moved |
+| buyer inserts a reservation already `confirmed`, on a private unlisted pet | 201 |
+| viewer cancels / staff confirms a reservation directly | 200 / 200 |
+
+Tests after the migration (staging, synthetic only):
+| Suite | Result |
+| --- | --- |
+| `supabase/tests/reservation_api_checks.cjs` (REST, all roles, double clicks, parallel requests, health before/after) | **51/51 passed** (twice) |
+| Docker stub (`run_local.sh`): privacy before/after + reservation + transfer | 13 + 37 + 11 + 13 passed, 0 failed; `run_concurrency.sh`: one confirm wins, double confirm/accept → one result |
+| E2E, local preview-mode build on staging | 56/56 passed, 0 skipped |
+| E2E on the real Preview `whiskora-4661aufyr` (`f4bfb86`, protection kept, bypass cookie), 17:30–17:37 ICT | 56/56 passed |
+| Same, after strengthening the "after transfer" check (waits for the pet data, asserts no status pill), 17:43–17:49 ICT | **56/56 passed** |
+| `preview_qa` on that Preview (17:37 ICT) | bundle staging-only, LINE/notify off, profile save/restore on staging, 22 Supabase requests all staging |
+| Production edge logs 09:39–10:51 UTC | 0 requests (none from the Preview) |
+| Staging-only exact rollback (10:38 UTC; not a production step) | functions / policies / triggers hashes = pre-migration baseline; trigger body md5 = production's; privacy column + table grants unchanged before, during and after |
+| App on the rolled-back DB (Preview, reservation E2E) | 13/14 — fallback path works (deploy order app → migration is safe); the 1 failure is the expected one: pet stays `ติดจอง` without the migration |
+| Production read-only precheck `reservation_precheck.sql` | `state: before`, all ok; counts 0 reservations / 0 transfers / 5 pets `ติดจอง` (set by owners, not touched) |
+
+Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-cancel not added this round):
+1. Pet status after an accepted transfer: sale statuses → NULL "not specified", other statuses kept [NULL].
+2. Other open reservations of the pet on accept [cancelled].
+3. Buyer self-cancel: no UI today; direct UPDATE is now closed for buyers too [not possible — add an RPC if wanted].
+4. Co-owners and admins: had write access through `can_manage_pet_visibility`; now read-only for reservations/transfers [read-only].
+5. Manager: confirm/cancel yes, send transfer no (matches the UI) [as is].
+6. `is_public` after transfer [kept as is].
+
+### Review round 2 (owner review of PR #12; staging only; ICT = UTC+7)
+| Item | Change | Result |
+| --- | --- | --- |
+| Recovery plan | `_down.sql` moved to `supabase/tests/staging_only/…_down_STAGING_ONLY.sql` (warning + refuses without the staging QA seed); production recovery = `supabase/emergency/reservation_transfer_freeze.sql` (2 restrictive insert policies + revoke EXECUTE on the 2 write RPCs) → fix forward → `…_unfreeze.sql` | freeze on staging 18:23 ICT: 4/4 writes blocked, 7/7 reads + privacy probes unchanged; catalog: column/table grants, functions, triggers unchanged, only the 2 freeze policies added; unfreeze → identical to before; open-state run 11/11 |
+| Lock order | every write path now locks pets → reservations → transfers (FOR NO KEY UPDATE) and re-reads after locking; confirm also requires the pet to be listed (`pet_not_listed`) | **before the change** (same harness): stress 45 runs → 12 deadlocks (`40P01`); **after**: controlled-timing 6/6 consistent (3 scenarios × both orders), stress 4 × 45 runs → 0 deadlocks, 0 inconsistent states |
+| `pet_is_reservable` | was `is_public or status = พร้อมย้ายบ้าน` (copied from the pets policy "Public can view available pets"); now the app's `isPublicListing` rule: listed status **and** `is_public is not false` | API: P6 (พร้อมย้ายบ้าน, is_public=false) readable anonymously (existing design, documented) but not reservable; `/p` shows no reserve button; owner sees a notice that the status makes the page public. Production: 0 such pets now |
+| Transfer inbox | `get_my_pending_transfers` also returns `pet_is_public`, `pet_status`, `from_farm_name`; card lists: becomes owner, leaves farm X, sale status cleared (no relist), public page stays as is, manage from the pet page. There is no per-pet privacy setting UI in the app today to link to | E2E checks the notice |
+| PR wording | "no rows now ≠ never exploited" | updated |
+| Precheck | md5 of all changed bodies; STOP for half-applied state and for data that breaks the new unique indexes; WARN with counts for existing rows the new rules treat differently; never edit real rows to pass | staging before-state + injected synthetic duplicates → STOP/WARN as designed; forced apply aborted as one transaction (state stayed `before`); clean → `after`, all ok except a seed drift WARN (staging reservation 1) |
+| Migration checksum | sha256 `00b7cd438e40b3106eebb1e24e0d8a74fec48ccb56b043283424e48dca4bf0f8` (applied on staging 11:25:13 UTC) | |
+| Tests | API checks 53/53; Docker stub 13+37+11+13 pass, concurrency script ok; E2E local preview-mode build 58/58 | |
+| Real Preview `whiskora-mf5tzetgl` (`d311459`; `web/` = `0f01d48`), protection kept, 18:37–18:44 ICT | E2E **58/58**; `preview_qa` 5/5 (bundle staging-only, LINE/notify off, profile save/restore on staging, 22 Supabase requests all staging); repo scripts after it: API 53/53, concurrency timed 6/6 + stress 45/0 | |
+| Production read-only precheck (new file), 18:47 ICT | `state: before`, all 14 checks ok; 0 reservations / 0 transfers / 5 pets ติดจอง | |
+| Production logs 10:51–11:50 UTC | log API returned HTTP 500 three times at ~11:46, then answered: edge 116 (real use 11:20–11:26), auth 2, postgres 2 checkpoints; 0 errors; 0 from Preview | |
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -159,22 +237,22 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
     user + `created_at` — refresh tokens cascade-deleted (`refresh_token_not_found`), `/auth/v1/user` → 403, later
     sessions and other users unaffected. In both, an already-issued access token is still accepted by PostgREST
     until it expires (default 1 h). Nothing revoked on production — awaiting approval of scope + method.
-- Preview → staging: code on `chore/preview-staging-env` (guard blocks Preview builds that point to production);
-  Vercel Preview vars + staging Redirect URLs pending (owner). Branches without the guard (e.g. older branches) still
-  build Previews with production env until the Preview vars are changed — avoid pushing them.
+- Preview → staging: done (v1.6.0). Older branches without the guard now also build with the staging Preview vars.
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
-- Supabase Facebook provider is enabled. LINE callback `whiskora.vercel.app` trust removed on the branch (not live until merged).
-- Other DB items: `pet_reservations` UPDATE policy too broad, `admin_get_users` no-arg overload, default privileges
+- Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
+- Reservation/transfer write holes on production (see the staging section above) — fixed by `20261030120000`, not applied.
+- Other DB items: `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
 
 ## Backlog (separate tasks, not in the privacy rollout)
 - Pedigree: direct SELECT of pedigree columns stays allowed by the privacy migration — compare with pedigree privacy tiers.
-- Pet keeps `ติดจอง` after the buyer accepts the transfer.
 - PKCE flow + `emailRedirectTo`; drop `whiskora.vercel.app` from LINE callback; remove `NEXT_PUBLIC_*` from `web/.env.production`.
-- Full 90-day referer/redirect log scan; apex domain repair; reservation migration `20261029200000` staging pass.
+- Full 90-day referer/redirect log scan; apex domain repair.
+- Separate from the reservation PR: default privileges (anon/authenticated have ALL on new tables; table-level REVOKE on
+  `pet_reservations` / `pet_ownership_transfers`), DNS / apex, PKCE, revoking real user sessions.
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
-3. Preview → staging: verified on a real Preview. Remaining: re-check on a **no-cache** redeploy of the branch head; owner decides on PR/merge (production build then needs the Production Supabase vars — confirmed present).
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 11:50 UTC continuous, app errors 0 (all errors = QA tests).
+3. Reservation → transfer PR: owner decisions (list above), then production plan in the PR (app first, then migration).
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

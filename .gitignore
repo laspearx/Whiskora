@@ -12,3 +12,4 @@ node_modules/
 
 # local env files (web/.env.production is still tracked on purpose — see WHISKORA_PLATFORM_OVERVIEW.md)
 .env*.local
+supabase/.temp/

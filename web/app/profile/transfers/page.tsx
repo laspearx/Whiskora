@@ -21,6 +21,10 @@ interface TransferRow {
   from_user_id: string;
   from_name: string | null;
   initiated_at: string;
+  // from get_my_pending_transfers after migration 20261030120000 (undefined before it)
+  pet_is_public?: boolean | null;
+  pet_status?: string | null;
+  from_farm_name?: string | null;
 }
 
 export default function MyTransfersPage() {
@@ -47,15 +51,22 @@ export default function MyTransfersPage() {
     setBusyId(row.transfer_id);
     setError("");
     try {
-      // อัปเดตเฉพาะแถวที่ยัง pending — กดซ้ำหรือถูกยกเลิกไปก่อนจะไม่เปลี่ยนสถานะทับ
-      // การเปลี่ยนเจ้าของ (และการเปลี่ยนการจองเป็น converted) ทำโดย trigger ใน transaction เดียวกัน
-      // (ไม่ใช้ .select() ต่อท้าย เพราะผู้รับอ่านคำขอผ่าน RPC get_my_pending_transfers — อาจไม่มีสิทธิ์ select ตรง)
-      const { error: updErr } = await supabase
-        .from("pet_ownership_transfers")
-        .update({ status })
-        .eq("id", row.transfer_id)
-        .eq("status", "pending");
-      if (updErr) throw updErr;
+      // ทางหลัก: RPC ตรวจว่าเป็นผู้รับจริง ล็อกแถว และกดซ้ำได้ไม่เกิดผลซ้ำ
+      // (supabase/migrations/20261030120000_reservation_transfer_pipeline.sql)
+      // การเปลี่ยนเจ้าของ / การจองเป็น converted / สถานะสัตว์ ทำโดย trigger ใน transaction เดียวกัน
+      const { error: rpcErr } = await supabase.rpc("respond_pet_transfer", {
+        p_transfer_id: row.transfer_id, p_action: status === "accepted" ? "accept" : "decline",
+      });
+      if (rpcErr && rpcErr.code !== "PGRST202") throw rpcErr;
+      if (rpcErr?.code === "PGRST202") {
+        // ยังไม่ได้ติดตั้ง migration — วิธีเดิม: อัปเดตเฉพาะแถวที่ยัง pending
+        const { error: updErr } = await supabase
+          .from("pet_ownership_transfers")
+          .update({ status })
+          .eq("id", row.transfer_id)
+          .eq("status", "pending");
+        if (updErr) throw updErr;
+      }
       if (status === "accepted") {
         router.push(`/pets/${row.pet_id}`);
         return;
@@ -95,6 +106,11 @@ export default function MyTransfersPage() {
         .tf-from b { color: ${F.pink}; }
         .tf-date { font-size: 10.5px; color: ${F.muted}; margin-top: 2px; }
 
+        .tf-effects { list-style: none; margin: 12px 0 0; padding: 10px 12px; background: ${F.pinkSoft}; border-radius: 12px; font-size: 12px; color: ${F.inkSoft}; line-height: 1.5; }
+        .tf-effects li { padding-left: 12px; position: relative; }
+        .tf-effects li::before { content: "•"; position: absolute; left: 0; color: ${F.pink}; }
+        .tf-effects .tf-effects-title { padding-left: 0; font-weight: 700; color: ${F.ink}; }
+        .tf-effects .tf-effects-title::before { content: none; }
         .tf-actions { display: flex; gap: 10px; margin-top: 14px; }
         .tf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
         .tf-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -137,6 +153,14 @@ export default function MyTransfersPage() {
                     <div className="tf-date">{new Date(row.initiated_at).toLocaleDateString((locale === "en" ? "en-GB" : "th-TH"), { day: "numeric", month: "short", year: "numeric" })}</div>
                   </div>
                 </div>
+                <ul className="tf-effects" aria-label={t("effTitle")}>
+                  <li className="tf-effects-title">{t("effTitle")}</li>
+                  <li>{t("effOwner")}</li>
+                  {row.from_farm_name && <li>{t("effFarm")} <b>{row.from_farm_name}</b></li>}
+                  <li>{t("effStatus")}</li>
+                  {row.pet_is_public !== undefined && <li>{row.pet_is_public === false ? t("effPrivate") : t("effPublic")}</li>}
+                  <li>{t("effManage")}</li>
+                </ul>
                 <div className="tf-actions">
                   <button className="tf-btn tf-btn-decline" disabled={busyId === row.transfer_id} onClick={() => respond(row, "declined")}>{t("decline")}</button>
                   <button className="tf-btn tf-btn-accept" disabled={busyId === row.transfer_id} onClick={() => respond(row, "accepted")}>

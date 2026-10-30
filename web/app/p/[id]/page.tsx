@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import type { Pet, Vaccine, Activity, UserProfile } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
+import { isPublicListing } from '@/lib/trust';
 import { useLocale, useTranslations } from '@/i18n/context';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
@@ -706,10 +707,14 @@ export default function PublicPetProfilePage() {
                 {pet.status && (
                   <span className="status-pill" style={{ background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' }}>● {statusLabel(pet.status)}</span>
                 )}
+                {sessionUserId === pet.user_id && pet.status === 'พร้อมย้ายบ้าน' && pet.is_public === false && (
+                  <span className="status-pill" style={{ background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>{t('availableMakesPublic')}</span>
+                )}
                 {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
                   <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>
                 )}
-                {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && sessionUserId && sessionUserId !== pet.user_id && (
+                {/* จองได้ตามกฎเดียวกับ DB (pet_is_reservable): สถานะเปิดขาย และไม่ได้ตั้งเป็นไม่สาธารณะ */}
+                {isPublicListing(pet) && sessionUserId && sessionUserId !== pet.user_id && (
                   myReservation ? (
                     <span className="status-pill" style={{
                       background: myReservation.status === 'confirmed' ? '#D1FAE5' : '#FEF3C7',
@@ -724,7 +729,7 @@ export default function PublicPetProfilePage() {
                     </button>
                   )
                 )}
-                {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && !sessionUserId && (
+                {isPublicListing(pet) && !sessionUserId && (
                   <a href={`/login?redirect=${encodeURIComponent(`/p/${petId}`)}`} className="status-pill" style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', textDecoration: 'none' }}>
                     {t('signInToReserve')}
                   </a>
