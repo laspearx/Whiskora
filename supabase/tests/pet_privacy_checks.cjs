@@ -171,6 +171,12 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     ok('after transfer: anon still cannot see private P2 health', !(await canHealth('anon', P2)), {});
     // co-owner added by the previous owner: reported, not asserted (owner decision)
     console.log(`INFO co-owner added by the previous owner still sees P2 row/health after transfer: ${await canRow('coowner', P2)}/${await canHealth('coowner', P2)}`);
+    // what else stays with the old owner (reported, not asserted — proposal for a separate migration)
+    const ow = await rest('owner', 'GET', `pet_weights?pet_id=eq.${P7}&select=id`);
+    const ou = await fetch(`${SB}/rest/v1/pet_weights?id=eq.9900007`, { method: 'PATCH', headers: { apikey: KEY, Authorization: `Bearer ${await tok('owner')}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ notes: 'qa' }) });
+    const nw = await fetch(`${SB}/rest/v1/pet_weights?id=eq.9900007`, { method: 'PATCH', headers: { apikey: KEY, Authorization: `Bearer ${await tok('buyer')}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ notes: 'qa2' }) });
+    const nwRows = (await nw.json().catch(() => [])).length;
+    console.log(`INFO after transfer of P7: old owner reads its weight rows: ${ow.rows}; old owner can edit them: ${((await ou.json().catch(() => [])).length) === 1}; new owner can edit them: ${nwRows === 1}`);
     ok('after transfer: old owner no longer sees P7 health (tier owner)', !(await canHealth('owner', P7)), {});
     // new owner makes P7 private → everything closes for outsiders and the old owner
     // return=minimal: a representation would select the private health columns (revoked since the privacy migration)

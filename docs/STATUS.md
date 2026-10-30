@@ -275,12 +275,28 @@ Tests (synthetic accounts: anon, stranger, buyer, owner, co-owner, farm manager 
 | Preview bundle | — | staging ref only, production ref 0 |
 | Precheck `pet_privacy_precheck.sql` | production (read-only): `state: before`, all ok, no WARN | staging: `after`, WARN rows = the synthetic fixtures |
 
-Decisions for the owner (not done in this PR):
-1. Owner control: add an "แสดงในหน้าสาธารณะ" (is_public) toggle on the pet edit page? Per-pet tier UI? (today: API only)
-2. After a transfer, co-owners and per-pet tiers set by the previous owner stay (co-owner still sees health). Remove them on accept, show them to the new owner, or keep?
-3. Signed-in users can still read pedigree columns of readable pets directly (farm dashboard / owner pages read `PET_COLUMNS`). Close with an owner/team RPC + page refactor, or accept?
-4. `pet-photos` stays a public bucket: a known photo URL of a private pet still loads (listing is closed). Move private pets' photos to a private bucket with signed URLs, or accept?
-5. Separate small items: `pet-documents` upload policy has no folder check (no overwrite possible); `verification-docs` uses `getPublicUrl` on a private bucket; microchip numbers are shown on public pages by design (2 pets).
+### Review round 2 (owner review of PR #14; staging / Preview only)
+| Item | Change | Result |
+| --- | --- | --- |
+| Pedigree columns for signed-in users | SELECT revoked from `authenticated` too (anon + authenticated: 2619 → 2603 column grants, removals only); new RPC `get_pet_pedigree_fields()` for owner / co-owner / farm team / admin (any tier) or a viewer the pedigree tier allows; `PET_COLUMNS` without pedigree fields; owner edit page loads sire/dam via the RPC and does not send them if loading failed | stranger / buyer / owner direct read → 403; stranger RPC → nothing; owner, co-owner, farm manager / staff / viewer RPC → ok; Preview: owner edit + save keeps sire and pedigree number, 0 Supabase errors |
+| Pedigree across generations | walking up from an ancestor needs `viewer_can_see(ancestor, 'pedigree')`; its card needs `pet_visible_to(ancestor)` | public child P7 → anon/stranger see dam P8 (public card) but not P8's sire P9 (P8 pedigree owner-only); owner of P8 sees P9 |
+| Grants / previous owner | `granted` only for an active grant of that field group (or a pet-wide grant); grants no longer open the private card; grant create/revoke only by who may change the pet's privacy (was any farm member / co-owner) | vaccination grant → that group + its vaccine rows only, not weight/health/pedigree/documents/card; expired and revoked grants → nothing; staff / co-owner cannot create grants, owner can create + revoke; previous owner sees only groups with "include previous owner" (health yes, weight no), never the private card |
+| UI texts | private profile is limited, but **photo files are not private yet — existing photo links still open** (owner notice on `/p` and `/pets/<id>`, transfer inbox) | E2E asserts the photo caveat |
+| After-transfer access | proposal only: `docs/PROPOSAL_TRANSFER_ACCESS_RESET.md` (co-owners, grants, per-pet settings, weight rows, documents, previous-owner definition) | not applied |
+
+Migration sha256 now `47123b3b2e96f9acab4bc7f69da8df112c90a6d56eda05fd18f5bb3a1f3f8f95` (staging re-applied 13:11:19 UTC). Tested code `1cc44bc`.
+| Suite | Before (revert) | After |
+| --- | --- | --- |
+| `pet_privacy_checks.cjs --transfer` | 50 passed / **43 failed** | **93 / 93** |
+| E2E on the real Preview `whiskora-jl76dl3la` (staging env, protection kept), 20:13–20:20 ICT | — | **58 / 58** |
+| `reservation_api_checks.cjs` | — | 53 / 53 |
+| Staging-only revert | catalog = production (colpriv, table grants, public + storage policies, functions); re-apply = same "after" hashes | ok |
+| `pet_privacy_precheck.sql` | reverted staging (production-equal catalog): `before`, all ok | staging: `after`, all ok (WARN = synthetic fixtures) |
+
+**Still open (privacy is not closed on every path):** photo files of private pets are in a public bucket (a known URL
+still loads); owners have no UI for `is_public` / per-pet tiers; access given by a previous owner survives a transfer
+(proposal); the original seller is not a "previous owner"; `pet-documents` upload has no folder check;
+`verification-docs` uses a public URL on a private bucket.
 
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).

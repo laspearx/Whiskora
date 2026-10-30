@@ -44,6 +44,9 @@ insert into public.pet_visibility_settings (pet_id, field_group_key, tier, inclu
 -- one synthetic vaccine row on P2 (id 9900002) to prove a vaccination grant opens exactly that table
 insert into public.vaccines (id, pet_id, vaccine_name, date_given) values (9900002, 900002, 'QA-VAC-P2', current_date)
 on conflict (id) do update set pet_id = excluded.pet_id, vaccine_name = excluded.vaccine_name;
+-- one weight row on P7 recorded by owner 01 (id 9900007) — shows what stays with the old owner after a transfer
+insert into public.pet_weights (id, pet_id, weight, user_id) values (9900007, 900007, 4.2, 'a0000000-0000-4000-8000-000000000001')
+on conflict (id) do update set pet_id = excluded.pet_id, user_id = excluded.user_id;
 insert into public.access_grants (granted_by, grantee_id, resource_type, resource_id, field_group_key, relationship_tag, expires_at, revoked_at) values
  ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000006', 'pet', 900002, 'vaccination', 'custom', null, null),
  ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000005', 'pet', 900002, 'weight', 'custom', now() - interval '1 day', null),
