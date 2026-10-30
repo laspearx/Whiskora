@@ -71,15 +71,19 @@ edit → save → refresh → restore, PATCH goes to staging and staging holds t
 browser goes to staging. Then: production edge logs for the test window have no request with the preview host as
 origin/referer; production `www.whiskora.pet` still serves `3f37410` (v1.5.1) and the production ref.
 
-## Rollback (Preview only)
-- Vercel: delete the Preview-only entries added in step 2 (or re-tick Preview on the variables split in step 1 to return
-  to the previous shared values). Production entries are never edited, so Production is unaffected.
-- With the guard on the branch, a Preview without staging values fails the build (safe). To get the old behaviour back
-  entirely, don't merge the branch / revert its code commit.
-- Staging Auth: remove the two Redirect URLs (staging only).
-- Bypass secret: Deployment Protection → Protection Bypass for Automation → revoke.
+## Rollback / if a Preview misbehaves (Preview only — never back to production)
+- **Never** re-tick Preview on production variables or copy production URL/keys/secrets into Preview. Going back to the
+  old "Preview = production" setup is not a rollback option.
+- Preview problem → stop it, don't widen it: leave the build failing (the guard fails any Preview without staging values),
+  or remove the Preview-only `NEXT_PUBLIC_SUPABASE_*` entries so new Previews fail; delete/cancel the bad Preview
+  deployment in Vercel (Deployments → ⋯ → Delete); keep Deployment Protection on.
+- Staging Auth: remove the two Redirect URLs (staging only) if Previews are stopped.
+- Bypass secret: Deployment Protection → Protection Bypass for Automation → revoke (and delete `~/.whiskora/vercel_bypass`).
+- Code (after merge): revert the PR on main. The tracked `web/.env.production` is not needed to restore Production
+  (Production reads its Vercel Production vars); do not re-add it, since it would again feed production values to Previews.
 
-## Later (separate approval)
-- Remove `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` from `web/.env.production` once Production-scope vars are confirmed.
-- Merge the branch to main (production build then runs the guard in `production` mode: secret-key check only).
+## After merge (separate approval)
+- Production build runs the guard in `production` mode: fails if `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` are missing or
+  not the production project, or if the public key is a secret key. A failed Production build does not replace the live
+  deployment (Vercel keeps the current one), so the risk is a blocked deploy, not an outage.
 - Optional LINE/Google on Preview needs a test LINE channel and a staging Google OAuth client.
