@@ -1,7 +1,7 @@
 # Vercel Preview → staging Supabase
 
-Branch `chore/preview-staging-env` (not merged). Production is untouched: no Production-scope variable, domain, deploy or
-promotion is changed by anything here.
+**Done — merged as PR #10, live in v1.6.0 (2026-10-30 09:35 UTC).** Post-deploy checks in `docs/STATUS.md`. No Production-scope variable or domain was changed and no Preview was promoted;
+Production changed only by the normal merge build (guard + Preview-only switches + `.env.production` removal).
 
 ## Status (2026-10-30)
 | Part | State |

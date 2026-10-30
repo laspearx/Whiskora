@@ -146,6 +146,28 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 | Production read-only after push (13:57 ICT) | passed — latest Production deployment still `3f37410` (v1.5.1); `www.whiskora.pet` bundle: production ref 1, staging ref 0. Nothing promoted |
 | Deployment Protection on Preview | on (anonymous → 302 Vercel SSO); kept. Automated check needs "Protection Bypass for Automation" saved by the owner to `~/.whiskora/vercel_bypass` |
 
+## 2026-10-30 — PR #10 deployed (v1.6.0): Preview → staging closed (ICT = UTC+7)
+| | |
+| --- | --- |
+| Pre-merge | main `3f37410`; PR head `d97fe2705b0553628bfd16da362e79c796a64518`; `web/` identical to `941b1a1` (no-cache Preview tested); only PR #10. Owner confirmed Production scope on both Supabase vars |
+| Merge | pinned to that head, 16:32:14 ICT → merge `ffa4319`; bot bump `8973463` (v1.6.0, only `web/lib/version.ts` + `web/package.json`) |
+| Deploy | Production `8973463` success 16:35:35 ICT (`ffa4319` also built OK first). Built from Vercel Production env — the guard's production check passed, so both Supabase vars are present and point to production. No Preview promoted |
+
+Post-deploy checks (16:36 ICT):
+| Check | Result |
+| --- | --- |
+| Served version / bundle (3 pages + 14 JS) | passed — `1.6.0`; production ref 1, staging ref 0, production publishable key present, staging key 0; VAPID public key present; Preview-only strings absent |
+| `/api/auth/line` (not followed) | passed — 307 → `access.line.me/oauth2/v2.1/authorize`, `redirect_uri=https://www.whiskora.pet/api/auth/line/callback`, client_id + state set |
+| `/api/notify/send` without secret | passed — 401 `unauthorized` (not 503); nothing sent |
+| QA stranger profile save → change → reload → restore | passed 16:36:45 — PATCH 204 ×3 (16:36:35 / :38 / :42), value persisted then restored, username stays NULL |
+| Ordinary user → admin | passed 16:36:46 — redirected, `admin_get_users` 400/P0001 (intended) |
+| Push setting on Production | passed 16:36:55 — toggle goes past the key check to the permission step ("ต้องอนุญาตการแจ้งเตือนในเบราว์เซอร์ก่อน", not "ยังไม่ได้ตั้งค่า"); permission never granted, `subscribe` stubbed: 0 calls, 0 `push_subscriptions` writes; stranger has 0 push subscriptions |
+| Logs 09:24–09:39 UTC | edge 69 / auth 10 / postgres 1, all 09:36:30–09:36:55 = the QA run. Only ≥400/ERROR: 09:36:47 `admin_get_users` 400 + postgres "Access denied" = intended QA denial. App errors 0 |
+| QA stranger after | role user, 0 sessions, 0 live refresh tokens; admins on production: 1 |
+
+Limits: Vercel variable *values* were not read (no access) — presence/ref proven by the guard passing in the Production build and by the served bundle. LINE login was not completed (not followed). Push delivery not tested by design.
+**Preview → staging: closed.** Branch Previews now build against staging; production values are not given back to Preview (see rollback in `docs/PREVIEW_STAGING_PLAN.md`).
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -159,11 +181,9 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
     user + `created_at` — refresh tokens cascade-deleted (`refresh_token_not_found`), `/auth/v1/user` → 403, later
     sessions and other users unaffected. In both, an already-issued access token is still accepted by PostgREST
     until it expires (default 1 h). Nothing revoked on production — awaiting approval of scope + method.
-- Preview → staging: code on `chore/preview-staging-env` (guard blocks Preview builds that point to production);
-  Vercel Preview vars + staging Redirect URLs pending (owner). Branches without the guard (e.g. older branches) still
-  build Previews with production env until the Preview vars are changed — avoid pushing them.
+- Preview → staging: done (v1.6.0). Older branches without the guard now also build with the staging Preview vars.
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
-- Supabase Facebook provider is enabled. LINE callback `whiskora.vercel.app` trust removed on the branch (not live until merged).
+- Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
 - Other DB items: `pet_reservations` UPDATE policy too broad, `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
 
@@ -176,5 +196,5 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
 2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
-3. Preview → staging: verified on a real Preview. Remaining: re-check on a **no-cache** redeploy of the branch head; owner decides on PR/merge (production build then needs the Production Supabase vars — confirmed present).
+3. (Preview → staging closed in v1.6.0.)
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

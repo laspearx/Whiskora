@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (v1.5.1 live; privacy migration applied on production 03:43 UTC — see `docs/STATUS.md`)
+**Last updated:** 2026-10-30 (v1.6.0 live: Preview deployments use staging Supabase; privacy migration applied 03:43 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -152,7 +152,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
-- Branch `chore/preview-staging-env` (not merged): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`. Vercel Preview vars pending (owner).
+- v1.6.0 (PR #10): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`; tracked `web/.env.production` removed (Production uses Vercel vars). Preview = staging, verified on a no-cache Preview and on Production.
 - v1.5.1 (PR #9): profile save no longer 409s for users without a username (blank → null, duplicates get a clear message); `/admin/verifications` loads (applicant from `admin_get_users`, no FK embed). Staging E2E 50/50; production QA passed.
 - Production browser QA with synthetic accounts: privacy/permission cases pass; found 2 pre-existing bugs (profile save 409 when username empty; admin verifications 400 — no FK for `profiles!user_id`). Fix on branch `fix/profile-username-admin-verifications`, staging-tested, not deployed. Preview→staging plan drafted (`docs/PREVIEW_STAGING_PLAN.md`).
 - PRODUCTION: privacy migration `20261029100000_private_columns.sql` applied alone (recorded as `20261030034348 private_columns`); precheck before/after ok, postcheck 17/17, anon HTTP private columns 401. Synthetic QA account created for postcheck (id in `docs/STATUS.md`).
