@@ -1,8 +1,16 @@
 # Privacy fix — staging & production rollout
 
-Status 2026-10-30: **applied on staging only** (`whiskora-staging`, ref `wpxcukrwmegwzfccbbga`). Production
-(`vhudldcizmbpujedojei`) has only the role hotfix; the read leak (anon can read `profiles.email/phone/address`
-and `pets` health columns) is **still open on production**. Nothing below has been done on production.
+Status 2026-10-30 (UTC) — **production: APPLIED.**
+| | |
+| --- | --- |
+| Production project | `vhudldcizmbpujedojei` |
+| Migration ID (production history) | `20261030034348` `private_columns`, applied 03:43:48 UTC, alone |
+| Source file (kept unchanged) | `supabase/migrations/20261029100000_private_columns.sql`, sha256 `b7338da6e3efc264ec6439aaf86c956d3d745a781ea253dd31f68795b1b47f7e` (its header comment still says "not applied on production" — left as is so the checksum stays valid) |
+| Applied SQL | file lines 45–129 (between `begin;`/`commit;`; MCP wraps its own transaction), non-comment SQL identical to the file and to `45f6071` (staging) |
+| Steps | 1–6 done (precheck before/after, anon HTTP, postcheck 17/17, owner re-test 03:50 UTC passed). Step 7 (24 h log watch) **in progress** until ≥ 2026-10-31 03:44 UTC |
+| Staging | `wpxcukrwmegwzfccbbga`, also in the after-migration state |
+
+Details and log windows: `docs/STATUS.md`. The text below is the original plan, kept for reference.
 
 ## What ships (pinned)
 | Item | Value |
