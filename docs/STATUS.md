@@ -224,6 +224,27 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 | Production read-only precheck (new file), 18:47 ICT | `state: before`, all 14 checks ok; 0 reservations / 0 transfers / 5 pets ติดจอง | |
 | Production logs 10:51–11:50 UTC | log API returned HTTP 500 three times at ~11:46, then answered: edge 116 (real use 11:20–11:26), auth 2, postgres 2 checkpoints; 0 errors; 0 from Preview | |
 
+## 2026-10-30 — PR #12 deployed (v1.7.0) + reservation migration on production (ICT = UTC+7)
+| Step | Result |
+| --- | --- |
+| Pre-merge | main `8973463`; PR head `57d11d67bb61b4f607cb9697588b890b50ea2344`; `web/` + migration identical to tested `0f01d48`; file sha256 `00b7cd43…bf0f8`; only PR #12 (PR #11's commit was already in its history → GitHub marked #11 merged) |
+| Precheck (read-only) 19:09 ICT | `state: before`, all 14 checks ok, no STOP/WARN; 0 reservations / 0 transfers / 5 pets ติดจอง |
+| Merge | 19:09:17 ICT, pinned to head → `6cce1f4`; bot bump `fae9f56` **v1.7.0** (version files only) |
+| Deploy | Production `fae9f56` success 19:12:42 ICT (Vercel Production env; no Preview promoted) |
+| App on the OLD DB | bundle: production ref 1, staging 0, v1.7.0, new code present; LINE route 307, notify 401; QA stranger: `/profile/transfers` (inbox RPC 200, empty state), `/profile/pets`, `/p/175` load, 0 Supabase errors (19:14 ICT) |
+| Precheck again 19:15:07 ICT | still `before`, 0 rows, no duplicates |
+| **Migration** | `20261030121715 reservation_transfer_pipeline` applied **19:17:15 ICT** (12:17:15 UTC) via `apply_migration`; stored statement sha256 = `00b7cd438e40b3106eebb1e24e0d8a74fec48ccb56b043283424e48dca4bf0f8` (= the file) |
+| Postcheck (catalog) | `state: after`; one trigger; md5 of 5 changed bodies = staging; policy set as designed; both unique indexes; not-self check NOT VALID; RLS on; `pets.allergies` grants unchanged |
+| RPC grants (read from the catalog) | write RPCs + 4 helpers: `authenticated`, `service_role`, owner only — anon/PUBLIC refused (checked over HTTP: 401). `get_my_pending_transfers` after drop/recreate: PUBLIC, anon, authenticated, service_role — same ACL as before the migration; the body returns only `to_user_id = auth.uid()` rows, anon call → 200 with 0 rows (checked) |
+| QA denials (create nothing) 19:17:54–56 ICT | 15/15 passed: confirmed-reservation insert 403, reserve for someone else 403, non-owner transfer-to-self 403, owner self-transfer 403, pre-accepted transfer 403, direct PATCH on both tables → 0 rows, both RPCs on a non-existent id → P0002 (HTTP 500 from PostgREST), anon RPCs 401, helpers anon 401, inbox signed-in 200/0 rows |
+| Privacy (anon HTTP) | `profiles.email`, `profiles.phone`, `pets.allergies`, `pets.health_notes` → 401; public columns → 200 |
+| Pages after the migration (19:18 ICT) | same QA pages load, inbox RPC 200, 0 Supabase errors |
+| Data | 0 reservations / 0 transfers after the checks (nothing created); QA accounts role user, 0 sessions; admins 1 |
+| Logs 11:50–12:20 UTC | edge 187 (real use from 12:05), auth 13, postgres 18. All ≥400/ERROR lines (12:17:54–12:17:56) = the QA denial probes above + anon privacy probes; plus the migration statement log at 12:17:15. App errors 0, no deadlocks |
+
+**Not tested on production:** the happy path (reserve → confirm → transfer → accept/decline) and farm-role UI — production has no QA farm and real rows were not to be created; those rely on staging (E2E 58/58 on the real Preview, API 53/53, concurrency). No real transfer was performed on production.
+Recovery if needed: `supabase/emergency/reservation_transfer_freeze.sql` → fix forward → unfreeze (never the staging-only rollback, never an app rollback below v1.7.0).
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -240,7 +261,9 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 - Preview → staging: done (v1.6.0). Older branches without the guard now also build with the staging Preview vars.
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
 - Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
-- Reservation/transfer write holes on production (see the staging section above) — fixed by `20261030120000`, not applied.
+- Reservation/transfer write holes: **closed on production 2026-10-30 12:17 UTC** (`20261030121715`). No rows existed at that time; that alone does not prove they were never used (not investigated).
+- **Next privacy task:** pets policy "Public can view available pets" makes any `พร้อมย้ายบ้าน` pet readable by anyone even with `is_public = false` (0 such pets on production now; app shows a notice to owners). Decide whether sale status should override `is_public`.
+- Small follow-ups: `get_my_pending_transfers` is executable by anon (returns 0 rows) — could be limited to `authenticated`; RPC "not found" errors (P0002) surface as HTTP 500; remove PGRST202 fallbacks after a stable week.
 - Other DB items: `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
 
@@ -253,6 +276,7 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 11:50 UTC continuous, app errors 0 (all errors = QA tests).
-3. Reservation → transfer PR: owner decisions (list above), then production plan in the PR (app first, then migration).
-4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 12:20 UTC continuous, app errors 0 (all errors = QA tests).
+3. Reservation → transfer: live (v1.7.0 + `20261030121715`). Watch logs; production happy path untested (staging only).
+4. Next privacy task: `is_public` vs `พร้อมย้ายบ้าน` visibility.
+5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
