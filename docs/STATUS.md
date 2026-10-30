@@ -219,7 +219,10 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 | PR wording | "no rows now ≠ never exploited" | updated |
 | Precheck | md5 of all changed bodies; STOP for half-applied state and for data that breaks the new unique indexes; WARN with counts for existing rows the new rules treat differently; never edit real rows to pass | staging before-state + injected synthetic duplicates → STOP/WARN as designed; forced apply aborted as one transaction (state stayed `before`); clean → `after`, all ok except a seed drift WARN (staging reservation 1) |
 | Migration checksum | sha256 `00b7cd438e40b3106eebb1e24e0d8a74fec48ccb56b043283424e48dca4bf0f8` (applied on staging 11:25:13 UTC) | |
-| Tests | API checks 53/53; Docker stub 13+37+11+13 pass, concurrency script ok; E2E local preview-mode build 58/58 | Preview run: see PR |
+| Tests | API checks 53/53; Docker stub 13+37+11+13 pass, concurrency script ok; E2E local preview-mode build 58/58 | |
+| Real Preview `whiskora-mf5tzetgl` (`d311459`; `web/` = `0f01d48`), protection kept, 18:37–18:44 ICT | E2E **58/58**; `preview_qa` 5/5 (bundle staging-only, LINE/notify off, profile save/restore on staging, 22 Supabase requests all staging); repo scripts after it: API 53/53, concurrency timed 6/6 + stress 45/0 | |
+| Production read-only precheck (new file), 18:47 ICT | `state: before`, all 14 checks ok; 0 reservations / 0 transfers / 5 pets ติดจอง | |
+| Production logs 10:51–11:50 UTC | log API returned HTTP 500 three times at ~11:46, then answered: edge 116 (real use 11:20–11:26), auth 2, postgres 2 checkpoints; 0 errors; 0 from Preview | |
 
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
@@ -250,6 +253,6 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 10:51 UTC continuous, app errors 0 (all errors = QA tests).
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 11:50 UTC continuous, app errors 0 (all errors = QA tests).
 3. Reservation → transfer PR: owner decisions (list above), then production plan in the PR (app first, then migration).
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
