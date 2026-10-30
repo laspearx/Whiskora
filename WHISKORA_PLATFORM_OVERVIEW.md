@@ -123,6 +123,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
+- Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
@@ -151,6 +152,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Branch `chore/preview-staging-env` (not merged): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`. Vercel Preview vars pending (owner).
 - v1.5.1 (PR #9): profile save no longer 409s for users without a username (blank → null, duplicates get a clear message); `/admin/verifications` loads (applicant from `admin_get_users`, no FK embed). Staging E2E 50/50; production QA passed.
 - Production browser QA with synthetic accounts: privacy/permission cases pass; found 2 pre-existing bugs (profile save 409 when username empty; admin verifications 400 — no FK for `profiles!user_id`). Fix on branch `fix/profile-username-admin-verifications`, staging-tested, not deployed. Preview→staging plan drafted (`docs/PREVIEW_STAGING_PLAN.md`).
 - PRODUCTION: privacy migration `20261029100000_private_columns.sql` applied alone (recorded as `20261030034348 private_columns`); precheck before/after ok, postcheck 17/17, anon HTTP private columns 401. Synthetic QA account created for postcheck (id in `docs/STATUS.md`).
