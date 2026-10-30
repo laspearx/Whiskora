@@ -63,7 +63,10 @@ shows as before; `/admin/users` lists users. (Admin account — see the limit ab
 - 03:44:06 → 03:50:13 UTC (latest ingested at 03:53 check; covers the owner re-test): edge 57 requests, all 2xx (incl.
   `rpc/get_my_profile`, `rpc/get_pet_health` ×4, `rpc/admin_get_users`, `rpc/admin_get_stats`, `GET profiles` ×2, `PATCH pets` ×2 → 204);
   postgres 4 lines = the postcheck itself (intended, rolled back) + checkpoint. No `PATCH profiles` request appears in this window.
-- **App permission errors: 0 so far. 24 h watch NOT complete** — checked only up to 03:50:13 UTC; continue until ≥ 2026-10-31 03:44 UTC
+- 03:50:14 → 05:40 UTC (latest ingested 05:36:25): edge 277 requests, 11 ≥ 400; postgres 4 `permission denied`. **All 15 are QA
+  tests** (03:59:15 the 409 bug, 03:59:47–48 intended negatives, 03:59:54 the verifications 400 bug, 04:01:12 and 05:35:51 / 05:36:24
+  intended admin-RPC denials).
+- **App permission errors: 0 so far. 24 h watch NOT complete** — checked continuously 03:43:48 → 05:36:25 UTC; continue until ≥ 2026-10-31 03:44 UTC
   (query `edge_logs` status ≥ 400 and `postgres_logs` `42501`/`permission denied`, excluding the probes listed above).
 
 ## 2026-10-30 — production browser QA with synthetic accounts (owner-approved; Thai time, ICT)
@@ -100,6 +103,25 @@ verifications 200 with applicant + farm shown; E2E 42 passed / 8 skipped (reserv
 | QA admin account (`whiskora-qa-admin-20261030@example.com`, "Whiskora QA Admin (temp)") | `6417e364-bfc4-4ec6-b112-0f227cc1da8a` | admin 10:57–11:01 ICT, now **user**, 0 sessions; password only in `~/.whiskora/prod_qa_admin_password` |
 | QA pet "QA ทดสอบระบบ Whiskora 20261030 (ไม่ใช่สัตว์จริง)" | 175 | `is_public = true` (app default), allergies/traits synthetic, visible at `/p/175` |
 
+## 2026-10-30 — hotfix PR #9 deployed (v1.5.1)
+| | |
+| --- | --- |
+| PR | #9 `fix/profile-username-admin-verifications`, head `3386865` (merged pinned to that SHA, 05:31:14 UTC); only `web/app/profile/edit/page.tsx` + `web/app/admin/verifications/page.tsx`, no migration |
+| Live | **v1.5.1**, deploy `3f37410` (bot version bump; differs from `3386865` only in `web/lib/version.ts`, `web/package.json`), success; bundle: production ref only, new code present in both page chunks |
+| Fix | blank / whitespace-only username → `null`, other usernames sent unchanged (no trim); duplicate (23505) → clear message. Verifications: no `profiles!user_id` embed; applicant from `admin_get_users` |
+| Staging (before PR) | 2 no-username accounts (empty field / spaces only): save→change→reload→restore all PATCH 204, username stays NULL; existing `qa_v` unchanged; duplicate `qa_o` → 409 + message, nothing changed; verifications 0 requests → 200 + empty state; 2 synthetic requests → each card shows its applicant; ordinary user blocked. E2E **50/50, 0 skipped** (P4/P5 reset so the reservation chain ran; the 8 earlier skips were that chain, skipped because `E2E_LISTED_PET_ID*` was unset). Staging data restored afterwards |
+| Preview | built with production env (plan not applied); code review: no automatic writes/notifications; production edge logs 05:29–05:31 UTC: 0 write requests |
+
+Post-deploy production QA (ICT):
+| Case | Result |
+| --- | --- |
+| QA stranger (ordinary user, no username): save → change → reload → restore | passed 12:35:50 — `PATCH profiles` 204 ×3 (12:35:39 / :43 / :47), value persisted then restored, username stays NULL. Note: the form writes empty strings, so the stranger's phone/address went NULL → `''` (app behaviour for every save, not new) |
+| Ordinary user → /admin/verifications, admin RPC | passed 12:35:51 — redirected to `/th`, `farm_verifications` 0 rows, `admin_get_users` 400/P0001 |
+| QA admin (temporarily admin 12:36:01–12:36:16 via SQL) /admin/users, /admin/verifications | passed 12:36:06–08 — `admin_get_users` 200 (count only), `farm_verifications` **200**, empty state (0 requests on production), no 4xx; no clicks |
+| QA admin demoted, new login | passed 12:36:25 — redirected, `admin_get_users` 400/P0001; sessions revoked (own token, global) |
+Both QA accounts: role user, 0 sessions, 0 live refresh tokens; admins on production: 1 (owner). Owner account: no new re-test needed;
+owner's earlier results stay as reported (admin account; no `PATCH profiles` from it seen in logs).
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -128,7 +150,7 @@ verifications 200 with applicant + farm shown; E2E 42 passed / 8 skipped (reserv
 - Full 90-day referer/redirect log scan; apex domain repair; reservation migration `20261029200000` staging pass.
 
 ## Next start
-1. Owner's own profile-save re-test with time → confirm a `PATCH /rest/v1/profiles` 2xx at that time in edge logs → close the privacy rollout round.
+1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
 2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
-3. Review `docs/PREVIEW_STAGING_PLAN.md`; review/approve fix branch `fix/profile-username-admin-verifications` for deploy.
+3. Review `docs/PREVIEW_STAGING_PLAN.md` (hotfix #9 is deployed as v1.5.1).
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

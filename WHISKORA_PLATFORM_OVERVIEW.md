@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (v1.5.0 live; privacy migration applied on production 03:43 UTC — see `docs/STATUS.md`)
+**Last updated:** 2026-10-30 (v1.5.1 live; privacy migration applied on production 03:43 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -125,7 +125,6 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
 
 ## Known gaps / not-yet-built (candidates for future planning)
-- Profile save fails (409) for users with an empty username, and `/admin/verifications` list errors (400) — fixed on branch `fix/profile-username-admin-verifications`, awaiting deploy approval.
 
 - Reservation → transfer works end to end without the reservation migration (app sends `reservation_id`; existing trigger sets `converted`), but after the buyer accepts the pet keeps status `ติดจอง` — no "sold/transferred" status update yet. Atomic confirm RPC (`20261029200000`) not applied anywhere.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
@@ -152,6 +151,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- v1.5.1 (PR #9): profile save no longer 409s for users without a username (blank → null, duplicates get a clear message); `/admin/verifications` loads (applicant from `admin_get_users`, no FK embed). Staging E2E 50/50; production QA passed.
 - Production browser QA with synthetic accounts: privacy/permission cases pass; found 2 pre-existing bugs (profile save 409 when username empty; admin verifications 400 — no FK for `profiles!user_id`). Fix on branch `fix/profile-username-admin-verifications`, staging-tested, not deployed. Preview→staging plan drafted (`docs/PREVIEW_STAGING_PLAN.md`).
 - PRODUCTION: privacy migration `20261029100000_private_columns.sql` applied alone (recorded as `20261030034348 private_columns`); precheck before/after ok, postcheck 17/17, anon HTTP private columns 401. Synthetic QA account created for postcheck (id in `docs/STATUS.md`).
 - Released v1.5.0 (`74391b7`) to production; DB unchanged. Auth Site URL was a third-party host and Redirect URLs had `*.vercel.app/**` — both fixed by the owner (closed 19:49:59 UTC); session-revocation decision pending (`docs/STATUS.md`).
