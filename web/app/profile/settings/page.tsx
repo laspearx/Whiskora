@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getMyProfile } from "@/lib/profile";
 import PageLoader from "@/app/components/PageLoader";
-import { getExistingSubscription, getNotifPermission, getOrCreateSubscription, registerSW } from "@/lib/push-client";
+import { getExistingSubscription, getNotifPermission, getOrCreateSubscription, registerSW, vapidPublicKey } from "@/lib/push-client";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -73,7 +73,7 @@ export default function SettingsPage() {
         return;
       }
       if (getNotifPermission() === "unsupported") { setPushNote("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน"); return; }
-      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) { setPushNote("ระบบแจ้งเตือนยังไม่ได้ตั้งค่า กรุณาลองใหม่ภายหลัง"); return; }
+      if (!vapidPublicKey) { setPushNote("ระบบแจ้งเตือนยังไม่ได้ตั้งค่า กรุณาลองใหม่ภายหลัง"); return; }
       const perm = await Notification.requestPermission();
       if (perm !== "granted") { setPushNote("ต้องอนุญาตการแจ้งเตือนในเบราว์เซอร์ก่อน"); return; }
       await registerSW();

@@ -17,12 +17,12 @@ promotion is changed by anything here.
   fails the build if `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` are missing, the URL is not staging `wpxcukrwmegwzfccbbga`,
   the key is a production key (compared by sha256) or a JWT of another project, `NEXT_PUBLIC_SITE_URL` is
   `whiskora.pet` / `www.whiskora.pet` / `whiskora.vercel.app`, or any of `SUPABASE_SERVICE_ROLE_KEY`, `LINE_CHANNEL_ID`,
-  `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `RESEND_API_KEY`, `RESEND_FROM`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
-  `VAPID_PRIVATE_KEY` is set. Every environment: fails if the public key is a secret/service-role key.
+  `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `RESEND_API_KEY`, `RESEND_FROM`, `VAPID_PRIVATE_KEY` is set. Every environment: fails if the public key is a secret/service-role key.
   Errors list variable names only, never values. Production/local builds: only the secret-key check.
 - `WHISKORA_DEPLOY_ENV` is inlined at build; on Preview: `/api/auth/line` (GET and callback) → redirect to the
   **preview's own** `/th/login?auth_error=LINE_DISABLED_ON_PREVIEW`; `POST /api/auth/line` and `/api/notify/send` → 503;
-  `lib/notify.ts` sends nothing. Push subscribe shows "not configured" (no VAPID key).
+  `lib/notify.ts` sends nothing. Push subscribe shows "not configured": `lib/push-client.ts` blanks the VAPID public key on
+  Preview (Vercel does not allow removing Preview from that public-prefixed variable, so it is allowed through the guard).
 - LINE callback trusts only `https://www.whiskora.pet` / `https://whiskora.pet` from the `line_origin` cookie
   (`whiskora.vercel.app` is someone else's site and was trusted before). Anything else → `www.whiskora.pet` as before.
 - Auth callback uses `NEXT_PUBLIC_SITE_URL || request origin`; with SITE_URL unset on Preview it stays on the preview host.
@@ -46,7 +46,8 @@ Do not paste values in chat. Production rows stay exactly as they are.
 | `SUPABASE_SERVICE_ROLE_KEY` | **not set** |
 | `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` | **not set** |
 | `RESEND_API_KEY`, `RESEND_FROM` | **not set** |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | **not set** |
+| `VAPID_PRIVATE_KEY` | **not set** |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | may stay (Vercel won't split it); ignored on Preview by code |
 | `INTERNAL_API_SECRET` | not set (the route is 503 on Preview anyway) |
 
 3. **Deployment Protection** is on for Preview (anonymous request → 302 to Vercel SSO). Keep it. For the automated check:

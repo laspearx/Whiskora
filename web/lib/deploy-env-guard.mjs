@@ -12,6 +12,7 @@ const PRODUCTION_KEY_SHA256 = [
 ]
 const PRODUCTION_HOSTS = ['whiskora.pet', 'www.whiskora.pet', 'whiskora.vercel.app']
 // ห้ามมีบน Preview: บริการเหล่านี้ยังไม่มีค่าทดสอบ จึงปิดไว้ (โค้ดฝั่ง runtime ก็ปิดซ้ำอีกชั้น)
+// NEXT_PUBLIC_VAPID_PUBLIC_KEY ไม่อยู่ในรายการ: เป็น public key และ Vercel ไม่ให้แยก scope ได้ — ปิดใน lib/push-client.ts แทน
 const PREVIEW_FORBIDDEN = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'LINE_CHANNEL_ID',
@@ -19,7 +20,6 @@ const PREVIEW_FORBIDDEN = [
   'LINE_CHANNEL_ACCESS_TOKEN',
   'RESEND_API_KEY',
   'RESEND_FROM',
-  'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
   'VAPID_PRIVATE_KEY',
 ]
 

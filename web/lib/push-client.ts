@@ -1,3 +1,8 @@
+import { isPreviewDeploy } from '@/lib/deploy-env';
+
+// Preview ใช้ staging แต่ Vercel บังคับให้ public key นี้ติด Preview มาด้วย → ปิดการสมัคร push บน Preview ที่นี่
+export const vapidPublicKey = isPreviewDeploy ? '' : (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '');
+
 export function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -18,7 +23,7 @@ export async function registerSW(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export async function getOrCreateSubscription(): Promise<PushSubscription | null> {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const publicKey = vapidPublicKey;
   if (!publicKey) return null;
   try {
     const reg = await navigator.serviceWorker.ready;
