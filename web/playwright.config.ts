@@ -12,7 +12,9 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   retries: 0,
   reporter: [['list']],
-  use: { baseURL, trace: 'retain-on-failure' },
+  // E2E_STORAGE_STATE: optional Playwright storage file holding the Vercel Deployment Protection bypass cookie
+  // for a protected Preview (keeps the bypass secret off every request, incl. Supabase)
+  use: { baseURL, trace: 'retain-on-failure', storageState: process.env.E2E_STORAGE_STATE || undefined },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },

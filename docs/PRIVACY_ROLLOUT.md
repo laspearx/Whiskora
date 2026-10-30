@@ -81,8 +81,8 @@ reservation fallback UI) — review the PR as a whole.
 
 ## After a stable week (separate changes)
 - Remove the PGRST202 fallbacks in `lib/profile.ts` and the reservations page.
-- `20261029200000_reservation_transfer_pipeline.sql`: own staging pass first (`reservation_cases.sql`, concurrency
-  script, reservation E2E), then its own production approval.
+- Reservation migration: replaced by `20261030120000_reservation_transfer_pipeline.sql` (staging pass 2026-10-30, own
+  production approval; see `docs/STATUS.md`).
 
 ## Staging tooling
 - Schema copy: `supabase/staging/dump_restore.sh` (+ `platform_objects.sql`); synthetic accounts:

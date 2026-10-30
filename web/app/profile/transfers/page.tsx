@@ -47,15 +47,22 @@ export default function MyTransfersPage() {
     setBusyId(row.transfer_id);
     setError("");
     try {
-      // อัปเดตเฉพาะแถวที่ยัง pending — กดซ้ำหรือถูกยกเลิกไปก่อนจะไม่เปลี่ยนสถานะทับ
-      // การเปลี่ยนเจ้าของ (และการเปลี่ยนการจองเป็น converted) ทำโดย trigger ใน transaction เดียวกัน
-      // (ไม่ใช้ .select() ต่อท้าย เพราะผู้รับอ่านคำขอผ่าน RPC get_my_pending_transfers — อาจไม่มีสิทธิ์ select ตรง)
-      const { error: updErr } = await supabase
-        .from("pet_ownership_transfers")
-        .update({ status })
-        .eq("id", row.transfer_id)
-        .eq("status", "pending");
-      if (updErr) throw updErr;
+      // ทางหลัก: RPC ตรวจว่าเป็นผู้รับจริง ล็อกแถว และกดซ้ำได้ไม่เกิดผลซ้ำ
+      // (supabase/migrations/20261030120000_reservation_transfer_pipeline.sql)
+      // การเปลี่ยนเจ้าของ / การจองเป็น converted / สถานะสัตว์ ทำโดย trigger ใน transaction เดียวกัน
+      const { error: rpcErr } = await supabase.rpc("respond_pet_transfer", {
+        p_transfer_id: row.transfer_id, p_action: status === "accepted" ? "accept" : "decline",
+      });
+      if (rpcErr && rpcErr.code !== "PGRST202") throw rpcErr;
+      if (rpcErr?.code === "PGRST202") {
+        // ยังไม่ได้ติดตั้ง migration — วิธีเดิม: อัปเดตเฉพาะแถวที่ยัง pending
+        const { error: updErr } = await supabase
+          .from("pet_ownership_transfers")
+          .update({ status })
+          .eq("id", row.transfer_id)
+          .eq("status", "pending");
+        if (updErr) throw updErr;
+      }
       if (status === "accepted") {
         router.push(`/pets/${row.pet_id}`);
         return;

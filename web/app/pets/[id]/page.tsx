@@ -392,11 +392,16 @@ export default function PetDetailPage() {
     if (!pendingTransfer) return;
     setTransferring(true);
     try {
-      const { error } = await supabase
-        .from('pet_ownership_transfers')
-        .update({ status: 'cancelled' })
-        .eq('id', pendingTransfer.id);
-      if (error) throw error;
+      // ทางหลัก: RPC (ผู้ส่ง/เจ้าของเท่านั้น); ยังไม่ได้ติดตั้ง migration → อัปเดตตรงแบบเดิม
+      const { error: rpcErr } = await supabase.rpc('respond_pet_transfer', { p_transfer_id: pendingTransfer.id, p_action: 'cancel' });
+      if (rpcErr && rpcErr.code !== 'PGRST202') throw rpcErr;
+      if (rpcErr?.code === 'PGRST202') {
+        const { error } = await supabase
+          .from('pet_ownership_transfers')
+          .update({ status: 'cancelled' })
+          .eq('id', pendingTransfer.id);
+        if (error) throw error;
+      }
       setPendingTransfer(null);
       setShowTransferModal(false);
       setTransferStep('input');
