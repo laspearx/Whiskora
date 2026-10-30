@@ -66,6 +66,40 @@ shows as before; `/admin/users` lists users. (Admin account — see the limit ab
 - **App permission errors: 0 so far. 24 h watch NOT complete** — checked only up to 03:50:13 UTC; continue until ≥ 2026-10-31 03:44 UTC
   (query `edge_logs` status ≥ 400 and `postgres_logs` `42501`/`permission denied`, excluding the probes listed above).
 
+## 2026-10-30 — production browser QA with synthetic accounts (owner-approved; Thai time, ICT)
+Run 10:58–11:01 ICT, Playwright (desktop Chromium) against `https://www.whiskora.pet`. No screenshots/traces kept; only
+statuses, counts and booleans recorded. No email/LINE/push sent (no vaccines/reservations created; QA accounts have no
+push subscription; `/api/notify` has no caller). No system settings changed.
+
+| # | Case (account) | Result | Evidence |
+| --- | --- | --- | --- |
+| S1a | Open /profile (stranger, user) | passed 10:59:12 | `rpc/get_my_profile` 200, no "Loading" |
+| S1b | Profile edit: save unchanged → change → reload → restore (stranger) | **failed** 10:59:15 | first save = `PATCH /rest/v1/profiles` **409** (only one in 24 h of edge logs besides the role probe). Cause: form sends `username: ''`; `profiles.username` is unique and one row already has `''` → every user with NULL username (96) cannot save. Nothing was written (stranger row unchanged). Predates v1.5.0; not caused by the migration |
+| S2a | Create QA pet with synthetic health (stranger as ordinary owner) | passed 10:59:37 | `POST pets` 201, pet id **175** |
+| S2b | Read / edit / save / reload / restore health of own QA pet | passed 10:59:41 | prefilled; `PATCH pets` 204 → persisted; `PATCH pets` 204 → restored; `get_pet_health` 200 |
+| S2c | Pet ID QR → public page as visitor | passed 10:59:45 | QR → `/p/175`, no login; visitor RPC health has no allergy and page shows none (consistent); no email / phone on page |
+| S3a–b | /admin/users, /admin/verifications as ordinary user | passed 10:59:46–47 | redirected to `/th`; `admin_get_users` never called |
+| S3c | API as ordinary user | passed 10:59:48 | own role → admin: 403/42501; `admin_get_users` / `admin_get_stats`: 400/P0001 Access denied; other user's email, phone/address, Jessica allergies: 403/42501; Jessica `get_pet_health`: 200, 0 rows; own `get_my_profile`: 1 row |
+| S4a | /admin/users (QA admin, temporary) | passed 10:59:53 | `admin_get_users` 200, row count only; no clicks |
+| S4b | /admin/verifications (QA admin) | **failed** 10:59:54 | `GET farm_verifications` **400**: page embeds `profiles!user_id` but there is no FK → list always empty (0 rows exist). Also hit at 10:31 ICT (before the migration) — predates it |
+| S5a | QA admin demoted to user (11:01:03), new login | passed 11:01:12 | redirected from /admin/users; `admin_get_users` 400/P0001 |
+| S5b–c | End QA sessions | done 11:01:12 | global logout with each QA account's own token (204); DB: 0 sessions, 0 live refresh tokens for both |
+
+Scope note: after S2 the stranger owns its own QA pet (id 175) — S2 results are the **ordinary-owner** case for that pet only;
+for Jessica and every other user's data the stranger remains **unrelated** (S3). Admin role count after the run: 1 admin (owner), unchanged.
+
+Fix prepared (not deployed): branch `fix/profile-username-admin-verifications` @ `0603963` (from `74391b7`):
+username `'' → null`; verifications take applicant name/email from `admin_get_users`. Staging, local build with staging env
+only (0 production refs in `.next`): old payload reproduces 409; fixed profile save/change/reload/restore all `PATCH` 204;
+verifications 200 with applicant + farm shown; E2E 42 passed / 8 skipped (reservation chain) / 0 failed. Staging data restored.
+
+### QA data on production (kept for re-checks; delete later only with owner approval)
+| Item | Id | State |
+| --- | --- | --- |
+| QA stranger account | `605f176a-dd3f-4cc7-b4c9-9d814a56f93a` | role user, 0 sessions; owns QA pet 175 |
+| QA admin account (`whiskora-qa-admin-20261030@example.com`, "Whiskora QA Admin (temp)") | `6417e364-bfc4-4ec6-b112-0f227cc1da8a` | admin 10:57–11:01 ICT, now **user**, 0 sessions; password only in `~/.whiskora/prod_qa_admin_password` |
+| QA pet "QA ทดสอบระบบ Whiskora 20261030 (ไม่ใช่สัตว์จริง)" | 175 | `is_public = true` (app default), allergies/traits synthetic, visible at `/p/175` |
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -94,6 +128,7 @@ shows as before; `/admin/users` lists users. (Admin account — see the limit ab
 - Full 90-day referer/redirect log scan; apex domain repair; reservation migration `20261029200000` staging pass.
 
 ## Next start
-1. Owner's login results (email, Google, LINE) → if OK, confirm Redirect URLs again with the probe.
-2. Owner approval for the production privacy migration → follow `docs/PRIVACY_ROLLOUT.md` steps 4–7.
-3. Decide session revocation scope/method; move Preview to staging (Vercel Preview env + rebuild + bundle check).
+1. Owner's own profile-save re-test with time → confirm a `PATCH /rest/v1/profiles` 2xx at that time in edge logs → close the privacy rollout round.
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
+3. Review `docs/PREVIEW_STAGING_PLAN.md`; review/approve fix branch `fix/profile-username-admin-verifications` for deploy.
+4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
