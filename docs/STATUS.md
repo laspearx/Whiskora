@@ -141,6 +141,7 @@ management credentials). Runbook, values, rollback: `docs/PREVIEW_STAGING_PLAN.m
 | Logs for that window (08:28–08:32 UTC) | staging edge: 30 requests, 26 carry the preview host, 2 `PATCH /rest/v1/profiles`; production edge: **0 requests** |
 | Production after that (15:33 ICT, read-only) | latest Production deployment still `3f37410` (2026-10-30 05:34 UTC); `www.whiskora.pet`: v1.5.1, production ref 1, staging ref 0. Nothing promoted |
 | `web/.env.production` removed (owner confirmed Production has both Supabase vars); guard also checks Production builds | local: Production build without vars → **fails** (missing), with production vars → ok; guard cases 13/13 + 4 production cases pass. Takes effect for Production only when the branch is merged (not approved yet) |
+| Real Preview `941b1a1` (`whiskora-dei4hb903-…`, push build, no tracked env file) 15:37:05–15:37:37 ICT | **passed** — same 5 checks as above (staging ref only, LINE/notify off, login + profile save/refresh/restore on staging, 20 Supabase requests all staging). Production edge 08:32–08:39 UTC: 0 requests; Production still `3f37410` |
 | Production read-only after push (13:57 ICT) | passed — latest Production deployment still `3f37410` (v1.5.1); `www.whiskora.pet` bundle: production ref 1, staging ref 0. Nothing promoted |
 | Deployment Protection on Preview | on (anonymous → 302 Vercel SSO); kept. Automated check needs "Protection Bypass for Automation" saved by the owner to `~/.whiskora/vercel_bypass` |
 
