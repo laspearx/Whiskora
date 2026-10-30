@@ -128,15 +128,15 @@ test.describe('listed but not public', () => {
   test.skip(!has('E2E_PRIVATE_LISTED_PET_ID', 'E2E_OWNER_EMAIL', 'E2E_OWNER_PASSWORD', 'E2E_BUYER_EMAIL', 'E2E_BUYER_PASSWORD'), 'private listed pet not configured');
   const PET = env.E2E_PRIVATE_LISTED_PET_ID!;
 
-  test('buyer gets no reserve button; owner is told the page is public because of the status', async ({ page }) => {
+  test('others cannot open the page (not public wins over the sale status); owner sees why', async ({ page }) => {
     await signIn(page, env.E2E_BUYER_EMAIL!, env.E2E_BUYER_PASSWORD!, `/p/${PET}`);
-    await expect(page.getByText(/WSK-/).first()).toBeVisible();
+    await expect(page.getByText('ไม่พบข้อมูลสัตว์เลี้ยง')).toBeVisible();
     await expect(page.getByRole('button', { name: /จองสัตว์ตัวนี้/ })).toHaveCount(0);
-    await expect(page.getByText('ทำให้ทุกคนเปิดหน้านี้ได้')).toHaveCount(0);
     await page.context().clearCookies({ name: /^sb-/ });
     await page.evaluate(() => localStorage.clear());
     await signIn(page, env.E2E_OWNER_EMAIL!, env.E2E_OWNER_PASSWORD!, `/p/${PET}`);
-    await expect(page.getByText(/ทำให้ทุกคนเปิดหน้านี้ได้/)).toBeVisible();
+    await expect(page.getByText(/WSK-/).first()).toBeVisible();
+    await expect(page.getByText(/ตั้งไม่เป็นสาธารณะ: คนอื่นไม่เห็นสัตว์ตัวนี้/)).toBeVisible();
   });
 });
 

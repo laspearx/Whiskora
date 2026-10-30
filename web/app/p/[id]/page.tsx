@@ -708,7 +708,7 @@ export default function PublicPetProfilePage() {
                   <span className="status-pill" style={{ background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0' }}>● {statusLabel(pet.status)}</span>
                 )}
                 {sessionUserId === pet.user_id && pet.status === 'พร้อมย้ายบ้าน' && pet.is_public === false && (
-                  <span className="status-pill" style={{ background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>{t('availableMakesPublic')}</span>
+                  <span className="status-pill" style={{ background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>{t('privateListedNotice')}</span>
                 )}
                 {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
                   <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>

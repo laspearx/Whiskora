@@ -355,7 +355,7 @@
     "reserving": "Reserving...",
     "reserve": "📌 Reserve this pet",
     "signInToReserve": "Sign in to reserve",
-    "availableMakesPublic": "\"Ready for a new home\" makes this page visible to everyone, even though this pet is set to not public (it still cannot be reserved)",
+    "privateListedNotice": "Set to not public: others cannot see this pet even with \"Ready for a new home\" (not listed, cannot be reserved)",
     "contactFarm": "Contact farm",
     "contactOwner": "Contact owner",
     "viewFarm": "View farm profile",
