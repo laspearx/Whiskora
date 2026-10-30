@@ -106,10 +106,12 @@ test.describe('reservation → transfer', () => {
     const visitor = await browser.newContext();
     const v = await visitor.newPage();
     await v.goto(`/th/p/${PET}`);
+    await expect(v.getByText(/WSK-/).first()).toBeVisible();   // pet data loaded before checking what is absent
+    await expect(v.locator('.status-pill')).toHaveCount(0);      // status cleared (NULL), not ติดจอง / เปิดจอง
     await expect(v.locator('body')).not.toContainText('ติดจอง');
     await expect(v.getByRole('button', { name: /จองสัตว์ตัวนี้/ })).toHaveCount(0);
     await v.goto(`/th/farm/${FARM_ID}`);
-    await expect(v.locator('body')).toBeVisible();
+    await expect(v.locator('.fp-pet-card').first()).toBeVisible(); // farm list loaded (farm still has other pets)
     await expect(v.locator(`a[href$="/p/${PET}"]`)).toHaveCount(0);
     await visitor.close();
   });

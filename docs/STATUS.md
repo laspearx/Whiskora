@@ -168,6 +168,47 @@ Post-deploy checks (16:36 ICT):
 Limits: Vercel variable *values* were not read (no access) — presence/ref proven by the guard passing in the Production build and by the served bundle. LINE login was not completed (not followed). Push delivery not tested by design.
 **Preview → staging: closed.** Branch Previews now build against staging; production values are not given back to Preview (see rollback in `docs/PREVIEW_STAGING_PLAN.md`).
 
+## 2026-10-30 — Reservation → transfer on staging (branch `feat/reservation-transfer-staging`; ICT = UTC+7)
+Migration `20261030120000_reservation_transfer_pipeline.sql` (replaces the never-applied draft `20261029200000`), applied on
+**staging only** (10:17 UTC, re-applied 10:19 after a fix, rolled back 10:38, re-applied 10:43). Production untouched
+(read-only checks only). Details, role table and rollback: migration header + `supabase/rollback/…_down.sql`.
+
+Schema check (read-only, both projects): tables, constraints, indexes, policies, the single trigger
+`trg_sync_pet_owner_on_transfer_accept` and function bodies (md5) were identical on staging and production. The existing
+trigger already sets `converted`; the migration replaces that function's body (same trigger, no second one).
+
+Holes reproduced on staging **before** the migration (REST API, synthetic accounts; production had 0 reservations and
+0 transfers, so nothing to exploit there yet — still open on production):
+| Case | Before |
+| --- | --- |
+| staff inserts a transfer of a farm pet to self, then accepts it | 201, 200 → staff became the owner |
+| receiver changes `pet_id` of a transfer to another (private) pet and accepts | 200 → receiver owns the other pet |
+| initiator marks a transfer `accepted` (receiver never agreed) | 200 → ownership moved |
+| buyer inserts a reservation already `confirmed`, on a private unlisted pet | 201 |
+| viewer cancels / staff confirms a reservation directly | 200 / 200 |
+
+Tests after the migration (staging, synthetic only):
+| Suite | Result |
+| --- | --- |
+| `supabase/tests/reservation_api_checks.cjs` (REST, all roles, double clicks, parallel requests, health before/after) | **51/51 passed** (twice) |
+| Docker stub (`run_local.sh`): privacy before/after + reservation + transfer | 13 + 37 + 11 + 13 passed, 0 failed; `run_concurrency.sh`: one confirm wins, double confirm/accept → one result |
+| E2E, local preview-mode build on staging | 56/56 passed, 0 skipped |
+| E2E on the real Preview `whiskora-4661aufyr` (`f4bfb86`, protection kept, bypass cookie), 17:30–17:37 ICT | 56/56 passed |
+| Same, after strengthening the "after transfer" check (waits for the pet data, asserts no status pill), 17:43–17:49 ICT | **56/56 passed** |
+| `preview_qa` on that Preview (17:37 ICT) | bundle staging-only, LINE/notify off, profile save/restore on staging, 22 Supabase requests all staging |
+| Production edge logs 09:39–10:51 UTC | 0 requests (none from the Preview) |
+| Rollback on staging (10:38 UTC) | functions / policies / triggers hashes = pre-migration baseline; trigger body md5 = production's; privacy column + table grants unchanged before, during and after |
+| App on the rolled-back DB (Preview, reservation E2E) | 13/14 — fallback path works (deploy order app → migration is safe); the 1 failure is the expected one: pet stays `ติดจอง` without the migration |
+| Production read-only precheck `reservation_precheck.sql` | `state: before`, all ok; counts 0 reservations / 0 transfers / 5 pets `ติดจอง` (set by owners, not touched) |
+
+Decisions for the owner (current choice in brackets):
+1. Pet status after an accepted transfer: sale statuses → NULL "not specified", other statuses kept [NULL].
+2. Other open reservations of the pet on accept [cancelled].
+3. Buyer self-cancel: no UI today; direct UPDATE is now closed for buyers too [not possible — add an RPC if wanted].
+4. Co-owners and admins: had write access through `can_manage_pet_visibility`; now read-only for reservations/transfers [read-only].
+5. Manager: confirm/cancel yes, send transfer no (matches the UI) [as is].
+6. `is_public` after transfer [kept as is].
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -184,17 +225,19 @@ Limits: Vercel variable *values* were not read (no access) — presence/ref prov
 - Preview → staging: done (v1.6.0). Older branches without the guard now also build with the staging Preview vars.
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
 - Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
-- Other DB items: `pet_reservations` UPDATE policy too broad, `admin_get_users` no-arg overload, default privileges
+- Reservation/transfer write holes on production (see the staging section above) — fixed by `20261030120000`, not applied.
+- Other DB items: `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
 
 ## Backlog (separate tasks, not in the privacy rollout)
 - Pedigree: direct SELECT of pedigree columns stays allowed by the privacy migration — compare with pedigree privacy tiers.
-- Pet keeps `ติดจอง` after the buyer accepts the transfer.
 - PKCE flow + `emailRedirectTo`; drop `whiskora.vercel.app` from LINE callback; remove `NEXT_PUBLIC_*` from `web/.env.production`.
-- Full 90-day referer/redirect log scan; apex domain repair; reservation migration `20261029200000` staging pass.
+- Full 90-day referer/redirect log scan; apex domain repair.
+- Separate from the reservation PR: default privileges (anon/authenticated have ALL on new tables; table-level REVOKE on
+  `pet_reservations` / `pet_ownership_transfers`), DNS / apex, PKCE, revoking real user sessions.
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT).
-3. (Preview → staging closed in v1.6.0.)
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 10:51 UTC continuous, app errors 0 (all errors = QA tests).
+3. Reservation → transfer PR: owner decisions (list above), then production plan in the PR (app first, then migration).
 4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
