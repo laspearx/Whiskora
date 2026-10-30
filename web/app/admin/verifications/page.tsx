@@ -84,17 +84,21 @@ export default function AdminVerificationsPage() {
       .from('farm_verifications')
       .select(`
         *,
-        farm:farms!farm_id(farm_name, image_url),
-        profile:profiles!user_id(full_name, username)
+        farm:farms!farm_id(farm_name, image_url)
       `)
       .order('submitted_at', { ascending: false });
     // เดิม select farms.name / profiles.display_name ซึ่งไม่มีอยู่จริง → query error และรายการว่างเสมอ
-    // อีเมลผู้ยื่นมาจาก RPC admin_get_users (ตรวจสิทธิ์ admin ฝั่ง DB) แทนการอ่านคอลัมน์ email ตรง
+    // ชื่อ/อีเมลผู้ยื่นมาจาก RPC admin_get_users (ตรวจสิทธิ์ admin ฝั่ง DB) — farm_verifications.user_id
+    // ไม่มี FK ไป profiles จึง embed profiles!user_id ไม่ได้ (PostgREST ตอบ 400)
     if (error) console.error('fetch verifications failed:', error);
     if (!error && data) {
       const { data: users } = await supabase.rpc('admin_get_users', { p_search: null, p_limit: 5000, p_offset: 0 }); // ต้องส่ง args: มี 2 overload
-      const emailById = new Map<string, string>(((users || []) as { id: string; email: string }[]).map(u => [u.id, u.email]));
-      setVerifications((data as unknown as Verification[]).map(v => ({ ...v, profile: { ...v.profile, email: emailById.get(v.user_id) ?? null } })));
+      type U = { id: string; full_name: string | null; username: string | null; email: string | null };
+      const userById = new Map<string, U>(((users || []) as U[]).map(u => [u.id, u]));
+      setVerifications((data as unknown as Verification[]).map(v => {
+        const u = userById.get(v.user_id);
+        return { ...v, profile: { full_name: u?.full_name ?? null, username: u?.username ?? null, email: u?.email ?? null } };
+      }));
     }
     setIsFetching(false);
   };
