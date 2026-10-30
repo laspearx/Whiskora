@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { isPreviewDeploy } from '@/lib/deploy-env'
 
 function makeAdmin() {
   return createClient(
@@ -13,6 +14,7 @@ function makeAdmin() {
 
 // POST — ใช้สำหรับ link mode เท่านั้น: ตรวจ session แล้วตั้ง cookie ที่ verified
 export async function POST(request: Request) {
+  if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
   const authHeader = request.headers.get('Authorization') || ''
   const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!accessToken) return Response.json({ error: 'unauthorized' }, { status: 401 })
@@ -43,6 +45,10 @@ export async function POST(request: Request) {
 // GET — redirect ไปยัง LINE OAuth
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
+  // Preview ใช้ staging และไม่มี LINE channel สำหรับทดสอบ → ปิด LINE login และอยู่บนโดเมน Preview เดิม
+  if (isPreviewDeploy) {
+    return NextResponse.redirect(`${reqOrigin}/th/login?auth_error=${encodeURIComponent('LINE_DISABLED_ON_PREVIEW')}`)
+  }
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || reqOrigin
 
   // If user is on a deployment-specific URL, bounce to the stable branch URL first

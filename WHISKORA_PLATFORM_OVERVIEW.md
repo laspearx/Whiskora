@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (privacy migration verified on staging)
+**Last updated:** 2026-10-30 (v1.5.1 live; privacy migration applied on production 03:43 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -123,6 +123,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
+- Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
@@ -131,10 +132,10 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
 - Stray `#FDF6F8` background color still present in 13 files (see above).
-- **Privacy (DB) — STILL OPEN in production** (read-only inventory 2026-10-30 via Supabase MCP; production `vhudldcizmbpujedojei`; staging `whiskora-staging` = `wpxcukrwmegwzfccbbga`, schema-only copy + synthetic QA data, see `supabase/staging/`):
+- **Privacy (DB) — read leak CLOSED on production 2026-10-30 03:43 UTC** (`private_columns`, migration `20261030034348`; 24 h log watch in progress, see `docs/STATUS.md`). History: (read-only inventory 2026-10-30 via Supabase MCP; production `vhudldcizmbpujedojei`; staging `whiskora-staging` = `wpxcukrwmegwzfccbbga`, schema-only copy + synthetic QA data, see `supabase/staging/`):
   - anon + authenticated have table-level ALL on `profiles`/`pets`; `profiles` RLS SELECT `using (true)` → email/phone/address readable by anyone; `pets` health columns readable on public/available pets.
   - **Role self-escalation — HOTFIXED on production 2026-10-30**: trigger `trg_profiles_protect_role` (BEFORE INSERT OR UPDATE) rejects any role set/change by `anon`/`authenticated` (42501); SECURITY DEFINER code, service_role and the dashboard can still change roles. Grants are unchanged (column privilege still exists, the trigger enforces). Role counts unchanged (1 admin, 104 user) — owner should confirm the admin account is theirs.
-  - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). **Applied on staging only** (2026-10-30): API checks 107/107 (`supabase/tests/staging_api_checks.py`), E2E 50/50 desktop+mobile, 0 skipped — and the same build passes E2E 50/50 on the pre-migration (production-equal) schema. Gate/verify SQL: `supabase/tests/privacy_precheck.sql` / `privacy_postcheck.sql`. **Not applied on production.**
+  - Fix: `supabase/migrations/20261029100000_private_columns.sql` (column-level SELECT/INSERT/UPDATE, RPCs). Applied on staging (2026-10-30), then production (2026-10-30 03:43 UTC): API checks 107/107 (`supabase/tests/staging_api_checks.py`), E2E 50/50 desktop+mobile, 0 skipped — and the same build passes E2E 50/50 on the pre-migration (production-equal) schema. Gate/verify SQL: `supabase/tests/privacy_precheck.sql` / `privacy_postcheck.sql`.
   - Deploy order matters: the app on `main` still has ~29 queries that fail after the migration (`select('*')` on pets/profiles, email columns, profile upserts) → deploy this branch's app first, then the migration (`docs/PRIVACY_ROLLOUT.md`).
   - Fine as is: vaccines/activities/weights/documents SELECT via `viewer_can_see()`; buckets `pet-documents`, `verification-docs` are private (so `getPublicUrl` links for verification docs do not open — admin viewing bug).
   - Also open (separate): `pet_reservations` UPDATE policy allows any farm-team member (incl. staff/viewer) and co-owners; default privileges grant ALL on new tables to anon; leaked-password protection off; 7 functions without `search_path`.
@@ -151,6 +152,11 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-30**
+- Branch `chore/preview-staging-env` (not merged): build guard blocks Preview builds pointing to production Supabase or carrying LINE/Resend/service-role/VAPID values; LINE login + notify off on Preview; LINE callback no longer trusts `whiskora.vercel.app`. Vercel Preview vars pending (owner).
+- v1.5.1 (PR #9): profile save no longer 409s for users without a username (blank → null, duplicates get a clear message); `/admin/verifications` loads (applicant from `admin_get_users`, no FK embed). Staging E2E 50/50; production QA passed.
+- Production browser QA with synthetic accounts: privacy/permission cases pass; found 2 pre-existing bugs (profile save 409 when username empty; admin verifications 400 — no FK for `profiles!user_id`). Fix on branch `fix/profile-username-admin-verifications`, staging-tested, not deployed. Preview→staging plan drafted (`docs/PREVIEW_STAGING_PLAN.md`).
+- PRODUCTION: privacy migration `20261029100000_private_columns.sql` applied alone (recorded as `20261030034348 private_columns`); precheck before/after ok, postcheck 17/17, anon HTTP private columns 401. Synthetic QA account created for postcheck (id in `docs/STATUS.md`).
+- Released v1.5.0 (`74391b7`) to production; DB unchanged. Auth Site URL was a third-party host and Redirect URLs had `*.vercel.app/**` — both fixed by the owner (closed 19:49:59 UTC); session-revocation decision pending (`docs/STATUS.md`).
 - Privacy release prep: clean-checkout build of `45f6071` passes E2E 50/50 before and after the migration on staging; read-only precheck passes on production; pinned plan in `docs/PRIVACY_ROLLOUT.md`. Known: after a reservation → transfer is accepted the pet keeps status `ติดจอง`.
 - Staging `whiskora-staging` created from a production schema dump (+ `platform_objects.sql`: storage, auth trigger, `field_groups` seed, function ACL the dump drops); definitions diffed against production (only pg_net version differs).
 - Privacy migration applied and verified on staging (API 107/107, E2E 50/50, 0 skipped); production untouched.

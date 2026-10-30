@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // E2E smoke tests for the main flows.
 // E2E_BASE_URL: point at a staging deploy; defaults to a local `next start` on :3123.
-// The local server uses whatever Supabase project .env.production points to — public
+// The local server needs NEXT_PUBLIC_SUPABASE_URL/ANON_KEY in the environment (staging; no tracked .env file) — public
 // (anonymous) specs only read public pages; signed-in specs need staging test accounts.
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3123';
 
