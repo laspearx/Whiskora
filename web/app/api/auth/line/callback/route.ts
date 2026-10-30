@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
+import { isPreviewDeploy } from '@/lib/deploy-env'
 import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
 
 function makeAdmin() {
@@ -12,7 +13,10 @@ function makeAdmin() {
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+  const { searchParams, origin: reqOrigin } = new URL(request.url)
+  if (isPreviewDeploy) {
+    return NextResponse.redirect(`${reqOrigin}/th/login?auth_error=${encodeURIComponent('LINE_DISABLED_ON_PREVIEW')}`)
+  }
   const code      = searchParams.get('code')
   const stateBack = searchParams.get('state')
   const lineErr   = searchParams.get('error')
@@ -21,11 +25,10 @@ export async function GET(request: Request) {
   const cookieStore = await cookies()
   const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value)
   const PRODUCTION_URL = 'https://www.whiskora.pet'
-  const rawOrigin = cookieStore.get('line_origin')?.value || ''
-  // Vercel internal compute-instance URLs look like "whiskora-f74p5-laspearxs-projects.vercel.app"
-  // (short alphanumeric segment after project name). Reject these and fall back to production.
-  const isVercelInternal = /vercel\.app$/.test(rawOrigin) && !/whiskora\.vercel\.app$/.test(rawOrigin) && !/whiskora-git-/.test(rawOrigin)
-  const siteUrl = (rawOrigin && !isVercelInternal) ? rawOrigin.replace(/\/$/, '') : PRODUCTION_URL
+  const rawOrigin = (cookieStore.get('line_origin')?.value || '').replace(/\/$/, '')
+  // allow-list เฉพาะโดเมนของเรา — whiskora.vercel.app เป็นเว็บของคนอื่น และ Preview ปิด LINE ไว้แล้ว
+  const TRUSTED_ORIGINS = [PRODUCTION_URL, 'https://whiskora.pet']
+  const siteUrl = TRUSTED_ORIGINS.includes(rawOrigin) ? rawOrigin : PRODUCTION_URL
 
   const fail = (msg: string) =>
     NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(msg)}`)

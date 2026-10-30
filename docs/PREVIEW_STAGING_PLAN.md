@@ -1,66 +1,84 @@
-# Plan — Vercel Preview → staging Supabase (DRAFT for owner review, nothing changed yet)
+# Vercel Preview → staging Supabase
 
-Status 2026-10-30: **not started.** No Vercel setting, env var, domain or deploy has been changed.
+Branch `chore/preview-staging-env` (not merged). Production is untouched: no Production-scope variable, domain, deploy or
+promotion is changed by anything here.
 
-## Why
-Every Preview build (any pushed branch / PR) currently runs against **production** Supabase: the Preview env either has
-production values or falls back to the tracked `web/.env.production` (production URL + publishable key). Server routes
-(LINE login, notify) also read server-only secrets, so a Preview with production `SUPABASE_SERVICE_ROLE_KEY` /
-LINE / Resend secrets can write to production users and send real messages from unreviewed code.
+## Status (2026-10-30)
+| Part | State |
+| --- | --- |
+| Code: build guard + LINE/notify off on Preview + LINE origin allow-list | **done** on the branch; local tests passed (below) |
+| Vercel Preview variables | **waiting for the owner** — this workspace has no Vercel CLI/token, so they can't be read or set from here |
+| Staging Auth Redirect URLs | **waiting for the owner** — no Supabase management token here (MCP has no auth-config tool) |
+| Real Preview check (bundle, network, login/profile on staging) | **not done yet** — runs after the two items above (`preview_qa` script, see Verify) |
+| Remove `NEXT_PUBLIC_*` from `web/.env.production` | **not done, on purpose** — needs the owner to confirm Production-scope vars exist first. Not needed for safety: the guard already fails a Preview that falls back to the file |
 
-## What the app reads (from `web/`)
-| Variable | Used in | Preview value (target) |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | `lib/supabase.ts`, auth callback, LINE routes, `lib/notify.ts` (build-time inlined in client JS) | `https://wpxcukrwmegwzfccbbga.supabase.co` (staging) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | same (inlined) | staging publishable key (`sb_publishable_…` of staging; the legacy anon JWT also works) |
-| `NEXT_PUBLIC_SITE_URL` | `auth/callback` (fallback = request origin), `api/auth/line` (fallback = `https://www.whiskora.pet`) | **unset** on Preview, so callbacks stay on the preview host — or a fixed staging alias if one is created |
-| `SUPABASE_SERVICE_ROLE_KEY` | `api/auth/line`, `api/auth/line/callback`, `lib/notify.ts` | staging service-role key **or unset** |
-| `LINE_CHANNEL_ID` / `LINE_CHANNEL_SECRET` | LINE login | **unset** (LINE login on Preview shows `LINE_CONFIG_MISSING`) unless a separate test LINE channel exists |
-| `LINE_CHANNEL_ACCESS_TOKEN` | `lib/notify.ts` (LINE push) | **unset** |
-| `RESEND_API_KEY` / `RESEND_FROM` | `lib/notify.ts` (email) | **unset** |
-| `INTERNAL_API_SECRET` | `api/notify/send` | **unset** (route then rejects) or a staging-only random value |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | push subscribe | **unset** (settings page shows "not configured") |
+## What the code does
+- `web/lib/deploy-env-guard.mjs` (run from `next.config.ts` after loading `.env*`), when `VERCEL_ENV=preview`:
+  fails the build if `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` are missing, the URL is not staging `wpxcukrwmegwzfccbbga`,
+  the key is a production key (compared by sha256) or a JWT of another project, `NEXT_PUBLIC_SITE_URL` is
+  `whiskora.pet` / `www.whiskora.pet` / `whiskora.vercel.app`, or any of `SUPABASE_SERVICE_ROLE_KEY`, `LINE_CHANNEL_ID`,
+  `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `RESEND_API_KEY`, `RESEND_FROM`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY` is set. Every environment: fails if the public key is a secret/service-role key.
+  Errors list variable names only, never values. Production/local builds: only the secret-key check.
+- `WHISKORA_DEPLOY_ENV` is inlined at build; on Preview: `/api/auth/line` (GET and callback) → redirect to the
+  **preview's own** `/th/login?auth_error=LINE_DISABLED_ON_PREVIEW`; `POST /api/auth/line` and `/api/notify/send` → 503;
+  `lib/notify.ts` sends nothing. Push subscribe shows "not configured" (no VAPID key).
+- LINE callback trusts only `https://www.whiskora.pet` / `https://whiskora.pet` from the `line_origin` cookie
+  (`whiskora.vercel.app` is someone else's site and was trusted before). Anything else → `www.whiskora.pet` as before.
+- Auth callback uses `NEXT_PUBLIC_SITE_URL || request origin`; with SITE_URL unset on Preview it stays on the preview host.
+  Hard-coded `whiskora.pet` in `sitemap`/`robots`/`metadataBase`/canonical links is SEO only (no redirect, no data).
 
-Production env (Production scope in Vercel) is **not touched** by this plan.
+## Owner: values to set (Vercel → project **whiskora** → Settings → Environment Variables)
+Do not paste values in chat. Production rows stay exactly as they are.
 
-## Steps (each needs the owner's go-ahead; stop on any failure)
-0. **Inventory (read-only, owner in the Vercel dashboard)** — Project → Settings → Environment Variables: list the *names* and
-   scopes (Production / Preview / Development) of every variable. Do not paste values. Note which are shared "All
-   Environments" (those must be split, otherwise editing Preview changes Production).
-1. **Code change (PR, staging-tested first)** — remove `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` from tracked `web/.env.production`
-   so a missing Preview var fails the build instead of silently using production; add a build guard in `next.config.ts`
-   that fails when `VERCEL_ENV=preview` and the Supabase URL contains the production ref `vhudldcizmbpujedojei`.
-   Production keeps working because its Production-scoped vars are set in Vercel (confirm in step 0 first — if Production
-   relies on the file, set the vars in Vercel *before* merging).
-   Also (same PR or next): LINE callback treats `whiskora.vercel.app` (third-party host) as trusted and otherwise trusts the
-   `line_origin` cookie (set by our own `/api/auth/line`) → allow-list `www.whiskora.pet` + this project's preview hosts only.
-2. **Vercel Preview vars** — for each row above: set the Preview-scoped value (staging) or remove it from Preview. Split any
-   "All Environments" variable into separate Production and Preview entries; Production values stay exactly as they are.
-   Optional: enable Deployment Protection (Vercel Authentication) for Preview.
-3. **Staging Supabase Auth** (`wpxcukrwmegwzfccbbga` only) — URL Configuration: Site URL = a staging/preview URL;
-   Redirect URLs = `https://whiskora-git-*-laspearxs-projects.vercel.app/**` (team-scoped suffix only, never
-   `*.vercel.app/**`) + `http://localhost:3123/**`. Production Auth settings unchanged.
-4. **Rebuild** — env changes apply only to new builds: Vercel → Deployments → latest Preview of a docs/test branch →
-   Redeploy **without build cache** (or push a commit to a throwaway branch). No production deploy; do not promote.
-5. **Verify (no production ref, no production secrets)**:
-   - Bundle: download the preview's HTML + every `/_next/static/**.js` it references; `grep` must find the staging ref and
-     **0** occurrences of `vhudldcizmbpujedojei` and of every production publishable / anon key (fetch the current list
-     with Supabase MCP `get_publishable_keys` at check time; compare by value in a script, print counts only).
-   - Runtime: sign in on the preview with a staging synthetic account (`supabase/staging/seed_synthetic.sql`); the browser's
-     Supabase requests all go to the staging host; production edge logs for that time window show **no** requests with the
-     preview origin/referer; staging edge logs show them.
-   - Server routes: `GET <preview>/api/auth/line` → `LINE_CONFIG_MISSING` (LINE secrets absent);
-     `POST <preview>/api/notify/send` without the secret → 401/403; no LINE/email/push sent.
-   - Vercel dashboard (owner): Preview scope lists only the staging/unset variables from the table; Production unchanged.
-   - Production smoke after the change: `E2E_BASE_URL=https://www.whiskora.pet npx playwright test e2e/public.spec.ts` (18/18).
-6. **Record** results (counts/booleans only) in `docs/STATUS.md`; update `WHISKORA_PLATFORM_OVERVIEW.md` known gaps.
+1. **Inventory first** (names only): note every variable whose Environments show **All Environments** or
+   **Production + Preview**. Such a shared variable must be split: edit it → untick **Preview** (Production keeps the
+   value) — then add a new Preview-only entry if the table says so. Also confirm that **Production** has
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (tell me yes/no; this gates removing them from
+   `web/.env.production` later).
+2. **Preview** scope (Environment = Preview, "All Preview branches"):
 
-## Rollback
-Re-add the previous Preview values in Vercel (Preview scope only) and redeploy the preview. Production is unaffected
-by every step except step 1's merge — that merge is gated on step 0 confirming Production-scoped vars exist.
+| Variable | Preview |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://wpxcukrwmegwzfccbbga.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | staging publishable key — Supabase dashboard → project *staging* (`wpxcukrwmegwzfccbbga`) → Project Settings → API Keys → Publishable key (`sb_publishable_aDM_…`). Public key, not a secret |
+| `NEXT_PUBLIC_SITE_URL` | **not set** |
+| `SUPABASE_SERVICE_ROLE_KEY` | **not set** |
+| `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` | **not set** |
+| `RESEND_API_KEY`, `RESEND_FROM` | **not set** |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | **not set** |
+| `INTERNAL_API_SECRET` | not set (the route is 503 on Preview anyway) |
 
-## Open questions for the owner
-- Does Production rely on `web/.env.production` or on Vercel Production-scoped vars? (step 0)
-- Keep LINE/Google login on Preview (needs a separate LINE test channel + staging Google OAuth client), or email-only?
-- Enable Vercel Deployment Protection for Preview?
-- Until this is done, **avoid pushing branches** (each push builds a Preview against production).
+3. **Deployment Protection** is on for Preview (anonymous request → 302 to Vercel SSO). Keep it. For the automated check:
+   Settings → Deployment Protection → **Protection Bypass for Automation** → Add (or copy the existing) secret, and save it
+   on this machine yourself: `! install -m 600 /dev/null ~/.whiskora/vercel_bypass && nano ~/.whiskora/vercel_bypass`.
+   Alternative: no bypass; you open the preview in your browser and I verify via staging/production logs only.
+4. **Staging Supabase** (dashboard → project *staging* → Authentication → URL Configuration). Production project: no change.
+   - Site URL: `http://localhost:3123` (staging has no fixed web host; email/password login does not use it)
+   - Redirect URLs (only these two):
+     `https://whiskora-*-laspearxs-projects.vercel.app/**` (covers both the branch URL `whiskora-git-<branch>-…` and the
+     per-deployment URL `whiskora-<hash>-…`; both end in our team suffix) and `http://localhost:3123/**`
+     — never `https://*.vercel.app/**`. Google/LINE stay off on staging this round.
+5. **Rebuild**: Deployments → the newest Preview of `chore/preview-staging-env` → ⋯ → **Redeploy** → untick
+   **Use existing Build Cache**. Do **not** use "Promote to Production" / "Assign domain" on it.
+
+## Verify (after 1–5)
+`node <scratchpad>/preview_qa.cjs <preview URL>` (reads the bypass from `~/.whiskora/vercel_bypass`; prints counts only):
+served HTML + all `/_next/static/*.js` → staging ref > 0, production ref 0, production keys 0; LINE GET/callback → same
+preview host with `LINE_DISABLED_ON_PREVIEW`; notify → 503; browser login `whiskora-qa+viewer@example.com` → profile
+edit → save → refresh → restore, PATCH goes to staging and staging holds the value; every Supabase request in the
+browser goes to staging. Then: production edge logs for the test window have no request with the preview host as
+origin/referer; production `www.whiskora.pet` still serves `3f37410` (v1.5.1) and the production ref.
+
+## Rollback (Preview only)
+- Vercel: delete the Preview-only entries added in step 2 (or re-tick Preview on the variables split in step 1 to return
+  to the previous shared values). Production entries are never edited, so Production is unaffected.
+- With the guard on the branch, a Preview without staging values fails the build (safe). To get the old behaviour back
+  entirely, don't merge the branch / revert its code commit.
+- Staging Auth: remove the two Redirect URLs (staging only).
+- Bypass secret: Deployment Protection → Protection Bypass for Automation → revoke.
+
+## Later (separate approval)
+- Remove `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` from `web/.env.production` once Production-scope vars are confirmed.
+- Merge the branch to main (production build then runs the guard in `production` mode: secret-key check only).
+- Optional LINE/Google on Preview needs a test LINE channel and a staging Google OAuth client.

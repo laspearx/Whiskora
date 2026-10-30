@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isPreviewDeploy } from '@/lib/deploy-env'
 
 function makeAdmin() {
   return createClient(
@@ -9,6 +10,7 @@ function makeAdmin() {
 }
 
 export async function sendLineMessage(lineUserId: string, text: string) {
+  if (isPreviewDeploy) { console.warn('[notify] LINE push disabled on Preview'); return }
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!token) throw new Error('LINE_CHANNEL_ACCESS_TOKEN not configured')
 
@@ -31,6 +33,7 @@ export async function sendLineMessage(lineUserId: string, text: string) {
 }
 
 export async function sendEmail(to: string, subject: string, html: string) {
+  if (isPreviewDeploy) { console.warn('[notify] email disabled on Preview'); return }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error('RESEND_API_KEY not configured')
   // ผู้ส่งต้องเป็นโดเมนที่ยืนยันใน Resend แล้วเท่านั้น — whiskora.com ไม่ใช่โดเมนของเรา (DNS ชี้ไป Afternic)
@@ -60,6 +63,7 @@ export async function notifyUser(
   message: string,
   emailSubject = 'แจ้งเตือนจาก Whiskora',
 ) {
+  if (isPreviewDeploy) { console.warn('[notify] notifications disabled on Preview'); return }
   const admin = makeAdmin()
 
   const [profileRes, userRes] = await Promise.all([
