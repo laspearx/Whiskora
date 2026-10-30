@@ -111,8 +111,9 @@ export default function EditProfilePage() {
     // update/insert แยกกันแทน upsert: ON CONFLICT DO UPDATE ต้องมีสิทธิ์ SELECT คอลัมน์ที่เขียน
     // ซึ่งคอลัมน์ส่วนตัว (phone/address) ถูกปิดไว้ใน migration 20261029100000_private_columns.sql
     const payload = {
-      // username มี unique index: ช่องว่างต้องเป็น null ไม่ใช่ '' (มิฉะนั้นชนกับแถวอื่นที่เป็น '' → 409)
-      username: username.trim() || null, full_name: fullName, avatar_url: avatarUrl, phone,
+      // username มี unique index: ค่าว่าง/ช่องว่างล้วนต้องเป็น null ไม่ใช่ '' (มิฉะนั้นชนกับแถวอื่นที่เป็น '' → 409)
+      // ค่าที่มีตัวอักษรส่งตามเดิม ไม่ trim เพื่อไม่เปลี่ยน username ที่มีอยู่
+      username: username.trim() === '' ? null : username, full_name: fullName, avatar_url: avatarUrl, phone,
       address: composeAddress(addr),
       house_no: addr.house_no || null, room_no: addr.room_no || null,
       moo: addr.moo || null, soi: addr.soi || null, road: addr.road || null,
@@ -126,7 +127,7 @@ export default function EditProfilePage() {
       : await supabase.from("profiles").insert({ id: uid, ...payload });
     if (!error) setProfileExists(true);
     if (error) {
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      alert(error.code === '23505' ? "username นี้มีผู้ใช้แล้ว กรุณาเลือกชื่ออื่น" : "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       setSaving(false);
     } else {
       router.replace("/profile");
