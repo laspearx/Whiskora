@@ -4,16 +4,17 @@ with
 fn as (select proname, md5(prosrc) m from pg_proc where pronamespace = 'public'::regnamespace),
 applied as (select exists (select 1 from fn where proname = 'pet_visible_to') a),
 anon_ped as (select count(*) c from information_schema.column_privileges
-             where table_schema = 'public' and table_name = 'pets' and grantee = 'anon' and privilege_type = 'SELECT'
+             where table_schema = 'public' and table_name = 'pets' and grantee in ('anon', 'authenticated') and privilege_type = 'SELECT'
                and column_name in ('sire_id', 'dam_id', 'pedigree_number', 'pedigree_image_url',
                                    'paternal_grandsire', 'paternal_granddam', 'maternal_grandsire', 'maternal_granddam'))
 select 1 as n, 'state' as check, case when (select a from applied) then 'after' else 'before' end as result
 union all
 select 2, 'function bodies are the known ones for this state (md5)',
   case when (select a from applied) then
-    case when (select m from fn where proname = 'viewer_can_see') = '7cc47e1c97c0f1f40c2be049aedd849d'
-          and (select m from fn where proname = 'get_pet_pedigree') = '7ac793a1493d8f4106992eb8d177304d'
-          and (select m from fn where proname = 'pet_visible_to') = '29df9721941de6a98195c4448a02d13a'
+    case when (select m from fn where proname = 'viewer_can_see') = 'afd80a08c47c15071c128efa8af45a16'
+          and (select m from fn where proname = 'get_pet_pedigree') = '72fc98e5de6028a4336c3e5059a9aa67'
+          and (select m from fn where proname = 'pet_visible_to') = 'c95458d5fcf48b8a892c5dc49fa3abf8'
+          and (select m from fn where proname = 'get_pet_pedigree_fields') = '4842bb75d6c036ac4291e885a0c53319'
          then 'ok' else 'STOP: unexpected body' end
   else
     case when (select m from fn where proname = 'viewer_can_see') = '249f6458b2f78da06d876f2486ddc919'
@@ -23,7 +24,7 @@ select 2, 'function bodies are the known ones for this state (md5)',
 union all
 select 3, 'before: no new helper exists yet (no half-applied state)',
   case when (select a from applied) then 'ok (after)'
-       when exists (select 1 from fn where proname in ('is_pet_co_owner', 'can_manage_farm_privacy', 'can_manage_pet_privacy'))
+       when exists (select 1 from fn where proname in ('is_pet_co_owner', 'can_manage_farm_privacy', 'can_manage_pet_privacy', 'get_pet_pedigree_fields'))
        then 'STOP: partially applied' else 'ok' end
 union all
 select 4, 'pets policies for this state',
@@ -64,9 +65,22 @@ select 6, 'storage pet-photos SELECT policies for this state',
          then 'ok' else 'STOP: storage policies differ from the reviewed state' end
   end
 union all
-select 7, 'anon SELECT on the 8 pedigree columns (before 8, after 0)',
+select 7, 'anon + authenticated SELECT on the 8 pedigree columns (before 16, after 0)',
   case when (select a from applied) then case when (select c from anon_ped) = 0 then 'ok' else 'STOP' end
-       else case when (select c from anon_ped) = 8 then 'ok' else 'STOP: ' || (select c from anon_ped) end end
+       else case when (select c from anon_ped) = 16 then 'ok' else 'STOP: ' || (select c from anon_ped) end end
+union all
+select 7.5, 'access_grants write policies for this state',
+  case when (select a from applied) then
+    case when (select count(*) from pg_policies where tablename = 'access_grants'
+               and policyname in ('access_grants create by pet owner', 'access_grants revoke by granter or owner')) = 2
+          and not exists (select 1 from pg_policies where tablename = 'access_grants'
+               and policyname in ('access_grants create by pet manager', 'access_grants revoke by granter or manager'))
+         then 'ok' else 'STOP' end
+  else
+    case when (select count(*) from pg_policies where tablename = 'access_grants'
+               and policyname in ('access_grants create by pet manager', 'access_grants revoke by granter or manager')) = 2
+         then 'ok' else 'STOP: access_grants policies differ from the reviewed state' end
+  end
 -- who is affected (WARN = rows behave differently after apply; never change these rows to pass)
 union all
 select 8, 'private pets (is_public = false) — hidden from outsiders after apply',
@@ -80,6 +94,10 @@ select 10, 'private pets that are sire/dam of another pet — dropped from other
   case when c = 0 then 'ok' else 'WARN: ' || c end
   from (select count(distinct par.id) c from public.pets ch join public.pets par on par.id in (ch.sire_id, ch.dam_id)
         where par.is_public is false) x
+union all
+select 10.5, 'active access grants (scope changes: a grant now covers only its field group, and no longer the card)',
+  case when c = 0 then 'ok' else 'WARN: ' || c end
+  from (select count(*) c from public.access_grants where revoked_at is null and (expires_at is null or expires_at > now())) x
 union all
 select 11, 'farm / pet privacy rows (info: existing values are kept; only who may write changes)',
   (select count(*) from public.farm_visibility_settings)::text || ' farm / ' ||

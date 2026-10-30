@@ -26,8 +26,16 @@ create policy "pet_visibility write by manager" on public.pet_visibility_setting
 create policy "pet_visibility update by manager" on public.pet_visibility_settings for update using (can_manage_pet_visibility(pet_id)) with check (can_manage_pet_visibility(pet_id));
 create policy "pet_visibility delete by manager" on public.pet_visibility_settings for delete using (can_manage_pet_visibility(pet_id));
 
+drop policy if exists "access_grants create by pet owner" on public.access_grants;
+drop policy if exists "access_grants revoke by granter or owner" on public.access_grants;
+create policy "access_grants create by pet manager" on public.access_grants for insert
+  with check ((granted_by = auth.uid()) and (resource_type = 'pet'::text) and can_manage_pet_visibility(resource_id));
+create policy "access_grants revoke by granter or manager" on public.access_grants for update
+  using ((granted_by = auth.uid()) or ((resource_type = 'pet'::text) and can_manage_pet_visibility(resource_id)));
+
+drop function if exists public.get_pet_pedigree_fields(bigint);
 grant select (sire_id, dam_id, pedigree_number, pedigree_image_url,
-              paternal_grandsire, paternal_granddam, maternal_grandsire, maternal_granddam) on public.pets to anon;
+              paternal_grandsire, paternal_granddam, maternal_grandsire, maternal_granddam) on public.pets to anon, authenticated;
 
 drop policy if exists "pets read by co-owner or farm team" on public.pets;
 drop policy if exists "Public can view available pets" on public.pets;

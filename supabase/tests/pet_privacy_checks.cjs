@@ -8,7 +8,7 @@ const KEY = process.env.STAGING_ANON_KEY; if (!KEY) { console.error('set STAGING
 const PW = fs.readFileSync(os.homedir() + '/.whiskora/staging_qa_password', 'utf8').trim();
 const ID = { owner: 'a0000000-0000-4000-8000-000000000001', manager: 'a0000000-0000-4000-8000-000000000002', staff: 'a0000000-0000-4000-8000-000000000003', viewer: 'a0000000-0000-4000-8000-000000000004', buyer: 'a0000000-0000-4000-8000-000000000005', stranger: 'a0000000-0000-4000-8000-000000000006', coowner: 'a0000000-0000-4000-8000-000000000008' };
 const EMAIL = { coowner: 'newuser' };
-const P2 = 900002, P6 = 900006, P7 = 900007;
+const P2 = 900002, P6 = 900006, P7 = 900007, P8 = 900008, P9 = 900009;
 const toks = {};
 async function tok(who) {
   if (who === 'anon') return null; if (toks[who]) return toks[who];
@@ -61,8 +61,58 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
   ok('anon cannot read pedigree columns directly (use get_pet_pedigree)', r.status === 401 || r.status === 403, { status: r.status, code: r.code });
   r = await rest('anon', 'GET', `pets?id=eq.${P7}&select=id,name,status,image_url,microchip_number`);
   ok('anon still reads the public card columns of a public pet', r.status === 200 && r.rows === 1, { status: r.status });
-  r = await rest('owner', 'GET', `pets?id=eq.${P7}&select=sire_id,pedigree_number`);
-  ok('owner still reads own pedigree columns', r.status === 200 && r.rows === 1, { status: r.status });
+  // 4a. signed-in users: no direct pedigree columns either; owner / team through get_pet_pedigree_fields
+  const pedFields = async (who, id) => { const x = await rpc(who, 'get_pet_pedigree_fields', { p_pet_id: id }); return x.status === 200 && x.rows === 1 ? x.body[0] : null; };
+  for (const who of ['stranger', 'buyer', 'owner']) {
+    r = await rest(who, 'GET', `pets?id=eq.${P8}&select=sire_id,pedigree_number`);
+    ok(`${who} cannot read pedigree columns directly (P8, public pet, pedigree owner-only)`, r.status === 401 || r.status === 403, { status: r.status, code: r.code });
+  }
+  for (const who of ['stranger', 'buyer']) {
+    ok(`${who}: get_pet_pedigree_fields(P8) returns nothing`, (await pedFields(who, P8)) === null, {});
+    ok(`${who}: get_pet_pedigree(P8) empty (tier owner)`, (await pedigreeIds(who, P8)).length === 0, {});
+  }
+  r = await rpc('anon', 'get_pet_pedigree_fields', { p_pet_id: P8 });
+  ok('anon cannot call get_pet_pedigree_fields', r.status === 401 || r.status === 403, { status: r.status });
+  let f = await pedFields('owner', P8);
+  ok('owner reads own pedigree fields via RPC (P8)', !!f && f.pedigree_number === 'QA-PED-P8' && Number(f.sire_id) === P9, {});
+  for (const who of ['manager', 'staff', 'viewer']) ok(`farm ${who} reads pedigree fields of farm pet P6 via RPC`, !!(await pedFields(who, P6)), {});
+  ok('co-owner reads pedigree fields of P2 via RPC', !!(await pedFields('coowner', P2)), {});
+  ok('stranger reads pedigree fields of P7 (pedigree tier public) via RPC', !!(await pedFields('stranger', P7)), {});
+
+  // 3b. a public parent with owner-only pedigree: its card may show in the child's tree, its own parents may not
+  const anonTree7 = await pedigreeIds('anon', P7);
+  ok('anon tree of P7 shows dam P8 (public card)', anonTree7.includes(P8), { nodes: anonTree7.length });
+  ok('anon tree of P7 does NOT show P9 (P8 pedigree is owner-only)', !anonTree7.includes(P9), {});
+  ok('stranger tree of P7 does NOT show P9', !(await pedigreeIds('stranger', P7)).includes(P9), {});
+  const ownerTree7 = await pedigreeIds('owner', P7);
+  ok('owner of P8 sees P9 in the tree of P7', ownerTree7.includes(P9) && ownerTree7.includes(P8) && ownerTree7.includes(P2), {});
+
+  // 3c. access grants are per field group, and expiry / revocation work
+  const access = async (who, id) => (await rpc(who, 'get_my_pet_access', { p_pet_id: id })).body || {};
+  let a = await access('stranger', P2);
+  ok('grant vaccination (active) → stranger sees vaccination of private P2', a.vaccination === true, {});
+  ok('… but not weight / health / pedigree / documents (grant is for one group only)', a.weight === false && a.health === false && a.pedigree === false && a.documents === false, {});
+  ok('… and still no health via RPC', !(await canHealth('stranger', P2)), {});
+  r = await rest('stranger', 'GET', `vaccines?pet_id=eq.${P2}&select=id`);
+  ok('… the grantee reads the vaccine rows of P2 (the granted table)', r.status === 200 && r.rows === 1, { status: r.status, rows: r.rows });
+  r = await rest('buyer', 'GET', `vaccines?pet_id=eq.${P2}&select=id`);
+  ok('… a user without that grant reads none', r.status === 200 && r.rows === 0, { rows: r.rows });
+  ok('a vaccination grant does not open the private pet card (row) — grants cover their group only', !(await canRow('stranger', P2)), {});
+  ok('… nor the private pet\'s card in someone else\'s pedigree tree', !(await pedigreeIds('stranger', P7)).includes(P2), {});
+  a = await access('buyer', P2);
+  ok('expired grant (weight) gives nothing', a.weight === false && a.vaccination === false && !(await canRow('buyer', P2)), {});
+  a = await access('viewer', P2);
+  ok('revoked grant (vaccination) gives nothing', a.vaccination === false && !(await canRow('viewer', P2)), {});
+  // who may create grants
+  r = await rest('staff', 'POST', 'access_grants', { granted_by: ID.staff, grantee_id: ID.stranger, resource_type: 'pet', resource_id: P6, field_group_key: 'health', relationship_tag: 'custom' });
+  ok('farm staff cannot create an access grant for a farm pet', r.status === 403, { status: r.status });
+  r = await rest('coowner', 'POST', 'access_grants', { granted_by: ID.coowner, grantee_id: ID.stranger, resource_type: 'pet', resource_id: P2, field_group_key: 'health', relationship_tag: 'custom' });
+  ok('co-owner cannot create an access grant', r.status === 403, { status: r.status });
+  r = await rest('owner', 'POST', 'access_grants', { granted_by: ID.owner, grantee_id: ID.buyer, resource_type: 'pet', resource_id: P8, field_group_key: 'weight', relationship_tag: 'custom' });
+  const gid = r.body?.[0]?.id;
+  ok('pet owner can create an access grant', r.status === 201 && !!gid, { status: r.status });
+  r = await rest('owner', 'PATCH', `access_grants?id=eq.${gid}`, { revoked_at: new Date().toISOString() });
+  ok('pet owner can revoke it', r.status === 200 && r.rows === 1, { status: r.status });
 
   // 4b. storage pet-photos: no listing for anon / other users; owner upsert + list own folder; public URL works
   {
@@ -131,6 +181,19 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     ok('after private: old owner cannot read P7 row', !(await canRow('owner', P7)), {});
     ok('after private: anon pedigree RPC of P7 is empty (old per-pet tier "public" no longer opens it)', (await pedigreeIds('anon', P7)).length === 0, {});
     ok('after private: new owner still gets P7 pedigree', (await pedigreeIds('buyer', P7)).includes(P7), {});
+    // previous_owner is per field group (include_previous_owner) and only for tiers up to "owner"
+    const t2 = await rest('buyer', 'POST', 'pet_ownership_transfers', { pet_id: P7, from_user_id: ID.buyer, to_user_id: ID.stranger, initiated_by: ID.buyer, status: 'pending' });
+    const a2 = await rpc('stranger', 'respond_pet_transfer', { p_transfer_id: t2.body?.[0]?.id, p_action: 'accept' });
+    ok('second transfer P7 buyer → stranger accepted', t2.status === 201 && a2.status === 200, { insert: t2.status, accept: a2.status });
+    const pvs = (group, tier, inc) => rest('stranger', 'POST', 'pet_visibility_settings?on_conflict=pet_id,field_group_key', { pet_id: P7, field_group_key: group, tier, include_previous_owner: inc });
+    const w1 = await pvs('health', 'owner', true), w2 = await pvs('weight', 'owner', false);
+    ok('new owner sets P7 health = owner + previous owners, weight = owner only', [w1.status, w2.status].every(x => x === 201 || x === 200), { health: w1.status, weight: w2.status });
+    const accB = await (async () => (await rpc('buyer', 'get_my_pet_access', { p_pet_id: P7 })).body || {})();
+    ok('previous owner (buyer) sees health (group allows previous owners)', accB.health === true && (await canHealth('buyer', P7)), {});
+    ok('previous owner does not see weight (group does not allow previous owners)', accB.weight === false, {});
+    ok('previous owner does not get the private card back', !(await canRow('buyer', P7)), {});
+    const accO = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P7 })).body || {};
+    console.log(`INFO the original seller (owner 01, sent P7 in the first transfer, never received it) counts as previous owner: ${accO.health === true}`);
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);

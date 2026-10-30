@@ -10,15 +10,18 @@
 --   * get_pet_pedigree() walked into ancestors regardless of their privacy: a public pet's tree showed a private
 --     sire/dam (name, photo, breed).
 --   * pedigree columns (sire_id, dam_id, pedigree_number, pedigree_image_url, grand-parent names) were readable
---     by anonymous REST calls on any readable pet, bypassing the pedigree tier (default: owner).
+--     by anyone (anon and every signed-in user) on any readable pet, bypassing the pedigree tier (default: owner).
+--   * get_pet_pedigree() also walked past an ancestor whose own pedigree is owner-only (a public child's tree
+--     revealed the parent's parents).
+--   * an access grant for one field group opened every group of the pet (resolve_pet_tags ignores
+--     field_group_key), and any farm member / co-owner could create grants (policy used can_manage_pet_visibility).
 --   * co-owners could not read a private pet row at all (no SELECT policy), although they are owners for tiers.
--- Production (2026-10-30, read-only count): 137 pets, none private, so rows/RPC results change for nobody today
--- except anonymous direct reads of pedigree columns (25 readable pets have some pedigree value; the app's public
--- pages never read those columns — they use get_pet_pedigree()).
+-- Production (2026-10-30, read-only count): 137 pets, none private, 0 access grants, 0 per-pet settings; direct reads
+-- of pedigree columns close for everyone (25 readable pets have some pedigree value). The app reads them only on
+-- the owner edit page, now through get_pet_pedigree_fields(); public pages use get_pet_pedigree().
 --   * storage bucket pet-photos could be listed by anyone (all user-id folders and file names).
--- Not changed here: signed-in users can still read pedigree columns of readable pets directly (needed by the farm
--- dashboard / owner pages that read PET_COLUMNS; closing it needs an owner/team RPC — separate decision);
--- pet-photos stays a public bucket (a known photo URL of a private pet still loads — separate decision);
+-- Not changed here: pet-photos stays a public bucket — listing is closed, but anyone who has a photo URL can still
+-- load that file, also for a private pet (separate PR: private photos with access checks + signed URLs);
 -- co-owners / per-pet tiers set by a previous owner survive a transfer (separate decision); default privileges.
 -- Recovery: fix forward. The staging-only exact revert re-opens the leaks and is not a production step.
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -30,13 +33,13 @@ returns boolean language sql stable security definer set search_path = public as
      and exists (select 1 from pet_co_owners co where co.pet_id = p_pet_id and co.user_id = p_viewer);
 $$;
 
--- may this viewer see the pet at all? public pets: everyone; private pets: owner, co-owner, farm team, admin,
--- or an active access grant
+-- may this viewer see the pet's basic card? public pets: everyone; private pets: owner, co-owner, farm team, admin
+-- (same as the pets row policies). An access grant covers only its field group, not the card (viewer_can_see).
 create or replace function public.pet_visible_to(p_pet_id bigint, p_viewer uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from pets p where p.id = p_pet_id and p.is_public is not false)
       or (p_viewer is not null
-          and resolve_pet_tags(p_pet_id, p_viewer) && array['current_owner', 'farm_team', 'platform_admin', 'granted']);
+          and resolve_pet_tags(p_pet_id, p_viewer) && array['current_owner', 'farm_team', 'platform_admin']);
 $$;
 
 revoke all on function public.is_pet_co_owner(bigint, uuid) from public, anon;
@@ -59,7 +62,15 @@ create policy "pets read by co-owner or farm team" on public.pets
 create or replace function public.viewer_can_see(p_pet_id bigint, p_field_group text, p_viewer uuid default auth.uid())
 returns boolean language sql stable security definer set search_path = public as $$
   with s as (
-    select resolve_pet_tags(p_pet_id, p_viewer) as tags,
+    -- 'granted' counts only for a grant of this field group (or a pet-wide grant with field_group_key null),
+    -- active (not revoked, not expired)
+    select array_remove(resolve_pet_tags(p_pet_id, p_viewer), 'granted')
+           || case when p_viewer is not null and exists (
+                select 1 from access_grants g
+                where g.resource_type = 'pet' and g.resource_id = p_pet_id and g.grantee_id = p_viewer
+                  and g.revoked_at is null and (g.expires_at is null or g.expires_at > now())
+                  and (g.field_group_key is null or g.field_group_key = p_field_group))
+              then array['granted'] else array[]::text[] end as tags,
       coalesce(
         (select tier from pet_visibility_settings
           where pet_id = p_pet_id and field_group_key = p_field_group),
@@ -89,7 +100,9 @@ returns boolean language sql stable security definer set search_path = public as
   from s;
 $$;
 
--- 3. pedigree tree stops at ancestors the viewer may not see (shown as missing by the app)
+-- 3. pedigree tree: an ancestor's basic card (name, photo, breed, gender) needs pet_visible_to(ancestor);
+--    going further up from that ancestor (its own parents) needs viewer_can_see(ancestor, 'pedigree').
+--    Hidden nodes are shown as missing by the app.
 create or replace function public.get_pet_pedigree(p_pet_id bigint, p_max_gen integer default 5)
 returns table (node_id bigint, child_id bigint, name text, image_url text, breed text, gender text, relation text, generation integer)
 language plpgsql stable security definer set search_path = public as $$
@@ -111,16 +124,32 @@ begin
     from lineage l
     join pets par on par.id in (l.sire_id, l.dam_id)
     where l.generation < p_max_gen
+      and (l.generation = 0 or viewer_can_see(l.id, 'pedigree', auth.uid()))
       and pet_visible_to(par.id, auth.uid())
   )
   select lineage.id, lineage.child_id, lineage.name, lineage.image_url, lineage.breed, lineage.gender, lineage.relation, lineage.generation from lineage;
 end;
 $$;
 
--- 4. anonymous REST reads of pedigree columns (the tier is enforced by get_pet_pedigree; public pages use it)
+-- 4. no direct REST reads of pedigree columns for anyone; owner / co-owner / farm team / admin (any tier) or a viewer
+--    the pedigree tier allows read them through get_pet_pedigree_fields(). Writes (INSERT/UPDATE grants) unchanged.
 revoke select (sire_id, dam_id, pedigree_number, pedigree_image_url,
                paternal_grandsire, paternal_granddam, maternal_grandsire, maternal_granddam)
-  on public.pets from anon;
+  on public.pets from anon, authenticated;
+
+create or replace function public.get_pet_pedigree_fields(p_pet_id bigint)
+returns table (sire_id bigint, dam_id bigint, pedigree_number text, pedigree_image_url text,
+               paternal_grandsire text, paternal_granddam text, maternal_grandsire text, maternal_granddam text)
+language sql stable security definer set search_path = public as $$
+  select p.sire_id, p.dam_id, p.pedigree_number, p.pedigree_image_url,
+         p.paternal_grandsire, p.paternal_granddam, p.maternal_grandsire, p.maternal_granddam
+  from pets p
+  where p.id = p_pet_id and auth.uid() is not null
+    and (resolve_pet_tags(p.id, auth.uid()) && array['current_owner', 'farm_team', 'platform_admin']
+         or viewer_can_see(p.id, 'pedigree', auth.uid()));
+$$;
+revoke all on function public.get_pet_pedigree_fields(bigint) from public, anon;
+grant execute on function public.get_pet_pedigree_fields(bigint) to authenticated;
 
 -- 5. pet-photos: anyone could LIST the bucket (every user-id folder and file name, incl. photos of private pets).
 --    Public URLs keep working (public bucket, no RLS on /object/public). The app only uploads (some with upsert)
@@ -185,3 +214,17 @@ create policy "pet_visibility update by owner" on public.pet_visibility_settings
   with check (public.can_manage_pet_privacy(pet_id, auth.uid()));
 create policy "pet_visibility delete by owner" on public.pet_visibility_settings
   for delete to authenticated using (public.can_manage_pet_privacy(pet_id, auth.uid()));
+
+-- 7. access grants: only who may change the pet's privacy may create or change grants (before: any farm member or
+--    co-owner via can_manage_pet_visibility). Reading and deleting own grants are unchanged.
+drop policy if exists "access_grants create by pet manager" on public.access_grants;
+drop policy if exists "access_grants revoke by granter or manager" on public.access_grants;
+drop policy if exists "access_grants create by pet owner" on public.access_grants;
+drop policy if exists "access_grants revoke by granter or owner" on public.access_grants;
+create policy "access_grants create by pet owner" on public.access_grants
+  for insert to authenticated
+  with check (granted_by = auth.uid() and resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid()));
+create policy "access_grants revoke by granter or owner" on public.access_grants
+  for update to authenticated
+  using (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid())))
+  with check (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid())));

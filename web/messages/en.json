@@ -355,7 +355,7 @@
     "reserving": "Reserving...",
     "reserve": "📌 Reserve this pet",
     "signInToReserve": "Sign in to reserve",
-    "privateListedNotice": "Set to not public: others cannot see this pet even with \"Ready for a new home\" (not listed, cannot be reserved)",
+    "privateListedNotice": "Set to not public: this profile is limited to the owner, co-owners and the farm team, even with \"Ready for a new home\" (not listed, cannot be reserved) — photo files are not private yet: anyone who has a photo link can still open it",
     "contactFarm": "Contact farm",
     "contactOwner": "Contact owner",
     "viewFarm": "View farm profile",
@@ -405,7 +405,7 @@
     "effFarm": "The pet leaves the farm",
     "effStatus": "Sale/reserved status is cleared and the pet is not relisted automatically",
     "effPublic": "The pet's public page stays visible to everyone as before (private data such as health follows access rules)",
-    "effPrivate": "The pet's public page stays hidden as before",
+    "effPrivate": "The pet's public page stays hidden as before (photo files are not private yet: anyone with an existing photo link can still open it)",
     "effManage": "Manage the pet from your pet page after accepting"
   },
   "reservations": {

@@ -70,6 +70,7 @@ export default function EditPetPage() {
   const [bloodType, setBloodType] = useState("");
   // false = โหลดข้อมูลสุขภาพไม่ได้ (error/ไม่มีสิทธิ์) — ห้ามบันทึกทับด้วยค่าว่าง
   const [healthLoaded, setHealthLoaded] = useState(false);
+  const [pedigreeLoaded, setPedigreeLoaded] = useState(false);
   const [microchip, setMicrochip] = useState("");
 
   const [status, setStatus] = useState("");
@@ -121,8 +122,12 @@ export default function EditPetPage() {
       setInitialIsNeutered(data.is_neutered ?? null);
       setBloodType(health.blood_type || "");
       setMicrochip(data.microchip_number || "");
-      setSireId(data.sire_id ? String(data.sire_id) : "");
-      setDamId(data.dam_id ? String(data.dam_id) : "");
+      // พ่อ/แม่พันธุ์ไม่อยู่ใน PET_COLUMNS — อ่านผ่าน RPC ที่ตรวจสิทธิ์ (เจ้าของ/ทีมได้เสมอ)
+      const { data: pedRows, error: pedErr } = await supabase.rpc("get_pet_pedigree_fields", { p_pet_id: data.id });
+      const ped = Array.isArray(pedRows) ? pedRows[0] : pedRows;
+      setPedigreeLoaded(!pedErr && !!ped);
+      setSireId(ped?.sire_id ? String(ped.sire_id) : "");
+      setDamId(ped?.dam_id ? String(ped.dam_id) : "");
       setStatus(data.status || "");
       setPrice(data.price || "");
       setPattern(data.pattern || "");
@@ -238,8 +243,8 @@ export default function EditPetPage() {
       ...(healthLoaded ? { allergies: allergies || null, traits: traits || null, blood_type: bloodType || null } : {}),
       is_neutered: isNeutered,
       microchip_number: microchip || null,
-      sire_id: sireId ? Number(sireId) : null,
-      dam_id: damId ? Number(damId) : null,
+      // ส่งพ่อ/แม่พันธุ์เฉพาะเมื่อโหลดค่าเดิมได้ ไม่งั้นจะลบความสัมพันธ์เดิมทิ้งโดยไม่ตั้งใจ
+      ...(pedigreeLoaded ? { sire_id: sireId ? Number(sireId) : null, dam_id: damId ? Number(damId) : null } : {}),
       status: status || null, price: price === "" ? null : Number(price),
       pattern: null, coat: coat || null, ear: ear || null, leg: leg || null,
     }).eq("id", petId);
@@ -621,14 +626,14 @@ export default function EditPetPage() {
               <div className="ep-grid2">
                 <div className="ep-field" style={{ marginBottom: 0 }}>
                   <label className="ep-label">พ่อพันธุ์<img src="/icons/icon-men.png" alt="" style={{ display: 'inline-block', width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginLeft: 4 }} /></label>
-                  <select className="ep-select" value={sireId} onChange={e => setSireId(e.target.value)} disabled={sireOptions.length === 0}>
+                  <select className="ep-select" value={sireId} onChange={e => setSireId(e.target.value)} disabled={sireOptions.length === 0 || !pedigreeLoaded}>
                     <option value="">{sireOptions.length === 0 ? 'ยังไม่มีตัวผู้ให้เลือก' : '— ไม่ระบุ —'}</option>
                     {sireOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
                   </select>
                 </div>
                 <div className="ep-field" style={{ marginBottom: 0 }}>
                   <label className="ep-label">แม่พันธุ์<img src="/icons/icon-women.png" alt="" style={{ display: 'inline-block', width: 14, height: 14, objectFit: 'contain', verticalAlign: 'middle', marginLeft: 4 }} /></label>
-                  <select className="ep-select" value={damId} onChange={e => setDamId(e.target.value)} disabled={damOptions.length === 0}>
+                  <select className="ep-select" value={damId} onChange={e => setDamId(e.target.value)} disabled={damOptions.length === 0 || !pedigreeLoaded}>
                     <option value="">{damOptions.length === 0 ? 'ยังไม่มีตัวเมียให้เลือก' : '— ไม่ระบุ —'}</option>
                     {damOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
                   </select>

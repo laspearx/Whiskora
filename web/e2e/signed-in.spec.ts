@@ -136,7 +136,8 @@ test.describe('listed but not public', () => {
     await page.evaluate(() => localStorage.clear());
     await signIn(page, env.E2E_OWNER_EMAIL!, env.E2E_OWNER_PASSWORD!, `/p/${PET}`);
     await expect(page.getByText(/WSK-/).first()).toBeVisible();
-    await expect(page.getByText(/ตั้งไม่เป็นสาธารณะ: คนอื่นไม่เห็นสัตว์ตัวนี้/)).toBeVisible();
+    await expect(page.getByText(/ตั้งไม่เป็นสาธารณะ: โปรไฟล์นี้จำกัด/)).toBeVisible();
+    await expect(page.getByText(/ผู้ที่มีลิงก์รูปเดิมยังเปิดรูปได้/).first()).toBeVisible();   // no claim that photos are private
   });
 });
 

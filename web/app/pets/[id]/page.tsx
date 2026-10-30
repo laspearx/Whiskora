@@ -1214,7 +1214,7 @@ export default function PetDetailPage() {
               </div>
               {isOwner && pet.status === 'พร้อมย้ายบ้าน' && pet.is_public === false && (
                 <div style={{ margin: '8px 0', padding: '8px 12px', borderRadius: 12, background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E', fontSize: 12 }}>
-                  ตั้งไม่เป็นสาธารณะ: คนอื่นไม่เห็นสัตว์ตัวนี้ แม้สถานะเป็น &quot;พร้อมย้ายบ้าน&quot; (ไม่แสดงในรายการซื้อขายและจองไม่ได้)
+                  ตั้งไม่เป็นสาธารณะ: โปรไฟล์นี้จำกัดเฉพาะเจ้าของ ผู้ร่วมดูแล และทีมฟาร์ม แม้สถานะเป็น &quot;พร้อมย้ายบ้าน&quot; (ไม่แสดงในรายการซื้อขายและจองไม่ได้) — แต่ไฟล์รูปยังไม่เป็นส่วนตัว ผู้ที่มีลิงก์รูปเดิมยังเปิดรูปได้
                 </div>
               )}
               <div className="pet-id-card">
