@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.8.1 live; vaccine reminder function v6 + `20261031110929` on production, cron paused — not sending; see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.9.0 live; vaccine reminder cron enabled 12:37:56 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -83,7 +83,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - `/admin/verifications` — approve/reject farm verification requests; approval flips `farms.is_verified`/`verification_status`.
 
 ### Notifications (actual state, 2026-10-29)
-- Web Push: opt-in/out toggle in `/profile/settings` saves/deletes `push_subscriptions`; Edge Function `send-push-notifications` sends vaccine reminders (today/tomorrow, Bangkok dates) and deep-links to the pet's vaccine page. Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel) + VAPID secrets and `CRON_SECRET` (Supabase), and pg_cron job 1 (`0 1 * * *`). Production (since v1.8.1): function v6 (batched reads, errors ≠ 200, send log against re-sends, `CRON_SECRET` + JWT required), dry-run verified; **cron job 1 is inactive → no scheduled reminders yet**. Plan / monitoring: `docs/NOTIFICATIONS_SETUP.md` §4, separate from Vercel.
+- Web Push: opt-in/out toggle in `/profile/settings` saves/deletes `push_subscriptions`; Edge Function `send-push-notifications` sends vaccine reminders (today/tomorrow, Bangkok dates) and deep-links to the pet's vaccine page. Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel) + VAPID secrets and `CRON_SECRET` (Supabase), and pg_cron job 1 (`0 1 * * *`). Production: function v8 (batched reads, errors ≠ 200, send log against re-sends, `CRON_SECRET` + JWT required, QA single-user mode); real push verified once on Chrome/Windows; **cron job 1 active since 2026-10-31 12:37:56 UTC** (daily 01:00 UTC). Plan / monitoring: `docs/NOTIFICATIONS_SETUP.md` §4, separate from Vercel.
 - LINE / email (`lib/notify.ts`, `/api/notify/send`) have code but **no caller**; settings page says so.
 
 ### Profile (personal area)
@@ -129,7 +129,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
-- Vaccine reminders: new function live (v8) and proven with one real QA push, but cron job 1 is still paused (no scheduled sends) until approved; send-log history is lost on unsubscribe (cascade) — follow-up; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
+- Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history is lost on unsubscribe (cascade) — follow-up; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -154,6 +154,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- Staging only: send-log history kept across unsubscribe / resubscribe (`20261101090000`: user + endpoint hash, subscription ON DELETE SET NULL, 90-day retention).
+- v1.9.0 (PR #17 merged) + vaccine reminder cron job 1 enabled 12:37:56 UTC (daily 08:00 ICT); first run 2026-11-01 01:00 UTC to be checked; display verified on Chrome/Windows only.
 - PR #17 QA mode + real push QA on production: one QA account / one device, notification seen and opened `/pets/175/vaccines`; QA data removed; cron job 1 still inactive. Follow-up: send-log rows cascade-deleted on unsubscribe.
 - v1.8.1 (PR #16): vaccine reminder function v6 (`verify_jwt` on, secret required) + migration `20261031110929` on production; dry-run postcheck 9/9; cron job 1 inactive — not sending yet.
 - Vaccine reminder fix (PR #16, staging only, deployed-staging 25/25): two batched reads instead of the `pets!inner` embed, 500/502 instead of 200 `{sent:0}`, orphans skipped + counted, send log `20261031150000` (uncertain pushes kept, not retried), `CRON_SECRET` required + JWT verification, logs without error text.

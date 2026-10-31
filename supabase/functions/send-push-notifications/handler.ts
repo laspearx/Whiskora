@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
-  bangkokDate, buildPayload, chunk, classifyPushError, safeCode, safeErrorName, timingSafeEqual, withElapsed, type ReminderItem,
+  bangkokDate, buildPayload, chunk, classifyPushError, endpointHash, safeCode, safeErrorName, timingSafeEqual, withElapsed, type ReminderItem,
 } from "./reminders.ts";
 
 export type PushSubscriptionKeys = { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -20,6 +20,7 @@ const IN_CHUNK = 200;      // ids per .in() filter (keeps the URL short)
 const SEND_CONCURRENCY = 10;
 const PUSH_TIMEOUT_MS = 10_000;
 const STUCK_AFTER_MS = 15 * 60 * 1000;
+const RETENTION_DAYS = 90;   // send-log rows are pruned this long after their next_due
 
 class StageError extends Error {
   stage: string;
@@ -49,8 +50,11 @@ function check<T>(stage: string, res: { data: T | null; error: { code?: unknown 
 
 type Vaccine = { id: number; pet_id: number | null; vaccine_name: string | null; next_due: string };
 type Pet = { id: number; name: string | null; user_id: string | null };
-type Sub = { id: string; user_id: string; endpoint: string; p256dh: string; auth: string };
-type Delivery = { id: number; subscription_id: string; vaccine_id: number; next_due: string; status: string; claimed_at: string };
+type SubRow = { id: string; user_id: string; endpoint: string; p256dh: string; auth: string };
+type Sub = SubRow & { hash: string };
+type Delivery = { id: number; user_id: string; endpoint_hash: string; vaccine_id: number; next_due: string; status: string; claimed_at: string };
+// de-duplication key: recipient + destination (endpoint hash) + vaccine + due date — independent of the subscription row
+const key = (userId: string, hash: string, vaccineId: number, due: string) => `${userId}|${hash}|${vaccineId}|${due}`;
 
 async function dueVaccines(db: SupabaseClient, from: string, to: string): Promise<Vaccine[]> {
   const out: Vaccine[] = [];
@@ -86,7 +90,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
     outcome: "", dry_run: dryRun, qa_single_user: qaUserId !== null, date: today, window: [today, tomorrow],
     due: 0, orphan_skipped: 0, no_owner_skipped: 0, recipients: 0, recipients_without_subscription: 0,
     subscriptions: 0, already_sent_skipped: 0, stuck_claims: 0, uncertain_claims: 0,
-    attempted: 0, sent: 0, failed: 0, uncertain: 0, expired_removed: 0,
+    attempted: 0, sent: 0, failed: 0, uncertain: 0, expired_removed: 0, pruned: 0,
     failed_status: {} as Record<string, number>, uncertain_reason: {} as Record<string, number>,
   };
 
@@ -115,28 +119,32 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
   if (!byUser.size) return { ...r, outcome: "no_recipients" };
 
   // 3. the owners' push subscriptions
-  const subs = await byIdChunks<Sub>("push_subscriptions", [...byUser.keys()], (part, offset) =>
+  const subRows = await byIdChunks<SubRow>("push_subscriptions", [...byUser.keys()], (part, offset) =>
     db.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth").in("user_id", part)
       .order("id").range(offset, offset + PAGE - 1));
+  const subs: Sub[] = await Promise.all(subRows.map(async (s) => ({ ...s, hash: await endpointHash(s.endpoint) })));
   r.subscriptions = subs.length;
   if (qaUserId !== null && subs.length !== 1) return { ...r, outcome: "qa_guard_failed" };   // 0 or several devices
   r.recipients_without_subscription = [...byUser.keys()].filter((u) => !subs.some((s) => s.user_id === u)).length;
   if (!subs.length) return { ...r, outcome: "no_subscriptions" };
 
-  // 4. what each subscription already has (sent, or claimed by another / an earlier run)
-  const existing = await byIdChunks<Delivery>("deliveries_read", subs.map((s) => s.id), (part, offset) =>
-    db.from("vaccine_reminder_deliveries").select("id, subscription_id, vaccine_id, next_due, status, claimed_at")
-      .in("subscription_id", part).gte("next_due", today).order("id").range(offset, offset + PAGE - 1));
-  const taken = new Set(existing.map((d) => `${d.subscription_id}|${d.vaccine_id}|${d.next_due}`));
+  // 4. what each recipient + destination already has (sent, or claimed by another / an earlier run) — also rows whose
+  //    subscription was deleted and re-created with the same endpoint
+  const existing = await byIdChunks<Delivery>("deliveries_read", [...new Set(subs.map((s) => s.user_id))], (part, offset) =>
+    db.from("vaccine_reminder_deliveries").select("id, user_id, endpoint_hash, vaccine_id, next_due, status, claimed_at")
+      .in("user_id", part).gte("next_due", today).order("id").range(offset, offset + PAGE - 1));
+  const subHashes = new Set(subs.map((s) => `${s.user_id}|${s.hash}`));
+  const relevant = existing.filter((d) => subHashes.has(`${d.user_id}|${d.endpoint_hash}`));
+  const taken = new Set(relevant.map((d) => key(d.user_id, d.endpoint_hash, d.vaccine_id, d.next_due)));
   // 'sending' older than 15 min = crashed between claim and record; 'uncertain' = no answer from the push service.
   // Both stay taken (never re-sent automatically) and are reported for a person to look at.
-  r.stuck_claims = existing.filter((d) => d.status === "sending" && nowMs - Date.parse(d.claimed_at) > STUCK_AFTER_MS).length;
-  r.uncertain_claims = existing.filter((d) => d.status === "uncertain").length;
+  r.stuck_claims = relevant.filter((d) => d.status === "sending" && nowMs - Date.parse(d.claimed_at) > STUCK_AFTER_MS).length;
+  r.uncertain_claims = relevant.filter((d) => d.status === "uncertain").length;
 
   const wanted: { sub: Sub; items: ReminderItem[] }[] = [];
   for (const sub of subs) {
     const items = byUser.get(sub.user_id) ?? [];
-    const fresh = items.filter((i) => !taken.has(`${sub.id}|${i.vaccineId}|${i.dueDate}`));
+    const fresh = items.filter((i) => !taken.has(key(sub.user_id, sub.hash, i.vaccineId, i.dueDate)));
     r.already_sent_skipped += items.length - fresh.length;
     if (fresh.length) wanted.push({ sub, items: fresh });
   }
@@ -147,20 +155,21 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
 
   // 5. claim before sending; only rows this run inserted are sent (a concurrent run gets nothing back for them)
   const claimRows = wanted.flatMap(({ sub, items }) => items.map((i) => ({
-    subscription_id: sub.id, vaccine_id: i.vaccineId, next_due: i.dueDate, reminder_date: today, status: "sending",
+    subscription_id: sub.id, user_id: sub.user_id, endpoint_hash: sub.hash,
+    vaccine_id: i.vaccineId, next_due: i.dueDate, reminder_date: today, status: "sending",
   })));
   const claimed: Delivery[] = [];
   for (const part of chunk(claimRows, 500)) {
     claimed.push(...check<Delivery[]>("deliveries_claim", await db.from("vaccine_reminder_deliveries")
-      .upsert(part, { onConflict: "subscription_id,vaccine_id,next_due", ignoreDuplicates: true })
-      .select("id, subscription_id, vaccine_id, next_due, status, claimed_at")));
+      .upsert(part, { onConflict: "user_id,endpoint_hash,vaccine_id,next_due", ignoreDuplicates: true })
+      .select("id, user_id, endpoint_hash, vaccine_id, next_due, status, claimed_at")));
   }
-  const claimIds = new Map(claimed.map((d) => [`${d.subscription_id}|${d.vaccine_id}|${d.next_due}`, d.id]));
+  const claimIds = new Map(claimed.map((d) => [key(d.user_id, d.endpoint_hash, d.vaccine_id, d.next_due), d.id]));
   const jobs = wanted
     .map(({ sub, items }) => {
-      const mine = items.filter((i) => claimIds.has(`${sub.id}|${i.vaccineId}|${i.dueDate}`));
+      const mine = items.filter((i) => claimIds.has(key(sub.user_id, sub.hash, i.vaccineId, i.dueDate)));
       r.already_sent_skipped += items.length - mine.length;
-      return { sub, items: mine, ids: mine.map((i) => claimIds.get(`${sub.id}|${i.vaccineId}|${i.dueDate}`)!) };
+      return { sub, items: mine, ids: mine.map((i) => claimIds.get(key(sub.user_id, sub.hash, i.vaccineId, i.dueDate))!) };
     })
     .filter((j) => j.items.length);
 
@@ -179,7 +188,8 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
         r.sent++; sentIds.push(...job.ids);
       } catch (err) {
         const res = withElapsed(classifyPushError(err), deps.now() - t0, PUSH_TIMEOUT_MS);
-        if (res.kind === "expired") { r.expired_removed++; expiredSubs.push(job.sub.id); return; }
+        // expired: nothing was delivered → release the claims (history rows no longer cascade with the subscription)
+        if (res.kind === "expired") { r.expired_removed++; expiredSubs.push(job.sub.id); releaseIds.push(...job.ids); return; }
         if (res.kind === "uncertain") {
           r.uncertain++; uncertainIds.push(...job.ids);
           r.uncertain_reason[res.label] = (r.uncertain_reason[res.label] ?? 0) + 1;
@@ -197,7 +207,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
   }
 
   // 7. record: sent → 'sent'; clear failure → claim released (a later run may send it); uncertain → 'uncertain'
-  //    (kept, not retried); expired → subscription removed (its rows cascade)
+  //    (kept, not retried); expired → subscription removed (its rows stay, subscription_id → null)
   for (const part of chunk(sentIds, IN_CHUNK)) {
     check("deliveries_mark_sent", await db.from("vaccine_reminder_deliveries")
       .update({ status: "sent", sent_at: new Date().toISOString() }).in("id", part));
@@ -218,6 +228,14 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string 
     : r.sent + r.expired_removed > 0 ? "partial_failure"
     : r.failed === 0 ? "uncertain" : "failed";
   return { ...r, outcome };
+}
+
+// retention: rows whose next_due is more than RETENTION_DAYS in the past. Best effort on every non-dry run (also when
+// nothing was due); a failure is logged with its code and reported as pruned = -1, it never fails the run.
+async function prune(deps: Deps, nowMs: number): Promise<number> {
+  const pr = await deps.db.from("vaccine_reminder_deliveries").delete({ count: "exact" }).lt("next_due", bangkokDate(nowMs, -RETENTION_DAYS));
+  if (pr.error) { log("error", { stage: "deliveries_prune", code: safeCode(pr.error.code) }); return -1; }
+  return pr.count ?? 0;
 }
 
 export async function handleRequest(req: Request, deps: Deps): Promise<Response> {
@@ -259,6 +277,7 @@ export async function handleRequest(req: Request, deps: Deps): Promise<Response>
 
   try {
     const result = await run(deps, nowMs, dryRun, qaUserId);
+    if (!dryRun && result.outcome !== "qa_guard_failed") result.pruned = await prune(deps, nowMs);
     if (result.outcome === "qa_guard_failed") { log("error", { stage: "qa_guard", subscriptions: result.subscriptions }); return json(409, result); }
     const problem = result.failed > 0 || result.uncertain > 0;
     log(problem ? "error" : "info", { summary: result });

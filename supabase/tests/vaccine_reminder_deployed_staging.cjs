@@ -66,10 +66,14 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
   const mode = (tag, m) => q(`update public.qa_push_mock_modes set mode = $2 where tag = $1`, [`QAVR-${tag}`, m]);
   const resetRuns = async () => { await q(`delete from public.vaccine_reminder_deliveries where vaccine_id between 9900021 and 9900030`); await q(`delete from public.qa_push_mock_hits`); await q(`update public.qa_push_mock_modes set mode = 'ok'`); };
   const hits = async () => Object.fromEntries((await q(`select replace(tag, 'QAVR-', '') t, count(*)::int n, bool_and(aes128gcm and vapid) enc from public.qa_push_mock_hits group by tag`)).map((r) => [r.t, r.enc ? r.n : `${r.n}!unencrypted`]));
-  const deliveries = async () => Object.fromEntries((await q(`select replace(split_part(s.endpoint, '/qa-push-mock/', 2), 'QAVR-', '') t,
-      string_agg(d.vaccine_id - 9900000 || ':' || d.status, ',' order by d.vaccine_id) v
-    from public.vaccine_reminder_deliveries d join public.push_subscriptions s on s.id = d.subscription_id
-    where d.vaccine_id between 9900021 and 9900030 group by 1`)).map((r) => [r.t, r.v]));
+  // send-log rows are keyed by user + endpoint hash (they survive the subscription row) → map hashes to our tags
+  const sha = (e) => require("crypto").createHash("sha256").update(e).digest("hex");
+  const TAG_OWNER = { A1: U.owner, A2: U.owner, A1N: U.owner, B1: U.buyer };
+  const tagOfHash = new Map(Object.keys(TAG_OWNER).map((t) => [sha(`${MOCK}/QAVR-${t}`), t]));
+  const deliveries = async () => Object.fromEntries((await q(`select user_id::text u, endpoint_hash h,
+      string_agg(vaccine_id - 9900000 || ':' || status, ',' order by vaccine_id) v
+    from public.vaccine_reminder_deliveries where vaccine_id between 9900021 and 9900030 group by 1, 2`)).map((r) => {
+      const t = tagOfHash.get(r.h) ?? "?"; return [TAG_OWNER[t] === r.u ? t : `${t}@other-user`, r.v]; }));
   // never let a non-dry run reach anything but the mock
   async function onlyMockSubscriptions() {
     const other = Number((await q(`select count(*) c from public.push_subscriptions where endpoint not like $1`, [`${MOCK}/QAVR-%`]))[0].c);
@@ -153,6 +157,31 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
     ok("QA real run (buyer) → 1 push to B1 only (A1/A2 have due items but get nothing), only B1 rows", q3.status === 200 && q3.j.sent === 1 && hq.B1 === 1 && !hq.A1 && !hq.A2 && dq.B1 === "25:sent" && !dq.A1 && !dq.A2, { ...pick(q3.j, "outcome", "sent"), hits: hq, d: dq });
     const q4 = await call({ qa_only_user_id: U.buyer });
     ok("QA run repeated → already_sent, still 1 push", q4.status === 200 && q4.j.outcome === "already_sent" && (await hits()).B1 === 1);
+
+    // ---------- 5c. history across unsubscribe / resubscribe (send log no longer tied to the subscription row) ----------
+    await fixture(); await resetRuns();
+    await call({});
+    const addSub = async (uid, t) => { const cr = require("crypto"); const e = cr.createECDH("prime256v1"); e.generateKeys();
+      await q(`insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)`, [uid, `${MOCK}/QAVR-${t}`, e.getPublicKey("base64url"), cr.randomBytes(16).toString("base64url")]);
+      await q(`insert into public.qa_push_mock_modes (tag, mode) values ($1, 'ok') on conflict (tag) do update set mode = 'ok'`, [`QAVR-${t}`]); };
+    await q(`delete from public.push_subscriptions where endpoint = $1`, [`${MOCK}/QAVR-A1`]);
+    const kept = (await q(`select count(*)::int c, count(*) filter (where subscription_id is null)::int n from public.vaccine_reminder_deliveries where endpoint_hash = $1`, [sha(`${MOCK}/QAVR-A1`)]))[0];
+    ok("unsubscribe: A1's send-log rows kept with subscription_id null", kept.c === 2 && kept.n === 2, kept);
+    await addSub(U.owner, "A1");
+    const rs = await call({});
+    ok("resubscribe with the same endpoint → already_sent, mock A1 still 1 request", rs.status === 200 && rs.j.outcome === "already_sent" && (await hits()).A1 === 1, { ...pick(rs.j, "outcome", "attempted"), hits: await hits() });
+    await q(`delete from public.push_subscriptions where endpoint = $1`, [`${MOCK}/QAVR-A1`]);
+    await addSub(U.owner, "A1N");
+    const rn = await call({});
+    ok("resubscribe with a NEW endpoint → sent to it (cannot be tied to the old device; documented)", rn.status === 200 && rn.j.sent === 1 && (await hits()).A1N === 1, { ...pick(rn.j, "outcome", "sent"), hits: await hits() });
+    await q(`delete from public.push_subscriptions where endpoint = $1`, [`${MOCK}/QAVR-A2`]);
+    await q(`update public.pets set user_id = $1 where id = 900022`, [U.buyer]);
+    await addSub(U.buyer, "A2");
+    const ri = await call({});
+    const di = await deliveries();
+    ok("another account on the same endpoint is not blocked: buyer gets pet A2's reminder on endpoint A2", ri.status === 200 && di["A2@other-user"] === "22:sent,25:sent" && di.A2 === "21:sent,22:sent", { d: di });
+    await q(`update public.pets set user_id = $1 where id = 900022`, [U.owner]);
+    await fixture();
 
     // ---------- 6. uncertain: the mock receives the message and never answers (function times out after 10 s) ----------
     await resetRuns(); await mode("A2", "hang");

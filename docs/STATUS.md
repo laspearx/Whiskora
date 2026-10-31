@@ -79,6 +79,25 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Send-log history across unsubscribe / resubscribe (branch `feat/vaccine-delivery-history`; STAGING ONLY)
+| Item | Result |
+| --- | --- |
+| Migration `20261101090000_vaccine_reminder_delivery_history.sql` (sha256 `a9be8c5e2a11b6dbc03379076dad42ead2857f1cd2130ad98898b4c8b3b35abb`) | staging only. **No automatic delete:** after the back-fill it raises P0001 (counts only) and the whole transaction rolls back if any row cannot be back-filled or would collide on the new key (precheck 13 / 14 report the same). Rows get `user_id` + `endpoint_hash` (SHA-256 hex, not the endpoint); `subscription_id` nullable, **ON DELETE SET NULL**; unique (user_id, endpoint_hash, vaccine_id, next_due); `user_id → auth.users ON DELETE CASCADE`; RLS / ACL unchanged. **Not on production** |
+| Function (staging v8, `ezbr 438346bf…`) | de-duplicates on user + endpoint hash; 404/410 releases its claims (no stuck rows now that rows survive); retention: rows > 90 days past `next_due` pruned on every non-dry, non-refused run (best effort, `pruned` count) |
+| Tests | unit 8/8 (incl. JS hash = SQL `encode(digest(…,'sha256'),'hex')`); local harness **65/65**; deployed staging **33/33** (function logic unchanged since); migration guard `staging_only/20261101090000_migration_guard_test_STAGING_ONLY.cjs` **9/9**: un-back-fillable row → P0001 "1 row(s)…", rows (2) + schema unchanged; key collision → P0001 "1 key group(s)…", rows + schema unchanged; good data → applied, back-filled (hash = function hash), history kept after subscription delete |
+| Behaviour proven | unsubscribe keeps history (subscription_id null); resubscribe with the **same endpoint** → not re-sent; **new endpoint** → sent again (an endpoint hash cannot prove the same device — documented); another account on the same endpoint (shared browser / pet transferred) is **not** blocked; retention prunes 100-day-old rows, keeps 30-day-old, not on dry runs |
+| Rollout plan | see `docs/NOTIFICATIONS_SETUP.md` §4 "Send-log history rollout": pause job 1 → confirm no run in flight → migration + matching function → dry run + catalog → only then propose re-enabling. Stuck half-way → keep job 1 paused, fix forward |
+
+## 2026-10-31 — PR #17 merged (v1.9.0) + vaccine reminder cron job 1 ENABLED (UTC)
+| Step | Result |
+| --- | --- |
+| Pin + merge | PR #17 head `864c31286d7a5a323cd5582e78c877fc41f3e89b` (function files = production v8 / staging v7, `ezbr_sha256 cdb4061a…`); merge `6b009f0` → bot `15d01cc` **v1.9.0**; Vercel Production v1.9.0: bundle production ref 1, staging ref 0, VAPID public key unchanged. **Edge Function not redeployed** (running v8 = merged files) |
+| Precheck / postcheck 12:37 | precheck `after`, all ok (Vault headers, schedule, RLS/ACL); dry-run postcheck **9/9**; cron command uses Vault, no literal secret (md5 `e7a6a301…`); QA test vaccines 0, QA subscriptions 0, subscriptions 0, send log 0, vaccines 45, migrations latest `20261031110929` |
+| **Enabled** | cron job 1 `active = true` at **2026-10-31 12:37:56 UTC**; schedule `0 1 * * *`, command unchanged. No manual send, no back-fill, no QA data |
+| **First scheduled run** | **2026-11-01 01:00 UTC (08:00 ICT)**. Check between 01:00 and 07:00 UTC (pg_net TTL 6 h) with `supabase/tests/vaccine_reminder_run_check.sql` + the function summary log + send-log statuses — not cron "succeeded". With 0 subscriptions today the expected outcome is `no_due` / `no_subscriptions` (HTTP 200) unless users subscribe before then. Nobody watches this automatically: it has to be requested |
+| If it fails | pause only job 1 (`cron.alter_job(1, active := false)`), fix forward; never v5, never `verify_jwt` off, never delete send-log rows to force a retry |
+| Limits | real display verified on **Chrome / Windows only** (FCM); Android, macOS, Firefox, Safari / iOS not verified. Send-log history is lost on unsubscribe (follow-up PR on staging) |
+
 ## 2026-10-31 — Real push QA on production (PR #17 QA mode; one account, one device; cron stays inactive; UTC)
 | Step | Result |
 | --- | --- |
@@ -501,7 +520,7 @@ still loads); owners have no UI for `is_public` / per-pet tiers; access given by
 
 ## Next start
 1. Log watches: v1.7.1 until ≥ 2026-11-01 07:24 UTC; v1.8.0 until ≥ 2026-11-01 08:22 UTC (separate).
-2. Vaccine reminder fix PR #16: staging done (deployed 25/25). Production only after approval, per `docs/NOTIFICATIONS_SETUP.md` §4 (cron headers before the deploy). Separate approvals: browser push QA, FK, removing `qa-push-mock`.
+2. Vaccine reminders: cron job 1 enabled 2026-10-31 12:37:56 UTC — **check the first run 2026-11-01 01:00–07:00 UTC** with `supabase/tests/vaccine_reminder_run_check.sql` + function summary log. Next: send-log history PR (staging). Separate: FK decision, removing `qa-push-mock` on staging.
 3. Reservation → transfer: live (v1.7.0 + `20261030121715`, 19:17:15 ICT). Logs checked 12:17:15 → 12:50 UTC: errors only from the QA denial probes (≤ 12:18 UTC), 0 deadlocks. Production happy path untested (staging only).
 4. Pet privacy: live (v1.7.1 + `20261031072347`, 2026-10-31 07:23:47 UTC). Next after the transfer PR: private files (signed URLs, cache, old links), owner UI for `is_public` / tiers.
 5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

@@ -2,7 +2,7 @@
 // Pure helpers of the vaccine reminder Edge Function: Bangkok dates around midnight, payload, push error classes.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bangkokDate, buildPayload, chunk, classifyPushError, makeSender, PushNotSentError, safeCode, safeErrCode, withElapsed, safeErrorName, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
+import { bangkokDate, buildPayload, chunk, classifyPushError, endpointHash, makeSender, PushNotSentError, safeCode, safeErrCode, withElapsed, safeErrorName, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
 
 test("Bangkok date flips at 17:00 UTC, not at UTC midnight", () => {
   assert.equal(bangkokDate(Date.parse("2026-10-31T16:59:59Z")), "2026-10-31"); // 23:59:59 BKK
@@ -83,6 +83,11 @@ test("log hygiene: only real codes / plain error names pass", () => {
   assert.equal(safeErrCode("Key (x)=(secret)"), "other");
   assert.equal(safeErrorName({ name: "https://secret.example" }), "object");
   assert.equal(safeErrorName("plain string with secret"), "string");
+});
+
+test("endpointHash = lowercase hex SHA-256 (same as SQL encode(digest(endpoint, 'sha256'), 'hex'))", async () => {
+  assert.equal(await endpointHash("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+  assert.match(await endpointHash("https://fcm.googleapis.com/fcm/send/x"), /^[0-9a-f]{64}$/);
 });
 
 test("chunk + constant-time compare", () => {
