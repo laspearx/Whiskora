@@ -215,9 +215,9 @@ export default function RegisterFarmPage() {
         owner_id: session.user.id, entity_id: farmData.id, avatar_url: imageUrl || null,
       }).select('id').single();
       if (wsData) {
-        await supabase.from('workspace_members').insert({
-          workspace_id: wsData.id, user_id: session.user.id, role: 'owner',
-        });
+        // owner rights come from the business itself; this only records the owner row (idempotent, owner-checked)
+        const { error: ownErr } = await supabase.rpc('ensure_workspace_owner_membership', { p_workspace: wsData.id });
+        if (ownErr) console.warn('owner membership not recorded', ownErr.code);
       }
 
       alert('ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
