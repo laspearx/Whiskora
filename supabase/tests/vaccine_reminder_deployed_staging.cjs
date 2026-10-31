@@ -139,6 +139,21 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
     ok("410 → subscription B1 deleted (expired_removed 1), A1/A2 sent, 200", e1.status === 200 && e1.j.expired_removed === 1 && e1.j.sent === 2 && JSON.stringify(left) === '["A1","A2"]', { ...pick(e1.j, "outcome", "expired_removed", "sent"), left });
     await fixture();
 
+    // ---------- 5b. QA single-user mode (qa_only_user_id) ----------
+    await resetRuns();
+    const qd = await call({ dry_run: true, qa_only_user_id: U.buyer });
+    ok("QA dry run (buyer): computes exactly 1 recipient / 1 device, but sends 0 pushes, writes 0 send-log rows, mock gets 0 requests",
+      qd.status === 200 && qd.j.outcome === "would_send" && qd.j.qa_single_user === true && qd.j.recipients === 1 && qd.j.attempted === 1 && qd.j.sent === 0
+        && Object.keys(await deliveries()).length === 0 && Object.keys(await hits()).length === 0,
+      { ...pick(qd.j, "outcome", "recipients", "attempted", "sent"), rows: Object.keys(await deliveries()).length, mock_requests: Object.keys(await hits()).length });
+    const q2 = await call({ qa_only_user_id: U.owner });
+    ok("QA run for the owner (2 subscriptions) → 409 qa_guard_failed, 0 mock requests", q2.status === 409 && q2.j.outcome === "qa_guard_failed" && Object.keys(await hits()).length === 0, pick(q2.j, "outcome", "subscriptions"));
+    const q3 = await call({ qa_only_user_id: U.buyer });
+    const hq = await hits(), dq = await deliveries();
+    ok("QA real run (buyer) → 1 push to B1 only (A1/A2 have due items but get nothing), only B1 rows", q3.status === 200 && q3.j.sent === 1 && hq.B1 === 1 && !hq.A1 && !hq.A2 && dq.B1 === "25:sent" && !dq.A1 && !dq.A2, { ...pick(q3.j, "outcome", "sent"), hits: hq, d: dq });
+    const q4 = await call({ qa_only_user_id: U.buyer });
+    ok("QA run repeated → already_sent, still 1 push", q4.status === 200 && q4.j.outcome === "already_sent" && (await hits()).B1 === 1);
+
     // ---------- 6. uncertain: the mock receives the message and never answers (function times out after 10 s) ----------
     await resetRuns(); await mode("A2", "hang");
     const t0 = Date.now();
