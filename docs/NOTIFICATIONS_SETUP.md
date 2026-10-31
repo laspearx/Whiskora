@@ -33,7 +33,9 @@ Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same public key) in the staging Vercel envir
 The function and its cron job live in **Supabase** only. Merging / deploying the web app on Vercel does **not** deploy
 or change the function, and the function deploy does not need a Vercel deploy.
 
-**Production state 2026-10-31 (read-only):** function v5 (older code than the repo), **`verify_jwt = false` and no
+**Production since 2026-10-31 11:11 UTC (v1.8.1):** function **v6** (`verify_jwt: true`, `CRON_SECRET` set, VAPID pair unchanged and matching the web key), migration `20261031110929`, Vault `cron_secret` + `functions_anon_key`, cron job 1 command with Vault headers and **`active = false`** — dry-run verified, no scheduled sends. Steps 0–6 below are done; step 7 starts with re-enabling the job (separate approval). Details: `docs/STATUS.md`.
+
+**Production state before (2026-10-31, read-only):** function v5 (older code than the repo), **`verify_jwt = false` and no
 secret check** → anyone with the URL can trigger a run. Cron job 1 (`0 1 * * *`) posts with **no** `Authorization` /
 `x-cron-secret`. 0 push subscriptions *today*. What the evidence shows about sends — and what it does not:
 - Sampled log days 2026-08-20, 09-15, 10-28, 10-31: one function call at ~01:00 UTC (cron) and the vaccines query
@@ -114,10 +116,21 @@ $cmd$);
 Not in scope: back-filling missed reminders, LINE / email reminders, the FK `vaccines.pet_id → pets`
 (`docs/PROPOSAL_VACCINE_PET_FK.md`), the 3 orphan vaccine rows on production (kept as they are).
 
-**Separate QA step for approval later (not done):** real browser push on staging — a QA account subscribes in a real
-browser on the staging Preview, a staging vaccine is due, one non-dry run is triggered, the notification is seen and
-clicked (deep link), then unsubscribe and remove the rows. This sends one real push through the browser vendor's push
-service to that QA device only.
+**Real push QA on production — done 2026-10-31 (PR #17 QA mode):** one account (QA stranger), one device (Chrome on
+Windows), test vaccine on QA pet 175; `{"qa_only_user_id": "<uuid>"}` → only that user, 409 unless exactly one
+subscription, title `[ทดสอบ]`. Round 2 seen + clicked through to `/pets/175/vaccines`; everything removed afterwards
+(see `docs/STATUS.md`). Turning cron job 1 on is the next, separate approval.
+
+**Earlier proposal — staging browser push QA (not done):** one QA account, one device, one message.
+- Today every Preview has push switched off (`web/lib/push-client.ts`, `isPreviewDeploy` → no VAPID key). Keep that.
+- Separate, limited channel: a dedicated QA branch whose Vercel Preview env (branch-scoped, that branch only) holds the
+  **staging** VAPID public key and a QA flag; a small code change lets push subscribe only when both are present and
+  refuses the production key. General Previews stay without push; no production key on any Preview.
+- Run: QA account subscribes on that Preview (staging) → one synthetic staging vaccine due → one non-dry run of the
+  staging function → notification seen and clicked (`/pets/<id>/vaccines`) → unsubscribe in the app → subscription row
+  and send-log rows gone → remove the vaccine row, the QA branch env and the branch.
+- This sends one real push through the browser vendor's push service to that one device. VAPID pair check for
+  production (private key ↔ web key) is only provable by a real push; same approval question for production later.
 
 ### Staging state (2026-10-31)
 - `send-push-notifications` v6, `verify_jwt: true`; owner set `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`

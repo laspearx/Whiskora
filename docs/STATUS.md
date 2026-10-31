@@ -79,7 +79,45 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
-## 2026-10-31 — Vaccine reminder fix (PR #16, branch `fix/vaccine-reminders`; staging only, nothing on production)
+## 2026-10-31 — Real push QA on production (PR #17 QA mode; one account, one device; cron stays inactive; UTC)
+| Step | Result |
+| --- | --- |
+| QA mode | PR #17 (`qa_only_user_id`: keeps only that user's items, 409 unless exactly 1 subscription, title `[ทดสอบ]`, own tag). Staging v7 deployed-staging **29/29** (QA dry run: 1 recipient / 1 device computed, **0 pushes, 0 send-log rows, 0 mock requests**). Production **v8**, `verify_jwt: true`, `ezbr_sha256 cdb4061a25dbd39e75d8e09c03c2ae81f7f5e5d67c6b9657181677ab2d638c4a` = staging v7; dry-run postcheck 9/9 |
+| Guard on production | QA dry run before the device was ready → 409 `qa_guard_failed` (subscriptions 0) |
+| Round 1 | test vaccine #1 on QA pet 175 (owner QA stranger), due 2026-10-31. Owner subscribed Chrome on Windows (11:46:32); total subscriptions 1. QA dry run would_send 1/1 → **one QA send 11:47:14 → 200 `sent: 1`** (FCM accepted), send-log `sent` 11:47:15. **Not seen on the device**: Windows had Chrome notifications turned off |
+| Between rounds | owner turned Windows notifications on and toggled the app switch → app deleted the subscription (12:11:23) and created a new one (12:11:27). **The round-1 send-log row was deleted with it (ON DELETE CASCADE)** — round-1 evidence kept here and in the function log (summary `sent` 11:47:15) |
+| Round 2 (owner approved one more send) | test vaccine #1 removed, test vaccine #2 added (only due item); QA dry run: due 1, recipients 1, 1 device → **one QA send 12:26:13 → 200 `sent: 1`**, send-log `sent` 12:26:14 (FCM). **Owner confirmed: notification seen, click opened `/pets/175/vaccines`** → production VAPID pair works end to end |
+| Unsubscribe + clean-up 12:30 | owner switched notifications off → subscriptions 0, send log 0 (cascade); test vaccine #2 removed → pet 175 has 0 vaccines, pet row md5 and `is_public` unchanged; vaccines 45 (as before), orphan rows 3 (untouched) |
+| Function log 11:39–12:31 | 2 sending runs, both QA mode (11:47:15, 12:26:14); everything else dry runs / 409; no other caller; counts only |
+| State | cron job 1 **inactive** (schedule `0 1 * * *`); no scheduled sends; nothing sent to anyone else; no back-fill |
+
+**Follow-up (separate task, not fixed):** send-log rows are deleted when a subscription is deleted (`ON DELETE CASCADE`):
+history is lost on unsubscribe, and a user who switches notifications off and on the same day can receive the same
+reminder again (new subscription id). Option for a later migration: keep rows with `subscription_id ON DELETE SET NULL`
+plus an endpoint hash, and de-duplicate on the hash.
+
+## 2026-10-31 — PR #16 rollout (v1.8.1): new vaccine reminder function on production — installed, dry-run verified, **NOT sending** (UTC)
+| Step | Result |
+| --- | --- |
+| Pin | PR head `44d7b21e5b9421ad0f34e78b4b669f71dbf5f794` on main `07a01cf`; function files + migration sha256 = the deployed-staging set; no `web/` change |
+| Precheck (read-only, 11:06) | no STOP; WARN 6 only (cron without headers — allowed fix); subscriptions 0, Vault 0, orphan rows 3 (untouched) |
+| Merge | `5cabae6` → bot `881d1c7` **v1.8.1** (version files only). Vercel Production v1.8.1: bundle production ref 1, staging ref 0. **The merge did not deploy the Edge Function** |
+| Cron job 1 | recorded (schedule `0 1 * * *`, command posted with no headers, active=true) → **`active = false`** 11:09:16; schedule unchanged |
+| Migration | **`20261031110929` `vaccine_reminder_deliveries`** 11:09:29, one transaction; file + stored statement sha256 `86d9dba318b1bdaae6b818058c20908924c9259e5ffb32bbd78debbf64199a8b`; RLS on, 0 policies, no anon/authenticated grants |
+| Vault + cron command | Vault was empty → created `cron_secret` (new production value, not staging's) + `functions_anon_key` (production anon JWT), values as query parameters; job 1 command now builds `Authorization` + `x-cron-secret` from Vault (no literal secret; md5 `e7a6a301…`); still inactive |
+| Function deploy | production **v6**, `verify_jwt: true`, `ezbr_sha256 cb1a5a922435a28cc6afc5657222f48f5f041e749a6a766b97ea7745a23376c7` = staging v6 (deployed-staging 25/25). Old v5 (open, no secret) replaced 11:11:51 |
+| Secrets | owner set `CRON_SECRET`; `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` already present, owner confirmed the public key digest matches the web Production key (sha256 `a6200242…abe65`); no new VAPID pair |
+| Before the secret (11:12) | no key 401, bad JWT 401, anon JWT → 500 `misconfigured` (fail closed), GET 405 |
+| Postcheck `vaccine_reminder_prod_postcheck.cjs` 11:25:28–11:25:41 | **9/9** — every authenticated call `dry_run: true`. HTTP: no key / bad JWT / no secret / wrong secret 401, GET 405, `as_of` without dry_run 400; dry run 200 `no_due`. pg_net with the cron job's Vault headers: none / JWT only / wrong secret 401, cron headers + dry run **200** (read from `net._http_response`). Send log 0 rows before and after, subscriptions unchanged (0), cron job 1 inactive, table RLS/ACL ok, anon API read 401 |
+| Extra dry runs (as_of, 11:26) | 2026-09-18 → 200 `no_subscriptions` (due 1, recipients 1: vaccines → pets → subscriptions all read); 2027-01-27 → 200 `no_recipients` (due 1, **orphan_skipped 1**). Send log still 0 rows |
+| Function logs 11:08–11:30 | only our probes; summary lines with counts; config line naming the missing secret before it was set; no PGRST200, no names / ids / endpoints |
+| **State now** | installed and verified by dry run; **cron job 1 inactive — no scheduled sends**; no push sent; no back-fill; FK not added; orphans untouched |
+
+To start scheduled sends later (separate approval): re-run `vaccine_reminder_precheck.sql` + the postcheck, then
+`select cron.alter_job(job_id := 1, active := true);`, then check the first run with `net._http_response` (≤ 6 h) +
+the function summary log — not cron "succeeded". Real-push QA: proposal only (`docs/NOTIFICATIONS_SETUP.md` §4).
+
+## 2026-10-31 — Vaccine reminder fix (PR #16, branch `fix/vaccine-reminders`; staging results — on production since v1.8.1, not sending)
 | Item | Result |
 | --- | --- |
 | Production (read-only) | function **v5** = older code than the repo, **`verify_jwt: false`, no secret check** → callable by anyone with the URL; cron job 1 `0 1 * * *` posts with no auth headers; 0 subscriptions today; Vault 0 secrets; `pg_net.ttl` 6 h, `cron.log_statement` on |

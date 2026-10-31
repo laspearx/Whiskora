@@ -4,7 +4,8 @@
 //          VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL (required unless dry_run).
 // Deploy WITH JWT verification (default; do not pass --no-verify-jwt): the gateway also needs a valid key.
 // Body (optional JSON): {"dry_run": true} → read only, nothing sent or written; {"dry_run": true, "as_of": "<ISO>"}
-// evaluates the window for another moment (dry run only).
+// evaluates the window for another moment (dry run only); {"qa_only_user_id": "<uuid>"} → QA run for that one user
+// only, refused (409) unless the user has exactly one subscription; title starts with "[ทดสอบ]".
 //
 // Reads are batched: vaccines in the window (paged), then their pets by id, then the owners' subscriptions —
 // no PostgREST embed (vaccines.pet_id has no FK to pets). Vaccines whose pet no longer exists are skipped and

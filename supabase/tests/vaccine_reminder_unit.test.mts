@@ -27,6 +27,13 @@ test("payload: title by any item due today, per-item day label, single pet → i
   assert.ok(long.body.length <= 80 && long.body.endsWith("..."));
 });
 
+test("test payload: title marked [ทดสอบ], own tag (never replaces a real reminder), same deep link", () => {
+  const a = { vaccineId: 1, petId: 175, petName: "QA", vaccineName: "ทดสอบระบบแจ้งเตือน", dueDate: "2026-10-31" };
+  const t = JSON.parse(buildPayload([a], "2026-10-31", true)), n = JSON.parse(buildPayload([a], "2026-10-31"));
+  assert.equal(t.title, "[ทดสอบ] วันนี้มีกำหนดฉีดวัคซีน"); assert.equal(t.tag, "vaccine-reminder-test-2026-10-31"); assert.equal(t.url, "/pets/175/vaccines");
+  assert.equal(n.title, "วันนี้มีกำหนดฉีดวัคซีน"); assert.equal(n.tag, "vaccine-reminder-2026-10-31");
+});
+
 test("push results: an answer from the push service or a provable non-send is clear; no answer is uncertain", () => {
   assert.deepEqual(classifyPushError({ statusCode: 410 }), { kind: "expired", label: "410" });
   assert.deepEqual(classifyPushError({ statusCode: 404 }), { kind: "expired", label: "404" });
