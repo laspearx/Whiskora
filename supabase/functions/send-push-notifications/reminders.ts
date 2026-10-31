@@ -60,7 +60,7 @@ export type PushResult =
   | { kind: "expired"; label: string }
   | { kind: "rejected"; label: string }
   | { kind: "not_delivered"; label: string }
-  | { kind: "uncertain"; label: string };
+  | { kind: "uncertain"; label: string; errName?: string; errCode?: string | null };
 
 // labels are fixed strings or numeric statuses only — never the error message (it can hold the endpoint)
 export function classifyPushError(err: unknown): PushResult {
@@ -76,7 +76,13 @@ export function classifyPushError(err: unknown): PushResult {
   const msg = typeof e?.message === "string" ? e.message : "";
   if (code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT" || /socket timeout|timed out/i.test(msg)) return { kind: "uncertain", label: "timeout" };
   if (code === "ECONNRESET" || code === "EPIPE" || /socket hang up|connection (reset|closed)/i.test(msg)) return { kind: "uncertain", label: "connection_lost" };
-  return { kind: "uncertain", label: "unknown" };
+  // unknown: keep the error's type and code (both pattern-checked) so it can be identified later — never the message
+  return { kind: "uncertain", label: "unknown", errName: safeErrorName(err), errCode: safeErrCode(code) };
+}
+
+// the request ran until our own timeout → treat an unrecognised error as a timeout (runtimes word it differently)
+export function withElapsed(res: PushResult, elapsedMs: number, timeoutMs: number): PushResult {
+  return res.kind === "uncertain" && res.label === "unknown" && elapsedMs >= timeoutMs * 0.95 ? { ...res, label: "timeout" } : res;
 }
 
 type WebPushLike = {
@@ -97,6 +103,10 @@ export function makeSender(wp: WebPushLike, extraOptions: object = {}) {
 export function safeCode(code: unknown): string | null {
   if (code == null || code === "") return null;
   return typeof code === "string" && /^(PGRST\d{3}|[0-9A-Z]{5})$/.test(code) ? code : "other";
+}
+export function safeErrCode(code: unknown): string | null {
+  if (code == null || code === "") return null;
+  return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,40}$/.test(code) ? code : "other";
 }
 export function safeErrorName(e: unknown): string {
   const n = (e as { name?: unknown })?.name;

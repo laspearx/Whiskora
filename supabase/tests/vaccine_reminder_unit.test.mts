@@ -2,7 +2,7 @@
 // Pure helpers of the vaccine reminder Edge Function: Bangkok dates around midnight, payload, push error classes.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bangkokDate, buildPayload, chunk, classifyPushError, makeSender, PushNotSentError, safeCode, safeErrorName, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
+import { bangkokDate, buildPayload, chunk, classifyPushError, makeSender, PushNotSentError, safeCode, safeErrCode, withElapsed, safeErrorName, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
 
 test("Bangkok date flips at 17:00 UTC, not at UTC midnight", () => {
   assert.equal(bangkokDate(Date.parse("2026-10-31T16:59:59Z")), "2026-10-31"); // 23:59:59 BKK
@@ -39,9 +39,14 @@ test("push results: an answer from the push service or a provable non-send is cl
   assert.deepEqual(classifyPushError(new Error("Socket timeout")), { kind: "uncertain", label: "timeout" });       // web-push timeout
   assert.deepEqual(classifyPushError(Object.assign(new Error("x"), { code: "ETIMEDOUT" })), { kind: "uncertain", label: "timeout" });
   assert.deepEqual(classifyPushError(Object.assign(new Error("socket hang up"), { code: "ECONNRESET" })), { kind: "uncertain", label: "connection_lost" });
-  assert.deepEqual(classifyPushError(new Error("something else")), { kind: "uncertain", label: "unknown" });
-  assert.deepEqual(classifyPushError(null), { kind: "uncertain", label: "unknown" });
-  assert.deepEqual(classifyPushError({ statusCode: "500" }), { kind: "uncertain", label: "unknown" });          // not a real status
+  assert.deepEqual(classifyPushError(new Error("something else")), { kind: "uncertain", label: "unknown", errName: "Error", errCode: null });
+  assert.deepEqual(classifyPushError(null), { kind: "uncertain", label: "unknown", errName: "object", errCode: null });
+  assert.equal(classifyPushError({ statusCode: "500" }).label, "unknown");          // not a real status
+  assert.deepEqual(classifyPushError(Object.assign(new Error("x"), { code: "https://secret" })), { kind: "uncertain", label: "unknown", errName: "Error", errCode: "other" });
+  // ran into our own timeout → timeout, whatever the runtime called the error
+  assert.equal(withElapsed(classifyPushError(new Error("deno wording")), 10_050, 10_000).label, "timeout");
+  assert.equal(withElapsed(classifyPushError(new Error("deno wording")), 200, 10_000).label, "unknown");
+  assert.equal(withElapsed({ kind: "rejected", label: "500" }, 20_000, 10_000).label, "500");
   // labels never carry the message
   const r = classifyPushError(Object.assign(new Error("https://push.example/SECRET-ENDPOINT"), { code: "ECONNRESET" }));
   assert.ok(!JSON.stringify(r).includes("SECRET"));
@@ -67,6 +72,8 @@ test("log hygiene: only real codes / plain error names pass", () => {
   assert.equal(safeCode("user@example.com"), "other");
   assert.equal(safeCode(42501), "other");
   assert.equal(safeErrorName(new TypeError("secret")), "TypeError");
+  assert.equal(safeErrCode("ECONNRESET"), "ECONNRESET");
+  assert.equal(safeErrCode("Key (x)=(secret)"), "other");
   assert.equal(safeErrorName({ name: "https://secret.example" }), "object");
   assert.equal(safeErrorName("plain string with secret"), "string");
 });

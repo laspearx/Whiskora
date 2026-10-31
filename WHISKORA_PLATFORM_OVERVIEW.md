@@ -129,7 +129,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
-- Vaccine reminders on production: function v5 is callable without any key (`verify_jwt` off, no secret) and fails daily with PGRST200 (no FK `vaccines.pet_id`); nothing was ever sent (0 subscriptions). Fix in PR (staging only); FK is a separate decision.
+- Vaccine reminders on production: function v5 is callable without any key (`verify_jwt` off, no secret) and failed with PGRST200 on every sampled day (no FK `vaccines.pet_id`), so those runs sent nothing; unsampled days not checked. Fix in PR (staging only); FK is a separate decision.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -154,7 +154,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
-- Vaccine reminder fix (PR, staging only): two batched reads instead of the `pets!inner` embed, 500/502 instead of 200 `{sent:0}`, orphans skipped + counted, send log `20261031150000` against re-sends, `CRON_SECRET` required + JWT verification.
+- Vaccine reminder fix (PR #16, staging only, deployed-staging 25/25): two batched reads instead of the `pets!inner` embed, 500/502 instead of 200 `{sent:0}`, orphans skipped + counted, send log `20261031150000` (uncertain pushes kept, not retried), `CRON_SECRET` required + JWT verification, logs without error text.
 - v1.8.0 (PR #15) + migration `20261031082206` on production — transfer access reset: accept removes co-owners, revokes grants, sets tiers owner-only (history in `pet_transfer_access_revocations`); seller = previous owner without access; weights follow the current owner.
 - v1.7.1 (PR #14) + migration `20261031072347` on production: is_public wins, pedigree columns via RPC only, tier-gated tree, per-group grants, pet-photos listing closed (files still public).
 - PR #14: access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.

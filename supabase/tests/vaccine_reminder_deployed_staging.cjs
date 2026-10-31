@@ -6,7 +6,8 @@
 //
 // usage: NODE_PATH=<dir with pg> STAGING_ANON_KEY=<staging anon JWT> node supabase/tests/vaccine_reminder_deployed_staging.cjs
 // Reads CRON_SECRET from ~/.whiskora/staging_cron_secret (never printed). Prints statuses / counts only.
-// Leaves: vault secrets cron_secret + functions_anon_key on staging (same values as the staging function secrets).
+// Vault: creates cron_secret + functions_anon_key only if they do not exist, and deletes only those it created.
+// If either name already exists, the pg_net / cron part is skipped (existing secrets are never read or changed).
 const { Client, types } = require("pg");
 const fs = require("fs"); const os = require("os");
 types.setTypeParser(1082, (v) => v); types.setTypeParser(20, (v) => Number(v));
@@ -30,6 +31,7 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
   const db = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await db.connect();
   const q = async (sql, p = []) => (await db.query(sql, p)).rows;
   const started = new Date().toISOString();
+  const createdVault = [];
   const today = (await q(`select (now() at time zone 'Asia/Bangkok')::date::text d`))[0].d;
   const add = async (n) => (await q(`select ($1::date + $2::int)::text d`, [today, n]))[0].d;
   const [d1, d2, dm1] = [await add(1), await add(2), await add(-1)];
@@ -165,10 +167,11 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
     ok("service_role grants on pets restored exactly", sr === "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE", { sr });
 
     // ---------- 8. pg_net, shaped like the cron job (secrets from Vault, never literal in SQL) ----------
+    const existing = Number((await q(`select count(*) c from vault.secrets where name in ('cron_secret', 'functions_anon_key')`))[0].c);
+    ok("Vault has no cron_secret / functions_anon_key yet (nothing existing is touched)", existing === 0, { existing });
+    if (existing) throw new Error("vault names already exist — skipping pg_net / cron part");
     for (const [name, value] of [["cron_secret", SECRET], ["functions_anon_key", ANON]]) {
-      const ex = await q(`select id from vault.secrets where name = $1`, [name]);
-      if (ex.length) await q(`select vault.update_secret($1, $2)`, [ex[0].id, value]);
-      else await q(`select vault.create_secret($1, $2, 'staging QA: vaccine reminder cron test')`, [value, name]);
+      createdVault.push((await q(`select vault.create_secret($1, $2, 'staging QA: vaccine reminder cron test (temporary)') id`, [value, name]))[0].id);
     }
     const VAULT = (n) => `(select decrypted_secret from vault.decrypted_secrets where name = '${n}')`;
     const CMD = (headers, body) => `select net.http_post(url := '${FN}', headers := ${headers}, body := '${body}'::jsonb, timeout_milliseconds := 60000)`;
@@ -217,6 +220,9 @@ const pick = (j, ...k) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
     await q(`select cron.unschedule(jobname) from cron.job where jobname like 'qa-vr-%'`).catch(() => {});
     await q(`delete from public.vaccine_reminder_deliveries where vaccine_id between 9900021 and 9900030`).catch(() => {});
     await cleanup().catch(() => {});
+    for (const id of createdVault) await q(`delete from vault.secrets where id = $1`, [id]).catch(() => {});
+    const vaultLeft = Number((await q(`select count(*) c from vault.secrets where id = any($1::uuid[])`, [createdVault]))[0].c);
+    ok("temporary Vault secrets deleted (only the ones this run created)", vaultLeft === 0, { created: createdVault.length, left: vaultLeft });
     const leftover = Number((await q(`select (select count(*) from public.pets where id between 900021 and 900025) + (select count(*) from public.vaccines where id between 9900021 and 9900030)
       + (select count(*) from public.push_subscriptions) + (select count(*) from public.vaccine_reminder_deliveries) + (select count(*) from public.qa_push_mock_hits) c`))[0].c);
     ok("cleanup: synthetic pets / vaccines / subscriptions / send log / mock hits = 0", leftover === 0, { leftover });

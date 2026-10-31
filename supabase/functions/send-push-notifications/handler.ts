@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
-  bangkokDate, buildPayload, chunk, classifyPushError, safeCode, safeErrorName, timingSafeEqual, type ReminderItem,
+  bangkokDate, buildPayload, chunk, classifyPushError, safeCode, safeErrorName, timingSafeEqual, withElapsed, type ReminderItem,
 } from "./reminders.ts";
 
 export type PushSubscriptionKeys = { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -165,6 +165,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
   for (const batch of chunk(jobs, SEND_CONCURRENCY)) {
     await Promise.all(batch.map(async (job) => {
       r.attempted++;
+      const t0 = deps.now();
       try {
         await deps.sendNotification(
           { endpoint: job.sub.endpoint, keys: { p256dh: job.sub.p256dh, auth: job.sub.auth } },
@@ -173,11 +174,13 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
         );
         r.sent++; sentIds.push(...job.ids);
       } catch (err) {
-        const res = classifyPushError(err);
+        const res = withElapsed(classifyPushError(err), deps.now() - t0, PUSH_TIMEOUT_MS);
         if (res.kind === "expired") { r.expired_removed++; expiredSubs.push(job.sub.id); return; }
         if (res.kind === "uncertain") {
           r.uncertain++; uncertainIds.push(...job.ids);
           r.uncertain_reason[res.label] = (r.uncertain_reason[res.label] ?? 0) + 1;
+          // unrecognised error (also when read as a timeout by elapsed time): its type + code, never the message
+          if (res.errName !== undefined) log("error", { stage: "push_unrecognised_error", label: res.label, error: res.errName, code: res.errCode });
           return;
         }
         r.failed++; releaseIds.push(...job.ids);       // rejected by the push service, or provably not sent
