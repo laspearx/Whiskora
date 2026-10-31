@@ -14,6 +14,7 @@ E2E_BASE_URL=https://<staging-url> npm run test:e2e   # against a deployed stagi
   E2E_PRIVATE_PET_ALLERGIES=QA-ALLERGY-P2`, and for the public spec `E2E_PET_ID=900001 E2E_FARM_NAME="QA Farm"`.
   Build/start with `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` of staging in the environment (there is no tracked `.env` file any more; without them the app has no Supabase URL).
   The reservation chain transfers P4/P5 away — reset them before re-running.
+  The workspace members chain (invite → decline → accept → role change → remove → leave on farm 9001) needs `supabase/tests/workspace_members_fixture_staging.sql` first and `--workers=1` (desktop and mobile share the farm).
 - If pages stay on the "Loading" spinner, a stale `next start`/`next-server` from an older build is probably still on port 3123 — stop it and rerun.
 
 ## Manual checklist (staging, synthetic data, test accounts only)

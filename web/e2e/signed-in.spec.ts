@@ -281,7 +281,8 @@ test.describe('privacy: roles', () => {
 });
 
 test.describe('workspace members (invitations)', () => {
-  // needs the members fixture (supabase/tests/workspace_members_fixture_staging.sql): farm 9001 = owner, manager, staff, viewer
+  // needs the members fixture (supabase/tests/workspace_members_fixture_staging.sql): farm 9001 = owner, manager, staff, viewer.
+  // One shared chain on the same farm: run with --workers=1 so desktop and mobile do not overlap.
   test.skip(!has('E2E_OWNER_EMAIL', 'E2E_OWNER_PASSWORD', 'E2E_MANAGER_EMAIL', 'E2E_MANAGER_PASSWORD', 'E2E_STAFF_EMAIL',
     'E2E_STAFF_PASSWORD', 'E2E_STRANGER_EMAIL', 'E2E_STRANGER_PASSWORD', 'E2E_FARM_ID'), 'member accounts not configured');
   test.describe.configure({ mode: 'serial' });
@@ -362,7 +363,7 @@ test.describe('workspace members (invitations)', () => {
     await switchTo(page, 'OWNER', MEMBERS);
     const row = page.getByTestId('member-row').filter({ hasText: 'QA Stranger' });
     await row.locator('.fm-role-btn').click();
-    await page.locator('.fm-role-opt').filter({ hasText: 'สตาฟ' }).click();
+    await page.locator('.fm-role-opt').filter({ has: page.locator('.fm-role-opt-label', { hasText: /^สตาฟ$/ }) }).click();
     await expect(page.locator('.fm-notice.ok')).toContainText('เปลี่ยนเป็นสตาฟแล้ว');
     await page.reload();
     await expect(page.getByTestId('member-row').filter({ hasText: 'QA Stranger' })).toContainText('สตาฟ');
@@ -371,6 +372,16 @@ test.describe('workspace members (invitations)', () => {
     await expect(page.locator('.fm-notice.ok')).toContainText('นำสมาชิกออกแล้ว');
     await page.reload();
     await expect(page.getByTestId('member-row')).toHaveCount(4);
+  });
+
+  test('shop owner without an owner member row still has full owner rights (shop 990101)', async ({ page }) => {
+    await switchTo(page, 'OWNER', '/shop-dashboard/990101/members');
+    await expect(page.getByTestId('member-row')).toHaveCount(1);
+    await expect(page.getByTestId('member-row')).toContainText('QA Owner (คุณ)');
+    await expect(page.getByTestId('member-row')).toContainText('เจ้าของ');
+    expect(await page.locator('select[aria-label="บทบาทที่จะเชิญ"] option').allInnerTexts()).toEqual(['ผู้จัดการ', 'สตาฟ', 'ผู้ดู']);
+    await expect(page.getByText('แก้ข้อมูลร้านยังเป็นของเจ้าของ')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ออกจากร้านนี้' })).toHaveCount(0);
   });
 
   test('a member can leave; the owner has no leave button', async ({ page }) => {
