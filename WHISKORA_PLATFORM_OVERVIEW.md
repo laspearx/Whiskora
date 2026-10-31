@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.8.0 live; transfer access reset `20261031082206` applied 08:22 UTC — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.8.0 live; transfer access reset `20261031082206` applied 08:22 UTC; vaccine reminder fix in PR, staging only — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -83,7 +83,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - `/admin/verifications` — approve/reject farm verification requests; approval flips `farms.is_verified`/`verification_status`.
 
 ### Notifications (actual state, 2026-10-29)
-- Web Push: opt-in/out toggle in `/profile/settings` saves/deletes `push_subscriptions`; Edge Function `send-push-notifications` sends vaccine reminders (today/tomorrow, Bangkok dates) and deep-links to the pet's vaccine page. Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel) + VAPID secrets, optional `CRON_SECRET` (Supabase), and a pg_cron schedule — deployment/schedule not verified.
+- Web Push: opt-in/out toggle in `/profile/settings` saves/deletes `push_subscriptions`; Edge Function `send-push-notifications` sends vaccine reminders (today/tomorrow, Bangkok dates) and deep-links to the pet's vaccine page. Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel) + VAPID secrets and `CRON_SECRET` (Supabase), and pg_cron job 1 (`0 1 * * *`). Production still runs the old function (v5, PGRST200 every day, `verify_jwt` off); the fix (batched reads, errors ≠ 200, send log against re-sends, secret required) is in PR — deploy plan in `docs/NOTIFICATIONS_SETUP.md` §4, separate from Vercel.
 - LINE / email (`lib/notify.ts`, `/api/notify/send`) have code but **no caller**; settings page says so.
 
 ### Profile (personal area)
@@ -97,7 +97,8 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 | Farms / workspaces | `farms`, `farm_verifications`, `workspaces`, `workspace_members` |
 | Breeding | `litters` |
 | Reservations & transfers | `pet_reservations`, `pet_ownership_transfers`, `pet_transfer_access_revocations` (history of access removed on accept; API read-only for the sender / admin), `contact_leads` |
-| Weights & health | `pet_weights` (canonical), `Vaccine` |
+| Weights & health | `pet_weights` (canonical), `vaccines` (`pet_id` has **no FK** to `pets` — orphans exist; see `docs/PROPOSAL_VACCINE_PET_FK.md`) |
+| Notifications | `push_subscriptions`, `vaccine_reminder_deliveries` (staging; one row per subscription + vaccine + due date, service role only) |
 | Activities | `Activity` (shared pet-level / farm-level timeline) |
 | Visibility | `field_groups`, `farm_visibility_settings`, (unused) `pet_visibility_settings` |
 | Shops / services | `Shop`, `Product`, `Service`, `ServiceBooking` |
@@ -128,6 +129,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
+- Vaccine reminders on production: function v5 is callable without any key (`verify_jwt` off, no secret) and fails daily with PGRST200 (no FK `vaccines.pet_id`); nothing was ever sent (0 subscriptions). Fix in PR (staging only); FK is a separate decision.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -152,6 +154,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- Vaccine reminder fix (PR, staging only): two batched reads instead of the `pets!inner` embed, 500/502 instead of 200 `{sent:0}`, orphans skipped + counted, send log `20261031150000` against re-sends, `CRON_SECRET` required + JWT verification.
 - v1.8.0 (PR #15) + migration `20261031082206` on production — transfer access reset: accept removes co-owners, revokes grants, sets tiers owner-only (history in `pet_transfer_access_revocations`); seller = previous owner without access; weights follow the current owner.
 - v1.7.1 (PR #14) + migration `20261031072347` on production: is_public wins, pedigree columns via RPC only, tier-gated tree, per-group grants, pet-photos listing closed (files still public).
 - PR #14: access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
