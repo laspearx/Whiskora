@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.7.0 live; pet privacy PR #14 on staging only — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.7.1 live; pet privacy migration `20261031072347` applied 07:23 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -127,7 +127,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Pet privacy (branch `fix/pet-privacy`, migration `20261030140000`, staging only): until applied, production lets anon read pedigree columns directly, list `pet-photos`, and lets staff/viewer change farm privacy tiers via API; `is_public = false` would be overridden by `พร้อมย้ายบ้าน` and by tiers (0 private pets exist today). No UI to set `is_public` or per-pet tiers.
+- Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), access given by a previous owner survives a transfer (next PR), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -152,7 +152,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
-- PR #14 (staging): access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
+- v1.7.1 (PR #14) + migration `20261031072347` on production: is_public wins, pedigree columns via RPC only, tier-gated tree, per-group grants, pet-photos listing closed (files still public).
+- PR #14: access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
 
 **2026-10-30**
 - Pet privacy fix on staging (`fix/pet-privacy`): not public wins over sale status / tiers / pedigree; anon pedigree columns and `pet-photos` listing closed; privacy-settings writes owner/manager only.
