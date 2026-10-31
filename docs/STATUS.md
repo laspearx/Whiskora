@@ -30,7 +30,30 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
-## 2026-10-31 — Transfer access reset (branch `feat/transfer-access-reset`, staging only; not on production)
+## 2026-10-31 — PR #15 deployed (v1.8.0) + transfer access reset on production (UTC; ICT = UTC+7)
+| Step | Result |
+| --- | --- |
+| Pre-merge | PR head `0100fcb87044160a17b4f2ada778bab9fdd60718`; `supabase/` identical to tested `28fe91d` (later commit docs only); no `web/` change vs main `7ab3cdc`; migration sha256 `b3d7ed9f…af63`; no other PR included |
+| Precheck (read-only) 08:18:56 | `transfer_access_reset_precheck.sql`: `before`, all ok, no STOP / WARN (0 pending / accepted transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 farm viewers, 0 weight rows by others); `pet_privacy_precheck.sql` still `after` |
+| Merge | 08:19:05, pinned → `78ccd7a`; bot bump `07a01cf` **v1.8.0** (version files only) |
+| Deploy | Production `07a01cf` (`whiskora-731e680xk`, Vercel Production env build; no Preview promoted); bundle 08:21:46: production ref 1, staging 0, `1.8.0` |
+| Precheck again 08:21:56 | `before`, all ok |
+| **Migration** | `20261031082206 transfer_access_reset` applied **08:22:06** (only this file, one transaction incl. the `schema_migrations` row; bytes checked before sending); stored statement sha256 = `b3d7ed9f3189612edff77291bd9fb0bbaea0ae4876c4997f4dd89a8742a1af63` |
+| Postcheck catalog 08:22:13 | precheck `after`, all ok; catalog vs staging **identical** (39 lines: md5 + security definer + ACL of 9 functions, policies on `pet_weights` / history / `pet_co_owners` / `access_grants` / `pet_visibility_settings`, trigger definitions, history table columns / indexes / constraints / grants: authenticated SELECT only, anon none, RLS on). `pet_privacy_precheck.sql` still `after`. `reservation_precheck.sql` check 3 showed STOP only because it pinned the old trigger body (intended change; other 4 bodies unchanged; new body = staging) → file updated to accept the successor md5, re-run ok |
+| QA HTTP 08:23:21–22 (QA stranger = owner of QA pet 175, QA admin = role user, anon) | **29 / 29**: owner inserts / reads / edits / deletes a test weight row on 175; recorder cannot be changed (403); insert in someone else's name 403; other user insert 403, edit 0 rows, read 0 rows; anon insert 401; rows of 175 back to the original set (0). History: anon 401, other user 0 rows, API insert / update / delete 403. Non-owner co-owner / grant / tier write on 175 → 403 (nothing created). Privacy: pedigree columns 403, `access_grants` column UPDATE 403, other user no health / weight, owner health 1 row, anon private column 401. Transfer: inbox 200, `respond_pet_transfer` missing id → P0002, direct PATCH 0 rows. Global logout 204 ×2 |
+| QA browser 08:22–08:23 | edit pet 175 save → reload → restore (pedigree / health / card identical); `/pets/175`, `/pets/175/weight`, `/profile/transfers`, `/p/175` + tree, farm-hub, a farm page: load, 0 Supabase errors, only the production host |
+| Data after | weights 49 total / 0 on 175 (as before), co-owners / grants / per-pet settings / history / transfers all 0, QA sessions 0, QA roles user, admins 1 |
+| Logs 08:15–08:24 | every ≥ 400 / ERROR = the QA probes above (UA `node`); PostgREST schema reload at 08:22; no browser / customer errors |
+
+**Proven on staging only (not on production):** a real accept with co-owners / grants / tiers / weights, the farm-team
+cases, multi-hop chains, double / parallel accept, rollback and the race guard (no real transfer, co-owner or grant was
+created on production). Note: a non-owner's co-owner / grant / tier write is refused by the race-guard trigger with the
+message "pet ownership changed" (403) before the RLS check — correct outcome, wording could be clearer.
+Recovery: fix forward; never re-add "Users manage own pet weights", never restore co-owners / grants by script, never
+disable the race guard or the revoke-only trigger, never run the staging-only revert on production; to pause transfers
+use `supabase/emergency/reservation_transfer_freeze.sql`.
+
+## 2026-10-31 — Transfer access reset (branch `feat/transfer-access-reset`; staging results — live since v1.8.0)
 Migration `20261031120000_transfer_access_reset.sql` sha256 `b3d7ed9f3189612edff77291bd9fb0bbaea0ae4876c4997f4dd89a8742a1af63`.
 Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfer` transaction; lock order kept
 (pets → reservations → transfer, then co-owners / grants / settings — nothing locks those first and then pets).
@@ -56,11 +79,36 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Vaccine reminder fix (PR #16, branch `fix/vaccine-reminders`; staging only, nothing on production)
+| Item | Result |
+| --- | --- |
+| Production (read-only) | function **v5** = older code than the repo, **`verify_jwt: false`, no secret check** → callable by anyone with the URL; cron job 1 `0 1 * * *` posts with no auth headers; 0 subscriptions today; Vault 0 secrets; `pg_net.ttl` 6 h, `cron.log_statement` on |
+| What we can say about past sends | sampled log days 08-20, 09-15, 10-28, 10-31: 1 call at ~01:00 and vaccines query **400** → no send on those runs (v5 code returns first); 10-01: 1 call (query result not checked). **Not checked:** other days, time before available logs, past subscription counts (today's 0 is not evidence for earlier days) |
+| Function | `index.ts` (Deno wiring) + `handler.ts` (logic, injectable) + `reminders.ts` (pure). Batched paged reads, no embed; orphans skipped + counted; POST only; `CRON_SECRET` required; push results: clear failure → released + retried later, **uncertain (no answer) → kept as `uncertain`, not retried**; 200 / 502 / 500; logs = counts, stage, sanitised codes, error type names only |
+| Migration `20261031150000_vaccine_reminder_deliveries.sql` | sha256 `86d9dba318b1bdaae6b818058c20908924c9259e5ffb32bbd78debbf64199a8b`; staging re-applied 10:04:57 UTC (status `sending` / `sent` / `uncertain`); RLS on, 0 policies, no anon/authenticated grants |
+| Unit (`vaccine_reminder_unit.test.mts`) | **6/6** — Bangkok dates; payload; push result classes (incl. Deno `TypeError` at our timeout → timeout); request built before sending; log hygiene |
+| Local harness (`vaccine_reminder_staging.mts`) | **51/51** — staging data as service role via an adapter, local HTTPS mock: auth, Thai dates, no_due / no_subscriptions, send + same-day re-run, 500/429 retry only the failed, item added later, 404/410, refused / 400 / bad keys = clear (released), **received-then-connection-cut + no answer = uncertain, next run sends nothing to them**, each query stage → 500, record failure, 2 concurrent runs × 10, owner change, poisoned errors (endpoint / email / user id / key in message, details, code, throw) → nothing in logs or bodies; real PostgREST: old embed PGRST200 |
+| **Deployed staging (`vaccine_reminder_deployed_staging.cjs`)** 10:55:27–10:57:09 UTC, function v6 + owner-set test secrets, pushes only to `qa-push-mock` | **25/25** — no key 401 (gateway), bad JWT 401, valid JWT without / wrong secret 401, GET 405; dry run 200 `would_send` (due 6, orphan 1, no-owner 1) + as_of 23:59:59 BKK; dry runs wrote 0 rows, 0 mock hits; real run 200 sent 3 (mock: 1 encrypted VAPID-signed push per device) and **send log written through PostgREST as service role**; re-run 0 pushes; 500/429 → 502, retry sends only those; 410 → subscription deleted; mock receives then never answers → uncertain (timeout), kept, next run 0 pushes; real DB error (service role SELECT on pets revoked for the test, restored exactly) → 500 `pets` 42501; **pg_net like cron**: no headers 401, JWT only 401, wrong secret 401, planned Vault headers + dry run 200 (0 rows / 0 hits), planned headers real run 200 sent 3; **pg_cron**: a job with a wrong secret ran "succeeded" while the function answered 401; dry-run job "succeeded" + 200 |
+| First deployed run (v2 code) | 24/25: in Deno the timeout error is a code-less `TypeError` → labelled `unknown` (still kept as uncertain, no resend). Fixed: elapsed ≥ timeout → `timeout`; unrecognised errors log their type + code only. Re-run 25/25 |
+| Logs of the deployed runs (function_logs 10:51–10:58) | only summary / stage lines with counts, stage names, `42501`, `TypeError`; no names, user ids, endpoints, keys |
+| Clean-up (checked) | synthetic pets / vaccines / subscriptions / send log / mock hits = 0; temporary cron jobs removed (0 jobs); the 2 Vault secrets created by the run deleted (Vault 0, as before); service role grants on pets as before |
+| Left on staging | function v6 + its 3 test secrets; `qa-push-mock` + 2 empty tables (removal: `docs/NOTIFICATIONS_SETUP.md` §4 "Staging state") |
+| Not tested | a real browser push service (proposed as a separate QA step); a TCP cut after delivery on the deployed path (the Supabase gateway is in between — covered locally) |
+| Sent | nothing outside staging: pushes only to the staging mock / local mock; no LINE / email; no back-fill; no production change |
+
+**Before deploying** (plan: `docs/NOTIFICATIONS_SETUP.md` §4, separate from Vercel): cron job 1 must send `Authorization` +
+`x-cron-secret` (from Vault) **before** the new function is deployed, otherwise cron gets 401. Monitor with
+`net._http_response` (within 6 h) + the function's summary log + send-log statuses — not with cron "succeeded".
+FK `vaccines.pet_id`: proposal only (`docs/PROPOSAL_VACCINE_PET_FK.md`); orphan rows untouched.
+`reservation_precheck` check 3 accepts exactly one extra md5 for `sync_pet_owner_on_transfer_accept` (`e722eb…`, the body
+from `20261031120000`, = production = staging); the other four bodies stay pinned to single values.
+
 ## 2026-10-31 — log watches (production, read-only; UTC)
 | Watch | Window | Result |
 | --- | --- | --- |
 | `private_columns` (applied 2026-10-30 03:43:48) — 24 h **complete** | 03:43:48 → 2026-10-31 03:43:47 (earlier check to 12:50, this one 12:50 → 03:43:47) | logs present every active hour (edge / postgres / postgrest; quiet 13:00–01:00 = no traffic, postgres checkpoints logged → pipeline alive). Non-QA errors: **1** — `GET vaccines …pets!inner(name,user_id)` **400 PGRST200** at 01:00:02 from the vaccine-reminder Edge Function (cron job 1, secret key). Also on 2026-10-28 01:00:01 → **pre-existing** (before both privacy migrations), not caused by them; separate task. Other: 13:21:32 `column d.file_path does not exist` = our own read-only MCP count (mgmt-api); 18:31 `Connection reset by peer` after a forced checkpoint (1 line) |
-| v1.7.1 `20261031072347` (applied 07:23:47) — **separate, in progress** until ≥ 2026-11-01 07:24 | 07:15 → 07:45 checked | errors = QA probes (07:22–07:24) + our first precheck draft (07:35:54 42P01 on a not-yet-created table, read-only); 0 edge requests from users after 07:25; postgres 0 other ERROR |
+| v1.7.1 `20261031072347` (applied 07:23:47) — **separate, in progress** until ≥ 2026-11-01 07:24 | **07:23:47 → 08:59:59 checked** (logs present for edge / postgres / postgrest in 07:00 and 08:00 hours; **09:00–09:45: no edge / postgres lines delivered yet at 09:45** — only our read-only supavisor connections — so that hour is not counted as checked) | every 4xx/5xx edge line has UA `node` = QA probes (07:24:31–07:24:35, 08:23:21–08:23:22); our first precheck draft 07:35:54 42P01 (read-only); no request from a browser / user with an error; PostgREST "Thread killed" lines at 07:23:48, 07:25:02, 07:25:32, **07:49:18**, 08:23:49, 08:24:19 (cause not confirmed, see below) |
+| v1.8.0 `20261031082206` (applied 08:22:06) — **separate, in progress** until ≥ 2026-11-01 08:22 | **08:22:06 → 08:59:59 checked** (same gap from 09:00) | errors = QA probes 08:23:21–08:23:22 only; 0 user errors |
 | "Warp server error: Thread killed by timeout manager" (PostgREST) | 2026-10-28 → 2026-10-31 | **cause not confirmed.** Seen before both migrations (10-28: 01:01:02, 11:23:18, 13:16:18). Some lines come 30–60 s after a request burst (10-28 01:01:02 and 10-31 01:01:02 = 60 s after the cron request; 07:25:02 / 07:25:32 after the QA probes), but 10-30 21:01:18 has no edge / PostgREST request in 20:59–21:02. No failed request is linked to any of them. Next: compare with PostgREST server timeout settings / Supabase support before naming a cause |
 
 ## 2026-10-31 — PR #14 deployed (v1.7.1) + pet privacy migration on production (UTC; ICT = UTC+7)
@@ -380,7 +428,7 @@ still loads); owners have no UI for `is_public` / per-pet tiers; access given by
 
 ## Still open
 - Privacy (`private_columns`): leak closed 2026-10-30 03:43 UTC; 24 h log watch complete (no non-QA error caused by it; see log watches).
-- Vaccine reminder Edge Function: `vaccines?select=…,pets!inner(name,user_id)` → 400 PGRST200 every day at 01:00 UTC since at least 2026-10-28 (no relationship vaccines → pets for PostgREST) — reminders are not sent. Separate task.
+- **Vaccine reminder — fix in PR (branch `fix/vaccine-reminders`, staging only; see section below).** Diagnosis: read-only diagnosis 2026-10-31 — `vaccines.pet_id` (bigint) has **no foreign key** to `pets` (production and staging), so PostgREST cannot embed `pets!inner(name,user_id)` → 400 PGRST200 every day at 01:00 UTC since at least 2026-10-28. The function returns 200 `{sent:0}` on any query error, so cron job 1 shows "succeeded" (7/7 runs). Production: 45 vaccine rows / 23 pets, **3 rows point to a pet that no longer exists** (kept), 0 push subscriptions today. Fix: PR #16 (staging-tested; FK only proposed, not added).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
   (14, 25, 29, 30 Aug) all used `redirect_to=www.whiskora.pet` and the session reached www. Before Aug: no logs.
   The wildcard and third-party Site URL were open until 19:49:59 UTC today.
@@ -414,8 +462,8 @@ still loads); owners have no UI for `is_public` / per-pet tiers; access given by
   `pet_reservations` / `pet_ownership_transfers`), DNS / apex, PKCE, revoking real user sessions.
 
 ## Next start
-1. v1.7.1 log watch until ≥ 2026-11-01 07:24 UTC (separate from the closed `private_columns` watch).
-2. Transfer access reset PR (staging): owner review → production plan in the PR.
+1. Log watches: v1.7.1 until ≥ 2026-11-01 07:24 UTC; v1.8.0 until ≥ 2026-11-01 08:22 UTC (separate).
+2. Vaccine reminder fix PR #16: staging done (deployed 25/25). Production only after approval, per `docs/NOTIFICATIONS_SETUP.md` §4 (cron headers before the deploy). Separate approvals: browser push QA, FK, removing `qa-push-mock`.
 3. Reservation → transfer: live (v1.7.0 + `20261030121715`, 19:17:15 ICT). Logs checked 12:17:15 → 12:50 UTC: errors only from the QA denial probes (≤ 12:18 UTC), 0 deadlocks. Production happy path untested (staging only).
-4. Pet privacy: live (v1.7.1 + `20261031072347`, 2026-10-31 07:23:47 UTC). Next after the transfer PR: private files (signed URLs, cache, old links), owner UI for `is_public` / tiers; vaccine reminder PGRST200.
+4. Pet privacy: live (v1.7.1 + `20261031072347`, 2026-10-31 07:23:47 UTC). Next after the transfer PR: private files (signed URLs, cache, old links), owner UI for `is_public` / tiers.
 5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
