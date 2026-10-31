@@ -79,6 +79,15 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Partner system audit (read-only) — **BLOCKER found: workspace takeover of any farm**
+Full audit: `docs/PARTNER_SYSTEM_AUDIT.md`. Proven on staging in a rolled-back transaction: any signed-in user can
+repoint their own `personal` workspace (`update workspaces set type='farm', entity_id=<any farm>`) and immediately
+passes `is_farm_team`, `can_manage_farm_privacy`, `can_record_pet_weight`, `can_transfer_pet`,
+`can_decide_pet_reservation`. Production has the identical catalog → open now; current state shows 0 mismatched
+workspaces (no sign of use in the current state). Needs its own hotfix PR (staging → production) before partner work.
+Also: `workspace_members` INSERT fails with 42P17 (recursion) and has no UPDATE policy; `shop-assets` /
+`service-assets` writable / deletable by any signed-in user; `products` table missing (`/marketplace` errors).
+
 ## 2026-10-31 — PR #18 rollout (v1.10.0): send-log history on production; cron job 1 re-enabled (UTC)
 | Step | Result |
 | --- | --- |

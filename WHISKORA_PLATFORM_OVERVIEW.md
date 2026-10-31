@@ -128,6 +128,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
+- **Security (open, 2026-10-31): any signed-in user can repoint their own workspace to any farm and pass all farm-team / owner checks (incl. pet transfer)** — hotfix PR needed first; details + partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy), shop/service asset buckets writable by anyone signed in, `products` table missing, no review/publish flow for shops.
+
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
