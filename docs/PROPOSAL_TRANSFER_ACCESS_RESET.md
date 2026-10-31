@@ -1,6 +1,11 @@
-# Proposal — reset access on ownership transfer (separate migration, NOT applied anywhere)
+# Proposal — reset access on ownership transfer
 
-Status 2026-10-30: proposal for the owner's review. Not in PR #14, not on staging, not on production.
+Status 2026-10-31: **implemented** as `supabase/migrations/20261031120000_transfer_access_reset.sql` (branch
+`feat/transfer-access-reset`), applied on **staging only**; not on production. Owner decisions (2026-10-31): revoke
+co-owners + grants with history tied to the transfer; per-group tiers owner-only + include_previous_owner false (private
+stays private, overview + is_public kept); seller counts as previous owner without automatic access; weights follow
+the current owner, recorder kept; documents/files handled in the private-files PR (nothing moved by a trigger).
+Results: `docs/STATUS.md` → "Transfer access reset (staging)". The text below is the original 2026-10-30 proposal.
 
 ## Goal
 Access that the previous owner gave out must not pass to the new owner's pet automatically. The new owner starts

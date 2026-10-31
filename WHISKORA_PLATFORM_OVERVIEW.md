@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.7.0 live; pet privacy PR #14 on staging only — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.7.1 live; pet privacy migration `20261031072347` applied 07:23 UTC — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -64,7 +64,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - `pet_reservations`: buyer reserves a listed pet from `/p/[id]` (`pending` → farm confirms/cancels from `farm-dashboard/[id]/reservations`). DB enforces one confirmed reservation per pet.
 - Confirming/cancelling a reservation **now syncs the pet's own `status`** to `ติดจอง` (reserved) / back to `เปิดจอง` (fixed 2026-07-24 — previously only the reservation row changed, the pet's status field was left stale).
 - `pet_ownership_transfers`: owner-initiated from `/pets/[id]`, accepted/declined by the recipient at `/profile/transfers` (inbox via RPC `get_my_pending_transfers`). Acceptance is handled by a **DB trigger** (`sync_pet_owner_on_transfer_accept`) that reassigns `pets.user_id` and clears `pets.farm_id` — not client-side code.
-- Reservation → transfer: a confirmed reservation has "ส่งคำขอโอนเจ้าของ" (farm owner only), which inserts a pending `pet_ownership_transfers` row with `reservation_id` and `to_user_id = buyer`. The existing trigger sets the reservation `converted` on accept.
+- Reservation → transfer: a confirmed reservation has "ส่งคำขอโอนเจ้าของ" (farm owner only), which inserts a pending `pet_ownership_transfers` row with `reservation_id` and `to_user_id = buyer`. The existing trigger sets the reservation `converted` on accept. Branch `feat/transfer-access-reset` (staging only): the same trigger also removes co-owners, revokes grants and sets per-group tiers owner-only, logged in `pet_transfer_access_revocations`.
 - Migration `20261030120000_reservation_transfer_pipeline.sql` (production `20261030121715`, 2026-10-30): writes go through RPCs — `farm_set_reservation_status` (pet owner / farm owner / manager; atomic, row-locked, idempotent; cancelling a confirmed reservation cancels its pending transfer) and `respond_pet_transfer` (accept/decline = receiver only, cancel = initiator / pet owner / farm owner). No direct UPDATE policy on either table; INSERT policies check status `pending`, listed + public pet, sender = current owner, reservation buyer = receiver. On accept the trigger also clears sale statuses (→ NULL) and cancels other open reservations. Staff/viewer: read-only. Row locks always pets → reservations → transfers. Reservable = `isPublicListing` (listed status and `is_public` not false); note the pets policy "Public can view available pets" makes any `พร้อมย้ายบ้าน` pet readable even when `is_public = false`. App calls the RPCs and falls back to direct writes on PGRST202 (deploy app before the migration). Production recovery: `supabase/emergency/reservation_transfer_freeze.sql`, then fix forward (the exact rollback is staging-only).
 
 ### Farm / shop / service dashboards
@@ -96,7 +96,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 | Pets & lineage | `pets` (incl. `sire_id`/`dam_id`, `litter_id`, `status` enum), `pet_co_owners`, `pet_documents` |
 | Farms / workspaces | `farms`, `farm_verifications`, `workspaces`, `workspace_members` |
 | Breeding | `litters` |
-| Reservations & transfers | `pet_reservations`, `pet_ownership_transfers`, `contact_leads` |
+| Reservations & transfers | `pet_reservations`, `pet_ownership_transfers`, `pet_transfer_access_revocations` (staging only, history of access removed on accept), `contact_leads` |
 | Weights & health | `pet_weights` (canonical), `Vaccine` |
 | Activities | `Activity` (shared pet-level / farm-level timeline) |
 | Visibility | `field_groups`, `farm_visibility_settings`, (unused) `pet_visibility_settings` |
@@ -127,7 +127,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Pet privacy (branch `fix/pet-privacy`, migration `20261030140000`, staging only): until applied, production lets anon read pedigree columns directly, list `pet-photos`, and lets staff/viewer change farm privacy tiers via API; `is_public = false` would be overridden by `พร้อมย้ายบ้าน` and by tiers (0 private pets exist today). No UI to set `is_public` or per-pet tiers.
+- Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), access given by a previous owner survives a transfer (next PR), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Per-pet visibility override (`pet_visibility_settings`) has no UI or write path — farm-wide privacy settings are the only lever today.
 - No in-app messaging between buyers and farms/shops/services — everything hands off to phone/LINE/Facebook.
 - No visible in-app checkout/payment flow for shop products or service bookings (booking creation exists via `ServiceBooking`/`appointments`, but a public-facing booking-request UI was not confirmed in the last audit — verify before assuming it's missing).
@@ -152,7 +152,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
-- PR #14 (staging): access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
+- Transfer access reset (branch `feat/transfer-access-reset`, staging only): accept removes co-owners, revokes grants, sets tiers owner-only (history in `pet_transfer_access_revocations`); seller = previous owner without access; weights follow the current owner.
+- v1.7.1 (PR #14) + migration `20261031072347` on production: is_public wins, pedigree columns via RPC only, tier-gated tree, per-group grants, pet-photos listing closed (files still public).
+- PR #14: access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
 
 **2026-10-30**
 - Pet privacy fix on staging (`fix/pet-privacy`): not public wins over sale status / tiers / pedigree; anon pedigree columns and `pet-photos` listing closed; privacy-settings writes owner/manager only.

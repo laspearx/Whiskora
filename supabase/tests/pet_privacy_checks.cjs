@@ -15,8 +15,8 @@ async function tok(who) {
   const d = await (await fetch(`${SB}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `whiskora-qa+${EMAIL[who] || who}@example.com`, password: PW }) })).json();
   return (toks[who] = d.access_token);
 }
-async function rest(who, method, path, body) {
-  const h = { apikey: KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' }; const t = await tok(who); if (t) h.Authorization = `Bearer ${t}`;
+async function rest(who, method, path, body, prefer = 'return=representation') {
+  const h = { apikey: KEY, 'Content-Type': 'application/json', Prefer: prefer }; const t = await tok(who); if (t) h.Authorization = `Bearer ${t}`;
   const r = await fetch(`${SB}/rest/v1/${path}`, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) });
   let b = null; try { b = await r.json(); } catch {}
   return { status: r.status, rows: Array.isArray(b) ? b.length : null, code: b && !Array.isArray(b) ? b.code : null, body: b };
@@ -232,31 +232,23 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     ok('after transfer: old owner no longer sees private P2 row', !(await canRow('owner', P2)), {});
     ok('after transfer: old owner no longer sees P2 health', !(await canHealth('owner', P2)), {});
     ok('after transfer: anon still cannot see private P2 health', !(await canHealth('anon', P2)), {});
-    // the old owner still created grants on P2 (stranger → vaccination): revoke yes, anything else no
+    // accept revoked the old owner's grants on P2 (stranger → vaccination) and removed its co-owner (20261031120000)
     {
-      const og = (await rest('owner', 'GET', `access_grants?granted_by=eq.${ID.owner}&resource_id=eq.${P2}&grantee_id=eq.${ID.stranger}&revoked_at=is.null&select=*`)).body?.[0];
-      ok('after transfer: old owner still sees its grant on P2', !!og, {});
-      let x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { field_group_key: null, grantee_id: ID.owner });
-      let acc = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P2 })).body || {};
-      ok('after transfer: old owner cannot redirect / widen its old grant to itself', !(x.status === 200 && x.rows === 1) && acc.health === false && !(await canHealth('owner', P2)), { status: x.status, code: x.code });
-      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { resource_id: P7, grantee_id: ID.owner });
-      acc = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P7 })).body || {};
-      ok('after transfer: old owner cannot move its old grant to another pet it lost (P7)', !(x.status === 200 && x.rows === 1) && acc.health === false, { status: x.status, code: x.code });
-      acc = (await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {};
-      ok('… stranger still has vaccination only on P2', acc.vaccination === true && acc.health === false, {});
-      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { revoked_at: new Date().toISOString() });
-      ok('after transfer: old owner can still revoke its old grant', x.status === 200 && x.rows === 1 && ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, { status: x.status });
-      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { revoked_at: null });
-      ok('after transfer: … but cannot un-revoke it', !(x.status === 200 && x.rows === 1) && ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, { status: x.status, code: x.code });
+      const og = (await rest('owner', 'GET', `access_grants?granted_by=eq.${ID.owner}&resource_id=eq.${P2}&grantee_id=eq.${ID.stranger}&select=*`)).body?.[0];
+      ok('after transfer: the old owner\'s grant on P2 is revoked (row kept)', !!og && !!og.revoked_at, {});
+      ok('… stranger has no vaccination on P2 any more', ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, {});
+      let x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { revoked_at: null });
+      ok('after transfer: old owner cannot un-revoke it', !(x.status === 200 && x.rows === 1) && ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, { status: x.status, code: x.code });
+      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { resource_id: P7, grantee_id: ID.owner, field_group_key: null });
+      ok('after transfer: old owner cannot move / widen it', !(x.status === 200 && x.rows === 1) && ((await rpc('owner', 'get_my_pet_access', { p_pet_id: P7 })).body || {}).health === false, { status: x.status, code: x.code });
     }
-    // co-owner added by the previous owner: reported, not asserted (owner decision)
-    console.log(`INFO co-owner added by the previous owner still sees P2 row/health after transfer: ${await canRow('coowner', P2)}/${await canHealth('coowner', P2)}`);
-    // what else stays with the old owner (reported, not asserted — proposal for a separate migration)
-    const ow = await rest('owner', 'GET', `pet_weights?pet_id=eq.${P7}&select=id`);
-    const ou = await fetch(`${SB}/rest/v1/pet_weights?id=eq.9900007`, { method: 'PATCH', headers: { apikey: KEY, Authorization: `Bearer ${await tok('owner')}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ notes: 'qa' }) });
-    const nw = await fetch(`${SB}/rest/v1/pet_weights?id=eq.9900007`, { method: 'PATCH', headers: { apikey: KEY, Authorization: `Bearer ${await tok('buyer')}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ notes: 'qa2' }) });
-    const nwRows = (await nw.json().catch(() => [])).length;
-    console.log(`INFO after transfer of P7: old owner reads its weight rows: ${ow.rows}; old owner can edit them: ${((await ou.json().catch(() => [])).length) === 1}; new owner can edit them: ${nwRows === 1}`);
+    ok('after transfer: co-owner added by the previous owner no longer sees P2 row / health', !(await canRow('coowner', P2)) && !(await canHealth('coowner', P2)), {});
+    {
+      const ow = await rest('owner', 'GET', `pet_weights?pet_id=eq.${P7}&select=id`);
+      const ou = await rest('owner', 'PATCH', 'pet_weights?id=eq.9900007', { notes: 'qa' });
+      const nw = await rest('buyer', 'PATCH', 'pet_weights?id=eq.9900007', { notes: 'qa2' });
+      ok('after transfer of P7: old owner reads none of its weight rows and cannot edit them; new owner can', ow.rows === 0 && !(ou.status === 200 && ou.rows === 1) && nw.status === 200 && nw.rows === 1, { old_reads: ow.rows, old_edit: ou.rows, new_edit: nw.rows });
+    }
     ok('after transfer: old owner no longer sees P7 health (tier owner)', !(await canHealth('owner', P7)), {});
     // new owner makes P7 private → everything closes for outsiders and the old owner
     // return=minimal: a representation would select the private health columns (revoked since the privacy migration)
@@ -271,7 +263,8 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     const t2 = await rest('buyer', 'POST', 'pet_ownership_transfers', { pet_id: P7, from_user_id: ID.buyer, to_user_id: ID.stranger, initiated_by: ID.buyer, status: 'pending' });
     const a2 = await rpc('stranger', 'respond_pet_transfer', { p_transfer_id: t2.body?.[0]?.id, p_action: 'accept' });
     ok('second transfer P7 buyer → stranger accepted', t2.status === 201 && a2.status === 200, { insert: t2.status, accept: a2.status });
-    const pvs = (group, tier, inc) => rest('stranger', 'POST', 'pet_visibility_settings?on_conflict=pet_id,field_group_key', { pet_id: P7, field_group_key: group, tier, include_previous_owner: inc });
+    // upsert: since 20261031120000 the accept writes an owner-only row for every group
+    const pvs = (group, tier, inc) => rest('stranger', 'POST', 'pet_visibility_settings?on_conflict=pet_id,field_group_key', { pet_id: P7, field_group_key: group, tier, include_previous_owner: inc }, 'return=representation,resolution=merge-duplicates');
     const w1 = await pvs('health', 'owner', true), w2 = await pvs('weight', 'owner', false);
     ok('new owner sets P7 health = owner + previous owners, weight = owner only', [w1.status, w2.status].every(x => x === 201 || x === 200), { health: w1.status, weight: w2.status });
     const accB = await (async () => (await rpc('buyer', 'get_my_pet_access', { p_pet_id: P7 })).body || {})();
@@ -279,7 +272,7 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     ok('previous owner does not see weight (group does not allow previous owners)', accB.weight === false, {});
     ok('previous owner does not get the private card back', !(await canRow('buyer', P7)), {});
     const accO = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P7 })).body || {};
-    console.log(`INFO the original seller (owner 01, sent P7 in the first transfer, never received it) counts as previous owner: ${accO.health === true}`);
+    ok('the original seller (owner 01, sent P7, never received it) counts as previous owner: sees health only where allowed', accO.health === true && accO.weight === false && !(await canRow('owner', P7)), {});
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);
