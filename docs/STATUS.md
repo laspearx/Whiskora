@@ -79,6 +79,15 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Partner storage scoping (branch `fix/partner-storage-scoping`; STAGING ONLY)
+| Item | Result |
+| --- | --- |
+| Paths (production, read-only) | farm-assets 10 objects `<farm id>/avatar_…|cover_…`; partner-photos 6 objects `farms/<uploader uid>/…`; shop- / service-assets 0. Code: dashboards `<entity id>/…`, register pages `farms|shops|services/<uid>/…` |
+| Migration `20261101130000_partner_storage_scoping.sql` (sha256 `dce44e03716e62608ea2b25e59f79d173f386ad5e0645190f6fc0c1860ee3bc2`) | staging 13:59:24 UTC. farm-assets INSERT / UPDATE, shop- / service-assets INSERT / UPDATE / DELETE only when the first folder is an entity the caller owns or manages (`can_edit_business_assets`: entity owner or workspace owner / manager); partner-photos `<uid>/…` or `farms|shops|services/<uid>/…`. Public read unchanged |
+| Precheck `partner_storage_precheck.sql` | production: all 16 objects inside allowed paths, 11 / 11 replaced policies present, 4 / 4 public read kept |
+| Storage API checks `partner_storage_checks.cjs` (synthetic `qa-sp-` files only) | before **9 / 14 failed**: staff + stranger upload / overwrite farm images, stranger upload / overwrite / **delete** shop + service images, **register-page path `shops/<uid>/…` refused (400) — logo / cover upload on the register pages is broken today**. After **23 / 23** |
+| Not deployed | production unchanged; awaits review |
+
 ## 2026-10-31 — PR #19 rollout (v1.10.1): workspace ownership guard on production — hole closed 13:55:23 UTC
 | Step | Result |
 | --- | --- |
