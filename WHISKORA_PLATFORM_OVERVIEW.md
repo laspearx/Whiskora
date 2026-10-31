@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.10.1 live; workspace ownership guard `20261031135523` — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.10.2 live; partner storage scoping `20261031141649` — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -128,7 +128,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy), shop/service asset buckets writable by anyone signed in, `products` table missing, no review/publish flow for shops.
+- Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy), `products` table missing, no review/publish flow for shops.
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
@@ -156,6 +156,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- v1.10.2 (PR #20) + migration `20261031141649`: farm / shop / service asset buckets writable only in the folder of a business the caller owns or manages; register-page photo path (`farms|shops|services/<uid>/…`) works again.
 - v1.10.1 (PR #19) + migration `20261031135523`: workspace ownership guard — type / entity / owner immutable for the API, farm / shop / service workspaces only for the entity owner, unique (type, entity_id).
 - v1.10.0 (PR #18) + migration `20261031125922` + function v9 on production: send log keyed by user + endpoint hash, kept on unsubscribe, 90-day retention; cron job 1 paused for the swap and re-enabled 13:01:52 UTC.
 - v1.9.0 (PR #17 merged) + vaccine reminder cron job 1 enabled 12:37:56 UTC (daily 08:00 ICT); first run 2026-11-01 01:00 UTC to be checked; display verified on Chrome/Windows only.
