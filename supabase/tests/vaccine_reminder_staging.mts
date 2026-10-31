@@ -345,6 +345,24 @@ ok("no other staging vaccine falls in the window (counts below are exact)", real
   await q(`update public.pets set user_id = $1 where id = 900022`, [U.owner]);
 }
 
+// ---------- 9b. QA single-user run (qa_only_user_id) ----------
+{
+  await resetRuns();
+  const bad = await call(deps(db), { qa_only_user_id: "not-a-uuid" });
+  ok("qa_only_user_id must be a UUID → 400", bad.status === 400);
+  const two = await call(deps(db), { qa_only_user_id: U.owner });
+  ok("QA run for a user with 2 subscriptions → 409 qa_guard_failed, 0 pushes, 0 rows", two.status === 409 && two.j.outcome === "qa_guard_failed" && Object.keys(hits).length === 0 && Object.keys(await deliveries()).length === 0, pick(two.j, "outcome", "subscriptions"));
+  const none = await call(deps(db), { qa_only_user_id: U.stranger });
+  ok("QA run for a user without subscription → 409, 0 pushes", none.status === 409 && Object.keys(hits).length === 0, pick(none.j, "outcome", "subscriptions"));
+  const dryQa = await call(deps(db), { dry_run: true, qa_only_user_id: U.buyer });
+  ok("QA dry run for buyer (1 subscription) → would_send to 1 device, recipients 1 (others filtered out)", dryQa.status === 200 && dryQa.j.outcome === "would_send" && dryQa.j.recipients === 1 && dryQa.j.attempted === 1 && dryQa.j.qa_single_user === true, pick(dryQa.j, "outcome", "recipients", "attempted"));
+  const one = await call(deps(db), { qa_only_user_id: U.buyer });
+  const d = await deliveries();
+  ok("QA run for buyer → exactly 1 push to B1, none to A1/A2 although they have due items; only B1 rows recorded", one.status === 200 && one.j.sent === 1 && hits["QAVR-B1"] === 1 && !hits["QAVR-A1"] && !hits["QAVR-A2"] && d.B1 === "25:sent" && !d.A1 && !d.A2, { ...pick(one.j, "outcome", "sent"), hits, d });
+  const again = await call(deps(db), { qa_only_user_id: U.buyer });
+  ok("QA run repeated → already_sent, no second push", again.j.outcome === "already_sent" && hits["QAVR-B1"] === 1);
+}
+
 // ---------- 10. no personal data in responses or logs ----------
 {
   const all = logs.join("\n");

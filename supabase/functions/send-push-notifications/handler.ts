@@ -77,11 +77,13 @@ async function byIdChunks<T>(stage: string, ids: (string | number)[], fetch: (pa
   return out;
 }
 
-async function run(deps: Deps, nowMs: number, dryRun: boolean) {
+// qaUserId: QA run limited to ONE account — only that user's items are kept, the run is refused unless that user has
+// exactly one subscription, and the notification is marked as a test. It can only narrow who receives.
+async function run(deps: Deps, nowMs: number, dryRun: boolean, qaUserId: string | null = null) {
   const db = deps.db;
   const today = bangkokDate(nowMs, 0), tomorrow = bangkokDate(nowMs, 1), dayAfter = bangkokDate(nowMs, 2);
   const r = {
-    outcome: "", dry_run: dryRun, date: today, window: [today, tomorrow],
+    outcome: "", dry_run: dryRun, qa_single_user: qaUserId !== null, date: today, window: [today, tomorrow],
     due: 0, orphan_skipped: 0, no_owner_skipped: 0, recipients: 0, recipients_without_subscription: 0,
     subscriptions: 0, already_sent_skipped: 0, stuck_claims: 0, uncertain_claims: 0,
     attempted: 0, sent: 0, failed: 0, uncertain: 0, expired_removed: 0,
@@ -108,6 +110,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
     items.push({ vaccineId: v.id, petId: pet.id, petName: pet.name || "สัตว์เลี้ยง", vaccineName: v.vaccine_name || "วัคซีน", dueDate: v.next_due });
     byUser.set(pet.user_id, items);
   }
+  if (qaUserId !== null) for (const uid of [...byUser.keys()]) if (uid !== qaUserId) byUser.delete(uid);
   r.recipients = byUser.size;
   if (!byUser.size) return { ...r, outcome: "no_recipients" };
 
@@ -116,6 +119,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
     db.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth").in("user_id", part)
       .order("id").range(offset, offset + PAGE - 1));
   r.subscriptions = subs.length;
+  if (qaUserId !== null && subs.length !== 1) return { ...r, outcome: "qa_guard_failed" };   // 0 or several devices
   r.recipients_without_subscription = [...byUser.keys()].filter((u) => !subs.some((s) => s.user_id === u)).length;
   if (!subs.length) return { ...r, outcome: "no_subscriptions" };
 
@@ -169,7 +173,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
       try {
         await deps.sendNotification(
           { endpoint: job.sub.endpoint, keys: { p256dh: job.sub.p256dh, auth: job.sub.auth } },
-          buildPayload(job.items, today),
+          buildPayload(job.items, today, qaUserId !== null),
           { timeout: PUSH_TIMEOUT_MS },
         );
         r.sent++; sentIds.push(...job.ids);
@@ -227,9 +231,16 @@ export async function handleRequest(req: Request, deps: Deps): Promise<Response>
     return json(401, { error: "unauthorized" });
   }
 
-  let body: { dry_run?: unknown; as_of?: unknown } = {};
+  let body: { dry_run?: unknown; as_of?: unknown; qa_only_user_id?: unknown } = {};
   try { const text = await req.text(); body = text.trim() ? JSON.parse(text) : {}; } catch { return json(400, { error: "invalid_json" }); }
   const dryRun = body.dry_run === true;
+  let qaUserId: string | null = null;
+  if (body.qa_only_user_id !== undefined) {
+    if (typeof body.qa_only_user_id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(body.qa_only_user_id)) {
+      return json(400, { error: "invalid_qa_only_user_id" });
+    }
+    qaUserId = body.qa_only_user_id;
+  }
   let nowMs = deps.now();
   if (body.as_of !== undefined) {
     if (!dryRun) return json(400, { error: "as_of_requires_dry_run" });
@@ -247,7 +258,8 @@ export async function handleRequest(req: Request, deps: Deps): Promise<Response>
   }
 
   try {
-    const result = await run(deps, nowMs, dryRun);
+    const result = await run(deps, nowMs, dryRun, qaUserId);
+    if (result.outcome === "qa_guard_failed") { log("error", { stage: "qa_guard", subscriptions: result.subscriptions }); return json(409, result); }
     const problem = result.failed > 0 || result.uncertain > 0;
     log(problem ? "error" : "info", { summary: result });
     // any failed / uncertain push → 502 so pg_net shows a non-2xx; a later run skips what was sent or is uncertain

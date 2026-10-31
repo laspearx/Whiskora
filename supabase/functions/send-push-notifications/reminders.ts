@@ -25,9 +25,10 @@ export function timingSafeEqual(a: string, b: string): boolean {
 
 export type ReminderItem = { vaccineId: number; petId: number; petName: string; vaccineName: string; dueDate: string };
 
-export function buildPayload(items: ReminderItem[], today: string): string {
+export function buildPayload(items: ReminderItem[], today: string, test = false): string {
   const dueToday = items.some((e) => e.dueDate === today);
-  const title = dueToday ? "วันนี้มีกำหนดฉีดวัคซีน" : "พรุ่งนี้มีกำหนดฉีดวัคซีน";
+  // test = QA run: the title says so, and its own tag never replaces a real reminder on the device
+  const title = (test ? "[ทดสอบ] " : "") + (dueToday ? "วันนี้มีกำหนดฉีดวัคซีน" : "พรุ่งนี้มีกำหนดฉีดวัคซีน");
   const petList = items
     .map((e) => `${e.petName} (${e.vaccineName}${e.dueDate === today ? " วันนี้" : " พรุ่งนี้"})`)
     .join(", ");
@@ -36,7 +37,7 @@ export function buildPayload(items: ReminderItem[], today: string): string {
   const petIds = [...new Set(items.map((e) => e.petId))];
   const url = petIds.length === 1 ? `/pets/${petIds[0]}/vaccines` : "/pets/vaccines/all";
   // tag ตามวันที่: ถ้ามีการแจ้งเตือนเพิ่มในวันเดียวกัน อุปกรณ์จะแทนที่อันเดิม ไม่ซ้อนหลายอัน
-  return JSON.stringify({ title, body, icon: "/mini-logo.png", tag: `vaccine-reminder-${today}`, url });
+  return JSON.stringify({ title, body, icon: "/mini-logo.png", tag: `${test ? "vaccine-reminder-test" : "vaccine-reminder"}-${today}`, url });
 }
 
 // --- push results -------------------------------------------------------------------------------------------
