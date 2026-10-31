@@ -56,4 +56,13 @@ select 11, 'info: send log rows by status (after)',
     -- dynamic so the query still parses before the table exists
     (xpath('/row/s/text()', query_to_xml($q$select coalesce(string_agg(s, ', '), '0') s from (select status || ': ' || count(*) s
        from public.vaccine_reminder_deliveries group by status order by 1) x$q$, false, true, '')))[1]::text end
+union all
+select 12, 'send-log history shape (20261101090000): before = rows tied to the subscription; after = user + endpoint hash, kept on unsubscribe',
+  case when not (select a from applied) then '-'
+       when not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'vaccine_reminder_deliveries' and column_name = 'endpoint_hash')
+         then 'before (subscription_id ' || (select pg_get_constraintdef(oid) from pg_constraint where conname = 'vaccine_reminder_deliveries_subscription_id_fkey') || ')'
+       when (select pg_get_constraintdef(oid) from pg_constraint where conname = 'vaccine_reminder_deliveries_once') = 'UNIQUE (user_id, endpoint_hash, vaccine_id, next_due)'
+        and (select pg_get_constraintdef(oid) from pg_constraint where conname = 'vaccine_reminder_deliveries_subscription_id_fkey') like '%ON DELETE SET NULL'
+        and exists (select 1 from pg_constraint where conname = 'vaccine_reminder_deliveries_user_id_fkey')
+       then 'after ok' else 'STOP: half-applied / unexpected shape' end
 order by 1;

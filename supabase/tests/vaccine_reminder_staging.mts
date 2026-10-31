@@ -42,7 +42,7 @@ const ok = (n: string, c: boolean, i: unknown = {}) => { c ? pass++ : fail++; co
 const conn = async () => { const c = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await c.connect(); return c; };
 
 // ---------- adapter: the supabase-js calls handler.ts makes → SQL as service_role ----------
-type Res = { data: any; error: { code?: string; message?: string } | null };
+type Res = { data: any; error: { code?: string; message?: string } | null; count?: number | null };
 // inject["<table>:<op>"]: true → a plain error; {code, message} → that error object; "throw" → from() throws
 type Inject = Record<string, true | "throw" | { code?: unknown; message?: string; details?: string }>;
 function pgDb(client: any, inject: Inject = {}) {
@@ -66,7 +66,7 @@ class Q {
   range(a: number, b: number) { this.off = a; this.lim = b - a + 1; return this; }
   upsert(rows: any[], o: { onConflict: string; ignoreDuplicates: boolean }) { this.op = "upsert"; this.rows = rows; this.conflict = o.onConflict; this.ignore = o.ignoreDuplicates; return this; }
   update(set: Record<string, unknown>) { this.op = "update"; this.set = set; return this; }
-  delete() { this.op = "delete"; return this; }
+  delete(_o?: { count?: string }) { this.op = "delete"; return this; }   // count → rowCount, like supabase-js count: "exact"
   then(res: (r: Res) => unknown, rej: (e: unknown) => unknown) { return this.exec().then(res, rej); }
   async exec(): Promise<Res> {
     if (this.op === "upsert" && !this.ignore) throw new Error("adapter supports upsert with ignoreDuplicates only");
@@ -84,7 +84,7 @@ class Q {
     try {
       await this.c.query("begin"); await this.c.query("set local role service_role");
       const r = await this.c.query(sql, this.params); await this.c.query("commit");
-      return { data: r.rows, error: null };
+      return { data: r.rows, error: null, count: r.rowCount };
     } catch (e: any) { await this.c.query("rollback").catch(() => {}); return { data: null, error: { code: e.code, message: e.message } }; }
   }
 }
@@ -172,8 +172,16 @@ async function fixture() {
   }
 }
 const resetRuns = async () => { await q(`delete from public.vaccine_reminder_deliveries where vaccine_id between 9900021 and 9900030`); for (const k of Object.keys(hits)) delete hits[k]; for (const k of Object.keys(mode)) delete mode[k]; };
-const deliveries = async () => Object.fromEntries((await q(`select split_part(s.endpoint, '/s/QAVR-', 2) t, string_agg(d.vaccine_id - 9900000 || ':' || d.status, ',' order by d.vaccine_id) v
-  from public.vaccine_reminder_deliveries d join public.push_subscriptions s on s.id = d.subscription_id where d.vaccine_id between 9900021 and 9900030 group by 1`)).map((r: any) => [r.t, r.v]));
+// send-log rows are keyed by user + endpoint hash (not the subscription row) → map hashes back to our tags
+const sha = (e: string) => crypto.createHash("sha256").update(e).digest("hex");
+const TAG_OWNER: Record<string, string> = { A1: U.owner, A2: U.owner, A1N: U.owner, B1: U.buyer };
+const tagOfHash = new Map<string, string>();
+for (const t of Object.keys(TAG_OWNER)) { tagOfHash.set(sha(`https://127.0.0.1:${PORT}/s/QAVR-${t}`), t); tagOfHash.set(sha(`https://127.0.0.1:9/s/QAVR-${t}`), t); }
+const deliveries = async () => {
+  const rows = await q(`select user_id::text u, endpoint_hash h, string_agg(vaccine_id - 9900000 || ':' || status, ',' order by vaccine_id) v
+    from public.vaccine_reminder_deliveries where vaccine_id between 9900021 and 9900030 group by 1, 2`);
+  return Object.fromEntries(rows.map((r: any) => { const t = tagOfHash.get(r.h) ?? "?"; return [TAG_OWNER[t] === r.u ? t : `${t}@other-user`, r.v]; }));
+};
 const pick = (j: any, ...k: string[]) => Object.fromEntries(k.map((x) => [x, j?.[x]]));
 
 if (process.argv.includes("cleanup")) { await resetRuns(); await cleanup(); await admin.end(); server.close(); console.log("cleaned"); process.exit(0); }
@@ -393,6 +401,59 @@ ok("no other staging vaccine falls in the window (counts below are exact)", real
   await call(deps(db), {});
   const pushLogs = logs.slice(before2).join("\n");
   ok("push failure logs: labels / counts only, no endpoint", !pushLogs.includes("127.0.0.1") && !pushLogs.includes("QAVR") && pushLogs.includes('"failed_status":{"500":1}'), { pushLogs: pushLogs.length });
+}
+
+// ---------- 11. history kept across unsubscribe / resubscribe; isolation; retention ----------
+{
+  const subRow = async (t: string) => (await q(`select id, user_id from public.push_subscriptions where endpoint = $1`, [`https://127.0.0.1:${PORT}/s/QAVR-${t}`]))[0];
+  const addSub = async (uid: string, t: string) => { const k = keyPair(); await q(`insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)`, [uid, `https://127.0.0.1:${PORT}/s/QAVR-${t}`, k.p256dh, k.auth]); };
+  await fixture(); await resetRuns();
+  await call(deps(db), {});
+  ok("baseline run: A1 / A2 / B1 sent", JSON.stringify(await deliveries()) === JSON.stringify(await deliveries()) && (await deliveries()).A1 === "21:sent,22:sent", await deliveries());
+  // app unsubscribe (row deleted) → history stays, subscription_id null
+  const a1 = await subRow("A1");
+  await q(`delete from public.push_subscriptions where id = $1`, [a1.id]);
+  const kept = (await q(`select count(*)::int c, count(*) filter (where subscription_id is null)::int n from public.vaccine_reminder_deliveries where endpoint_hash = $1`, [sha(`https://127.0.0.1:${PORT}/s/QAVR-A1`)]))[0];
+  ok("unsubscribe: A1's 2 send-log rows kept, subscription_id set to null (history no longer lost)", kept.c === 2 && kept.n === 2, kept);
+  // resubscribe with the SAME endpoint (new subscription id, new keys) → not sent again
+  await addSub(U.owner, "A1");
+  const same = await call(deps(db), {});
+  ok("resubscribe, same endpoint → already_sent, A1 still 1 push", same.j.outcome === "already_sent" && same.j.attempted === 0 && hits["QAVR-A1"] === 1, { ...pick(same.j, "outcome", "attempted"), hits: { ...hits } });
+  // resubscribe with a NEW endpoint (browser-level unsubscribe) → treated as a new destination
+  await q(`delete from public.push_subscriptions where endpoint = $1`, [`https://127.0.0.1:${PORT}/s/QAVR-A1`]);
+  await addSub(U.owner, "A1N");
+  const neu = await call(deps(db), {});
+  ok("resubscribe, NEW endpoint → sent again to it (an endpoint hash cannot prove it is the same device — documented)", neu.j.sent === 1 && hits["QAVR-A1N"] === 1 && (await deliveries()).A1N === "21:sent,22:sent", { ...pick(neu.j, "outcome", "sent"), hits: { ...hits } });
+  // isolation: pet A2 transferred to the buyer, who subscribes from the owner's old endpoint A2 (shared browser)
+  await q(`delete from public.push_subscriptions where endpoint = $1`, [`https://127.0.0.1:${PORT}/s/QAVR-A2`]);
+  await q(`update public.pets set user_id = $1 where id = 900022`, [U.buyer]);
+  await addSub(U.buyer, "A2");
+  const iso = await call(deps(db), {});
+  const di = await deliveries();
+  ok("another account on the same endpoint is NOT blocked by the first account's rows: buyer gets pet A2's reminder on endpoint A2",
+    iso.j.sent >= 1 && di["A2@other-user"] === "22:sent,25:sent" && di.A2 === "21:sent,22:sent" && hits["QAVR-A2"] === 2, { ...pick(iso.j, "outcome", "sent"), d: di, hits: { ...hits } });
+  await q(`update public.pets set user_id = $1 where id = 900022`, [U.owner]);
+  // 410 → subscription deleted, its claims released (nothing delivered), no stuck 'sending' rows
+  await fixture(); await resetRuns(); mode["QAVR-B1"] = "gone410";
+  await call(deps(db), {});
+  const b1rows = (await q(`select count(*)::int c from public.vaccine_reminder_deliveries where endpoint_hash = $1`, [sha(`https://127.0.0.1:${PORT}/s/QAVR-B1`)]))[0].c;
+  ok("410: subscription deleted and its claims released (0 rows for B1, no stuck 'sending')", b1rows === 0 && !(await subRow("B1")), { b1rows });
+  // retention: rows > 90 days past next_due are pruned on a real run (not on a dry run); 30 days kept
+  await fixture(); await resetRuns();
+  const h = sha(`https://127.0.0.1:${PORT}/s/QAVR-B1`);
+  await q(`insert into public.vaccine_reminder_deliveries (user_id, endpoint_hash, vaccine_id, next_due, reminder_date, status, sent_at)
+           values ($1, $2, 9900024, $3::date - 100, $3::date - 100, 'sent', now()), ($1, $2, 9900024, $3::date - 30, $3::date - 30, 'sent', now())`, [U.buyer, h, today]);
+  const d0 = await call(deps(db), { dry_run: true });
+  const afterDry = (await q(`select count(*)::int c from public.vaccine_reminder_deliveries where vaccine_id = 9900024`))[0].c;
+  const real = await call(deps(db), {});
+  const left = (await q(`select (next_due < $1::date - 90) old from public.vaccine_reminder_deliveries where vaccine_id = 9900024`, [today])).map((r: any) => r.old);
+  ok("retention: dry run prunes nothing; real run prunes the 100-day-old row, keeps the 30-day-old one", afterDry === 2 && d0.j.pruned === 0 && real.j.pruned === 1 && JSON.stringify(left) === "[false]", { afterDry, pruned: real.j.pruned, left });
+  // retention also runs when nothing is due
+  await q(`insert into public.vaccine_reminder_deliveries (user_id, endpoint_hash, vaccine_id, next_due, reminder_date, status) values ($1, $2, 9900024, $3::date - 120, $3::date - 120, 'sent')`, [U.buyer, h, today]);
+  const nd = await call(deps(db), { qa_only_user_id: U.stranger });   // QA filter → no subscription → 409 → no prune
+  const nothing = await call(deps(pgDb(admin, {})), {});
+  ok("retention runs on every non-dry run that is not refused", nd.status === 409 && nothing.j.pruned === 1, { qa: nd.status, pruned: nothing.j.pruned });
+  await fixture();
 }
 
 // ---------- Part B: real PostgREST on staging (QA owner session, RLS-limited) ----------

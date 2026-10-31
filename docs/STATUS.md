@@ -79,6 +79,15 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Send-log history across unsubscribe / resubscribe (branch `feat/vaccine-delivery-history`; STAGING ONLY)
+| Item | Result |
+| --- | --- |
+| Migration `20261101090000_vaccine_reminder_delivery_history.sql` (sha256 `1a6d8f696a9dfdd575abeb80840439c9840ecf2c0c8b3b5662903b01c30522a7`) | staging only (12:40:35 UTC). Rows get `user_id` + `endpoint_hash` (SHA-256 hex, not the endpoint); `subscription_id` nullable, **ON DELETE SET NULL**; unique (user_id, endpoint_hash, vaccine_id, next_due); `user_id → auth.users ON DELETE CASCADE`; RLS / ACL unchanged. **Not on production** |
+| Function (staging v8, `ezbr 438346bf…`) | de-duplicates on user + endpoint hash; 404/410 releases its claims (no stuck rows now that rows survive); retention: rows > 90 days past `next_due` pruned on every non-dry, non-refused run (best effort, `pruned` count) |
+| Tests | unit 8/8 (incl. JS hash = SQL `encode(digest(…,'sha256'),'hex')`); local harness **65/65**; deployed staging **33/33**; back-fill test (staging down → old-shaped row → re-apply → user + hash filled, row kept after subscription delete) |
+| Behaviour proven | unsubscribe keeps history (subscription_id null); resubscribe with the **same endpoint** → not re-sent; **new endpoint** → sent again (an endpoint hash cannot prove the same device — documented); another account on the same endpoint (shared browser / pet transferred) is **not** blocked; retention prunes 100-day-old rows, keeps 30-day-old, not on dry runs |
+| Rollout note | old function (production v8) needs the old columns; the new function needs the new ones → apply the migration and deploy the function together, well away from 01:00 UTC (or pause job 1 for the swap). Precheck 12 shows the shape |
+
 ## 2026-10-31 — PR #17 merged (v1.9.0) + vaccine reminder cron job 1 ENABLED (UTC)
 | Step | Result |
 | --- | --- |

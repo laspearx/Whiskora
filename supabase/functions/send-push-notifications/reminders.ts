@@ -8,6 +8,13 @@ export function bangkokDate(nowMs: number, offsetDays = 0): string {
   return new Date(nowMs + BANGKOK_OFFSET_MS + offsetDays * DAY_MS).toISOString().slice(0, 10);
 }
 
+// SHA-256 (hex) of a push endpoint: stored instead of the endpoint so the send log survives the subscription row.
+// Same endpoint → same hash; a new endpoint (even from the same device) is a new destination.
+export async function endpointHash(endpoint: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));

@@ -154,6 +154,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- Staging only: send-log history kept across unsubscribe / resubscribe (`20261101090000`: user + endpoint hash, subscription ON DELETE SET NULL, 90-day retention).
 - v1.9.0 (PR #17 merged) + vaccine reminder cron job 1 enabled 12:37:56 UTC (daily 08:00 ICT); first run 2026-11-01 01:00 UTC to be checked; display verified on Chrome/Windows only.
 - PR #17 QA mode + real push QA on production: one QA account / one device, notification seen and opened `/pets/175/vaccines`; QA data removed; cron job 1 still inactive. Follow-up: send-log rows cascade-deleted on unsubscribe.
 - v1.8.1 (PR #16): vaccine reminder function v6 (`verify_jwt` on, secret required) + migration `20261031110929` on production; dry-run postcheck 9/9; cron job 1 inactive — not sending yet.

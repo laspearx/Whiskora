@@ -67,7 +67,8 @@ secret check** → anyone with the URL can trigger a run. Cron job 1 (`0 1 * * *
 - Logs and bodies: counts, stage names, SQLSTATE / PGRST codes, error **type** names — never error messages, pet names,
   user ids, endpoints or keys (tested with errors that carry such text).
 - Limits: de-duplication is per subscription (device); a user who re-subscribes gets a new subscription and may get the
-  same reminder again. Uncertain / stuck rows mean a reminder may be **missed** rather than sent twice. In Deno a refused
+  same reminder again. *(Staging PR `feat/vaccine-delivery-history`: key becomes user + endpoint hash and rows survive
+  unsubscribe — same endpoint no longer re-sent; a new endpoint still counts as a new destination.)* Uncertain / stuck rows mean a reminder may be **missed** rather than sent twice. In Deno a refused
   connection may also surface as a code-less `TypeError` → counted as uncertain (not retried) rather than as a clear failure.
 
 ### Production order (each step its own approval; Vercel untouched)
