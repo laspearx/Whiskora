@@ -9,12 +9,14 @@
 // Reads are batched: vaccines in the window (paged), then their pets by id, then the owners' subscriptions —
 // no PostgREST embed (vaccines.pet_id has no FK to pets). Vaccines whose pet no longer exists are skipped and
 // counted only. Each (subscription, vaccine, next_due) is claimed in vaccine_reminder_deliveries before sending,
-// so a retry does not re-send what a recipient already got. Logs and responses carry counts and status codes
-// only — no names, user ids, endpoints or keys.
+// so a retry does not re-send what a recipient already got. A push with no clear answer (timeout, connection lost)
+// is kept as 'uncertain' and not retried automatically. Logs and responses carry counts, stage names and sanitised
+// codes only — never error messages, names, user ids, endpoints or keys.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
 import { handleRequest } from "./handler.ts";
+import { makeSender } from "./reminders.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -33,7 +35,7 @@ Deno.serve((req) => {
       VAPID_EMAIL: Deno.env.get("VAPID_EMAIL") || "mailto:admin@whiskora.pet",
     },
     setVapidDetails: (email, pub, priv) => webpush.setVapidDetails(email, pub, priv),
-    sendNotification: (sub, payload, options) => webpush.sendNotification(sub, payload, options),
+    sendNotification: makeSender(webpush),
     now: () => Date.now(),
   });
 });

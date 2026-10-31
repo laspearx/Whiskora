@@ -39,9 +39,66 @@ export function buildPayload(items: ReminderItem[], today: string): string {
   return JSON.stringify({ title, body, icon: "/mini-logo.png", tag: `vaccine-reminder-${today}`, url });
 }
 
-// ผลจาก push service → ประเภท (ไม่เก็บ endpoint หรือข้อความตอบกลับ)
-export function classifyPushError(err: unknown): { kind: "expired" | "failed"; status: number | "network" } {
-  const status = (err as { statusCode?: number })?.statusCode;
-  if (status === 404 || status === 410) return { kind: "expired", status };
-  return { kind: "failed", status: typeof status === "number" ? status : "network" };
+// --- push results -------------------------------------------------------------------------------------------
+// clear:     the push service answered with a status (RFC 8030: anything but 2xx = not accepted) → 404/410 expired,
+//            other statuses rejected; or we know nothing left this side (request could not be built, connect refused /
+//            DNS / TLS) → not_delivered. Safe to release the claim; a later run may try again.
+// uncertain: the request may have reached the push service but no answer came back (timeout, connection reset or
+//            closed after sending, unknown errors). The claim is kept as 'uncertain' and NOT retried automatically.
+export class PushNotSentError extends Error {
+  reason: string;
+  constructor(reason: string) { super(reason); this.name = "PushNotSentError"; this.reason = reason; }
+}
+
+const NOT_SENT_CODES = new Set([
+  "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH",
+  "CERT_HAS_EXPIRED", "DEPTH_ZERO_SELF_SIGNED_CERT", "SELF_SIGNED_CERT_IN_CHAIN", "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+]);
+
+export type PushResult =
+  | { kind: "expired"; label: string }
+  | { kind: "rejected"; label: string }
+  | { kind: "not_delivered"; label: string }
+  | { kind: "uncertain"; label: string };
+
+// labels are fixed strings or numeric statuses only — never the error message (it can hold the endpoint)
+export function classifyPushError(err: unknown): PushResult {
+  if (err instanceof PushNotSentError) return { kind: "not_delivered", label: err.reason };
+  const e = err as { statusCode?: unknown; code?: unknown; message?: unknown } | null;
+  const status = e?.statusCode;
+  if (typeof status === "number" && Number.isInteger(status) && status >= 100 && status <= 599) {
+    if (status === 404 || status === 410) return { kind: "expired", label: String(status) };
+    return { kind: "rejected", label: String(status) };
+  }
+  const code = typeof e?.code === "string" ? e.code : "";
+  if (NOT_SENT_CODES.has(code)) return { kind: "not_delivered", label: "connect_failed" };
+  const msg = typeof e?.message === "string" ? e.message : "";
+  if (code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT" || /socket timeout|timed out/i.test(msg)) return { kind: "uncertain", label: "timeout" };
+  if (code === "ECONNRESET" || code === "EPIPE" || /socket hang up|connection (reset|closed)/i.test(msg)) return { kind: "uncertain", label: "connection_lost" };
+  return { kind: "uncertain", label: "unknown" };
+}
+
+type WebPushLike = {
+  generateRequestDetails: (sub: unknown, payload: string, options: object) => unknown;
+  sendNotification: (sub: unknown, payload: string, options: object) => Promise<unknown>;
+};
+// Builds the request first (keys, payload encryption, VAPID): a failure there provably sent nothing.
+export function makeSender(wp: WebPushLike, extraOptions: object = {}) {
+  return async (sub: { endpoint: string; keys: { p256dh: string; auth: string } }, payload: string, options: { timeout: number }) => {
+    const opts = { ...options, ...extraOptions };
+    try { wp.generateRequestDetails(sub, payload, opts); } catch { throw new PushNotSentError("request_build_failed"); }
+    return wp.sendNotification(sub, payload, opts);
+  };
+}
+
+// --- log hygiene ----------------------------------------------------------------------------------------------
+// Only SQLSTATE (5 chars) or PostgREST codes pass; anything else becomes "other". Messages are never logged.
+export function safeCode(code: unknown): string | null {
+  if (code == null || code === "") return null;
+  return typeof code === "string" && /^(PGRST\d{3}|[0-9A-Z]{5})$/.test(code) ? code : "other";
+}
+export function safeErrorName(e: unknown): string {
+  const n = (e as { name?: unknown })?.name;
+  return typeof n === "string" && /^[A-Za-z]{1,40}$/.test(n) ? n : typeof e;
 }

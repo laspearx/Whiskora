@@ -19,7 +19,7 @@ import path from "node:path";
 import https from "node:https";
 import crypto from "node:crypto";
 import { handleRequest, type Deps } from "../functions/send-push-notifications/handler.ts";
-import { bangkokDate } from "../functions/send-push-notifications/reminders.ts";
+import { bangkokDate, makeSender } from "../functions/send-push-notifications/reminders.ts";
 
 const require = createRequire(import.meta.url);
 const { Client, types } = require("pg");
@@ -43,13 +43,19 @@ const conn = async () => { const c = new Client({ connectionString: url, ssl: { 
 
 // ---------- adapter: the supabase-js calls handler.ts makes → SQL as service_role ----------
 type Res = { data: any; error: { code?: string; message?: string } | null };
-function pgDb(client: any, inject: Record<string, boolean> = {}) {
-  return { from: (table: string) => new Q(client, table, inject) } as unknown as Deps["db"];
+// inject["<table>:<op>"]: true → a plain error; {code, message} → that error object; "throw" → from() throws
+type Inject = Record<string, true | "throw" | { code?: unknown; message?: string; details?: string }>;
+function pgDb(client: any, inject: Inject = {}) {
+  return { from: (table: string) => {
+    const t = inject[`throw:${table}`];
+    if (t) throw Object.assign(new Error(String((t as any).message ?? "thrown")), { name: (t as any).name ?? "Error" });
+    return new Q(client, table, inject);
+  } } as unknown as Deps["db"];
 }
 class Q {
-  c: any; t: string; inject: Record<string, boolean>; op = "select"; cols = "*"; ret = ""; where: string[] = []; params: unknown[] = [];
+  c: any; t: string; inject: Inject; op = "select"; cols = "*"; ret = ""; where: string[] = []; params: unknown[] = [];
   orderBy = ""; off = 0; lim = 0; rows: any[] = []; conflict = ""; ignore = false; set: Record<string, unknown> = {};
-  constructor(c: any, t: string, inject: Record<string, boolean>) { this.c = c; this.t = t; this.inject = inject; }
+  constructor(c: any, t: string, inject: Inject) { this.c = c; this.t = t; this.inject = inject; }
   p(v: unknown) { this.params.push(v); return "$" + this.params.length; }
   select(cols: string) { if (this.op === "select") this.cols = cols; else this.ret = cols; return this; }
   gte(col: string, v: unknown) { this.where.push(`${col} >= ${this.p(v)}`); return this; }
@@ -64,7 +70,8 @@ class Q {
   then(res: (r: Res) => unknown, rej: (e: unknown) => unknown) { return this.exec().then(res, rej); }
   async exec(): Promise<Res> {
     if (this.op === "upsert" && !this.ignore) throw new Error("adapter supports upsert with ignoreDuplicates only");
-    if (this.inject[`${this.t}:${this.op}`]) return { data: null, error: { code: "XX000", message: `injected failure ${this.t}:${this.op}` } };
+    const inj = this.inject[`${this.t}:${this.op}`];
+    if (inj) return { data: null, error: inj === true ? { code: "XX000", message: `injected failure ${this.t}:${this.op}` } : inj as any };
     const w = this.where.length ? " where " + this.where.join(" and ") : "";
     let sql: string;
     if (this.op === "select") sql = `select ${this.cols} from public.${this.t}${w}${this.orderBy ? ` order by ${this.orderBy}` : ""}${this.lim ? ` limit ${this.lim} offset ${this.off}` : ""}`;
@@ -92,10 +99,13 @@ const server = https.createServer({ key: fs.readFileSync(`${tlsDir}/k.pem`), cer
   const tag = (req.url ?? "").split("/")[2] ?? "?";
   hits[tag] = (hits[tag] ?? 0) + 1;
   if (req.headers["content-encoding"] !== "aes128gcm" || !String(req.headers.authorization ?? "").startsWith("vapid t=")) bad.push(tag);
-  req.resume();
   const m = mode[tag] ?? "ok";
-  if (m === "hang") { hanging.push(res); return; }
-  res.statusCode = { ok: 201, fail500: 500, fail429: 429, gone410: 410, nf404: 404 }[m] ?? 500; res.end();
+  req.resume();
+  req.on("end", () => {      // the whole message has arrived before we answer (or don't)
+    if (m === "hang") { hanging.push(res); return; }
+    if (m === "drop") { req.socket.destroy(); return; }   // received, then the connection is cut before any answer
+    res.statusCode = { ok: 201, fail500: 500, fail429: 429, fail400: 400, gone410: 410, nf404: 404 }[m] ?? 500; res.end();
+  });
 });
 await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
 const PORT = (server.address() as any).port;
@@ -115,10 +125,14 @@ function deps(db: Deps["db"], over: Partial<Deps> & { env?: Partial<Deps["env"]>
     db,
     env: { CRON_SECRET: SECRET, VAPID_PUBLIC_KEY: vapid.publicKey, VAPID_PRIVATE_KEY: vapid.privateKey, VAPID_EMAIL: "mailto:qa@example.com", ...over.env },
     setVapidDetails: (e, pub, priv) => webpush.setVapidDetails(e, pub, priv),
-    sendNotification: (sub, payload, o) => {
-      if (!sub.endpoint.startsWith(`https://127.0.0.1:`)) throw new Error("refusing non-loopback endpoint in test");
-      return webpush.sendNotification(sub, payload, { ...o, agent: loopbackAgent });
-    },
+    // the function's own sender (request built first), but only ever towards the loopback mock
+    sendNotification: makeSender({
+      generateRequestDetails: (sub: any, p: string, o: object) => webpush.generateRequestDetails(sub, p, o),
+      sendNotification: (sub: any, p: string, o: object) => {
+        if (!String(sub.endpoint).startsWith("https://127.0.0.1:")) throw new Error("refusing non-loopback endpoint in test");
+        return webpush.sendNotification(sub, p, o);
+      },
+    }, { agent: loopbackAgent }),
     now: over.now ?? (() => Date.now()),
   };
 }
@@ -258,13 +272,32 @@ ok("no other staging vaccine falls in the window (counts below are exact)", real
   const r = await call(deps(db), {});
   const left = (await q(`select split_part(endpoint, '/s/QAVR-', 2) t from public.push_subscriptions where endpoint like '%/s/QAVR-%' order by 1`)).map((x: any) => x.t);
   ok("410 / 404 → subscriptions removed (expired_removed 2), A1 sent, 200 'sent'", r.status === 200 && r.j.expired_removed === 2 && r.j.sent === 1 && JSON.stringify(left) === '["A1"]', { ...pick(r.j, "outcome", "expired_removed", "sent"), left });
+  // clear failures: connection refused (nothing left), 400 from the push service, keys that cannot be encrypted
   await fixture(); await resetRuns();
   await q(`update public.push_subscriptions set endpoint = 'https://127.0.0.1:9/s/QAVR-B1' where endpoint like '%/s/QAVR-B1'`);
-  mode["QAVR-A2"] = "hang";
+  await q(`update public.push_subscriptions set p256dh = 'not-a-key' where endpoint like '%/s/QAVR-A1'`);
+  mode["QAVR-A2"] = "fail400";
+  const c = await call(deps(db), {});
+  ok("refused / 400 / bad keys → clear failures (connect_failed, 400, request_build_failed), 502, claims released, A1 never reached the mock",
+    c.status === 502 && c.j.failed === 3 && c.j.uncertain === 0 && c.j.failed_status.connect_failed === 1 && c.j.failed_status["400"] === 1 && c.j.failed_status.request_build_failed === 1
+      && Object.keys(await deliveries()).length === 0 && !hits["QAVR-A1"], { ...pick(c.j, "outcome", "failed", "failed_status"), hits });
+  // uncertain: the mock receives the whole message, then cuts the connection (A1) or never answers (A2, 10 s timeout)
+  await fixture(); await resetRuns();
+  mode["QAVR-A1"] = "drop"; mode["QAVR-A2"] = "hang";
   const t0 = Date.now();
-  const n = await call(deps(db), {});
-  ok("connection refused + push service hanging (10 s timeout) → failed as 'network', 502, claims released", n.status === 502 && n.j.failed === 2 && n.j.failed_status.network === 2 && (await deliveries()).B1 === undefined && (await deliveries()).A2 === undefined, { ...pick(n.j, "failed", "failed_status"), ms: Date.now() - t0 });
+  const u = await call(deps(db), {});
+  const du = await deliveries();
+  ok("received-then-dropped + no answer → uncertain (connection_lost, timeout), 502, claims kept as 'uncertain'; B1 sent",
+    u.status === 502 && u.j.outcome === "partial_failure" && u.j.uncertain === 2 && u.j.failed === 0 && u.j.sent === 1
+      && u.j.uncertain_reason.connection_lost === 1 && u.j.uncertain_reason.timeout === 1
+      && du.A1 === "21:uncertain,22:uncertain" && du.A2 === "21:uncertain,22:uncertain" && du.B1 === "25:sent",
+    { ...pick(u.j, "outcome", "uncertain", "uncertain_reason", "sent"), d: du, ms: Date.now() - t0, hits: { ...hits } });
   hanging.forEach((res) => res.destroy()); hanging.length = 0;
+  mode["QAVR-A1"] = "ok"; mode["QAVR-A2"] = "ok";
+  const u2 = await call(deps(db), {});
+  ok("next run: the uncertain devices are NOT sent again (each got 1 delivery attempt in total), reported as uncertain_claims 4",
+    u2.status === 200 && u2.j.attempted === 0 && u2.j.uncertain_claims === 4 && hits["QAVR-A1"] === 1 && hits["QAVR-A2"] === 1,
+    { ...pick(u2.j, "outcome", "attempted", "uncertain_claims"), hits });
   await fixture();
 }
 
@@ -320,6 +353,28 @@ ok("no other staging vaccine falls in the window (counts below are exact)", real
   const r = await call(deps(db), { dry_run: true });
   ok("response body: counts only", !["QA-VR", "127.0.0.1", U.owner, U.buyer].some((s) => r.text.includes(s)));
   ok("error logs carry the stage + code", logs.some((l) => l.includes('"stage":"pets"') && l.includes('"code":"XX000"')));
+
+  // errors that carry secrets in message / details / code, and an unexpected throw with a secret message
+  const POISON = ["SECRET-ENDPOINT-https://fcm.googleapis.com/fcm/send/abc", "poison@example.com", "a0000000-0000-4000-8000-0000000000aa", "sk_live_SECRETKEY"];
+  const msg = POISON.join(" | ");
+  const before = logs.length;
+  await resetRuns();
+  const r1 = await call(deps(pgDb(admin, { "pets:select": { code: "23505", message: `duplicate key: Key (endpoint)=(${msg})`, details: msg } })), {});
+  const r2 = await call(deps(pgDb(admin, { "push_subscriptions:select": { code: msg, message: msg } })), {});
+  const r3 = await call(deps(pgDb(admin, { "throw:vaccines": { message: msg, name: "TypeError" } as any })), {});
+  const r4 = await call(deps(pgDb(admin, { "throw:vaccines": { message: msg, name: msg } as any })), {});
+  const newLogs = logs.slice(before).join("\n"), bodies = [r1, r2, r3, r4].map((x) => x.text).join("\n");
+  const leaked = POISON.filter((p) => newLogs.includes(p) || bodies.includes(p));
+  ok("poisoned errors: 500s with stage + sanitised code only (23505 kept, junk code → 'other', throw → TypeError / object); nothing of the secret text in logs or bodies",
+    leaked.length === 0 && r1.j.code === "23505" && r2.j.code === "other" && r3.status === 500 && r3.j.error === "internal_error"
+      && newLogs.includes('"error":"TypeError"') && newLogs.includes('"error":"object"'),
+    { leaked, codes: [r1.j.code, r2.j.code], r3: r3.j, lines: logs.length - before });
+  // push errors whose message holds the endpoint: only labels reach logs
+  await resetRuns(); mode["QAVR-A1"] = "fail500";
+  const before2 = logs.length;
+  await call(deps(db), {});
+  const pushLogs = logs.slice(before2).join("\n");
+  ok("push failure logs: labels / counts only, no endpoint", !pushLogs.includes("127.0.0.1") && !pushLogs.includes("QAVR") && pushLogs.includes('"failed_status":{"500":1}'), { pushLogs: pushLogs.length });
 }
 
 // ---------- Part B: real PostgREST on staging (QA owner session, RLS-limited) ----------

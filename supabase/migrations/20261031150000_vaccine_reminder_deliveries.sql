@@ -1,8 +1,11 @@
 -- Vaccine reminder send log: one row per (push subscription, vaccine, due date).
 -- The Edge Function send-push-notifications claims a row (status 'sending') BEFORE it sends and marks it 'sent'
 -- after the push service accepts it. A retry or a second run the same day skips anything already claimed, so a
--- recipient who already got a reminder is not sent the same one again. A failed send deletes its claim (retry may
--- send it); an expired subscription (404/410) is deleted together with its rows.
+-- recipient who already got a reminder is not sent the same one again.
+--   clear failure (push service answered non-2xx, or the request provably never left) → claim deleted, a later run
+--   may send it; expired subscription (404/410) → subscription deleted together with its rows;
+--   uncertain (timeout / connection lost after sending — the device may already have it) → status 'uncertain',
+--   kept and NOT retried automatically; a crash between claim and record leaves 'sending' (also not retried).
 -- Not touched here: vaccines (no FK is added — see docs/PROPOSAL_VACCINE_PET_FK.md), push_subscriptions, cron.
 -- Only the service role (Edge Function) reads or writes this table; the API roles get nothing.
 
@@ -12,7 +15,7 @@ create table if not exists public.vaccine_reminder_deliveries (
   vaccine_id bigint not null references public.vaccines(id) on delete cascade,
   next_due date not null,
   reminder_date date not null,                 -- Asia/Bangkok date of the run that claimed it
-  status text not null default 'sending' check (status in ('sending', 'sent')),
+  status text not null default 'sending' check (status in ('sending', 'sent', 'uncertain')),
   claimed_at timestamptz not null default now(),
   sent_at timestamptz,
   constraint vaccine_reminder_deliveries_once unique (subscription_id, vaccine_id, next_due)

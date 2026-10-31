@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
-  bangkokDate, buildPayload, chunk, classifyPushError, timingSafeEqual, type ReminderItem,
+  bangkokDate, buildPayload, chunk, classifyPushError, safeCode, safeErrorName, timingSafeEqual, type ReminderItem,
 } from "./reminders.ts";
 
 export type PushSubscriptionKeys = { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -36,11 +36,13 @@ function log(level: "info" | "error", event: Record<string, unknown>) {
   level === "error" ? console.error(line) : console.log(line);
 }
 
-// PostgREST error → StageError (code + short message only; never row data)
-function check<T>(stage: string, res: { data: T | null; error: { code?: string; message?: string } | null }): T {
+// PostgREST error → StageError. Logged: our stage name + a sanitised code. Never the message / details / hint
+// (PostgreSQL puts values there, e.g. "Key (endpoint)=(…)").
+function check<T>(stage: string, res: { data: T | null; error: { code?: unknown } | null }): T {
   if (res.error) {
-    log("error", { stage, code: res.error.code ?? null, message: (res.error.message ?? "").slice(0, 160) });
-    throw new StageError(stage, res.error.code ?? null);
+    const code = safeCode(res.error.code);
+    log("error", { stage, code });
+    throw new StageError(stage, code);
   }
   return res.data as T;
 }
@@ -81,8 +83,9 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
   const r = {
     outcome: "", dry_run: dryRun, date: today, window: [today, tomorrow],
     due: 0, orphan_skipped: 0, no_owner_skipped: 0, recipients: 0, recipients_without_subscription: 0,
-    subscriptions: 0, already_sent_skipped: 0, stuck_claims: 0, attempted: 0, sent: 0, failed: 0, expired_removed: 0,
-    failed_status: {} as Record<string, number>,
+    subscriptions: 0, already_sent_skipped: 0, stuck_claims: 0, uncertain_claims: 0,
+    attempted: 0, sent: 0, failed: 0, uncertain: 0, expired_removed: 0,
+    failed_status: {} as Record<string, number>, uncertain_reason: {} as Record<string, number>,
   };
 
   // 1. vaccines due today / tomorrow (Bangkok)
@@ -121,7 +124,10 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
     db.from("vaccine_reminder_deliveries").select("id, subscription_id, vaccine_id, next_due, status, claimed_at")
       .in("subscription_id", part).gte("next_due", today).order("id").range(offset, offset + PAGE - 1));
   const taken = new Set(existing.map((d) => `${d.subscription_id}|${d.vaccine_id}|${d.next_due}`));
+  // 'sending' older than 15 min = crashed between claim and record; 'uncertain' = no answer from the push service.
+  // Both stay taken (never re-sent automatically) and are reported for a person to look at.
   r.stuck_claims = existing.filter((d) => d.status === "sending" && nowMs - Date.parse(d.claimed_at) > STUCK_AFTER_MS).length;
+  r.uncertain_claims = existing.filter((d) => d.status === "uncertain").length;
 
   const wanted: { sub: Sub; items: ReminderItem[] }[] = [];
   for (const sub of subs) {
@@ -155,7 +161,7 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
     .filter((j) => j.items.length);
 
   // 6. send (bounded concurrency, timeout per push)
-  const sentIds: number[] = [], releaseIds: number[] = [], expiredSubs: string[] = [];
+  const sentIds: number[] = [], releaseIds: number[] = [], uncertainIds: number[] = [], expiredSubs: string[] = [];
   for (const batch of chunk(jobs, SEND_CONCURRENCY)) {
     await Promise.all(batch.map(async (job) => {
       r.attempted++;
@@ -167,19 +173,30 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
         );
         r.sent++; sentIds.push(...job.ids);
       } catch (err) {
-        const { kind, status } = classifyPushError(err);
-        if (kind === "expired") { r.expired_removed++; expiredSubs.push(job.sub.id); return; }
-        r.failed++; releaseIds.push(...job.ids);
-        r.failed_status[String(status)] = (r.failed_status[String(status)] ?? 0) + 1;
+        const res = classifyPushError(err);
+        if (res.kind === "expired") { r.expired_removed++; expiredSubs.push(job.sub.id); return; }
+        if (res.kind === "uncertain") {
+          r.uncertain++; uncertainIds.push(...job.ids);
+          r.uncertain_reason[res.label] = (r.uncertain_reason[res.label] ?? 0) + 1;
+          return;
+        }
+        r.failed++; releaseIds.push(...job.ids);       // rejected by the push service, or provably not sent
+        r.failed_status[res.label] = (r.failed_status[res.label] ?? 0) + 1;
       }
     }));
   }
-  if (r.failed) log("error", { stage: "push", failed: r.failed, failed_status: r.failed_status, attempted: r.attempted });
+  if (r.failed || r.uncertain) {
+    log("error", { stage: "push", attempted: r.attempted, failed: r.failed, failed_status: r.failed_status, uncertain: r.uncertain, uncertain_reason: r.uncertain_reason });
+  }
 
-  // 7. record: sent → 'sent'; failed → claim released (a retry may send it); expired → subscription removed (cascade)
+  // 7. record: sent → 'sent'; clear failure → claim released (a later run may send it); uncertain → 'uncertain'
+  //    (kept, not retried); expired → subscription removed (its rows cascade)
   for (const part of chunk(sentIds, IN_CHUNK)) {
     check("deliveries_mark_sent", await db.from("vaccine_reminder_deliveries")
       .update({ status: "sent", sent_at: new Date().toISOString() }).in("id", part));
+  }
+  for (const part of chunk(uncertainIds, IN_CHUNK)) {
+    check("deliveries_mark_uncertain", await db.from("vaccine_reminder_deliveries").update({ status: "uncertain" }).in("id", part));
   }
   for (const part of chunk(releaseIds, IN_CHUNK)) {
     check("deliveries_release", await db.from("vaccine_reminder_deliveries").delete().in("id", part));
@@ -188,7 +205,11 @@ async function run(deps: Deps, nowMs: number, dryRun: boolean) {
     check("subscriptions_expire", await db.from("push_subscriptions").delete().in("id", part));
   }
 
-  const outcome = !jobs.length ? "already_sent" : r.failed === 0 ? "sent" : r.sent + r.expired_removed > 0 ? "partial_failure" : "failed";
+  const problems = r.failed + r.uncertain;
+  const outcome = !jobs.length ? "already_sent"
+    : problems === 0 ? "sent"
+    : r.sent + r.expired_removed > 0 ? "partial_failure"
+    : r.failed === 0 ? "uncertain" : "failed";
   return { ...r, outcome };
 }
 
@@ -224,12 +245,13 @@ export async function handleRequest(req: Request, deps: Deps): Promise<Response>
 
   try {
     const result = await run(deps, nowMs, dryRun);
-    log(result.failed ? "error" : "info", { summary: result });
-    // any failed push → 502 so cron / pg_net show a non-2xx; a retry skips what was already sent
-    return json(result.failed ? 502 : 200, result);
+    const problem = result.failed > 0 || result.uncertain > 0;
+    log(problem ? "error" : "info", { summary: result });
+    // any failed / uncertain push → 502 so pg_net shows a non-2xx; a later run skips what was sent or is uncertain
+    return json(problem ? 502 : 200, result);
   } catch (e) {
     if (e instanceof StageError) return json(500, { error: "query_failed", stage: e.stage, code: e.code });
-    log("error", { stage: "unexpected", message: String((e as Error)?.message ?? e).slice(0, 160) });
+    log("error", { stage: "unexpected", error: safeErrorName(e) });   // the name only, never the message
     return json(500, { error: "internal_error" });
   }
 }

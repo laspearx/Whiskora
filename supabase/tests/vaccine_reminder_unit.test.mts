@@ -2,7 +2,7 @@
 // Pure helpers of the vaccine reminder Edge Function: Bangkok dates around midnight, payload, push error classes.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bangkokDate, buildPayload, chunk, classifyPushError, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
+import { bangkokDate, buildPayload, chunk, classifyPushError, makeSender, PushNotSentError, safeCode, safeErrorName, timingSafeEqual } from "../functions/send-push-notifications/reminders.ts";
 
 test("Bangkok date flips at 17:00 UTC, not at UTC midnight", () => {
   assert.equal(bangkokDate(Date.parse("2026-10-31T16:59:59Z")), "2026-10-31"); // 23:59:59 BKK
@@ -27,12 +27,48 @@ test("payload: title by any item due today, per-item day label, single pet → i
   assert.ok(long.body.length <= 80 && long.body.endsWith("..."));
 });
 
-test("push errors: 404/410 expired, others failed, no status = network", () => {
-  assert.deepEqual(classifyPushError({ statusCode: 410 }), { kind: "expired", status: 410 });
-  assert.deepEqual(classifyPushError({ statusCode: 404 }), { kind: "expired", status: 404 });
-  assert.deepEqual(classifyPushError({ statusCode: 500 }), { kind: "failed", status: 500 });
-  assert.deepEqual(classifyPushError({ statusCode: 429 }), { kind: "failed", status: 429 });
-  assert.deepEqual(classifyPushError(new Error("ETIMEDOUT")), { kind: "failed", status: "network" });
+test("push results: an answer from the push service or a provable non-send is clear; no answer is uncertain", () => {
+  assert.deepEqual(classifyPushError({ statusCode: 410 }), { kind: "expired", label: "410" });
+  assert.deepEqual(classifyPushError({ statusCode: 404 }), { kind: "expired", label: "404" });
+  assert.deepEqual(classifyPushError({ statusCode: 500 }), { kind: "rejected", label: "500" });
+  assert.deepEqual(classifyPushError({ statusCode: 429 }), { kind: "rejected", label: "429" });
+  assert.deepEqual(classifyPushError({ statusCode: 400 }), { kind: "rejected", label: "400" });
+  assert.deepEqual(classifyPushError(new PushNotSentError("request_build_failed")), { kind: "not_delivered", label: "request_build_failed" });
+  assert.deepEqual(classifyPushError(Object.assign(new Error("connect"), { code: "ECONNREFUSED" })), { kind: "not_delivered", label: "connect_failed" });
+  assert.deepEqual(classifyPushError(Object.assign(new Error("dns"), { code: "ENOTFOUND" })), { kind: "not_delivered", label: "connect_failed" });
+  assert.deepEqual(classifyPushError(new Error("Socket timeout")), { kind: "uncertain", label: "timeout" });       // web-push timeout
+  assert.deepEqual(classifyPushError(Object.assign(new Error("x"), { code: "ETIMEDOUT" })), { kind: "uncertain", label: "timeout" });
+  assert.deepEqual(classifyPushError(Object.assign(new Error("socket hang up"), { code: "ECONNRESET" })), { kind: "uncertain", label: "connection_lost" });
+  assert.deepEqual(classifyPushError(new Error("something else")), { kind: "uncertain", label: "unknown" });
+  assert.deepEqual(classifyPushError(null), { kind: "uncertain", label: "unknown" });
+  assert.deepEqual(classifyPushError({ statusCode: "500" }), { kind: "uncertain", label: "unknown" });          // not a real status
+  // labels never carry the message
+  const r = classifyPushError(Object.assign(new Error("https://push.example/SECRET-ENDPOINT"), { code: "ECONNRESET" }));
+  assert.ok(!JSON.stringify(r).includes("SECRET"));
+});
+
+test("makeSender: a request that cannot be built (bad keys) is reported as not sent, nothing goes out", async () => {
+  let sent = 0;
+  const wp = { generateRequestDetails: () => { throw new Error("p256dh should be 65 bytes SECRET"); }, sendNotification: async () => { sent++; } };
+  await assert.rejects(makeSender(wp)({ endpoint: "https://x", keys: { p256dh: "a", auth: "b" } }, "{}", { timeout: 1 }), (e: unknown) => e instanceof PushNotSentError && (e as PushNotSentError).reason === "request_build_failed");
+  assert.equal(sent, 0);
+  const seen: object[] = [];
+  const ok = { generateRequestDetails: (_s: unknown, _p: string, o: object) => { seen.push(o); }, sendNotification: async (_s: unknown, _p: string, o: object) => { seen.push(o); } };
+  await makeSender(ok, { agent: "A" })({ endpoint: "https://x", keys: { p256dh: "a", auth: "b" } }, "{}", { timeout: 5 });
+  assert.deepEqual(seen, [{ timeout: 5, agent: "A" }, { timeout: 5, agent: "A" }]);
+});
+
+test("log hygiene: only real codes / plain error names pass", () => {
+  assert.equal(safeCode("42501"), "42501");
+  assert.equal(safeCode("PGRST200"), "PGRST200");
+  assert.equal(safeCode("XX000"), "XX000");
+  assert.equal(safeCode(null), null);
+  assert.equal(safeCode("Key (endpoint)=(https://secret)"), "other");
+  assert.equal(safeCode("user@example.com"), "other");
+  assert.equal(safeCode(42501), "other");
+  assert.equal(safeErrorName(new TypeError("secret")), "TypeError");
+  assert.equal(safeErrorName({ name: "https://secret.example" }), "object");
+  assert.equal(safeErrorName("plain string with secret"), "string");
 });
 
 test("chunk + constant-time compare", () => {
