@@ -224,6 +224,100 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 | Production read-only precheck (new file), 18:47 ICT | `state: before`, all 14 checks ok; 0 reservations / 0 transfers / 5 pets ติดจอง | |
 | Production logs 10:51–11:50 UTC | log API returned HTTP 500 three times at ~11:46, then answered: edge 116 (real use 11:20–11:26), auth 2, postgres 2 checkpoints; 0 errors; 0 from Preview | |
 
+## 2026-10-30 — PR #12 deployed (v1.7.0) + reservation migration on production (ICT = UTC+7)
+| Step | Result |
+| --- | --- |
+| Pre-merge | main `8973463`; PR head `57d11d67bb61b4f607cb9697588b890b50ea2344`; `web/` + migration identical to tested `0f01d48`; file sha256 `00b7cd43…bf0f8`; only PR #12 (PR #11's commit was already in its history → GitHub marked #11 merged) |
+| Precheck (read-only) 19:09 ICT | `state: before`, all 14 checks ok, no STOP/WARN; 0 reservations / 0 transfers / 5 pets ติดจอง |
+| Merge | 19:09:17 ICT, pinned to head → `6cce1f4`; bot bump `fae9f56` **v1.7.0** (version files only) |
+| Deploy | Production `fae9f56` success 19:12:42 ICT (Vercel Production env; no Preview promoted) |
+| App on the OLD DB | bundle: production ref 1, staging 0, v1.7.0, new code present; LINE route 307, notify 401; QA stranger: `/profile/transfers` (inbox RPC 200, empty state), `/profile/pets`, `/p/175` load, 0 Supabase errors (19:14 ICT) |
+| Precheck again 19:15:07 ICT | still `before`, 0 rows, no duplicates |
+| **Migration** | `20261030121715 reservation_transfer_pipeline` applied **19:17:15 ICT** (12:17:15 UTC) via `apply_migration`; stored statement sha256 = `00b7cd438e40b3106eebb1e24e0d8a74fec48ccb56b043283424e48dca4bf0f8` (= the file) |
+| Postcheck (catalog) | `state: after`; one trigger; md5 of 5 changed bodies = staging; policy set as designed; both unique indexes; not-self check NOT VALID; RLS on; `pets.allergies` grants unchanged |
+| RPC grants (read from the catalog) | write RPCs + 4 helpers: `authenticated`, `service_role`, owner only — anon/PUBLIC refused (checked over HTTP: 401). `get_my_pending_transfers` after drop/recreate: PUBLIC, anon, authenticated, service_role — same ACL as before the migration; the body returns only `to_user_id = auth.uid()` rows, anon call → 200 with 0 rows (checked) |
+| QA denials (create nothing) 19:17:54–56 ICT | 15/15 passed: confirmed-reservation insert 403, reserve for someone else 403, non-owner transfer-to-self 403, owner self-transfer 403, pre-accepted transfer 403, direct PATCH on both tables → 0 rows, both RPCs on a non-existent id → P0002 (HTTP 500 from PostgREST), anon RPCs 401, helpers anon 401, inbox signed-in 200/0 rows |
+| Privacy (anon HTTP) | `profiles.email`, `profiles.phone`, `pets.allergies`, `pets.health_notes` → 401; public columns → 200 |
+| Pages after the migration (19:18 ICT) | same QA pages load, inbox RPC 200, 0 Supabase errors |
+| Data | 0 reservations / 0 transfers after the checks (nothing created); QA accounts role user, 0 sessions; admins 1 |
+| Logs 11:50–12:20 UTC | edge 187 (real use from 12:05), auth 13, postgres 18. All ≥400/ERROR lines (12:17:54–12:17:56) = the QA denial probes above + anon privacy probes; plus the migration statement log at 12:17:15. App errors 0, no deadlocks |
+
+**Not tested on production:** the happy path (reserve → confirm → transfer → accept/decline) and farm-role UI — production has no QA farm and real rows were not to be created; those rely on staging (E2E 58/58 on the real Preview, API 53/53, concurrency). No real transfer was performed on production.
+Recovery if needed: `supabase/emergency/reservation_transfer_freeze.sql` → fix forward → unfreeze (never the staging-only rollback, never an app rollback below v1.7.0).
+
+## 2026-10-30 — Pet privacy audit + fix on staging (branch `fix/pet-privacy`, not merged; ICT = UTC+7)
+Rule applied (owner-approved principle): when a pet is set to not public (`is_public = false`), neither a sale status
+nor a field-group tier opens it to anyone who is not its owner / co-owner / farm team / admin (or an access grant).
+
+Read-only audit (catalog on staging = production by md5; production counts only, no data values):
+| Path | Finding before | Production today |
+| --- | --- | --- |
+| pets RLS | `Public can view available pets` (status = พร้อมย้ายบ้าน) returned private pets to anyone, incl. listing queries (farm-hub) | 0 private pets (all 137 public; the app has no control to set private) |
+| `viewer_can_see()` (health, pedigree, vaccination, weight, timeline, documents, medical notes) | ignored `is_public`: tier alone decided — anon got the allergies of a private pet with tier public | 1 farm has rows (10): health / medical_notes / documents / dna / pedigree / vaccination / weight = registered — a farm choice; rows kept as they are |
+| `get_pet_pedigree()` | walked into private ancestors (name, photo, breed) of a public pet | 0 private ancestors |
+| pedigree columns | anon could read sire_id / dam_id / pedigree_number / pedigree_image_url / grand-parent names directly (bypasses tier "owner") | **live leak:** anon read → 200; 25 readable pets have pedigree values |
+| storage `pet-photos` | anyone could LIST every user folder + file name (also photos of private pets) | **live leak:** anon list → 60 user folders, 170 objects |
+| privacy settings writes | any farm member (staff / viewer) and co-owners could change farm / per-pet tiers via API (UI says read-only) | possible on production now (staging: viewer set farm health tier to public) |
+| co-owner / farm team rows | co-owners could not read a private pet row; team only saw farm pets because all are public | — |
+| owner controls | no UI for `is_public`; no per-pet tier UI (`pet_visibility_settings` unused); farm privacy page only for farm pets | — |
+
+Fix: migration `20261030140000_pet_privacy_is_public.sql` (sha256 `837a8e3f323ac1702ed67cf65e2356fb63db65bc5782ff83cc3ec5d324f2f3d3`), staging
+12:27–12:31 UTC (applied, exact staging-only revert, re-applied twice). App: owner notice text (private pet stays hidden even
+when "พร้อมย้ายบ้าน"); E2E for it updated. Column grants: only removals (2619 → 2611 = 8 anon pedigree columns); no grant
+widened; revert returns every catalog hash to the pre-migration baseline (functions, policies incl. storage, grants, triggers).
+
+Tests (synthetic accounts: anon, stranger, buyer, owner, co-owner, farm manager / staff / viewer):
+| Suite | Before | After |
+| --- | --- | --- |
+| `supabase/tests/pet_privacy_checks.cjs --transfer` (rows, listing, health / pedigree RPC, private ancestor, pedigree columns, storage list/upsert/delete/public URL, settings writes, after transfer) | 32 passed / **26 failed** (each a leak or role gap above) | **58 / 58** |
+| Real Preview `whiskora-2twqry63h` (`1dbcb41`, staging env, protection kept) E2E, 19:38–19:45 ICT | — | **58 / 58** |
+| `reservation_api_checks.cjs` | — | 53 / 53 (R2b now asserts the private listed pet is hidden) |
+| Preview bundle | — | staging ref only, production ref 0 |
+| Precheck `pet_privacy_precheck.sql` | production (read-only): `state: before`, all ok, no WARN | staging: `after`, WARN rows = the synthetic fixtures |
+
+### Review round 2 (owner review of PR #14; staging / Preview only)
+| Item | Change | Result |
+| --- | --- | --- |
+| Pedigree columns for signed-in users | SELECT revoked from `authenticated` too (anon + authenticated: 2619 → 2603 column grants, removals only); new RPC `get_pet_pedigree_fields()` for owner / co-owner / farm team / admin (any tier) or a viewer the pedigree tier allows; `PET_COLUMNS` without pedigree fields; owner edit page loads sire/dam via the RPC and does not send them if loading failed | stranger / buyer / owner direct read → 403; stranger RPC → nothing; owner, co-owner, farm manager / staff / viewer RPC → ok; Preview: owner edit + save keeps sire and pedigree number, 0 Supabase errors |
+| Pedigree across generations | walking up from an ancestor needs `viewer_can_see(ancestor, 'pedigree')`; its card needs `pet_visible_to(ancestor)` | public child P7 → anon/stranger see dam P8 (public card) but not P8's sire P9 (P8 pedigree owner-only); owner of P8 sees P9 |
+| Grants / previous owner | `granted` only for an active grant of that field group (or a pet-wide grant); grants no longer open the private card; grant create/revoke only by who may change the pet's privacy (was any farm member / co-owner) | vaccination grant → that group + its vaccine rows only, not weight/health/pedigree/documents/card; expired and revoked grants → nothing; staff / co-owner cannot create grants, owner can create + revoke; previous owner sees only groups with "include previous owner" (health yes, weight no), never the private card |
+| UI texts | private profile is limited, but **photo files are not private yet — existing photo links still open** (owner notice on `/p` and `/pets/<id>`, transfer inbox) | E2E asserts the photo caveat |
+| After-transfer access | proposal only: `docs/PROPOSAL_TRANSFER_ACCESS_RESET.md` (co-owners, grants, per-pet settings, weight rows, documents, previous-owner definition) | not applied |
+
+Migration sha256 now `47123b3b2e96f9acab4bc7f69da8df112c90a6d56eda05fd18f5bb3a1f3f8f95` (staging re-applied 13:11:19 UTC). Tested code `1cc44bc`.
+| Suite | Before (revert) | After |
+| --- | --- | --- |
+| `pet_privacy_checks.cjs --transfer` | 50 passed / **43 failed** | **93 / 93** |
+| E2E on the real Preview `whiskora-jl76dl3la` (staging env, protection kept), 20:13–20:20 ICT | — | **58 / 58** |
+| `reservation_api_checks.cjs` | — | 53 / 53 |
+| Staging-only revert | catalog = production (colpriv, table grants, public + storage policies, functions); re-apply = same "after" hashes | ok |
+| `pet_privacy_precheck.sql` | reverted staging (production-equal catalog): `before`, all ok | staging: `after`, all ok (WARN = synthetic fixtures) |
+
+### Review round 3 — access_grants UPDATE (staging only, 2026-10-31)
+Found: the UPDATE policy checked `granted_by = auth.uid()` in USING and WITH CHECK, so a grant's creator could edit every
+column. Reproduced on staging (synthetic: stranger owns private P10 "A", owner 01 owns private P2 "B"): the creator moved
+its P10 grant to P2 with itself as grantee and all groups → `get_my_pet_access` / `get_pet_health` of P2 opened; also
+re-target, widen weight → all groups, extend an expired grant, un-revoke; same for a creator who lost the role (staff) and
+for the old owner after a transfer (22 failing checks before the fix).
+Fix (same migration, section 8): `authenticated` keeps UPDATE on `revoked_at` only (anon none); trigger
+`access_grants_revoke_only` allows only active → revoked, sets `revoked_at = now()`, rejects every other change (also for
+service roles); policy WITH CHECK requires `revoked_at is not null`. Who may revoke is unchanged: the creator (also after a
+transfer / losing the role — only removes access) or who may change the pet's privacy now. A changed grant = revoke + new.
+| Suite | Before (round-2 state / revert) | After |
+| --- | --- | --- |
+| `pet_privacy_checks.cjs --transfer` (fixture adds P10 + a stale-role grant on P6) | 105 / **22 failed** (round 2 code); revert: 59 / 68 failed | **127 / 127** |
+| Trigger alone (owner DB role, rolled back) | — | move → 42501; un-revoke → 42501; revoke → ok, time forced to now |
+| `reservation_api_checks.cjs` | — | 53 / 53 (run after resetting P2; the privacy `--transfer` run leaves P2 with the buyer) |
+| `pet_privacy_precheck.sql` (new 7.6: UPDATE privileges + trigger) | revert: `before`, all ok | `after`, all ok (WARN = synthetic) |
+| Staging-only revert → re-apply | ok | ok (07:03:18 UTC) |
+Migration sha256 now `f78da8057b2a70e43daf267d010b6a495e0e8d5c8d3a5d176314cb6f4c8a3e06`. No app change (no grant UI); Preview E2E not re-run.
+Not changed: the creator may still DELETE its grant (removes access, but the row leaves history).
+
+**Still open (privacy is not closed on every path):** photo files of private pets are in a public bucket (a known URL
+still loads); owners have no UI for `is_public` / per-pet tiers; access given by a previous owner survives a transfer
+(separate PR); the original seller is not a "previous owner"; grant DELETE removes history; `pet-documents` upload has no folder check;
+`verification-docs` uses a public URL on a private bucket.
+
 ## Still open
 - Privacy: leak closed 2026-10-30 03:43 UTC; owner re-test passed 03:50 UTC; 24 h log watch in progress (until ≥ 2026-10-31 03:44 UTC).
 - **Possible session exposure (not found, not excluded).** Logs exist from ~2026-08-01. Google logins in that window
@@ -240,7 +334,9 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 - Preview → staging: done (v1.6.0). Older branches without the guard now also build with the staging Preview vars.
 - Apex `whiskora.pet` → Cloudflare 530 / error 1033 (dead tunnel); SEO URLs, sitemap, Pet ID demo QR point there.
 - Supabase Facebook provider is enabled. (LINE callback no longer trusts `whiskora.vercel.app` — live in v1.6.0.)
-- Reservation/transfer write holes on production (see the staging section above) — fixed by `20261030120000`, not applied.
+- Reservation/transfer write holes: **closed on production 2026-10-30 12:17 UTC** (`20261030121715`). No rows existed at that time; that alone does not prove they were never used (not investigated).
+- **Pet privacy (fix on branch `fix/pet-privacy`, not on production):** live on production until applied — anon can read pedigree columns directly and list all `pet-photos` folders; staff/viewer can change farm privacy tiers via API. Decisions 1–5 in the section above.
+- Small follow-ups: `get_my_pending_transfers` is executable by anon (returns 0 rows) — could be limited to `authenticated`; RPC "not found" errors (P0002) surface as HTTP 500; remove PGRST202 fallbacks after a stable week.
 - Other DB items: `admin_get_users` no-arg overload, default privileges
   grant ALL to anon on new tables, leaked-password protection off, 7 functions without `search_path`.
 
@@ -253,6 +349,7 @@ Owner decisions — **approved as proposed** (2026-10-30 review; buyer self-canc
 
 ## Next start
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
-2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 11:50 UTC continuous, app errors 0 (all errors = QA tests).
-3. Reservation → transfer PR: owner decisions (list above), then production plan in the PR (app first, then migration).
-4. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
+2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 12:50 UTC continuous, app errors 0 (all errors = QA tests).
+3. Reservation → transfer: live (v1.7.0 + `20261030121715`, 19:17:15 ICT). Logs checked 12:17:15 → 12:50 UTC: errors only from the QA denial probes (≤ 12:18 UTC), 0 deadlocks. Production happy path untested (staging only).
+4. Pet privacy PR: owner review + decisions 1–5, then production plan in the PR.
+5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.

@@ -39,9 +39,9 @@ const health = async (who, id) => { const r = await rpc(who, 'get_pet_health', {
   ok('R1 buyer cannot insert an already-confirmed reservation', denied(r), s(r));
   r = await rest('buyer', 'POST', 'pet_reservations', { pet_id: P2, buyer_id: ID.buyer, status: 'pending' });
   ok('R2 buyer cannot reserve a private, unlisted pet', denied(r), s(r));
-  // P6: status พร้อมย้ายบ้าน but is_public = false — readable by anyone (existing pets policy), not reservable
+  // P6: status พร้อมย้ายบ้าน but is_public = false — hidden (20261030140000: not public wins over the sale status), not reservable
   r = await rest('anon', 'GET', `pets?id=eq.${P6}&select=id,status`);
-  ok('R2b (documents existing design) a พร้อมย้ายบ้าน pet with is_public=false is readable by anonymous visitors', r.status === 200 && r.rows === 1, s(r));
+  ok('R2b a พร้อมย้ายบ้าน pet with is_public=false is hidden from anonymous visitors', r.status === 200 && r.rows === 0, s(r));
   r = await rest('buyer', 'POST', 'pet_reservations', { pet_id: P6, buyer_id: ID.buyer, status: 'pending' });
   ok('R2c buyer cannot reserve a พร้อมย้ายบ้าน pet that is set to not public', denied(r), s(r));
   r = await rest('owner', 'POST', 'pet_reservations', { pet_id: P4, buyer_id: ID.owner, status: 'pending' });
