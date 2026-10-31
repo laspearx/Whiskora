@@ -30,6 +30,33 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
+## 2026-10-31 — PR #14 deployed (v1.7.1) + pet privacy migration on production (UTC; ICT = UTC+7)
+| Step | Result |
+| --- | --- |
+| Pre-merge | PR head `ae2b7f242720b141f94eafc3b34b7c2ce8e96698` (= tested); main `fae9f56` already in its history; migration in head sha256 `f78da805…3e06`; no other PR included |
+| Preview check (staging, migration `f78da805…` applied 07:03 UTC), `whiskora-2x53v1rmk` = `ae2b7f2` | QA owner on P7 (sire P2, dam P8, pedigree no., grandsire): edit → save 204 → reload shows change → restore 204; sire/dam/pedigree fields identical throughout, 0 Supabase errors. Stranger direct pedigree columns 403, anon 401, stranger `get_pet_pedigree_fields(P8)` none. Anon `/p/P7` tree 200: P8 shown, P9 + private P2 hidden; private P2 page hides health; farm-hub loads. Full E2E not re-run (no app change since `1cc44bc`, 58/58) |
+| Precheck (read-only) 07:18:23 | `state: before`, all ok incl. 7.6, no STOP / WARN; 10 farm / 0 pet settings, 0 grants, 170 pet-photos objects, 25 pets with pedigree values |
+| Merge | 07:18:39, pinned to head → `e880459`; bot bump `7ab3cdc` **v1.7.1** (version files only) |
+| Deploy | Production `7ab3cdc` success 07:22:06 (`whiskora-c4nkcnl7s`, Vercel Production env build; no Preview promoted). `e880459` deployed 07:20 before it |
+| App on the OLD DB 07:22–07:23 | bundle: production ref 1, staging 0, `1.7.1`; QA stranger edit pet 175: `get_pet_pedigree_fields` 404 (expected) → sire/dam not sent; save → reload → restore, card + health unchanged; `/p/175` tree 200, farm-hub, a farm page load |
+| Precheck again 07:23:29 | `before`, all ok |
+| **Migration** | `20261031072347 pet_privacy_is_public` applied **07:23:47** (only this file, one transaction incl. the `schema_migrations` row; bytes checked against sha256 before sending); stored statement sha256 = `f78da8057b2a70e43daf267d010b6a495e0e8d5c8d3a5d176314cb6f4c8a3e06` |
+| Postcheck catalog 07:23:54 | `pet_privacy_precheck.sql` → `after`, every check ok incl. 7.6; `reservation_precheck.sql` → `after`, ok; `pets.allergies` grants unchanged |
+| Postcheck HTTP 07:24:31–35 (QA stranger = owner of pet 175, QA admin = role user, anon) | **22/22**: pedigree columns anon 401 / both signed-in 403; `get_pet_pedigree_fields` anon 401, owner 1 row, other user 0 rows; `get_my_pet_access` other user pedigree false; `get_pet_pedigree` 200; PATCH `access_grants` (random id) `resource_id` / `grantee_id` / `field_group_key` → 403 42501, anon 401, `revoked_at` → 200 / 0 rows; pet-photos list anon + other user → 0; `profiles.email`, `pets.allergies` anon 401; transfer inbox 200, direct PATCH transfers 0 rows, `respond_pet_transfer` missing id → P0002, anon 401 |
+| App on the NEW DB 07:24 | bundle as above; QA stranger edit pet 175: RPC 200, save → reload → restore, pedigree fields + health + card identical, 0 Supabase errors; anon `/p/175` + tree, farm-hub, a farm page load, 0 errors. Pet 175 has no pedigree values — the non-empty sire/dam case is proven on staging only |
+| Photo URL 07:24:53 | QA stranger uploaded a probe to its own folder (200), public URL 200 (**known limit: public bucket**), own list sees it, anon list 0, deleted (200; row gone). The public URL still answered 200 right after delete (CDN cache) — input for the private-photos PR |
+| Data after | 0 grants, 0 per-pet settings, 170 pet-photos objects (unchanged), QA sessions 0 (global logout 204), QA roles user, admins 1, no pet_activities on 175 |
+| Logs 07:15–07:30 | every ≥ 400 = QA: 5× `get_pet_pedigree_fields` 404 at 07:22 (app on old DB, QA browser + script), the denial probes 07:24, P0002 probe; postgres 0 ERROR; PostgREST schema reload at 07:23:47 + "Thread killed by timeout manager" ×4 (idle-connection notices, no failed request). No customer request errors |
+
+Rollout used QA accounts / QA pet 175 only; no grant or test data on customer pets. Recovery: fix forward only — never
+re-grant pedigree columns or table UPDATE on `access_grants`, never drop `access_grants_revoke_only`, never run the
+staging-only revert on production; if needed, close only the failing path.
+
+**Not closed (privacy is not complete):** photo files of private pets stay in a public bucket (a known URL loads, CDN may
+serve a deleted file); access given by a previous owner survives a transfer (next PR, staging first); no owner UI for
+`is_public` / per-pet tiers; original seller not a previous owner; grant DELETE removes history (unchanged by decision);
+`pet-documents` folder check; `verification-docs` public URL.
+
 ## 2026-10-30 — privacy migration on production (owner-approved, steps 4–7 of `docs/PRIVACY_ROLLOUT.md`)
 | Step | Result |
 | --- | --- |
@@ -351,5 +378,5 @@ still loads); owners have no UI for `is_public` / per-pet tiers; access given by
 1. Close the privacy rollout round after the 24 h log watch (profile save proven with the QA account after the hotfix; owner re-test not needed).
 2. Privacy 24 h log watch until ≥ 2026-10-31 03:44 UTC (10:44 ICT). Checked so far: 03:43:48 → 12:50 UTC continuous, app errors 0 (all errors = QA tests).
 3. Reservation → transfer: live (v1.7.0 + `20261030121715`, 19:17:15 ICT). Logs checked 12:17:15 → 12:50 UTC: errors only from the QA denial probes (≤ 12:18 UTC), 0 deadlocks. Production happy path untested (staging only).
-4. Pet privacy PR: owner review + decisions 1–5, then production plan in the PR.
+4. Pet privacy: live (v1.7.1 + `20261031072347`, 2026-10-31 07:23:47 UTC). Logs checked 07:15–07:30 UTC. Next: separate PR on staging — reset access on transfer (agreed approach); then private photos (signed URLs) and owner UI for `is_public` / tiers.
 5. Decide: session revocation scope/method; email/Google login test; QA data clean-up.
