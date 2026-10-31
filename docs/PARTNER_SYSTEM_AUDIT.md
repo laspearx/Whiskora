@@ -28,7 +28,7 @@ service-assets 0. Every shop / service has a workspace whose owner = the entity 
   an entity they do not own (staging: allowed); adding members to it is currently blocked only by the bug below.
 - Production evidence today: 0 farm / shop / service workspaces whose owner differs from the entity owner
   (no sign of use in the current state; earlier use cannot be excluded from state alone).
-- **Status:** hotfix PR `fix/workspace-ownership-guard` (migration `20261101120000_workspace_ownership_guard.sql`) — staging done, production pending review.
+- **Status: CLOSED on production 2026-10-31 13:55:23 UTC** (PR #19, v1.10.1, migration `20261031135523`); see `docs/STATUS.md`.
 - **Fix first, as its own hotfix PR (staging → production), before any partner work:** BEFORE INSERT / UPDATE trigger
   (or policies) on `workspaces` for API roles: `type` / `entity_id` / `owner_id` immutable after insert; insert of
   `farm` / `shop` / `service` only if the caller owns that entity (`farms|shops|services.user_id = auth.uid()::text`)
@@ -111,7 +111,7 @@ service-assets 0. Every shop / service has a workspace whose owner = the entity 
 
 | # | PR | Contents | Test criteria |
 |---|---|---|---|
-| H | **Hotfix: workspace ownership** (first; production) — **done on staging, PR open** | trigger + column privileges on `workspaces`; unique (type, entity_id); precheck | stranger cannot repoint / create a workspace for another's farm / shop / service (API 403 / 42501); owner still creates own; all farm permission functions false for the stranger; existing members unaffected; precheck 0 mismatches |
+| H | **Hotfix: workspace ownership** — **done (production v1.10.1)** | trigger + column privileges on `workspaces`; unique (type, entity_id); precheck | stranger cannot repoint / create a workspace for another's farm / shop / service (API 403 / 42501); owner still creates own; all farm permission functions false for the stranger; existing members unaffected; precheck 0 mismatches |
 | S | **Storage scoping** (second; production) | `farm-assets`, `shop-assets`, `service-assets` policies: first folder = entity id the caller may edit; check `partner-photos` farm path | other users cannot upload / overwrite / delete; owner (+ allowed roles) can; existing files still served; synthetic files only in tests |
 | G | **Grants clean-up** (third) | revoke TRUNCATE / TRIGGER / REFERENCES from anon / authenticated on public tables; review sequences / function EXECUTE per real use; new-table template; default privileges change kept separate | app SELECT / INSERT / UPDATE / DELETE paths unchanged (API + E2E); no TRUNCATE test on production |
 | 1 | Members via RPCs | `add/set_role/remove_member` RPCs, drop recursive policies, read policy without recursion | owner adds staff / manager; manager limits; viewer read-only; nobody adds an `owner`; no 42P17; UI shows real errors |

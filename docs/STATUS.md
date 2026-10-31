@@ -79,7 +79,21 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
-## 2026-10-31 — Hotfix: workspace ownership guard (branch `fix/workspace-ownership-guard`; STAGING ONLY)
+## 2026-10-31 — PR #19 rollout (v1.10.1): workspace ownership guard on production — hole closed 13:55:23 UTC
+| Step | Result |
+| --- | --- |
+| Pin | head `831aa7b3c24fa22beb569a16ee162e0351cc20e0`; migration + test files = the staging-tested set (sha256 migration `7fe9c423…0f18`, precheck `4850f9e3…cc85`, checks `7ce669f8…923a`, fixture `569a803a…85fd`); no `web/` change |
+| Precheck 13:52 (read-only) | duplicates 0, owner ≠ entity owner 0, missing entities 0, forged owner members 0 → no STOP. Baseline: 14 farms — owner team / manage privacy 14 / 14; 51 farm pets — owner record weight / transfer / decide reservation 51 / 51 / 51; 8 farm workspace members — team / manage 8 / 8; workspaces 124 (md5 `b1c8b3b8…`), members 117 (md5 `605d97e5…`) |
+| Merge | `2808088` → bot `e2a7629` **v1.10.1** (version files only); Vercel Production v1.10.1: bundle production ref 1, staging ref 0 |
+| Migration | **`20261031135523` `workspace_ownership_guard`** 13:55:23, one transaction; stored statement sha256 `7fe9c423e49f3f0757b1496ae7862e735804150406fed40111044d236f3d0f18`; name recorded correctly |
+| Postcheck | precheck `after` (trigger, unique index, UPDATE columns `avatar_url, name, updated_at`); catalog (trigger def, indexes, column / table privileges, helper + guard md5 / search_path / ACL, policies) **identical to staging** (15 lines) |
+| QA probes 13:56:01–02 (after install only) | production QA stranger: PATCH own personal → farm, PATCH entity only, POST farm / shop / personal workspace → **all 403 (42501)**; workspaces + members md5 unchanged; stranger farm access false before and after |
+| Baseline after | farm owners / members rights **identical** to the baseline; workspaces / members unchanged |
+| Web (QA account) | edit pet 175 save → reload → restore 204 / 204, pet / weight / transfers pages, `/p/175` + tree, farm-hub, farm page: ok, 0 Supabase errors, production host only |
+| Logs 13:55–13:57 UTC (latest available at check time) | 4xx = the 5 probes (UA `node`); browser requests 200; no real-user error |
+| Still open | member management bug unchanged (INSERT 42P17, no UPDATE policy) — separate members PR. Next: storage PR (S) on staging |
+
+## 2026-10-31 — Hotfix: workspace ownership guard (PR #19; staging results — on production since v1.10.1)
 | Item | Result |
 | --- | --- |
 | Migration `20261101120000_workspace_ownership_guard.sql` (sha256 `7fe9c423e49f3f0757b1496ae7862e735804150406fed40111044d236f3d0f18`) | staging 13:42:32 UTC. For API roles: `type` / `entity_id` / `owner_id` immutable (column privileges: UPDATE only `name`, `avatar_url`, `updated_at` + trigger); farm / shop / service workspace only by the owner of that entity (`caller_owns_workspace_entity`, from farms / shops / services.user_id); `personal` only via `handle_new_user`; unique (type, entity_id); P0001 stop (counts only) if duplicates exist. System paths unchanged (SECURITY DEFINER owners) |
