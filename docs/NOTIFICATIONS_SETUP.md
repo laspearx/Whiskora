@@ -116,6 +116,11 @@ $cmd$);
 Not in scope: back-filling missed reminders, LINE / email reminders, the FK `vaccines.pet_id → pets`
 (`docs/PROPOSAL_VACCINE_PET_FK.md`), the 3 orphan vaccine rows on production (kept as they are).
 
+**Scheduled sends ON since 2026-10-31 12:37:56 UTC** (cron job 1 `active = true`, `0 1 * * *`, Vault headers;
+function v8 = `main` after PR #17, v1.9.0). First run 2026-11-01 01:00 UTC. Check each run within 6 h with
+`supabase/tests/vaccine_reminder_run_check.sql` (HTTP status + outcome from `net._http_response`, send-log statuses)
+and the function summary log. Display verified on Chrome / Windows only.
+
 **Real push QA on production — done 2026-10-31 (PR #17 QA mode):** one account (QA stranger), one device (Chrome on
 Windows), test vaccine on QA pet 175; `{"qa_only_user_id": "<uuid>"}` → only that user, 409 unless exactly one
 subscription, title `[ทดสอบ]`. Round 2 seen + clicked through to `/pets/175/vaccines`; everything removed afterwards
