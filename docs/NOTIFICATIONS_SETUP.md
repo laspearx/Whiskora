@@ -116,7 +116,12 @@ $cmd$);
 Not in scope: back-filling missed reminders, LINE / email reminders, the FK `vaccines.pet_id → pets`
 (`docs/PROPOSAL_VACCINE_PET_FK.md`), the 3 orphan vaccine rows on production (kept as they are).
 
-**Proposal — real browser push QA (not done, needs approval):** one QA account, one device, one message.
+**Real push QA on production — done 2026-10-31 (PR #17 QA mode):** one account (QA stranger), one device (Chrome on
+Windows), test vaccine on QA pet 175; `{"qa_only_user_id": "<uuid>"}` → only that user, 409 unless exactly one
+subscription, title `[ทดสอบ]`. Round 2 seen + clicked through to `/pets/175/vaccines`; everything removed afterwards
+(see `docs/STATUS.md`). Turning cron job 1 on is the next, separate approval.
+
+**Earlier proposal — staging browser push QA (not done):** one QA account, one device, one message.
 - Today every Preview has push switched off (`web/lib/push-client.ts`, `isPreviewDeploy` → no VAPID key). Keep that.
 - Separate, limited channel: a dedicated QA branch whose Vercel Preview env (branch-scoped, that branch only) holds the
   **staging** VAPID public key and a QA flag; a small code change lets push subscribe only when both are present and

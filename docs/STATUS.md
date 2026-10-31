@@ -79,6 +79,23 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
+## 2026-10-31 — Real push QA on production (PR #17 QA mode; one account, one device; cron stays inactive; UTC)
+| Step | Result |
+| --- | --- |
+| QA mode | PR #17 (`qa_only_user_id`: keeps only that user's items, 409 unless exactly 1 subscription, title `[ทดสอบ]`, own tag). Staging v7 deployed-staging **29/29** (QA dry run: 1 recipient / 1 device computed, **0 pushes, 0 send-log rows, 0 mock requests**). Production **v8**, `verify_jwt: true`, `ezbr_sha256 cdb4061a25dbd39e75d8e09c03c2ae81f7f5e5d67c6b9657181677ab2d638c4a` = staging v7; dry-run postcheck 9/9 |
+| Guard on production | QA dry run before the device was ready → 409 `qa_guard_failed` (subscriptions 0) |
+| Round 1 | test vaccine #1 on QA pet 175 (owner QA stranger), due 2026-10-31. Owner subscribed Chrome on Windows (11:46:32); total subscriptions 1. QA dry run would_send 1/1 → **one QA send 11:47:14 → 200 `sent: 1`** (FCM accepted), send-log `sent` 11:47:15. **Not seen on the device**: Windows had Chrome notifications turned off |
+| Between rounds | owner turned Windows notifications on and toggled the app switch → app deleted the subscription (12:11:23) and created a new one (12:11:27). **The round-1 send-log row was deleted with it (ON DELETE CASCADE)** — round-1 evidence kept here and in the function log (summary `sent` 11:47:15) |
+| Round 2 (owner approved one more send) | test vaccine #1 removed, test vaccine #2 added (only due item); QA dry run: due 1, recipients 1, 1 device → **one QA send 12:26:13 → 200 `sent: 1`**, send-log `sent` 12:26:14 (FCM). **Owner confirmed: notification seen, click opened `/pets/175/vaccines`** → production VAPID pair works end to end |
+| Unsubscribe + clean-up 12:30 | owner switched notifications off → subscriptions 0, send log 0 (cascade); test vaccine #2 removed → pet 175 has 0 vaccines, pet row md5 and `is_public` unchanged; vaccines 45 (as before), orphan rows 3 (untouched) |
+| Function log 11:39–12:31 | 2 sending runs, both QA mode (11:47:15, 12:26:14); everything else dry runs / 409; no other caller; counts only |
+| State | cron job 1 **inactive** (schedule `0 1 * * *`); no scheduled sends; nothing sent to anyone else; no back-fill |
+
+**Follow-up (separate task, not fixed):** send-log rows are deleted when a subscription is deleted (`ON DELETE CASCADE`):
+history is lost on unsubscribe, and a user who switches notifications off and on the same day can receive the same
+reminder again (new subscription id). Option for a later migration: keep rows with `subscription_id ON DELETE SET NULL`
+plus an endpoint hash, and de-duplicate on the hash.
+
 ## 2026-10-31 — PR #16 rollout (v1.8.1): new vaccine reminder function on production — installed, dry-run verified, **NOT sending** (UTC)
 | Step | Result |
 | --- | --- |
