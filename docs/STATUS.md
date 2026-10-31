@@ -79,7 +79,30 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
-## 2026-10-31 — Partner storage scoping (branch `fix/partner-storage-scoping`; STAGING ONLY)
+## 2026-10-31 — Public grants clean-up (branch `fix/public-grants-cleanup`; STAGING ONLY, needs review before production)
+| Item | Result |
+| --- | --- |
+| Inventory (read-only, production = staging) | all 31 public tables have RLS, no PUBLIC table grants; anon + authenticated hold TRUNCATE / TRIGGER / REFERENCES on 27 tables (162 grants); 22 identity sequences + 1 serial (`farm_verifications_id_seq`); functions executable by anon include admin RPCs (they check admin inside), `get_farm_dashboard_summary`, `get_my_pending_transfers`, `resolve_pet_tags` (callable with any viewer id → reveals relations) and trigger functions; default privileges of `postgres` give ALL to anon / authenticated and EXECUTE to PUBLIC |
+| Migration `20261101140000_public_grants_cleanup.sql` (sha256 `4502613a9b17df7bf30076804e6aa17a98c8e365c9b1a9f599b2eeb184747997`) | staging 14:22:39 UTC. Tables: revoke TRUNCATE / TRIGGER / REFERENCES from anon / authenticated / PUBLIC. Sequences: none for the API roles on identity sequences; `farm_verifications_id_seq` USAGE for authenticated only. Functions one by one: admin RPCs + `get_farm_dashboard_summary` + `get_my_pending_transfers` → authenticated only; `resolve_pet_tags` → no direct EXECUTE for API roles (callers are SECURITY DEFINER); trigger functions → no EXECUTE for API roles. Kept: public-page RPCs for anon (health, pedigree, my access), policy helpers. Defaults for objects postgres creates: no TRUNCATE / TRIGGER / REFERENCES for API roles on new tables, no sequence rights for anon, new functions not executable by anon / PUBLIC (global PUBLIC revoke, since a per-schema entry cannot remove it). `supabase_admin` defaults not changeable by postgres (platform request) |
+| Unchanged on purpose | CRUD table grants (219, md5 `523b8293…`) and column grants without REFERENCES (md5 `fa6175ad…`) identical before / after |
+| Checks `public_grants_checks.cjs` | before **12 / 5 failed** (TRUNCATE allowed for anon + authenticated in a rolled-back staging transaction, `resolve_pet_tags` callable, defaults) → after **17 / 17**: anon public-pet RPCs 200; admin RPCs admin 200 / others refused; signed-in RPCs ok; inserts with identity ids (anon lead, weights) and serial id (farm verification) ok; new farm + workspace ok; sign-up + name-sync triggers ok; new objects get the reduced defaults |
+| Regression after (staging) | privacy 128 / 128, transfer access 84 / 84, reservations 53 / 53, workspace guard 21 / 21, partner storage 23 / 23 |
+| Precheck `public_grants_precheck.sql` | production before: 162 grants to remove, CRUD + column hashes = staging after, all 13 named functions exist, anon public-page functions 4 / 4 |
+
+## 2026-10-31 — PR #20 rollout (v1.10.2): business image buckets scoped on production (14:16:49 UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `a689e7eadd3751e049c7842321aed63703ff72a9`; migration / precheck / checks sha256 = the staging 23 / 23 set; no `web/` change |
+| Precheck 14:11 (read-only) | storage: 16 objects all in allowed paths, 11 / 11 replaced policies present, 4 / 4 public read; workspace guard (PR #19) still `after`, all ok. Object baseline per bucket (count + list md5) recorded |
+| Merge | `7c3a8a0` → bot `01c4185` **v1.10.2**; Vercel Production v1.10.2: bundle production ref 1, staging ref 0 |
+| Migration | **`20261031141649` `partner_storage_scoping`** 14:16:49, one transaction; stored statement sha256 `dce44e03716e62608ea2b25e59f79d173f386ad5e0645190f6fc0c1860ee3bc2` |
+| Postcheck | precheck `after` (0 old / 11 new policies, 4 / 4 public read); storage catalog (policies, helper md5 / search_path / ACL, buckets still public) **identical to staging** (20 lines) |
+| QA probes 14:17:25 (QA stranger, new random names) | upload into another farm / shop / service folder and another user's partner-photos folder → **400 ×4, no object created**; existing images **16 / 16 still HTTP 200**; register path `shops/<own uid>/…` synthetic file → 200, deleted (1); **all buckets: count + list md5 identical to before** |
+| Web (QA account) | edit / restore pet 175, pages, `/p/175`, farm-hub, farm page: ok, 0 Supabase errors |
+| Logs 14:16–14:18 UTC (latest at check time) | storage writes = the probes only (UA `node`: 400 ×4, 200 upload + delete); no real-user error |
+| Limits | owner / manager upload + delete on real businesses proven on staging only (no customer image touched on production). Member management bug unchanged |
+
+## 2026-10-31 — Partner storage scoping (PR #20; staging results — on production since v1.10.2)
 | Item | Result |
 | --- | --- |
 | Paths (production, read-only) | farm-assets 10 objects `<farm id>/avatar_…|cover_…`; partner-photos 6 objects `farms/<uploader uid>/…`; shop- / service-assets 0. Code: dashboards `<entity id>/…`, register pages `farms|shops|services/<uid>/…` |
