@@ -30,3 +30,10 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `reservation_concurrency_staging.cjs` | controlled-timing + stress concurrency on whiskora-staging (needs `pg`) |
 | `staging_only/…_down_STAGING_ONLY.sql` | exact pre-migration state for staging rollback tests — re-opens the holes, **never on production** |
 | `../emergency/reservation_transfer_freeze.sql` / `…_unfreeze.sql` | production recovery: stop new reservation/transfer writes, keep reads + privacy, then fix forward |
+
+## Workspace members via RPC + invitations (`20261101150000`, staging only)
+| File | Use |
+|---|---|
+| `workspace_members_precheck.sql` | read-only gate before / after (guard, unique, forged owners, member counts, privileges, RPCs) |
+| `workspace_members_fixture_staging.sql` | farm 9001 = owner 01, manager 02, staff 03, viewer 04; shop 990101 workspace without member rows; clears invitations |
+| `workspace_members_checks.cjs` | every permission cell, invitations, remove / leave, direct writes refused, concurrency, business powers unchanged (`--compat-only` for the old-app calls) |
