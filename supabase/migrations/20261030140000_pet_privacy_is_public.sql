@@ -15,6 +15,7 @@
 --     revealed the parent's parents).
 --   * an access grant for one field group opened every group of the pet (resolve_pet_tags ignores
 --     field_group_key), and any farm member / co-owner could create grants (policy used can_manage_pet_visibility).
+--   * a grant creator could UPDATE every column of its grant (move it to another pet, re-target, widen, un-revoke).
 --   * co-owners could not read a private pet row at all (no SELECT policy), although they are owners for tiers.
 -- Production (2026-10-30, read-only count): 137 pets, none private, 0 access grants, 0 per-pet settings; direct reads
 -- of pedigree columns close for everyone (25 readable pets have some pedigree value). The app reads them only on
@@ -22,7 +23,8 @@
 --   * storage bucket pet-photos could be listed by anyone (all user-id folders and file names).
 -- Not changed here: pet-photos stays a public bucket — listing is closed, but anyone who has a photo URL can still
 -- load that file, also for a private pet (separate PR: private photos with access checks + signed URLs);
--- co-owners / per-pet tiers set by a previous owner survive a transfer (separate decision); default privileges.
+-- co-owners / per-pet tiers set by a previous owner survive a transfer (separate PR); default privileges;
+-- access_grants DELETE by the creator (removes only; the row is gone from history).
 -- Recovery: fix forward. The staging-only exact revert re-opens the leaks and is not a production step.
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -228,3 +230,42 @@ create policy "access_grants revoke by granter or owner" on public.access_grants
   for update to authenticated
   using (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid())))
   with check (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid())));
+
+-- 8. a grant can only be revoked, never edited. Before: the UPDATE policy checked granted_by = auth.uid() on both
+--    sides, so a creator could move its grant to someone else's pet, make itself the grantee, widen the group,
+--    extend an expired grant or un-revoke it (reproduced on staging: the owner of pet A moved its grant to pet B
+--    and read B's health through get_my_pet_access / get_pet_health). The app has no grant UI (API only).
+--    Now: authenticated may UPDATE only revoked_at (column privilege), and a trigger allows only "not revoked →
+--    revoked now". Who may revoke is unchanged: the creator (even after a transfer or losing the role — revoking
+--    only removes access) or whoever may change the pet's privacy now. A changed grant = revoke + create a new one.
+revoke update on public.access_grants from anon, authenticated;
+grant update (revoked_at) on public.access_grants to authenticated;
+
+create or replace function public.access_grants_revoke_only()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if (new.id, new.granted_by, new.grantee_id, new.grantee_email, new.resource_type, new.resource_id,
+      new.field_group_key, new.relationship_tag, new.expires_at, new.created_at)
+     is distinct from
+     (old.id, old.granted_by, old.grantee_id, old.grantee_email, old.resource_type, old.resource_id,
+      old.field_group_key, old.relationship_tag, old.expires_at, old.created_at) then
+    raise exception 'access grants cannot be changed, only revoked' using errcode = '42501';
+  end if;
+  if old.revoked_at is not null or new.revoked_at is null then
+    raise exception 'access grant: only an active grant can be revoked, and a revoke is final' using errcode = '42501';
+  end if;
+  new.revoked_at := now();
+  return new;
+end;
+$$;
+revoke all on function public.access_grants_revoke_only() from public, anon, authenticated;
+drop trigger if exists access_grants_revoke_only on public.access_grants;
+create trigger access_grants_revoke_only before update on public.access_grants
+  for each row execute function public.access_grants_revoke_only();
+
+drop policy if exists "access_grants revoke by granter or owner" on public.access_grants;
+create policy "access_grants revoke by granter or owner" on public.access_grants
+  for update to authenticated
+  using (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid())))
+  with check (revoked_at is not null
+              and (granted_by = auth.uid() or (resource_type = 'pet' and public.can_manage_pet_privacy(resource_id, auth.uid()))));

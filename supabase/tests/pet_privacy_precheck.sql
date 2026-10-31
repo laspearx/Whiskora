@@ -81,6 +81,22 @@ select 7.5, 'access_grants write policies for this state',
                and policyname in ('access_grants create by pet manager', 'access_grants revoke by granter or manager')) = 2
          then 'ok' else 'STOP: access_grants policies differ from the reviewed state' end
   end
+union all
+select 7.6, 'access_grants UPDATE: before = every column (anon + authenticated), no trigger; after = authenticated revoked_at only + revoke-only trigger',
+  (with up as (select grantee, array_agg(column_name::text order by column_name) cols from information_schema.column_privileges
+               where table_schema = 'public' and table_name = 'access_grants' and privilege_type = 'UPDATE'
+                 and grantee in ('anon', 'authenticated') group by grantee),
+        trg as (select exists (select 1 from pg_trigger where tgrelid = 'public.access_grants'::regclass
+                               and tgname = 'access_grants_revoke_only' and not tgisinternal) t)
+   select case when (select a from applied) then
+            case when (select t from trg) and not exists (select 1 from up where grantee = 'anon')
+                  and (select cols from up where grantee = 'authenticated') = array['revoked_at'] then 'ok' else 'STOP' end
+          else
+            case when not (select t from trg)
+                  and (select count(*) from up where cardinality(cols) = (select count(*) from information_schema.columns
+                         where table_schema = 'public' and table_name = 'access_grants')) = 2
+                 then 'ok' else 'STOP: access_grants UPDATE privileges differ from the reviewed state' end
+          end)
 -- who is affected (WARN = rows behave differently after apply; never change these rows to pass)
 union all
 select 8, 'private pets (is_public = false) — hidden from outsiders after apply',

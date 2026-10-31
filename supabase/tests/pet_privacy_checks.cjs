@@ -114,6 +114,69 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
   r = await rest('owner', 'PATCH', `access_grants?id=eq.${gid}`, { revoked_at: new Date().toISOString() });
   ok('pet owner can revoke it', r.status === 200 && r.rows === 1, { status: r.status });
 
+  // 3d. a grant can only be revoked: its creator must not move it to another pet, change grantee / group / creator /
+  //     expiry, or un-revoke it. Attacker = stranger, owner of private P10 ("A"); target = owner 01's private P2 ("B").
+  //     Checked by what the RPCs return afterwards, not only by the UPDATE status.
+  const P10 = 900010;
+  const mkGrant = async (who, by, grantee, pet, group, extra = {}) => (await rest(who, 'POST', 'access_grants', { granted_by: by, grantee_id: grantee, resource_type: 'pet', resource_id: pet, field_group_key: group, relationship_tag: 'custom', ...extra })).body?.[0]?.id;
+  const patchGrant = (who, id, body) => rest(who, 'PATCH', `access_grants?id=eq.${id}`, body);
+  const changed = (x) => x.status === 200 && x.rows === 1;
+  const readGrant = async (who, id) => (await rest(who, 'GET', `access_grants?id=eq.${id}&select=*`)).body?.[0] || null;
+  const KEYS = ['granted_by', 'grantee_id', 'grantee_email', 'resource_type', 'resource_id', 'field_group_key', 'relationship_tag', 'expires_at', 'revoked_at', 'created_at'];
+  const same = (a, b) => !!a && !!b && KEYS.every(k => JSON.stringify(a[k]) === JSON.stringify(b[k]));
+  {
+    let g = await mkGrant('stranger', ID.stranger, ID.buyer, P10, 'weight');
+    ok('attacker (owner of P10) creates a normal grant on own pet', !!g, {});
+    let before = await readGrant('stranger', g);
+    r = await patchGrant('stranger', g, { resource_id: P2, grantee_id: ID.stranger, field_group_key: null });
+    a = await access('stranger', P2);
+    ok('creator cannot move the grant to someone else\'s pet B and grant itself every group', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    ok('… RPC: attacker gets no health / weight / pedigree of P2', a.health === false && a.weight === false && a.pedigree === false && !(await canHealth('stranger', P2)), {});
+    const pf = await rpc('stranger', 'get_pet_pedigree_fields', { p_pet_id: P2 });
+    ok('… RPC: no pedigree fields of P2, no P2 card', pf.rows === 0 && !(await canRow('stranger', P2)), { rows: pf.rows });
+    for (const [col, val] of [['resource_id', P2], ['resource_type', 'farm'], ['granted_by', ID.owner], ['created_at', '2020-01-01T00:00:00Z'], ['relationship_tag', 'family'], ['grantee_email', 'whiskora-qa+viewer@example.com']]) {
+      r = await patchGrant('stranger', g, { [col]: val });
+      ok(`creator cannot change ${col}`, !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    }
+    r = await patchGrant('stranger', g, { grantee_id: ID.viewer });
+    ok('creator cannot change the grantee', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    ok('… RPC: the other user gets nothing on P10', (await access('viewer', P10)).weight === false, {});
+    r = await patchGrant('stranger', g, { field_group_key: null });
+    ok('creator cannot widen the group (weight → all groups)', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    a = await access('buyer', P10);
+    ok('… RPC: grantee still has weight only', a.weight === true && a.health === false && a.vaccination === false, {});
+    r = await patchGrant('stranger', g, { revoked_at: new Date().toISOString() });
+    ok('creator can revoke the grant', changed(r) && (await access('buyer', P10)).weight === false, { status: r.status });
+    before = await readGrant('stranger', g);
+    r = await patchGrant('stranger', g, { revoked_at: null });
+    ok('creator cannot un-revoke it', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    r = await patchGrant('stranger', g, { revoked_at: '2999-01-01T00:00:00Z' });
+    ok('… nor move the revoke time', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    ok('… RPC: revoked grant still gives nothing', (await access('buyer', P10)).weight === false, {});
+    g = await mkGrant('stranger', ID.stranger, ID.buyer, P10, 'health', { expires_at: new Date(Date.now() - 3600e3).toISOString() });
+    before = await readGrant('stranger', g);
+    r = await patchGrant('stranger', g, { expires_at: null });
+    ok('creator cannot extend an expired grant', !changed(r) && same(before, await readGrant('stranger', g)), { status: r.status, code: r.code });
+    ok('… RPC: expired grant still gives nothing', (await access('buyer', P10)).health === false, {});
+    // a creator who no longer has the role (staff 03 created a grant on farm pet P6; staff cannot grant)
+    const sg = (await rest('staff', 'GET', `access_grants?granted_by=eq.${ID.staff}&resource_id=eq.${P6}&select=*`)).body?.[0];
+    ok('fixture: staff\'s old grant on P6 (buyer → vaccination) is readable by its creator', !!sg, {});
+    r = await patchGrant('staff', sg.id, { field_group_key: null, grantee_id: ID.staff });
+    ok('creator without the role cannot widen / redirect it', !changed(r) && same(sg, await readGrant('staff', sg.id)), { status: r.status, code: r.code });
+    a = await access('buyer', P6);
+    ok('… RPC: buyer still has vaccination only on P6', a.vaccination === true && a.health === false && a.weight === false, {});
+    r = await patchGrant('staff', sg.id, { resource_id: P10 });
+    ok('creator without the role cannot move it to another pet', !changed(r) && same(sg, await readGrant('staff', sg.id)), { status: r.status, code: r.code });
+    ok('… RPC: buyer gets nothing on P10', (await access('buyer', P10)).vaccination === false, {});
+    r = await patchGrant('staff', sg.id, { revoked_at: new Date().toISOString() });
+    ok('creator without the role can still revoke it (revoking only removes access)', changed(r) && (await access('buyer', P6)).vaccination === false, { status: r.status });
+    r = await patchGrant('staff', sg.id, { revoked_at: null });
+    ok('… but cannot un-revoke it', !changed(r) && (await access('buyer', P6)).vaccination === false, { status: r.status, code: r.code });
+    // a user who is neither creator nor pet owner cannot touch the grant at all
+    r = await patchGrant('buyer', sg.id, { revoked_at: null });
+    ok('grantee cannot update its own grant', !changed(r), { status: r.status, code: r.code });
+  }
+
   // 4b. storage pet-photos: no listing for anon / other users; owner upsert + list own folder; public URL works
   {
     const st = async (who, method, path, body, extra = {}) => {
@@ -169,6 +232,23 @@ const pedigreeIds = async (who, id) => { const r = await rpc(who, 'get_pet_pedig
     ok('after transfer: old owner no longer sees private P2 row', !(await canRow('owner', P2)), {});
     ok('after transfer: old owner no longer sees P2 health', !(await canHealth('owner', P2)), {});
     ok('after transfer: anon still cannot see private P2 health', !(await canHealth('anon', P2)), {});
+    // the old owner still created grants on P2 (stranger → vaccination): revoke yes, anything else no
+    {
+      const og = (await rest('owner', 'GET', `access_grants?granted_by=eq.${ID.owner}&resource_id=eq.${P2}&grantee_id=eq.${ID.stranger}&revoked_at=is.null&select=*`)).body?.[0];
+      ok('after transfer: old owner still sees its grant on P2', !!og, {});
+      let x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { field_group_key: null, grantee_id: ID.owner });
+      let acc = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P2 })).body || {};
+      ok('after transfer: old owner cannot redirect / widen its old grant to itself', !(x.status === 200 && x.rows === 1) && acc.health === false && !(await canHealth('owner', P2)), { status: x.status, code: x.code });
+      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { resource_id: P7, grantee_id: ID.owner });
+      acc = (await rpc('owner', 'get_my_pet_access', { p_pet_id: P7 })).body || {};
+      ok('after transfer: old owner cannot move its old grant to another pet it lost (P7)', !(x.status === 200 && x.rows === 1) && acc.health === false, { status: x.status, code: x.code });
+      acc = (await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {};
+      ok('… stranger still has vaccination only on P2', acc.vaccination === true && acc.health === false, {});
+      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { revoked_at: new Date().toISOString() });
+      ok('after transfer: old owner can still revoke its old grant', x.status === 200 && x.rows === 1 && ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, { status: x.status });
+      x = await rest('owner', 'PATCH', `access_grants?id=eq.${og.id}`, { revoked_at: null });
+      ok('after transfer: … but cannot un-revoke it', !(x.status === 200 && x.rows === 1) && ((await rpc('stranger', 'get_my_pet_access', { p_pet_id: P2 })).body || {}).vaccination === false, { status: x.status, code: x.code });
+    }
     // co-owner added by the previous owner: reported, not asserted (owner decision)
     console.log(`INFO co-owner added by the previous owner still sees P2 row/health after transfer: ${await canRow('coowner', P2)}/${await canHealth('coowner', P2)}`);
     // what else stays with the old owner (reported, not asserted — proposal for a separate migration)

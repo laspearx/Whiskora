@@ -26,6 +26,9 @@ create policy "pet_visibility write by manager" on public.pet_visibility_setting
 create policy "pet_visibility update by manager" on public.pet_visibility_settings for update using (can_manage_pet_visibility(pet_id)) with check (can_manage_pet_visibility(pet_id));
 create policy "pet_visibility delete by manager" on public.pet_visibility_settings for delete using (can_manage_pet_visibility(pet_id));
 
+drop trigger if exists access_grants_revoke_only on public.access_grants;
+drop function if exists public.access_grants_revoke_only();
+grant update on public.access_grants to anon, authenticated;
 drop policy if exists "access_grants create by pet owner" on public.access_grants;
 drop policy if exists "access_grants revoke by granter or owner" on public.access_grants;
 create policy "access_grants create by pet manager" on public.access_grants for insert

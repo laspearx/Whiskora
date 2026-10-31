@@ -293,9 +293,29 @@ Migration sha256 now `47123b3b2e96f9acab4bc7f69da8df112c90a6d56eda05fd18f5bb3a1f
 | Staging-only revert | catalog = production (colpriv, table grants, public + storage policies, functions); re-apply = same "after" hashes | ok |
 | `pet_privacy_precheck.sql` | reverted staging (production-equal catalog): `before`, all ok | staging: `after`, all ok (WARN = synthetic fixtures) |
 
+### Review round 3 — access_grants UPDATE (staging only, 2026-10-31)
+Found: the UPDATE policy checked `granted_by = auth.uid()` in USING and WITH CHECK, so a grant's creator could edit every
+column. Reproduced on staging (synthetic: stranger owns private P10 "A", owner 01 owns private P2 "B"): the creator moved
+its P10 grant to P2 with itself as grantee and all groups → `get_my_pet_access` / `get_pet_health` of P2 opened; also
+re-target, widen weight → all groups, extend an expired grant, un-revoke; same for a creator who lost the role (staff) and
+for the old owner after a transfer (22 failing checks before the fix).
+Fix (same migration, section 8): `authenticated` keeps UPDATE on `revoked_at` only (anon none); trigger
+`access_grants_revoke_only` allows only active → revoked, sets `revoked_at = now()`, rejects every other change (also for
+service roles); policy WITH CHECK requires `revoked_at is not null`. Who may revoke is unchanged: the creator (also after a
+transfer / losing the role — only removes access) or who may change the pet's privacy now. A changed grant = revoke + new.
+| Suite | Before (round-2 state / revert) | After |
+| --- | --- | --- |
+| `pet_privacy_checks.cjs --transfer` (fixture adds P10 + a stale-role grant on P6) | 105 / **22 failed** (round 2 code); revert: 59 / 68 failed | **127 / 127** |
+| Trigger alone (owner DB role, rolled back) | — | move → 42501; un-revoke → 42501; revoke → ok, time forced to now |
+| `reservation_api_checks.cjs` | — | 53 / 53 (run after resetting P2; the privacy `--transfer` run leaves P2 with the buyer) |
+| `pet_privacy_precheck.sql` (new 7.6: UPDATE privileges + trigger) | revert: `before`, all ok | `after`, all ok (WARN = synthetic) |
+| Staging-only revert → re-apply | ok | ok (07:03:18 UTC) |
+Migration sha256 now `f78da8057b2a70e43daf267d010b6a495e0e8d5c8d3a5d176314cb6f4c8a3e06`. No app change (no grant UI); Preview E2E not re-run.
+Not changed: the creator may still DELETE its grant (removes access, but the row leaves history).
+
 **Still open (privacy is not closed on every path):** photo files of private pets are in a public bucket (a known URL
 still loads); owners have no UI for `is_public` / per-pet tiers; access given by a previous owner survives a transfer
-(proposal); the original seller is not a "previous owner"; `pet-documents` upload has no folder check;
+(separate PR); the original seller is not a "previous owner"; grant DELETE removes history; `pet-documents` upload has no folder check;
 `verification-docs` uses a public URL on a private bucket.
 
 ## Still open

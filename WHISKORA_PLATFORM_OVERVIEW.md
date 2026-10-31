@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-30 (v1.7.0 live; reservation→transfer migration `20261030121715` applied 12:17 UTC — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.7.0 live; pet privacy PR #14 on staging only — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -150,6 +150,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-10-31**
+- PR #14 (staging): access grants are revoke-only — UPDATE limited to `revoked_at` + trigger; a creator can no longer move, re-target, widen or un-revoke a grant.
 
 **2026-10-30**
 - Pet privacy fix on staging (`fix/pet-privacy`): not public wins over sale status / tiers / pedigree; anon pedigree columns and `pet-photos` listing closed; privacy-settings writes owner/manager only.
