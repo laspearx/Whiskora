@@ -79,7 +79,37 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
-## 2026-10-31 — Send-log history across unsubscribe / resubscribe (branch `feat/vaccine-delivery-history`; STAGING ONLY)
+## 2026-10-31 — Hotfix: workspace ownership guard (branch `fix/workspace-ownership-guard`; STAGING ONLY)
+| Item | Result |
+| --- | --- |
+| Migration `20261101120000_workspace_ownership_guard.sql` (sha256 `7fe9c423e49f3f0757b1496ae7862e735804150406fed40111044d236f3d0f18`) | staging 13:42:32 UTC. For API roles: `type` / `entity_id` / `owner_id` immutable (column privileges: UPDATE only `name`, `avatar_url`, `updated_at` + trigger); farm / shop / service workspace only by the owner of that entity (`caller_owns_workspace_entity`, from farms / shops / services.user_id); `personal` only via `handle_new_user`; unique (type, entity_id); P0001 stop (counts only) if duplicates exist. System paths unchanged (SECURITY DEFINER owners) |
+| Precheck `workspace_guard_precheck.sql` (read-only) | staging + **production: duplicates 0, owner ≠ entity owner 0, missing entities 0, forged owner members 0** → no anomaly; production has 14 farm workspaces / 8 owner member rows (backfilled ones without a member row, unchanged) |
+| API checks `workspace_guard_checks.cjs` | before: **13 passed / 8 failed** — A1 (repoint personal → farm) gave the stranger health read, privacy write, weight insert, farm team, privacy, weight, transfer, reservation; A2–A7, A10 workspace writes accepted. After: **21 / 21** — all attacks 403 (42501), stranger has no access; members cannot raise their own role; owner creates own shop workspace, second one 409; 10 rounds × 3 concurrent creates → exactly 1 each; rename still works; farm roles unchanged; sign-up + name sync still work; register-shop flow works |
+| Regression (staging) | pet privacy **128 / 128**, transfer access reset **84 / 84**, reservations **53 / 53** |
+| Not changed | `workspace_members` policies: INSERT still fails with 42P17 (pre-existing; separate members PR), no UPDATE policy |
+
+## 2026-10-31 — Partner system audit (read-only) — **BLOCKER found: workspace takeover of any farm**
+Full audit: `docs/PARTNER_SYSTEM_AUDIT.md`. Proven on staging in a rolled-back transaction: any signed-in user can
+repoint their own `personal` workspace (`update workspaces set type='farm', entity_id=<any farm>`) and immediately
+passes `is_farm_team`, `can_manage_farm_privacy`, `can_record_pet_weight`, `can_transfer_pet`,
+`can_decide_pet_reservation`. Production has the identical catalog → open now; current state shows 0 mismatched
+workspaces (no sign of use in the current state). Needs its own hotfix PR (staging → production) before partner work.
+Also: `workspace_members` INSERT fails with 42P17 (recursion) and has no UPDATE policy; `shop-assets` /
+`service-assets` writable / deletable by any signed-in user; `products` table missing (`/marketplace` errors).
+
+## 2026-10-31 — PR #18 rollout (v1.10.0): send-log history on production; cron job 1 re-enabled (UTC)
+| Step | Result |
+| --- | --- |
+| Pin | PR #18 head `64dc4420757ca790e548f548ca4c3460e0e2286b`; function files = deployed-staging 33/33 set (unchanged since `8c5aea9`); migration sha256 = guard-test 9/9 set |
+| Merge | `d12d1dd` → bot `fa447fb` **v1.10.0** (version files only); Vercel Production v1.10.0: bundle production ref 1, staging ref 0, VAPID key unchanged. Merge did not deploy the function |
+| Pause | cron job 1 `active = false` 12:58:59 (schedule `0 1 * * *`, command md5 `e7a6a301…` unchanged); in flight: 0 running cron runs, `net.http_request_queue` 0, no function request since 12:40 |
+| Precheck right before | 12 = `before`, **13 = ok, 14 = ok**, all other checks ok; rows: send log 0, subscriptions 0, vaccines 45 |
+| Migration | **`20261031125922` `vaccine_reminder_delivery_history`** 12:59:23, one transaction; file + stored statement sha256 `a9be8c5e2a11b6dbc03379076dad42ead2857f1cd2130ad98898b4c8b3b35abb`. The apply script first recorded the name as `vaccine_reminder_deliveries` (copied from the previous run); corrected to `vaccine_reminder_delivery_history` on that one `schema_migrations` row (statement unchanged) |
+| Function | production **v9**, `verify_jwt: true`, `ezbr_sha256 438346bff5fec2bb8f179ceca1ad87c0ce7b2571c782aa8e96f12c013d66f6d1` = staging v8 (deployed-staging 33/33). Secrets / VAPID untouched. Old function never ran against the new shape (job paused, no calls in between) |
+| Checks with the job paused | precheck 12 = `after ok`, 13/14 ok; catalog: user_id / endpoint_hash NOT NULL, hex check, unique (user_id, endpoint_hash, vaccine_id, next_due), subscription FK ON DELETE SET NULL, user FK cascade, RLS on, 0 policies, 0 API grants; rows before = after = 0 (nothing to back-fill); dry-run postcheck **9/9** (HTTP + pg_net with Vault headers); as_of dry runs 2026-09-18 → `no_subscriptions`, 2027-01-27 → `no_recipients` (orphan 1 skipped); send log 0 rows, subscriptions 0 afterwards |
+| **Re-enabled** | cron job 1 `active = true` **13:01:52 UTC**, schedule + command unchanged. **Next run 2026-11-01 01:00 UTC (08:00 ICT)** — check before 07:00 UTC (14:00 ICT) with `vaccine_reminder_run_check.sql` + function summary log; nobody watches it automatically |
+
+## 2026-10-31 — Send-log history across unsubscribe / resubscribe (PR #18; staging results — on production since v1.10.0)
 | Item | Result |
 | --- | --- |
 | Migration `20261101090000_vaccine_reminder_delivery_history.sql` (sha256 `a9be8c5e2a11b6dbc03379076dad42ead2857f1cd2130ad98898b4c8b3b35abb`) | staging only. **No automatic delete:** after the back-fill it raises P0001 (counts only) and the whole transaction rolls back if any row cannot be back-filled or would collide on the new key (precheck 13 / 14 report the same). Rows get `user_id` + `endpoint_hash` (SHA-256 hex, not the endpoint); `subscription_id` nullable, **ON DELETE SET NULL**; unique (user_id, endpoint_hash, vaccine_id, next_due); `user_id → auth.users ON DELETE CASCADE`; RLS / ACL unchanged. **Not on production** |
