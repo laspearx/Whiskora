@@ -131,7 +131,7 @@ nothing watches this automatically; someone has to run it.
 3. Not evidence on its own: `cron.job_run_details` "succeeded" (= queued).
 4. Problem → `select cron.alter_job(job_id := 1, active := false);`, fix forward.
 
-**Send-log history rollout (PR `feat/vaccine-delivery-history`, migration `20261101090000` + matching function) — later, separate approval:**
+**Send-log history rollout — DONE 2026-10-31 (v1.10.0, migration `20261031125922`, function v9; job paused 12:58:59 → re-enabled 13:01:52 UTC). Steps used:**
 1. Precheck (read-only): checks 12 = `before`, **13 = ok, 14 = ok** (any STOP → do not apply; never delete rows to pass).
 2. Pause: `select cron.alter_job(job_id := 1, active := false);` — keep schedule / command.
 3. No run in flight: `select count(*) from cron.job_run_details where jobid = 1 and status in ('starting','running')` = 0,
