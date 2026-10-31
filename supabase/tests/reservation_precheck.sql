@@ -16,7 +16,8 @@ select 2, 'trigger: exactly one on pet_ownership_transfers (no duplicate convert
 union all
 select 3, 'function bodies are the known ones for this state (md5)',
   case when (select a from applied) then
-    case when (select m from fn where proname = 'sync_pet_owner_on_transfer_accept') = 'd6a6908b4ca29667b3ce0d8be64f0b47'
+    -- sync_pet_owner_on_transfer_accept: d6a69… = 20261030121715; e722eb… = extended by 20261031120000 (transfer access reset)
+    case when (select m from fn where proname = 'sync_pet_owner_on_transfer_accept') in ('d6a6908b4ca29667b3ce0d8be64f0b47', 'e722ebf4658cb37bb04e94daec0a46c2')
           and (select m from fn where proname = 'get_my_pending_transfers') = '14301508c0907d63fd1b67f4ae62e89b'
           and (select m from fn where proname = 'farm_set_reservation_status') = '5b435035c0851feb88a409ba19c9c116'
           and (select m from fn where proname = 'respond_pet_transfer') = 'b3157dd14ac4b4c1ec6c91fe3326e831'
