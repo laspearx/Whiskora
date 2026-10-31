@@ -122,6 +122,29 @@ function v8 = `main` after PR #17, v1.9.0). First run 2026-11-01 01:00 UTC. Chec
 `supabase/tests/vaccine_reminder_run_check.sql` (HTTP status + outcome from `net._http_response`, send-log statuses)
 and the function summary log. Display verified on Chrome / Windows only.
 
+**Checking a scheduled run (e.g. the first one, 2026-11-01 01:00 UTC = 08:00 ICT) — before 07:00 UTC / 14:00 ICT:**
+nothing watches this automatically; someone has to run it.
+1. `supabase/tests/vaccine_reminder_run_check.sql` (read-only): `http` rows = status + `outcome` / counts from
+   `net._http_response` (kept 6 h), `deliveries` = send-log rows by status, `state` = job active + subscriptions.
+2. Function log (Logs → `function_logs`, ~01:00 UTC): the line `{"fn":"send-push-notifications","summary":{…}}` and any
+   `stage` lines. Expected with 0 subscriptions: HTTP 200 `no_due` / `no_subscriptions`.
+3. Not evidence on its own: `cron.job_run_details` "succeeded" (= queued).
+4. Problem → `select cron.alter_job(job_id := 1, active := false);`, fix forward.
+
+**Send-log history rollout (PR `feat/vaccine-delivery-history`, migration `20261101090000` + matching function) — later, separate approval:**
+1. Precheck (read-only): checks 12 = `before`, **13 = ok, 14 = ok** (any STOP → do not apply; never delete rows to pass).
+2. Pause: `select cron.alter_job(job_id := 1, active := false);` — keep schedule / command.
+3. No run in flight: `select count(*) from cron.job_run_details where jobid = 1 and status in ('starting','running')` = 0,
+   `select count(*) from net.http_request_queue` = 0, and no `send-push-notifications` request in the edge / function
+   logs in the last few minutes (a run takes seconds; wait out any in progress). Do it well away from 01:00 UTC.
+4. Apply the migration (sha256 in the PR) in one transaction + `schema_migrations` row. If it raises P0001 nothing
+   changed: keep job 1 paused, investigate the counted rows, fix forward (never delete history to pass).
+5. Deploy the matching function files (sha256 in the PR) with `verify_jwt` on; read back `verify_jwt` + bundle.
+6. Dry-run postcheck + catalog (precheck 12 = `after ok`, RLS / ACL, constraints) must pass while the job stays paused.
+7. Only then propose re-enabling job 1 (separate approval). If step 4 succeeded but 5 failed (old function on the new
+   shape → 500 at `deliveries_*`, nothing sent): job 1 stays paused; fix forward by deploying the matching function —
+   no revert to an older function, no `verify_jwt` off, no deleting send-log rows.
+
 **Real push QA on production — done 2026-10-31 (PR #17 QA mode):** one account (QA stranger), one device (Chrome on
 Windows), test vaccine on QA pet 175; `{"qa_only_user_id": "<uuid>"}` → only that user, 409 unless exactly one
 subscription, title `[ทดสอบ]`. Round 2 seen + clicked through to `/pets/175/vaccines`; everything removed afterwards

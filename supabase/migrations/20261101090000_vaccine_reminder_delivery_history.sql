@@ -17,13 +17,32 @@
 alter table public.vaccine_reminder_deliveries add column if not exists user_id uuid;
 alter table public.vaccine_reminder_deliveries add column if not exists endpoint_hash text;
 
--- back-fill existing rows from their subscription (rows without one cannot be attributed → removed; there are none
--- on production at the time of writing: the table was emptied by the QA clean-up)
+-- back-fill existing rows from their subscription
 update public.vaccine_reminder_deliveries d
    set user_id = s.user_id, endpoint_hash = encode(extensions.digest(s.endpoint, 'sha256'), 'hex')
   from public.push_subscriptions s
  where s.id = d.subscription_id and (d.user_id is null or d.endpoint_hash is null);
-delete from public.vaccine_reminder_deliveries where user_id is null or endpoint_hash is null;
+
+-- stop (whole transaction rolls back) instead of deleting history: rows that could not be back-filled, or rows that
+-- would collide on the new unique key. Counts only in the message. Precheck checks 13 / 14 report the same numbers.
+do $$
+declare
+  unfilled bigint;
+  collisions bigint;
+begin
+  select count(*) into unfilled from public.vaccine_reminder_deliveries where user_id is null or endpoint_hash is null;
+  if unfilled > 0 then
+    raise exception 'vaccine_reminder_deliveries: % row(s) could not be back-filled (no matching subscription); nothing was changed', unfilled
+      using errcode = 'P0001';
+  end if;
+  select count(*) into collisions from (
+    select 1 from public.vaccine_reminder_deliveries
+     group by user_id, endpoint_hash, vaccine_id, next_due having count(*) > 1) x;
+  if collisions > 0 then
+    raise exception 'vaccine_reminder_deliveries: % key group(s) would collide on (user_id, endpoint_hash, vaccine_id, next_due); nothing was changed', collisions
+      using errcode = 'P0001';
+  end if;
+end $$;
 
 alter table public.vaccine_reminder_deliveries alter column user_id set not null;
 alter table public.vaccine_reminder_deliveries alter column endpoint_hash set not null;
