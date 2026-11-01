@@ -7,6 +7,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from "@/app/components/PageLoader";
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
+import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -146,7 +147,10 @@ export default function EditFarmPage() {
     if (!phone.trim()) return alert("กรุณากรอกเบอร์โทรศัพท์");
     if (!addr.province.trim()) return alert("กรุณาระบุที่อยู่ฟาร์ม (จังหวัด)");
     setSaving(true);
-    const { error } = await supabase.from("farms").update({
+    // owner-only page; the server checks the role and the allowed fields again
+    let error: { message: string } | null = null;
+    try {
+      await updateBusinessProfile(supabase, 'farm', farmId, {
       farm_name: farmName.trim(),
       owner_name: ownerName.trim(),
       phone: phone.trim(),
@@ -158,8 +162,8 @@ export default function EditFarmPage() {
       bio: bio.trim(),
       lat: mapLat,
       lng: mapLng,
-      updated_at: new Date(),
-    }).eq("id", farmId);
+      });
+    } catch (e) { error = { message: errorMessage(e) }; }
     if (error) { alert("บันทึกไม่สำเร็จ: " + error.message); setSaving(false); }
     else { router.back(); router.refresh(); }
   };

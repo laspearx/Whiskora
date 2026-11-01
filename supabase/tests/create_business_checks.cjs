@@ -261,8 +261,11 @@ const base = (type, name, extra = {}) => ({
         const own = (await q(`select id from shops where shop_name = 'QA-CB shop 1' order by id limit 1`))[0];
         const r3 = await rest('newuser', 'POST', 'workspaces', { type: 'shop', name: 'QA-CB direct ws', owner_id: uid('newuser'), entity_id: own.id });
         ok('D3 direct INSERT into workspaces refused (step 2)', r3.status >= 400, { status: r3.status, code: r3.code });
-        const u = await rest('newuser', 'PATCH', `shops?id=eq.${own.id}`, { bio: 'QA-CB edited' });
-        ok('D4 owner can still edit their business (UPDATE unchanged)', u.status === 200 && u.rows === 1, { status: u.status, rows: u.rows });
+        // since 20261101200000 profile edits go through update_business_profile (direct UPDATE refused)
+        const profileRpc = !(await q(`select has_table_privilege('authenticated', 'public.shops', 'UPDATE') p`))[0].p;
+        const u = profileRpc ? await rpc('newuser', 'update_business_profile', { p_type: 'shop', p_id: own.id, p_fields: { bio: 'QA-CB edited' } })
+                             : await rest('newuser', 'PATCH', `shops?id=eq.${own.id}`, { bio: 'QA-CB edited' });
+        ok(`D4 owner can still edit their business (${profileRpc ? 'update_business_profile' : 'direct UPDATE'})`, u.status === 200 && (profileRpc || u.rows === 1), { status: u.status, rows: u.rows });
       } }
   } catch (e) { fail++; console.log('FAIL exception', e.message); }
   finally {

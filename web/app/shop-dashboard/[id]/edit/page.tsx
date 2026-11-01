@@ -8,6 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import { SPECIES_LIST } from '@/lib/species';
+import { updateBusinessProfile } from '@/lib/updateBusinessProfile';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -37,6 +38,8 @@ export default function ShopEditPage() {
 
   const { myRole } = useShopAccess();
   const canEdit = myRole === "owner" || myRole === "manager";
+  // managers change day-to-day content only; identity fields stay with the owner (the server checks this again)
+  const isOwner = myRole === "owner";
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -52,6 +55,27 @@ export default function ShopEditPage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row from select('*') / the RPC, same shape as before
+  const applyRow = (data: any) => {
+    setForm({
+      shop_name: data.shop_name || '',
+      owner_name: data.owner_name || '',
+      phone: data.phone || '',
+      bio: data.bio || '',
+    });
+    setAddr({
+      house_no: data.house_no || "", room_no: data.room_no || "",
+      moo: data.moo || "", soi: data.soi || "", road: data.road || "",
+      sub_district: data.sub_district || "", district: data.district || "",
+      province: data.province || "", postal_code: data.postal_code || "",
+    });
+    if (data.lat) setMapLat(data.lat);
+    if (data.lng) setMapLng(data.lng);
+    const sp = data.supported_species;
+    if (Array.isArray(sp)) setSelectedSpecies(sp);
+    else if (typeof sp === 'string' && sp) setSelectedSpecies(sp.split(',').filter(Boolean));
+  };
+
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -66,23 +90,7 @@ export default function ShopEditPage() {
 
       if (shopRes.error || !shopRes.data) return router.push('/partner');
       const data = shopRes.data;
-      setForm({
-        shop_name: data.shop_name || '',
-        owner_name: data.owner_name || '',
-        phone: data.phone || '',
-        bio: data.bio || '',
-      });
-      setAddr({
-        house_no: data.house_no || "", room_no: data.room_no || "",
-        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
-        sub_district: data.sub_district || "", district: data.district || "",
-        province: data.province || "", postal_code: data.postal_code || "",
-      });
-      if (data.lat) setMapLat(data.lat);
-      if (data.lng) setMapLng(data.lng);
-      const sp = data.supported_species;
-      if (Array.isArray(sp)) setSelectedSpecies(sp);
-      else if (typeof sp === 'string' && sp) setSelectedSpecies(sp.split(',').filter(Boolean));
+      applyRow(data);
 
       if (profileRes.data) setProfileData(profileRes.data);
       setLoading(false);
@@ -152,16 +160,19 @@ export default function ShopEditPage() {
     setSelectedSpecies(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   const handleSave = async () => {
-    if (!form.shop_name.trim()) return alert('กรุณากรอกชื่อร้าน');
-    if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
+    if (isOwner) {
+      if (!form.shop_name.trim()) return alert('กรุณากรอกชื่อร้าน');
+      if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
+      if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ร้าน (จังหวัด)');
+      if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งร้านบนแผนที่');
+    }
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ร้าน (จังหวัด)');
-    if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งร้านบนแผนที่');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่ร้านรองรับอย่างน้อย 1 ชนิด');
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('shops').update({
+      // server checks the role and the allowed fields; a manager's payload is reduced to manager fields
+      const saved = await updateBusinessProfile(supabase, 'shop', shopId, {
         shop_name: form.shop_name,
         owner_name: form.owner_name,
         phone: form.phone,
@@ -174,8 +185,8 @@ export default function ShopEditPage() {
         lat: mapLat,
         lng: mapLng,
         supported_species: selectedSpecies,
-      }).eq('id', shopId);
-      if (error) throw error;
+      }, isOwner ? 'owner' : 'manager');
+      applyRow(saved);   // show what the server stored
       alert('บันทึกข้อมูลเรียบร้อยแล้ว');
       router.back();
     } catch (err: any) { alert('Error: ' + err.message); }
@@ -242,7 +253,11 @@ export default function ShopEditPage() {
             </div>
           </div>
 
+          {!isOwner && (
+            <p style={{ fontSize: 12, color: F.muted, margin: '0 0 12px' }}>ผู้จัดการแก้ได้เฉพาะเบอร์โทร รายละเอียด และชนิดสัตว์ / ประเภทบริการ — ชื่อ เจ้าของ และที่อยู่ เจ้าของเป็นผู้แก้</p>
+          )}
           <div className="she-card">
+            <fieldset disabled={!isOwner} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <div className="she-field">
               <label className="she-label">ชื่อร้าน <span className="she-req">*</span></label>
               <input className="she-input" value={form.shop_name} onChange={e => setForm({ ...form, shop_name: e.target.value })} placeholder="ชื่อร้านค้าของคุณ" />
@@ -251,10 +266,12 @@ export default function ShopEditPage() {
               <label className="she-label">ชื่อ-สกุลเจ้าของ <span className="she-req">*</span></label>
               <input className="she-input" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} placeholder="ชื่อจริง นามสกุล" />
             </div>
+            </fieldset>
             <div className="she-field">
               <label className="she-label">เบอร์โทรศัพท์ <span className="she-req">*</span></label>
               <input type="tel" className="she-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
             </div>
+            <fieldset disabled={!isOwner} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <div className="she-field">
               <div className="she-addr-header">
                 <span className="she-addr-label">ที่อยู่ร้าน <span className="she-req">*</span></span>
@@ -266,13 +283,14 @@ export default function ShopEditPage() {
               </div>
               <AddressFields value={addr} onChange={setAddr} required />
             </div>
+            </fieldset>
             <div className="she-field">
               <label className="she-label">รายละเอียดเพิ่มเติม</label>
               <textarea className="she-textarea" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="แนะนำร้านค้าหรือสินค้าเด่นของร้าน..." />
             </div>
           </div>
 
-          <div className="she-card">
+          <fieldset disabled={!isOwner} className="she-card" style={{ minWidth: 0, marginInline: 0 }}>
             <div className="she-card-title"><Icon.MapPin /> ตำแหน่งร้านบนแผนที่ <span className="she-req">*</span></div>
             <button type="button" className={`she-map-toggle ${mapLat !== null ? 'has-pin' : ''}`} onClick={() => setMapVisible(v => !v)}>
               <Icon.MapPin />
@@ -288,7 +306,7 @@ export default function ShopEditPage() {
                 <p style={{ fontSize: 11, color: F.muted, marginTop: 6 }}>ลากหมุดบนแผนที่เพื่อปรับตำแหน่ง</p>
               </>
             )}
-          </div>
+          </fieldset>
 
           <div className="she-card">
             <div className="she-card-title">ร้านของคุณมีของสำหรับสัตว์ชนิดใดบ้าง? <span className="she-req">*</span></div>

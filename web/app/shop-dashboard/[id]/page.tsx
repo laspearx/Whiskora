@@ -8,6 +8,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
 import { useShopAccess } from "./layout";
+import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF', pink: '#E84677',
@@ -120,8 +121,12 @@ function ShopDashboardContent() {
       const { data: { publicUrl } } = supabase.storage.from('shop-assets').getPublicUrl(data.path);
       const url = `${publicUrl}?t=${Date.now()}`;
       const field = isAvatar ? 'image_url' : 'cover_url';
-      await supabase.from('shops').update({ [field]: url, updated_at: new Date().toISOString() }).eq('id', shopId);
-      setShop((s: any) => ({ ...s, [field]: url }));
+      // saved through update_business_profile (role + photo origin / folder checked on the server); the page shows
+      // the value the server stored, and nothing changes on screen if the save is refused
+      let saved;
+      try { saved = await updateBusinessProfile(supabase, 'shop', shopId, { [field]: url }, myRole === 'owner' ? 'owner' : 'manager'); }
+      catch (e) { alert('บันทึกรูปไม่สำเร็จ: ' + errorMessage(e)); return; }
+      setShop((x: any) => ({ ...x, [field]: saved[field] }));
       cancelCrop();
     } catch (err) {
       console.error('Crop upload error:', err);
