@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/lib/profile';
 import { OTHER_SPECIES } from '@/lib/species';
+import { createBusiness, createRequestKeyTracker } from '@/lib/createBusiness';
 import Cropper from 'react-easy-crop';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 
@@ -24,6 +25,8 @@ const Icon = {
 
 export default function RegisterFarmPage() {
   const router = useRouter();
+  // same key for a double click / retry of the same form content (create_business is idempotent per key)
+  const requestKey = useRef(createRequestKeyTracker()).current;
   const [loading, setLoading] = useState(false);
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -191,8 +194,8 @@ export default function RegisterFarmPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push(`/login?redirect=${encodeURIComponent('/partner/register-farm')}`); return; }
-      const { data: farmData, error } = await supabase.from('farms').insert([{
-        user_id: session.user.id,
+      // entity + workspace + owner row in one transaction; owner = the signed-in user (create_business RPC)
+      const fields = {
         farm_name: form.farmName,
         owner_name: form.ownerName,
         species: finalSpecies,
@@ -207,18 +210,8 @@ export default function RegisterFarmPage() {
         bio: form.bio,
         image_url: imageUrl || null,
         cover_url: coverUrl || null,
-      }]).select('id').single();
-      if (error) throw error;
-
-      const { data: wsData } = await supabase.from('workspaces').insert({
-        type: 'farm', name: form.farmName,
-        owner_id: session.user.id, entity_id: farmData.id, avatar_url: imageUrl || null,
-      }).select('id').single();
-      if (wsData) {
-        // owner rights come from the business itself; this only records the owner row (idempotent, owner-checked)
-        const { error: ownErr } = await supabase.rpc('ensure_workspace_owner_membership', { p_workspace: wsData.id });
-        if (ownErr) console.warn('owner membership not recorded', ownErr.code);
-      }
+      };
+      await createBusiness(supabase, 'farm', fields, requestKey(['farm', fields]));
 
       alert('ยินดีด้วย! เปิดฟาร์มใหม่เรียบร้อยแล้ว');
       router.push('/partner');

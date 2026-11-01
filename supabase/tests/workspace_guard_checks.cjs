@@ -31,7 +31,10 @@ async function rest(who, method, path, body, prefer = 'return=representation') {
   const db = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await db.connect();
   const q = async (s, p = []) => (await db.query(s, p)).rows;
   const guardOn = (await q(`select to_regprocedure('public.workspaces_guard()') is not null a`))[0].a;
-  console.log(`schema: ${guardOn ? 'AFTER (guard installed)' : 'BEFORE (no guard)'}\n`);
+  // since 20261101170000 the API cannot INSERT farms / shops / services / workspaces; creation goes through
+  // create_business (supabase/tests/create_business_checks.cjs) → L1 / L2 / L7 / L8 then expect 403 instead
+  const insertClosed = !(await q(`select has_table_privilege('authenticated', 'public.workspaces', 'INSERT') a`))[0].a;
+  console.log(`schema: ${guardOn ? 'AFTER (guard installed)' : 'BEFORE (no guard)'}${insertClosed ? ', direct INSERT closed (create_business only)' : ''}\n`);
   const fns = async (uid) => (await q(`select is_farm_team($1, $2) team, can_manage_farm_privacy($1, $2) privacy, can_record_pet_weight($3, $2) weight,
       can_transfer_pet($3, $2) transfer, can_decide_pet_reservation($3, $2) reservation`, [FARM, uid, PET]))[0];
   // what can the stranger do right now (API + functions); undo any successful write immediately
@@ -97,7 +100,7 @@ async function rest(who, method, path, body, prefer = 'return=representation') {
   {
     const a = await rest('owner', 'POST', 'workspaces', { type: 'shop', name: 'QA-WSG shop ws', owner_id: ID.owner, entity_id: SHOP });
     const b = await rest('owner', 'POST', 'workspaces', { type: 'shop', name: 'QA-WSG shop ws 2', owner_id: ID.owner, entity_id: SHOP });
-    ok('L1 owner creates a workspace for their own shop (201); a second one for the same shop is refused (unique)', a.status === 201 && (guardOn ? b.status === 409 : true), { first: a.status, second: b.status, code: b.code });
+    ok('L1 owner creates a workspace for their own shop (201); a second one for the same shop is refused (unique)', (insertClosed ? a.status === 403 && b.status === 403 : a.status === 201 && (guardOn ? b.status === 409 : true)), { first: a.status, second: b.status, code: b.code });
   }
   {
     // 10 rounds of 3 concurrent creates for the same service → always exactly one workspace
@@ -109,7 +112,7 @@ async function rest(who, method, path, body, prefer = 'return=representation') {
       rounds.push({ ok: rs.filter((r) => r.status === 201).length, conflict: rs.filter((r) => r.status === 409).length, n });
     }
     ok('L2 concurrent creates (10 rounds × 3) for the same service → exactly one workspace each round, others 409',
-      guardOn ? rounds.every((r) => r.n === 1 && r.ok === 1 && r.conflict === 2) : true, { rounds: rounds.map((r) => `${r.ok}/${r.conflict}/${r.n}`).join(' ') });
+      insertClosed ? rounds.every((r) => r.n === 0 && r.ok === 0) : guardOn ? rounds.every((r) => r.n === 1 && r.ok === 1 && r.conflict === 2) : true, { rounds: rounds.map((r) => `${r.ok}/${r.conflict}/${r.n}`).join(' ') });
   }
   {
     const before = (await q(`select name from workspaces where id = (select id from workspaces where owner_id = $1 and type = 'personal')`, [ID.owner]))[0].name;
@@ -142,12 +145,12 @@ async function rest(who, method, path, body, prefer = 'return=representation') {
     const sid = s.body?.[0]?.id;
     const w = await rest('owner', 'POST', 'workspaces', { type: 'shop', name: 'QA-WSG register ws', owner_id: ID.owner, entity_id: sid });
     const m = w.status === 201 ? await rest('owner', 'POST', 'workspace_members', { workspace_id: w.body[0].id, user_id: ID.owner, role: 'owner' }) : null;
-    ok('L7 register-shop flow (new shop → its workspace) still works', s.status === 201 && w.status === 201, { shop: s.status, ws: w.status, member_insert: m?.status, member_code: m?.code });
+    ok('L7 register-shop flow (new shop → its workspace) still works', (insertClosed ? s.status === 403 && w.status >= 400 : s.status === 201 && w.status === 201), { shop: s.status, ws: w.status, member_insert: m?.status, member_code: m?.code });
     if (sid) { await q(`delete from workspaces where type = 'shop' and entity_id = $1`, [sid]); await q(`delete from shops where id = $1`, [sid]); }
   }
   {
     const r = await rest('owner', 'POST', 'workspaces', { type: 'farm', name: 'QA-WSG dup farm', owner_id: ID.owner, entity_id: FARM });
-    ok('L8 farm owner cannot add a second workspace for the same farm', guardOn ? r.status === 409 : true, { status: r.status, code: r.code });
+    ok('L8 farm owner cannot add a second workspace for the same farm', insertClosed ? r.status === 403 : guardOn ? r.status === 409 : true, { status: r.status, code: r.code });
   }
   await cleanup();
   await q(`delete from workspaces where name like 'QA-WSG %'`);
