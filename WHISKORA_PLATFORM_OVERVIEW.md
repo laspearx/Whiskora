@@ -134,6 +134,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
+- Partner create (branch `feat/atomic-business-create`, **staging only**, not merged): `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; step 2 closes direct API INSERT on farms / shops / services / workspaces — see `docs/PARTNER_CREATE_BUSINESS.md`. Open, separate decision: owners can set `farms.is_verified` / `services.is_published` directly; manager profile edits save 0 rows (proposal in that doc §6).
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
@@ -162,6 +163,7 @@ Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
+- Branch `feat/atomic-business-create` (staging only): migrations `20261101160000` (create_business) + `20261101170000` (no direct business INSERT), register pages use the RPC.
 
 **2026-10-31**
 - v1.10.3 (PR #21) + migration `20261031151651`: public grants clean-up — no TRUNCATE / TRIGGER / REFERENCES for API roles, per-function EXECUTE (`resolve_pet_tags` not callable directly; admin / signed-in RPCs not for anon), reduced default privileges; CRUD + column grants unchanged.
