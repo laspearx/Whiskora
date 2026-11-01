@@ -129,6 +129,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
 - Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
+- **Builds / versions** (PR #25, draft — not on main yet): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message.
+
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy) — fixed on branch `feat/workspace-members-rpc` (staging only), `products` table missing, no review/publish flow for shops.
