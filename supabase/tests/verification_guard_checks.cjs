@@ -31,7 +31,15 @@ const refused = (r) => r.status >= 400 || r.rows === 0;
   const db = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await db.connect();
   const q = async (s, p = []) => (await db.query(s, p)).rows;
   const installed = (await q(`select count(*)::int n from pg_trigger where tgname in ('farms_verification_guard', 'farm_verifications_guard')`))[0].n === 2;
-  console.log(`schema: ${installed ? 'AFTER (verification guard)' : 'BEFORE'}\n`);
+  // since 20261101200000 ordinary profile fields are edited only through update_business_profile
+  const profileRpc = !(await q(`select has_table_privilege('authenticated', 'public.farms', 'UPDATE') p`))[0].p;
+  const editBio = async (id, bio) => {
+    if (!profileRpc) return rest('owner', 'PATCH', `farms?id=eq.${id}`, { bio });
+    const direct = await rest('owner', 'PATCH', `farms?id=eq.${id}`, { bio });
+    const r = await rpc('owner', 'update_business_profile', { p_type: 'farm', p_id: id, p_fields: { bio } });
+    return { status: direct.status === 403 && r.status === 200 ? 200 : 500, rows: r.status === 200 ? 1 : 0, direct: direct.status };
+  };
+  console.log(`schema: ${installed ? 'AFTER (verification guard)' : 'BEFORE'}${profileRpc ? ', profile edits via update_business_profile' : ''}\n`);
   const cleanup = async () => {
     const ids = (await q(`select v.id from farm_verifications v join farms f on f.id = v.farm_id where f.farm_name = 'QA-VG farm'`)).map((r) => String(r.id));
     if (ids.length) await q(`delete from admin_audit_logs where entity_type = 'farm_verification' and entity_id = any($1::text[])`, [ids]);
@@ -56,8 +64,8 @@ const refused = (r) => r.status >= 400 || r.rows === 0;
       const r = await rest('owner', 'PATCH', `farms?id=eq.${farm}`, body);
       ok(`F1 owner PATCH ${n} → refused, farm unchanged`, refused(r) && JSON.stringify(await state()) === JSON.stringify(clean), { status: r.status, code: r.code });
     }
-    { const r = await rest('owner', 'PATCH', `farms?id=eq.${farm}`, { bio: 'QA-VG edited' });
-      ok('F2 owner can still edit ordinary farm fields', r.status === 200 && r.rows === 1, { status: r.status, rows: r.rows }); }
+    { const r = await editBio(farm, 'QA-VG edited');
+      ok('F2 owner can still edit ordinary farm fields (direct before 20261101200000, via update_business_profile after)', r.status === 200 && r.rows === 1, { status: r.status, rows: r.rows, direct: r.direct }); }
     // INSERT path: direct INSERT may be closed by 20261101170000; open it only inside a rolled-back transaction
     { const t = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await t.connect(); const res = {};
       try {
@@ -116,7 +124,7 @@ const refused = (r) => r.status >= 400 || r.rows === 0;
       const r = await rest('owner', 'PATCH', `farms?id=eq.${farm}`, body);
       ok(`F5 after approval owner PATCH ${n} → refused, still verified`, refused(r) && (await state()).v === true, { status: r.status, code: r.code });
     }
-    { const r = await rest('owner', 'PATCH', `farms?id=eq.${farm}`, { bio: 'QA-VG after approval' });
+    { const r = await editBio(farm, 'QA-VG after approval');
       ok('F6 owner still edits ordinary fields after approval', r.status === 200 && r.rows === 1 && (await state()).v === true, { status: r.status }); }
   } catch (e) { fail++; console.log('FAIL exception', e.message); }
   finally {
