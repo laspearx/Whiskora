@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import Cropper from 'react-easy-crop';
 import { SPECIES_LIST } from '@/lib/species';
+import { createBusiness, createRequestKeyTracker } from '@/lib/createBusiness';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -33,6 +34,8 @@ const Icon = {
 
 export default function RegisterServicePage() {
   const router = useRouter();
+  // same key for a double click / retry of the same form content (create_business is idempotent per key)
+  const requestKey = useRef(createRequestKeyTracker()).current;
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -190,8 +193,8 @@ export default function RegisterServicePage() {
 
     setIsLoading(true);
     try {
-      const { data: svcData, error } = await supabase.from('services').insert([{
-        user_id: userId,
+      // entity + workspace + owner row in one transaction; owner = the signed-in user (create_business RPC)
+      const fields = {
         service_name: form.service_name,
         owner_name: form.owner_name,
         phone: form.phone,
@@ -206,19 +209,9 @@ export default function RegisterServicePage() {
         lng: mapLng,
         image_url: imageUrl || null,
         cover_url: coverUrl || null,
-        supported_species: selectedSpecies.join(','),
-      }]).select('id').single();
-      if (error) throw error;
-
-      const { data: wsData } = await supabase.from('workspaces').insert({
-        type: 'service', name: form.service_name,
-        owner_id: userId, entity_id: svcData.id, avatar_url: imageUrl || null,
-      }).select('id').single();
-      if (wsData) {
-        // owner rights come from the business itself; this only records the owner row (idempotent, owner-checked)
-        const { error: ownErr } = await supabase.rpc('ensure_workspace_owner_membership', { p_workspace: wsData.id });
-        if (ownErr) console.warn('owner membership not recorded', ownErr.code);
-      }
+        supported_species: selectedSpecies,
+      };
+      await createBusiness(supabase, 'service', fields, requestKey(['service', fields]));
 
       alert('บันทึกข้อมูลบริการเรียบร้อยแล้ว');
       router.push('/profile');

@@ -134,6 +134,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Known gaps / not-yet-built (candidates for future planning)
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
+- Partner create (branch `feat/atomic-business-create`, **staging only**, not merged): `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; step 2 closes direct API INSERT on farms / shops / services / workspaces — see `docs/PARTNER_CREATE_BUSINESS.md`. Open, separate decision: owners can set `farms.is_verified` / `services.is_published` directly; manager profile edits save 0 rows (proposal in that doc §6).
 
 - Farm verification (branch `fix/verification-self-approve`, **staging only**, migration `20261101180000`): API users can no longer set `farms.is_verified` / `verified_at` / `verification_*` or approve their own `farm_verifications`; owner path null|rejected → pending (with a pending request) and admin `admin_review_farm_verification` stay. Live today: owners can still self-verify by direct UPDATE, and the admin page's direct farms update matches 0 rows.
 
@@ -164,6 +165,7 @@ Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
+- Branch `feat/atomic-business-create` (staging only): migrations `20261101160000` (create_business) + `20261101170000` (no direct business INSERT), register pages use the RPC.
 
 **2026-10-31**
 - v1.10.3 (PR #21) + migration `20261031151651`: public grants clean-up — no TRUNCATE / TRIGGER / REFERENCES for API roles, per-function EXECUTE (`resolve_pet_tags` not callable directly; admin / signed-in RPCs not for anon), reduced default privileges; CRUD + column grants unchanged.
