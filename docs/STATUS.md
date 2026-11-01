@@ -30,6 +30,22 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
+## 2026-11-01 — PR #29 rollout: farm verification guard (v1.12.3; UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `7c8c2855de7350a1820f331537c7ca9aa97c0b62`, base = main `8ff37ff`; tested Preview `ffa0a6b` (later commit = docs + precheck file only); migration sha256 `bc8da387bda3d95dcb4a2f76357eecf0c232237e7e86de4add9fa385168d5503` |
+| Precheck 06:00 (read-only) | `before`; farms 14, verified 0, pending 0, requests 0, audit rows 0; verified_without_approved_request / verified_without_admin_audit / request_user_not_farm_owner / reviewed_by_non_admin all **0** → no stop; `admin_review_farm_verification` identical to staging (definition md5 equal) |
+| **Migration** 06:01:49 | `20261101060149 verification_guard` — one transaction, `lock_timeout` 5 s, sha check, `schema_migrations` row in the same transaction; stored statement sha256 = file sha256 |
+| Postcheck | `after`; 2 triggers BEFORE INSERT OR UPDATE (invoker, `search_path=public`); farms verification fields md5 + row md5 unchanged from baseline; requests 0, audit 0 |
+| QA HTTP 06:02 (UA `whiskora-qa-probe`, no real farm touched) | anon review RPC 401; QA user (role user) review RPC 400 "Access denied"; anon request insert 401; user request for an unowned farm / already approved 403 `42501`; public farm read 200; global logout 204 |
+| Merge | 06:02:57 pinned → `adbe4da` (Ignored Build Step); bot `3b291a8` **v1.12.3** (version files only) → Production `whiskora-fijuhl8ik` |
+| Smoke | `www.whiskora.pet` shows 1.12.3; `/admin/verifications` bundle calls `admin_review_farm_verification`, no direct farms update left; bundle production ref only; `/th`, `/th/farm-hub`, `/th/login` 200 |
+| Data after deploy 06:05 | identical to baseline (farms 14, md5s equal, requests 0, audit 0) |
+| Logs 05:55–06:06 | edge = the 8 probe requests only; postgres errors = the 4 intended refusals; PostgREST schema reload after the migration; one PostgREST "Thread killed by timeout manager" 06:03:18 with no matching edge request (not attributed) |
+
+Not proven on production: admin approve / reject happy path (no QA farm; no production farm or request created) — proven on
+staging (API 30 / 30, E2E 4 / 4). Recovery: fix forward only — hide the broken button / entry, never drop the guard.
+
 ## 2026-11-01 — PR #22 / #23 rollout: workspace members via RPC + invitations (v1.11.0 → v1.12.0; UTC, ICT = UTC+7)
 | Step | Result |
 | --- | --- |

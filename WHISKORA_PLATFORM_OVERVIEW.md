@@ -135,7 +135,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
 
-- Farm verification (branch `fix/verification-self-approve`, **staging only**, migration `20261101180000`): API users can no longer set `farms.is_verified` / `verified_at` / `verification_*` or approve their own `farm_verifications`; owner path null|rejected → pending (with a pending request) and admin `admin_review_farm_verification` stay. Live today: owners can still self-verify by direct UPDATE, and the admin page's direct farms update matches 0 rows.
+- Farm verification guard **live since v1.12.3 (2026-11-01, migration `20261101060149` = file `20261101180000`)**: API users cannot set `farms.is_verified` / `verified_at` / `verification_*` or approve their own `farm_verifications`; owner path null|rejected → pending (with a pending request); admin decides only via `admin_review_farm_verification` (audit log). Production happy path (approve / reject) proven on staging only. Recovery = fix forward, never drop the guard.
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
@@ -163,6 +163,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
+- v1.12.3 (PR #29) + migration `20261101060149 verification_guard` (sha256 `bc8da387…5503`): no self-verification; admin page reviews through `admin_review_farm_verification`.
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
 
 **2026-10-31**
