@@ -30,6 +30,27 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
+## 2026-11-01 — PR #22 / #23 rollout: workspace members via RPC + invitations (v1.11.0 → v1.12.0; UTC, ICT = UTC+7)
+| Step | Result |
+| --- | --- |
+| Pin | #22 head `e9a88e26b99e39d41a4896be73506ea1521eaac5`, #23 head `a6888c4dedeb2dd08e355584d82d17bf3f2a70f2`; main `0dd85af` (v1.10.3) = #22 base; migration sha256 `28e284bd031449521b5d2562af442d28c205a54478e7bf3592068093cfbedf17`. Tested Preview `whiskora-l61zv142j` = `d945345`; `a6888c4` adds docs + `web/e2e` only. The 2 skipped E2E = "listed but not public" × desktop / mobile (`E2E_PRIVATE_LISTED_PET_ID` unset; pet privacy, not members; passed earlier with 900006) |
+| Precheck 01:06 (read-only) | `before`, guard ok, unique ok, forged owners 0; 17 business workspaces / 10 owner rows / 0 non-owner members; members 117 (md5 `605d97e5…`), workspaces 124 (md5 `9d45f521…`) |
+| Old app before (QA, own personal workspace only) 01:09 | **8 / 8**: own-role reads 200; direct INSERT 500 `42P17`, UPDATE 0 rows, DELETE 500 `42P17`; no member visible outside own workspace |
+| **Migration** | **`20261101011545` `workspace_members_rpc`** — run by the owner from the terminal (`apply_members.cjs`: sha check, one transaction, `lock_timeout` 5 s, `schema_migrations` row in the same transaction); stored statement sha256 = file sha256 |
+| Postcheck catalog 01:16 | precheck `after`; `workspace_members` API = SELECT only, policy `members_select` only (authenticated, own rows or participant); invitations RLS on, no anon / authenticated grants, 0 policies (service_role grants = staging); RPC EXECUTE authenticated-only 9 / 9, SECURITY DEFINER + `search_path=public` 9 / 9; helpers not callable by the API except `is_workspace_participant` (authenticated) |
+| QA HTTP after 01:17 (and again on v1.12.0 01:28) | **20 / 20**: direct INSERT / UPDATE / DELETE 403 `42501`; anon RPC 401; QA inbox 200 empty; list members / invitations of a business it is not in 403; invite / set role / remove on own personal workspace 403; respond / cancel unknown invitation 404; `ensure_workspace_owner_membership` on a business not owned 403; direct invitations read 403. Global logout 204 |
+| Old app on new DB 01:18 (v1.10.3, QA browser) | profile, pet 175, transfers, `/p/175`, farm-hub, farm dashboard of a business it is not in (redirect to partner hub): 200, 0 Supabase errors; anon pages 200 |
+| Merge #22 | 01:20 pinned → `91e8474`; bot `6ea86c2` **v1.11.0** (version files only); Production `whiskora-ftpee0f3p` |
+| Merge #23 | base changed to main; diff = tested set byte-for-byte (patch sha256 equal), no other PR; 01:23 pinned → `686590d`; `web/` = `d945345` except version files; bot `efcc57d` **v1.12.0**; Production `whiskora-ne6v8gr26` |
+| Smoke v1.12.0 01:26 (QA only) | bundle: production ref 1, staging 0, `1.12.0`; `/profile/invitations` shows "ไม่มีคำเชิญที่รอตอบรับ" (real state); farm / shop members pages of a business QA is not in → no team data; profile, pet, `/p/175`, farm-hub, anon public pages 200; 0 Supabase errors |
+| Data after | members 117 / workspaces 124 (md5 unchanged), invitations 0, farms / shops / services 14 / 2 / 1, QA sessions 0 |
+| Logs 01:00–01:30 | every edge ≥ 400 (30) = QA probes (UA `whiskora-qa-probe`); no customer errors seen |
+
+**Proven on staging only (not on production):** invite → decline → accept → role change → remove → leave, manager limits, stale
+inviter, expiry, concurrency (members 51 / 51, E2E 72 / 2 skipped). No real member, invitation or business was created on
+production. Recovery: fix forward; the app can be rolled back on Vercel (old app + new DB checked above); never revert the
+migration or re-grant direct member writes.
+
 ## 2026-10-31 — PR #15 deployed (v1.8.0) + transfer access reset on production (UTC; ICT = UTC+7)
 | Step | Result |
 | --- | --- |

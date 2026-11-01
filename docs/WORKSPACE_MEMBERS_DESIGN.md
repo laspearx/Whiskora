@@ -1,6 +1,6 @@
-# Workspace members via RPC — design (staging first; not on production)
+# Workspace members via RPC — design (live on production since 2026-11-01, v1.12.0)
 
-Status 2026-10-31: **approved by the owner (rules below) — PR A (DB) + PR B (web) built and tested on staging / Preview; not merged, not on production.** Partner audit PR "1 — Members via RPCs"
+Status 2026-11-01: **live** — PR A (#22, DB) migration `20261101011545` applied 01:15:45 UTC, PR B (#23, web) live as v1.12.0 (rollout in `docs/STATUS.md`). Approved by the owner 2026-10-31. Partner audit PR "1 — Members via RPCs"
 (`docs/PARTNER_SYSTEM_AUDIT.md`). Builds on the workspace ownership guard (v1.10.1), storage scoping (v1.10.2) and the
 grants clean-up (v1.10.3).
 
