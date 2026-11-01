@@ -163,8 +163,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
-- v1.12.3 (PR #29) + migration `20261101060149 verification_guard` (sha256 `bc8da387…5503`): no self-verification; admin page reviews through `admin_review_farm_verification`.
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
+- v1.12.3 (PR #29) + migration `20261101060149 verification_guard` (sha256 `bc8da387…5503`): no self-verification; admin page reviews through `admin_review_farm_verification`.
 
 **2026-10-31**
 - v1.10.3 (PR #21) + migration `20261031151651`: public grants clean-up — no TRUNCATE / TRIGGER / REFERENCES for API roles, per-function EXECUTE (`resolve_pet_tags` not callable directly; admin / signed-in RPCs not for anon), reduced default privileges; CRUD + column grants unchanged.
