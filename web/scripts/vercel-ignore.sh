@@ -24,6 +24,8 @@ base_for_branch() {
     git cat-file -e "$prev^{commit}" 2>/dev/null || git fetch -q --depth=200 origin "$prev" 2>/dev/null || true
     if git cat-file -e "$prev^{commit}" 2>/dev/null; then echo "$prev"; return; fi
   fi
+  # Vercel clones shallow: deepen this branch and fetch main so a merge base exists; none found → empty → build
+  git fetch -q --deepen=200 2>/dev/null || true
   git fetch -q --depth=200 origin main 2>/dev/null || true
   git merge-base "$head" FETCH_HEAD 2>/dev/null || true
 }
