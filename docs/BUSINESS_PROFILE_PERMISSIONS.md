@@ -27,15 +27,31 @@ existing object in `<type>-assets/<entity id>/…` (dashboard uploads, `?t=<digi
 Not changed: storage policies (`can_edit_business_assets`: owner / manager may upload to the business folder),
 member RPCs, workspace guard, verification guard, create_business, SELECT / INSERT / DELETE grants and RLS policies.
 
-## 2. Tests (staging + Preview `whiskora-ozrp43jju` = `57c13ec`, synthetic QA accounts)
+## 2. Tests (staging + Preview `whiskora-wg8lh2yxh` = `web/` of the PR head; synthetic QA accounts; window 07:56–08:13 UTC, Codex off staging)
 | Suite | Result |
 |---|---|
-| `business_profile_checks.cjs` step 1 / step 2 | **161 / 161** each — per type: owner saves identity + content (response = stored row, workspace renamed), partial update, 14 forbidden keys 22023, invalid values 22023, manager content ok / identity 42501 / `is_published` refused, staff / viewer / stranger / other owner 42501, anon 401, unknown id 404; photos: dashboard asset `?t=` ok, manager cover ok, staff upload refused by storage, register photo ok, other business folder / other user's photo / other site / other project / bad query / never uploaded / other bucket refused, legacy and empty values kept unchanged, null clears; direct UPDATE refused in step 2; publish button unchanged (owner yes, manager 0 rows); verify request path still works and `is_verified` still refused |
-| Regression (step 2) | verification guard 30 / 30, create_business 75 / 75, storage 23 / 23, workspace guard 21 / 21, members 51 / 51 (verification F2 / F6 and create_business D4 now edit through the RPC once direct UPDATE is closed) |
-| E2E `business-profile.spec.ts` (desktop + mobile) | 10 / 10: owner save → stored value; server refusal → error, no success, nothing saved; manager sees locked identity fields and sends only bio / phone / species; staff redirected; dashboard cover change saved with `?t=`; tampered photo URL refused, picture unchanged |
+| `business_profile_checks.cjs` (step 2) | **164 / 164** — per type: owner saves identity + content (response = stored row, workspace renamed), partial update, **lat / lng 0 stored and returned as 0**, 14 forbidden keys 22023, invalid values 22023, manager content ok / identity 42501 / `is_published` refused, staff / viewer / stranger / other owner 42501, anon 401, unknown id 404; photos: dashboard asset `?t=` ok, manager cover ok, staff upload refused by storage, register photo ok, other business folder / other user's photo / other site / other project / bad query / never uploaded / other bucket refused, legacy and empty values kept, null clears; direct UPDATE refused; publish button unchanged (owner yes, manager 0 rows); verify request path works, `is_verified` still refused. Earlier run at step 1: 161 / 161 |
+| `business_profile_form_unit.test.mts` | 5 / 5 (0 / null / '' replace old values; species formats) |
+| `business_profile_precheck.sql` | step 2: `step2_verdict = OK`; simulated (rolled back): before → STOP, extra grant via PUBLIC → STOP, missing publish grant → STOP |
+| Regression (step 2) | verification guard 30 / 30, create_business 75 / 75, storage 23 / 23, workspace guard 21 / 21, members 51 / 51 |
+| E2E full suite on the Preview | **90 passed, 2 skipped** (the usual "listed but not public" pair), 0 failed — includes `business-profile.spec.ts` 10 / 10 and the pet-health tests on desktop + mobile |
 
-Leftover on staging: 3 tiny synthetic files per API run in `farm-assets/<deleted QA farm id>/` (no API delete policy;
-SQL deletes on storage are blocked) and the E2E covers in `shop-assets/990201/`.
+**Pet-health E2E (failed once in the previous round, mobile).** Checked with explicit hypotheses, each run in its own
+trace folder (kept locally, not published — traces hold session cookies):
+- H2 "state left by an earlier run": fixture reset, then 3 runs without reset → 6 / 6 pass; pet 900002 unchanged after each.
+- H3 "a staging request failed": staging edge logs 07:10–07:40 → `pets` / `get_pet_health` / `get_pet_pedigree_fields` all 2xx.
+- H4 "only after the full suite / under load": full suite → pass on both projects.
+Not reproduced, so the test was **not** changed. Open lead (unverified): the login page navigates to the redirect
+target twice (submit handler and `onAuthStateChange`, each with `router.refresh()`), which could re-render the edit
+page right after the test's first checks. If it fails again, its trace (retain-on-failure) is the evidence to read.
+
+**Synthetic data left on staging after the window:** fixtures restored (pets 900001–900005, farm 9001 members, shops
+990101 / 990201, QA-VG / QA-CB E2E rows removed by id after an owner + name check); this suite's ids 990301–990313: none.
+Storage: `farm-assets` 9 files — 6 old (`76/`, `77/`, `78/`, `79/`, from the first rounds) + 3 fixed names
+(`990301/avatar_qa.jpg`, `990301/cover_qa.jpg`, `990311/avatar_qa.jpg`, overwritten each run, no growth); the API
+returns 200 but removes 0 (no DELETE policy) — left as recorded, no policy opened. `shop-assets/990201/`: empty.
+Existing test "owner can add a pet" adds 2 `QA e2e pet …` pets per full run (47 now) — behaviour of that older test, not
+removed here.
 
 ## 3. Rollout (production — not done; each step on the owner's go-ahead)
 **Step 1 — RPC (additive; the live app keeps working)**
