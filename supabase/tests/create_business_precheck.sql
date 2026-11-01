@@ -23,6 +23,7 @@ select
   exists (select 1 from pg_trigger where tgname = 'workspaces_guard' and not tgisinternal) guard_trigger,
   to_regprocedure('public.ensure_workspace_owner_membership(uuid)') is not null members_rpc,
   -- Storage origin for create_business photos: must be THIS project's origin (compare with the app's Supabase URL)
-  (select value from public.platform_settings where key = 'storage_public_origin'
-    and to_regclass('public.platform_settings') is not null) storage_public_origin,
+  -- dynamic (query_to_xml) so the precheck also runs in state `before`, when platform_settings does not exist yet
+  (xpath('/row/v/text()', query_to_xml(case when to_regclass('public.platform_settings') is null then 'select null::text v'
+     else 'select value v from public.platform_settings where key = ''storage_public_origin''' end, false, true, '')))[1]::text storage_public_origin,
   exists (select 1 from pg_trigger where tgname = 'qa_cb_fault') qa_fault_triggers_present;

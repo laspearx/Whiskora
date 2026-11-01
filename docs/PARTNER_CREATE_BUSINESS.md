@@ -1,8 +1,8 @@
-# Create a business atomically (partner PR 2, part 1) — staging only
+# Create a business atomically (partner PR 2, part 1)
 
-Status 2026-11-01: on branch `feat/atomic-business-create`, applied on **staging only** (both steps; storage origin set from the staging connection). Not merged, not on
-production. Follows `docs/PARTNER_SYSTEM_AUDIT.md` §4–5. Out of scope here: review / publish, marketplace, bookings,
-payment, CI, and any change to who may edit a business profile (proposal in §6).
+Status 2026-11-01: **live on production since v1.13.0** (step 1 `20261101063842`, origin set, app, step 2 `20261101064204`; record in `docs/STATUS.md`). Staging: both steps.
+Follows `docs/PARTNER_SYSTEM_AUDIT.md` §4–5. Out of scope here: review / publish, marketplace, bookings,
+payment, CI, and any change to who may edit a business profile (§6, separate PR).
 
 ## 1. What changes
 | | Before | After |
@@ -67,11 +67,13 @@ of the transaction). Rule: **nothing is deleted automatically.**
 | Full E2E on Preview | 76 passed, 2 skipped (the "listed but not public" pair, `E2E_PRIVATE_LISTED_PET_ID` unset — same as before) |
 | Preview bundle | staging ref only |
 
-## 6. Proposal — who may edit a business profile (not changed in this PR; needs a decision)
+## 6. Who may edit a business profile (not changed by this PR; direction approved, separate PR)
 Today: DB UPDATE on `farms` / `shops` / `services` = entity owner only, **all columns**. The shop / service edit pages
 open for managers, but their save matches 0 rows and the page still reports success (known gap in the audit).
-Found while testing (rolled back on staging): the owner can set `farms.is_verified = true` / `verified_at` directly,
-and `services.is_published` without review. Proposed, as a separate PR:
+Found while testing (rolled back on staging): the owner could set `farms.is_verified = true` / `verified_at` directly —
+**closed by PR #29 (v1.12.3, verification guard)**. `services.is_published` can still be switched by the owner without
+review (the existing publish button) — **open, to be decided in the review / publish work**, not in the profile PR.
+Approved scope for the profile PR:
 
 | Role | Profile fields | Not allowed |
 |---|---|---|
