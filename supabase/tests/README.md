@@ -31,6 +31,13 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `staging_only/…_down_STAGING_ONLY.sql` | exact pre-migration state for staging rollback tests — re-opens the holes, **never on production** |
 | `../emergency/reservation_transfer_freeze.sql` / `…_unfreeze.sql` | production recovery: stop new reservation/transfer writes, keep reads + privacy, then fix forward |
 
+## Farm verification guard (`20261101180000`; staging only)
+| File | Use |
+|---|---|
+| `verification_guard_precheck.sql` | read-only: state, verified farms without an approved request / admin audit, pending without request, request user ≠ farm owner, reviewer not admin, review RPC grants |
+| `verification_guard_checks.cjs` | owner cannot set the result on farms or requests (INSERT in a rolled-back transaction), stranger cannot submit for another farm, verify-page path, admin RPC reject → resubmit → approve with audit rows, non-admins refused; synthetic `QA-VG farm` removed after |
+| `verification_fixture_staging.sql` + `../../web/e2e/verification.spec.ts` | admin approves / rejects on `/admin/verifications` through the RPC (desktop + mobile) |
+
 ## Workspace members via RPC + invitations (`20261101150000`; production `20261101011545` since 2026-11-01)
 | File | Use |
 |---|---|
