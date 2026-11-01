@@ -46,3 +46,5 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `partner_photos_orphans.sql` | read-only count of register photos no business uses (deletes nothing) |
 | `staging_only/apply_migration_STAGING_ONLY.cjs` / `create_business_down_STAGING_ONLY.sql` | sha-checked single-transaction apply; rollback test back to `before` — **never on production** |
 | `../../web/e2e/register-business.spec.ts` | Preview: lost response → retry gives one shop; server refusal saves nothing |
+| `business_insert_compat_check.cjs` | the decision-only old-app grants (`../emergency/business_insert_old_app_compat_DECISION_REQUIRED.sql`) in one rolled-back transaction |
+| `../settings/set_storage_origin.cjs` | sets `platform_settings.storage_public_origin` from the connection's own project ref (`--dry-run` first) |

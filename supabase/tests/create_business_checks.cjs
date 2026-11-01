@@ -63,6 +63,7 @@ const base = (type, name, extra = {}) => ({
     await q(`drop function if exists public.qa_cb_fault()`);
   };
   const files = { mine: `shops/${uid('newuser')}/qa-cb-logo.jpg`, mineFarm: `farms/${uid('newuser')}/qa-cb-logo.jpg`, theirs: `shops/${uid('stranger')}/qa-cb-logo.jpg` };
+  const savedOrigin = (await q(`select value from platform_settings where key = 'storage_public_origin'`).catch(() => []))[0]?.value;
   try {
     await dropFaults(); await cleanup();
     ok('S0 synthetic photos uploaded by their owners', (await upload('newuser', 'partner-photos', files.mine)) === 200
@@ -135,6 +136,57 @@ const base = (type, name, extra = {}) => ({
     }
     { const before = await counts(); const r = await rpc('newuser', 'create_business', { p_type: 'shop', p_fields: base('shop', 'QA-CB x'), p_request_key: null });
       ok('F4 missing request key refused', r.status === 400 && same(before, await counts()), { status: r.status, code: r.code }); }
+
+    // ── photo origin: only this environment's Storage origin (platform_settings), canonical URL stored ──
+    { const path = files.mine; const host = (h) => `${h}/storage/v1/object/public/partner-photos/${path}`;
+      for (const [n, u] of [['another website', host('https://evil.example')], ['another Supabase project', host('https://zzzzzzzzzzzzzzzzzzzz.supabase.co')],
+        ['http instead of https', host(SB.replace('https://', 'http://'))], ['look-alike host', host(SB + '.evil.example')],
+        ['query string', pub(path) + '?x=1'], ['protocol-relative', '//' + host(SB).slice(8)]]) {
+        const before = await counts(); const r = await create('newuser', 'shop', base('shop', 'QA-CB host', { image_url: u }));
+        ok(`H1 own photo but ${n} → refused, nothing written`, r.status === 400 && r.code === '22023' && same(before, await counts()), { status: r.status, code: r.code });
+      }
+      const k = key(); const r = await create('newuser', 'shop', base('shop', 'QA-CB path form', { image_url: path }), k);
+      const stored = r.body?.[0] && (await q(`select image_url from shops where id = $1`, [r.body[0].entity_id]))[0].image_url;
+      const origin = (await q(`select value from platform_settings where key = 'storage_public_origin'`))[0]?.value;
+      ok('H2 object path accepted; stored URL = canonical URL built from the environment setting', r.status === 200 && origin === SB && stored === pub(path), { status: r.status, canonical: stored === pub(path) });
+      const r2 = await create('newuser', 'shop', base('shop', 'QA-CB path form', { image_url: pub(path) }), k);
+      ok('H3 same photo as URL with the same key → same business (same canonical data)', r2.status === 200 && r2.body?.[0]?.entity_id === r.body?.[0]?.entity_id && r2.body[0].replayed === true, { status: r2.status });
+      // another environment's origin (derived from the production connection string's user name — no DB connection):
+      // with that setting the same code accepts that origin and refuses this one (rolled back, nothing persists)
+      const prodUser = new URL(fs.readFileSync(os.homedir() + '/.whiskora/prod_db_url', 'utf8').trim()).username;
+      const otherOrigin = `https://${prodUser.split('.')[1]}.supabase.co`;
+      const t = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await t.connect();
+      try {
+        await t.query('begin');
+        await t.query(`update platform_settings set value = $1 where key = 'storage_public_origin'`, [otherOrigin]);
+        await t.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: uid('newuser'), role: 'authenticated' })]);
+        await t.query('set local role authenticated');
+        const call = async (u) => { await t.query('savepoint s'); try { const x = await t.query(`select * from create_business('shop', $1::jsonb, gen_random_uuid())`, [JSON.stringify(base('shop', 'QA-CB other env', { image_url: u }))]);
+          const v = (await t.query(`select image_url from shops where id = $1`, [x.rows[0].entity_id])).rows[0].image_url; await t.query('release savepoint s'); return v; }
+          catch (e) { await t.query('rollback to savepoint s'); return 'ERR ' + e.code; } };
+        const a = await call(`${otherOrigin}/storage/v1/object/public/partner-photos/${path}`); const b = await call(pub(path)); const c = await call(path);
+        ok('H4 other environment setting: its own origin accepted, this origin refused, path → its canonical URL (rolled back)',
+          a.startsWith(otherOrigin + '/') && b === 'ERR 22023' && c.startsWith(otherOrigin + '/'), { a: a.startsWith(otherOrigin + '/'), b, c: c.startsWith(otherOrigin + '/') });
+      } finally { await t.query('rollback').catch(() => {}); await t.end(); }
+      // setting script guard: refuses when stored photo URLs belong to another project (rolled back)
+      const g = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await g.connect();
+      let guard = 'no error';
+      try {
+        await g.query('begin');
+        await g.query(`insert into farms (user_id, farm_name, image_url) values ($1, 'QA-CB origin guard', $2)`, [uid('newuser'), `${otherOrigin}/storage/v1/object/public/farm-assets/1/a.jpg`]);
+        await g.query(`select set_config('whiskora.storage_origin', $1, true)`, [SB]);
+        await g.query(fs.readFileSync(__dirname + '/../settings/storage_public_origin.sql', 'utf8'));
+      } catch (e) { guard = e.message.includes('another Supabase project') ? 'refused' : e.message; }
+      finally { await g.query('rollback').catch(() => {}); await g.end(); }
+      ok('H5 setting script refuses an origin that does not match the stored photo URLs (rolled back)', guard === 'refused', { guard });
+      const saved = (await q(`select value from platform_settings where key = 'storage_public_origin'`))[0]?.value;
+      await q(`delete from platform_settings where key = 'storage_public_origin'`);
+      const before = await counts();
+      const m1 = await create('newuser', 'shop', base('shop', 'QA-CB no setting', { image_url: pub(path) }));
+      const after1 = await counts();
+      const m2 = await create('newuser', 'shop', base('shop', 'QA-CB no setting no photo'));
+      await q(`insert into platform_settings (key, value) values ('storage_public_origin', $1)`, [saved]);
+      ok('H6 setting missing → photo refused (fail closed), nothing written; a business without photos still works', m1.status === 400 && m1.code === '22023' && same(before, after1) && m2.status === 200, { photo: m1.status, nophoto: m2.status }); }
 
     // ── concurrency ──
     { const before = await counts(); const k = key(); const f = base('shop', 'QA-CB concurrent same key');
@@ -214,6 +266,7 @@ const base = (type, name, extra = {}) => ({
       } }
   } catch (e) { fail++; console.log('FAIL exception', e.message); }
   finally {
+    if (savedOrigin) await q(`insert into platform_settings (key, value) values ('storage_public_origin', $1) on conflict (key) do nothing`, [savedOrigin]).catch(() => {});
     await dropFaults().catch(() => {}); await cleanup().catch((e) => console.log('cleanup error', e.message));
     for (const [who, p] of [['newuser', files.mine], ['newuser', files.mineFarm], ['stranger', files.theirs]]) await removeObj(who, 'partner-photos', p).catch(() => {});
     const left = (await q(`select (select count(*) from farms where farm_name like 'QA-CB%') + (select count(*) from shops where shop_name like 'QA-CB%')

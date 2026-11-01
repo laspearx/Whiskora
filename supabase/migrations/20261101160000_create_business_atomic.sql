@@ -7,7 +7,9 @@
 --     one transaction. Any error → nothing is written.
 --   * Owner = auth.uid() only. user_id / owner_id / role / approval or publish state are never read from the client:
 --     p_fields has an explicit allow-list per type and any other key is refused (22023).
---   * Images: only partner-photos objects that the caller uploaded under `<farms|shops|services>/<uid>/…`.
+--   * Images: only partner-photos objects that the caller uploaded under `<farms|shops|services>/<uid>/…`, given as
+--     the object path or as a URL on this environment's own Storage origin (platform_settings); stored as the
+--     canonical URL built from that setting.
 --   * Idempotency: (caller, p_request_key) is claimed in the same transaction. The same key + same data returns the
 --     first result (replayed = true); the same key + other data is refused. Another user's key never matches.
 --     Creating several businesses with different keys is allowed.
@@ -58,19 +60,50 @@ begin
   return (v #>> '{}')::double precision;
 end $$;
 
--- image URL → must be a partner-photos object the caller uploaded under <folder>/<uid>/ (never someone else's file)
+-- ── per-environment settings (no API access). The migration creates the table only; the value is set per
+-- environment by supabase/settings/storage_public_origin.sql (see that file), never copied between environments.
+create table if not exists public.platform_settings (
+  key text primary key check (key in ('storage_public_origin')),
+  value text not null,
+  updated_at timestamptz not null default now(),
+  -- the project's own Storage origin: https://<20-char project ref>.supabase.co (no path, no trailing slash)
+  constraint platform_settings_storage_origin check (key <> 'storage_public_origin' or value ~ '^https://[a-z0-9]{20}\.supabase\.co$')
+);
+alter table public.platform_settings enable row level security;
+revoke all on public.platform_settings from public, anon, authenticated;
+grant select on public.platform_settings to service_role;
+
+-- photo → must be a partner-photos object the caller uploaded under <folder>/<uid>/ (never someone else's file).
+-- Accepts the object path (`shops/<uid>/x.jpg`) or a public URL whose origin is EXACTLY this environment's
+-- storage_public_origin; any other host (another site, another Supabase project) is refused. Returns the canonical
+-- URL built here from the setting, so the stored value never carries a client-chosen host. No setting → refused.
 create or replace function public.business_field_image(p_fields jsonb, p_key text, p_folder text, p_uid uuid)
 returns text language plpgsql stable security definer set search_path = public as $$
-declare t text := public.business_field_text(p_fields, p_key, 500); obj text;
+declare
+  t text := public.business_field_text(p_fields, p_key, 500);
+  v_origin text := (select value from public.platform_settings where key = 'storage_public_origin');
+  v_prefix text;
+  obj text;
 begin
   if t is null then return null; end if;
-  obj := substring(t from '^https://[A-Za-z0-9.-]+/storage/v1/object/public/partner-photos/(.+)$');
-  if obj is null or obj !~ ('^' || p_folder || '/' || p_uid::text || '/[A-Za-z0-9._-]{1,120}$')
+  if v_origin is null then
+    raise exception 'photos cannot be saved yet (storage origin not configured)' using errcode = '22023';
+  end if;
+  v_prefix := v_origin || '/storage/v1/object/public/partner-photos/';
+  if t like 'https://%' or t like 'http://%' or t like '//%' then
+    if left(t, length(v_prefix)) <> v_prefix then
+      raise exception 'field % must be a photo you uploaded for this form', p_key using errcode = '22023';
+    end if;
+    obj := substr(t, length(v_prefix) + 1);
+  else
+    obj := t;
+  end if;
+  if obj !~ ('^' || p_folder || '/' || p_uid::text || '/[A-Za-z0-9._-]{1,120}$')
      or not exists (select 1 from storage.objects o where o.bucket_id = 'partner-photos' and o.name = obj
                      and o.owner_id = p_uid::text) then
     raise exception 'field % must be a photo you uploaded for this form', p_key using errcode = '22023';
   end if;
-  return t;
+  return v_prefix || obj;
 end $$;
 
 revoke all on function public.business_field_text(jsonb, text, int) from public, anon, authenticated;
