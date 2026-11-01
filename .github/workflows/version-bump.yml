@@ -19,7 +19,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # docs / tests only (web/scripts/build-scope.sh = "none") → no bump, so no production build either
+      - name: Decide whether this push needs a release
+        id: scope
+        run: |
+          SCOPE=$(bash web/scripts/build-scope.sh "${{ github.event.before }}" "${{ github.sha }}")
+          echo "scope=$SCOPE" >> "$GITHUB_OUTPUT"
+          echo "Change scope: $SCOPE (${{ github.event.before }}..${{ github.sha }})"
+
       - name: Determine bump type from commit messages
+        if: steps.scope.outputs.scope != 'none'
         id: bump_type
         run: |
           # ดึง commits ตั้งแต่ tag ล่าสุด (ถ้าไม่มี tag ใช้ 20 commits ล่าสุด)
@@ -46,6 +55,7 @@ jobs:
           echo "Bump type: $BUMP"
 
       - name: Calculate new version
+        if: steps.scope.outputs.scope != 'none'
         id: new_ver
         run: |
           CURRENT=$(node -p "require('./web/package.json').version")
@@ -63,6 +73,7 @@ jobs:
           echo "New version: $NEW ($BUMP)"
 
       - name: Update web/package.json
+        if: steps.scope.outputs.scope != 'none'
         run: |
           V="${{ steps.new_ver.outputs.version }}"
           node -e "
@@ -73,11 +84,13 @@ jobs:
           "
 
       - name: Update web/lib/version.ts
+        if: steps.scope.outputs.scope != 'none'
         run: |
           V="${{ steps.new_ver.outputs.version }}"
           echo "export const APP_VERSION = \"$V\";" > web/lib/version.ts
 
       - name: Commit and tag
+        if: steps.scope.outputs.scope != 'none'
         run: |
           V="${{ steps.new_ver.outputs.version }}"
           BUMP="${{ steps.new_ver.outputs.bump }}"
