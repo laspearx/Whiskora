@@ -30,6 +30,18 @@ Snapshot at end of day. No secrets, tokens or personal data in this file; counts
 | Owner manual login | LINE (owner's own admin account, 2026-10-30): login, profile data intact, save + restore, own pet health — **ok**. Email and Google: **not tested** |
 | Email-confirmation signup | not testable: Confirm email is OFF (`mailer_autoconfirm: true`); policy unchanged by decision |
 
+## 2026-11-01 — v1.12.1 (PR #25 build scope) / v1.12.2 (PR #26 icons) / PR #24 docs (UTC)
+| Step | Result |
+| --- | --- |
+| PR #25 merge `709d8e6` 02:20 | Vercel Production: **Canceled by Ignored Build Step** (merge commit skipped); workflow scope `app` → bot `766517e` **v1.12.1** → Production build 02:21 |
+| PR #26 merge `17d6dd8` 02:35 | merge commit skipped; bot `2296a04` **v1.12.2** → Production build 02:36 (`whiskora-kjcqzfv39`). `web/public` 99 MB → 24 MB (62 icons → 512 px PNG, same names) |
+| PR #24 merge `8ff37ff` 04:23 (docs only, pinned head `be34703`, merged without pulling main in) | merge tree vs main = 4 docs files only; workflow scope `none` → **no bump**; Vercel **Canceled by Ignored Build Step**; no new Production deployment |
+| Live after | `www.whiskora.pet` footer **V1.12.2** = `2296a04` |
+
+Limits: a branch that merges main in (e.g. `c0fcca3` on #26) gets a Preview build even for docs-only work, because the range
+since its previous deployment includes main's app changes — not changed in this round. Vercel Usage / Deployment Storage
+not re-read (numbers not available here) and old deployments are still kept, so **no storage saving is claimed yet**.
+
 ## 2026-11-01 — PR #22 / #23 rollout: workspace members via RPC + invitations (v1.11.0 → v1.12.0; UTC, ICT = UTC+7)
 | Step | Result |
 | --- | --- |

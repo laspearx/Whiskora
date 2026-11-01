@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-11-01 (v1.12.0 live; members via RPC + invitations on production — migration `20261101011545`, see `docs/WORKSPACE_MEMBERS_DESIGN.md` / `docs/STATUS.md`)
+**Last updated:** 2026-11-01 (v1.12.2 live — `2296a04`; members via RPC + invitations on production since v1.12.0, migration `20261101011545`; see `docs/WORKSPACE_MEMBERS_DESIGN.md` / `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -129,9 +129,12 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
 - Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
-- **Builds / versions** (PR #25, draft — not on main yet): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message.
+- **Builds / versions** (PR #25, live since v1.12.1): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message. Limit: a docs branch that merges main in can still get a Preview build (range includes main's app changes) — keep docs branches off main merges where possible.
 
 ## Known gaps / not-yet-built (candidates for future planning)
+
+- Bug (open, separate): `/placeholder-pet.jpg` is used as the no-photo fallback in `app/pets/[id]/page.tsx` and `app/p/[id]/page.tsx` but the file does not exist in `web/public` → broken image for pets without a photo.
+- Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
 
@@ -161,6 +164,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
+- v1.12.2 (PR #26): `web/public` icons resized to 512 px PNG (99 MB → 24 MB), same file names.
+- v1.12.1 (PR #25): build scope — docs / tests-only pushes get no version bump and no Vercel build; Production builds only the bot bump commit. Verified on PR #24 merge `8ff37ff` (scope `none`, build skipped).
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
 
 **2026-10-31**
