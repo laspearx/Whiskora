@@ -129,9 +129,12 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
 - Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
-- **Builds / versions** (PR #25, draft — not on main yet): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message.
+- **Builds / versions** (PR #25, live since v1.12.1): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message. Limit: a docs branch that merges main in can still get a Preview build (range includes main's app changes) — keep docs branches off main merges where possible. Also observed (cause not confirmed): the first push of a fresh docs-only branch got a Preview build (2026-11-01, see `docs/STATUS.md`).
 
 ## Known gaps / not-yet-built (candidates for future planning)
+
+- Bug (open, separate): `/placeholder-pet.jpg` is used as the no-photo fallback in `app/pets/[id]/page.tsx` and `app/p/[id]/page.tsx` but the file does not exist in `web/public` → broken image for pets without a photo.
+- Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
 - Partner create **live since v1.13.0**: `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; API direct INSERT on farms / shops / services / workspaces closed; photos only from this environment's Storage origin (`platform_settings`). Production happy path proven on staging only. Open: manager profile edits save 0 rows; profile-edit rights by role approved, PR next (`docs/PARTNER_CREATE_BUSINESS.md` §6); `services.is_published` belongs to review / publish. 2 existing rows have an empty photo URL (`shops.image_url`, `workspaces.avatar_url`) — kept as is.
@@ -166,6 +169,8 @@ Newest first. Keep entries short — one line per shipped item, grouped by date.
 **2026-11-01**
 - v1.13.0 (PR #28) + migrations `20261101063842 create_business_atomic` (sha256 `6b8c4c78…fb70`) and, after the new app was live, `20261101064204 business_insert_via_rpc_only` (`032b7c91…ec7`); `platform_settings.storage_public_origin` set from the production connection. Register pages create entity + workspace + owner row in one transaction (idempotent); API cannot INSERT businesses / workspaces directly.
 - v1.12.3 (PR #29) + migration `20261101060149 verification_guard` (sha256 `bc8da387…5503`): no self-verification; admin page reviews through `admin_review_farm_verification`.
+- v1.12.2 (PR #26): `web/public` icons resized to 512 px PNG (99 MB → 24 MB), same file names.
+- v1.12.1 (PR #25): build scope — docs / tests-only pushes get no version bump and no Vercel build; Production builds only the bot bump commit. Verified on PR #24 merge `8ff37ff` (scope `none`, build skipped).
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.
 
 **2026-10-31**
