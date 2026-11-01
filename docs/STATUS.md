@@ -79,7 +79,22 @@ Same trigger `trg_sync_pet_owner_on_transfer_accept` / same `respond_pet_transfe
 | `transfer_access_reset_precheck.sql` | staging + **production (read-only, 07:38 UTC)**: `before`, all ok, no WARN (production: 0 pending transfers, 0 co-owners, 0 grants, 0 per-pet settings, 0 accepted transfers, 0 farm viewers, 0 weight rows by others) | staging `after`, all ok |
 | Staging-only revert → re-apply | function md5 after revert = production | ok |
 
-## 2026-10-31 — Public grants clean-up (branch `fix/public-grants-cleanup`; STAGING ONLY, needs review before production)
+## 2026-10-31 — PR #21 rollout (v1.10.3): public grants clean-up on production (15:16:51 UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `9b9d2a74042c80468c236304f030f9620d018bb9`; migration / precheck / checks sha256 = the staging 17 / 17 set; no `web/` change |
+| Precheck 15:1x (read-only) | state before; 162 TRUNCATE / TRIGGER / REFERENCES grants; **CRUD 219 / `523b829307c4f073f81f61460a2d4d09`, columns `fa6175ad4a3c907d6fc343db0e62bba1`**; 13 / 13 named functions exist; anon public-page functions 4 / 4 |
+| Merge | `5b9ca4e` → bot `0dd85af` **v1.10.3**; Vercel Production v1.10.3: bundle production ref 1, staging ref 0 |
+| Migration | **`20261031151651` `public_grants_cleanup`** 15:16:51, one transaction; stored statement sha256 `4502613a9b17df7bf30076804e6aa17a98c8e365c9b1a9f599b2eeb184747997` |
+| Postcheck catalog | TRUNCATE / TRIGGER / REFERENCES grants (incl. PUBLIC) **0**; **CRUD + column hashes identical to before**; table / sequence / function ACL inventory **identical to staging** (105 lines); postgres default ACLs identical to staging (global: new functions not executable by PUBLIC); triggers checked from catalog — sign-up path proven on staging (no production account created) |
+| HTTP probes 15:17:45–46 | anon: public pet 175 row + `get_pet_health` / `get_pet_pedigree` / `get_my_pet_access` 200; `get_my_pending_transfers`, `resolve_pet_tags`, `admin_get_stats` 401 (42501). QA user: profile, pending transfers, own health, pedigree fields, own pet 200; `resolve_pet_tags` 403; `admin_get_stats` 400 (P0001). QA admin (role admin temporarily, restored to user): `admin_get_stats`, `admin_get_users`, `admin_get_action_center` 200 |
+| Web (QA account) | bundle v1.10.3; edit / restore pet 175, pages, `/p/175` + tree, farm-hub, farm page: ok, 0 Supabase errors |
+| After | QA admin role user, admins 1, QA sessions 0 (global logout) |
+| Logs 15:16–15:18 UTC (latest at check time) | 4xx = the 5 intended probe refusals (UA `node`); no real-user error |
+| Limits | no TRUNCATE / default-privilege object tests on production (staging only). **`supabase_admin` default privileges still grant ALL / EXECUTE to anon + authenticated in public** for objects created by `supabase_admin` (e.g. some dashboard actions) — postgres cannot change them; platform request |
+| Rule from now on | every new migration sets ACL + RLS explicitly for each object it creates (revoke from anon / authenticated / PUBLIC, grant only what the app path needs, RLS + policies on tables, EXECUTE per function) — do not rely on default privileges |
+
+## 2026-10-31 — Public grants clean-up (PR #21; staging results — on production since v1.10.3)
 | Item | Result |
 | --- | --- |
 | Inventory (read-only, production = staging) | all 31 public tables have RLS, no PUBLIC table grants; anon + authenticated hold TRUNCATE / TRIGGER / REFERENCES on 27 tables (162 grants); 22 identity sequences + 1 serial (`farm_verifications_id_seq`); functions executable by anon include admin RPCs (they check admin inside), `get_farm_dashboard_summary`, `get_my_pending_transfers`, `resolve_pet_tags` (callable with any viewer id → reveals relations) and trigger functions; default privileges of `postgres` give ALL to anon / authenticated and EXECUTE to PUBLIC |

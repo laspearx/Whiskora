@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.10.2 live; partner storage scoping `20261031141649` — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.10.3 live; public grants clean-up `20261031151651` — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -109,6 +109,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Architecture conventions (read before touching related code)
 
+- **Grants (since v1.10.3):** every new migration sets ACL + RLS explicitly for what it creates — revoke from `anon`, `authenticated`, `PUBLIC`, grant only what the app path needs, RLS + policies on tables, EXECUTE per function (new functions are no longer executable by PUBLIC / anon by default). Never TRUNCATE / TRIGGER / REFERENCES for API roles. `supabase_admin`'s default privileges still grant ALL — do not rely on defaults.
+
 - **Locale shim**: every route (at least under `farm-dashboard/[id]/...`) needs a matching re-export shim at `[locale]/farm-dashboard/[id]/...` or it 404s under the `/th/`, `/en/` prefixes.
 - **`pets.weight` is retired.** `pet_weights` is the only place weight is ever read or written. Grep for any stray write to `pets.weight` before shipping weight-related changes.
 - **App background color** is `#fffafc`. `#FDF6F8` is a stray near-duplicate that causes visible seams — as of 2026-07-24, still present in 13 files including two high-traffic public pages (`farm/[id]`, `p/[id]`). Worth a cleanup pass.
@@ -156,6 +158,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- v1.10.3 (PR #21) + migration `20261031151651`: public grants clean-up — no TRUNCATE / TRIGGER / REFERENCES for API roles, per-function EXECUTE (`resolve_pet_tags` not callable directly; admin / signed-in RPCs not for anon), reduced default privileges; CRUD + column grants unchanged.
 - v1.10.2 (PR #20) + migration `20261031141649`: farm / shop / service asset buckets writable only in the folder of a business the caller owns or manages; register-page photo path (`farms|shops|services/<uid>/…`) works again.
 - v1.10.1 (PR #19) + migration `20261031135523`: workspace ownership guard — type / entity / owner immutable for the API, farm / shop / service workspaces only for the entity owner, unique (type, entity_id).
 - v1.10.0 (PR #18) + migration `20261031125922` + function v9 on production: send log keyed by user + endpoint hash, kept on unsubscribe, 90-day retention; cron job 1 paused for the swap and re-enabled 13:01:52 UTC.

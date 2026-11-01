@@ -7,7 +7,7 @@ do $$ begin
   end if;
 end $$;
 -- workspaces created by the checks (never the seeded ones)
-delete from public.workspaces where name like 'QA-WSG %';
+delete from public.workspaces where name like 'QA-WSG %' or name like 'QA-WSM %';   -- also the members checks' shop workspace
 -- stranger's personal workspace back to personal (a "before" run may have repointed it)
 update public.workspaces set type = 'personal', entity_id = null
  where owner_id = 'a0000000-0000-4000-8000-000000000006' and (type <> 'personal' or entity_id is not null)
