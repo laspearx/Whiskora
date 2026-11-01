@@ -42,6 +42,10 @@ Limits: a branch that merges main in (e.g. `c0fcca3` on #26) gets a Preview buil
 since its previous deployment includes main's app changes — not changed in this round. Vercel Usage / Deployment Storage
 not re-read (numbers not available here) and old deployments are still kept, so **no storage saving is claimed yet**.
 
+Observed, cause not confirmed: the first push of the docs-only branch `docs/release-v1.12.1-v1.12.2` (`35e74e9`, branched
+from main `8ff37ff`, 2 docs files changed) **got a Preview build** (`whiskora-oqvfvh2lo`, 04:26), although the local
+classifier returns `none` for that range. Vercel build log not read (no access); CI unchanged.
+
 ## 2026-11-01 — PR #22 / #23 rollout: workspace members via RPC + invitations (v1.11.0 → v1.12.0; UTC, ICT = UTC+7)
 | Step | Result |
 | --- | --- |
