@@ -2,6 +2,41 @@
 
 Snapshot at end of day. No secrets, tokens or personal data in this file; counts are aggregates.
 
+## 2026-11-01 — PR #28 rollout: create a business atomically (v1.13.0; UTC)
+| Step | Result |
+| --- | --- |
+| Origin check (owner, read-only) | 13 stored business photo URLs = `https://vhudldcizmbpujedojei.supabase.co` only; 2 empty strings (`shops.image_url` 1, `workspaces.avatar_url` 1) — **kept as is** by decision |
+| Pin | head `a629bbf419a99b2f1e42ef4b7512d3463671a18e` on main `3b291a8` (v1.12.3, #29); `web/` = tested Preview `9fdbda7`; merge with main clean; sha256 step 1 `6b8c4c785f83f260ccf561975fc14a178271e1a5e932c6436ef981a77721fb70`, step 2 `032b7c9195f25d8e08c1f3b084ce239bd880acb45da6d5257f5611d937788ec7`, setting SQL `d6d1e0b9…bb7`, setter `ac0d6754…414` |
+| Precheck (read-only) | `before`; farms / shops / services 14 / 2 / 1, business workspaces 17, owner rows 10, entities without workspace 0, forged owners 0, guard + member RPC present. The pinned precheck file failed in `before` (references `platform_settings`, not created yet) → ran a copy without that one column; file fixed afterwards |
+| **Step 1** 06:38:42 | `20261101063842 create_business_atomic` — one transaction, `lock_timeout` 5 s, sha + state check, `schema_migrations` row in the same transaction |
+| Origin | `set_storage_origin.cjs` from the production connection: dry-run, then set `https://vhudldcizmbpujedojei.supabase.co` (= app's Supabase URL) |
+| Postcheck step 1 | `step1`; RPC authenticated-only + definer, helpers not API-callable; `business_create_requests` / `platform_settings` RLS on, no API grants; stored sha = file sha; data md5 = baseline |
+| QA probes 06:39 (UA `whiskora-qa-probe`, all refused before any write) | anon 401; forged `user_id` / `is_published` 22023; photo on another site / on the staging origin / own origin but never uploaded 22023; missing name 22023; claims / settings tables 403; `/th/partner/register-shop` 200; global logout 204; claims 0 |
+| Merge | 06:39:38 pinned → `3872572` (Ignored Build Step); bot `0f8ba33` **v1.13.0** (version files only) → Production `whiskora-qpz0wxhwn` |
+| App live check | footer 1.13.0; register farm / shop / service bundles call `create_business`, 0 direct entity inserts, production ref only |
+| **Step 2** 06:42:04 | `20261101064204 business_insert_via_rpc_only` (state check: RPC present, INSERT still open, origin = production) |
+| Postcheck step 2 | `step2`, API INSERT open on: none; QA direct INSERT shops / farms / services / workspaces 403, anon 401; data md5 = baseline, claims 0, QA rows 0 |
+| Logs 06:35–06:50 | edge = the QA probes only; postgres errors = the intended refusals + one `platform_settings does not exist` (06:38:12, the failed precheck); PostgREST "Thread killed by timeout manager" ×2 at 06:40:18 with no matching edge request (also seen 06:03:18; not attributed) |
+
+Not proven on production: a full successful create (no production business created) — proven on staging (API 75 / 75, E2E 4 / 4).
+Recovery: fix forward; `supabase/emergency/business_insert_old_app_compat_DECISION_REQUIRED.sql` only on a separate owner decision.
+
+## 2026-11-01 — PR #29 rollout: farm verification guard (v1.12.3; UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `7c8c2855de7350a1820f331537c7ca9aa97c0b62`, base = main `8ff37ff`; tested Preview `ffa0a6b` (later commit = docs + precheck file only); migration sha256 `bc8da387bda3d95dcb4a2f76357eecf0c232237e7e86de4add9fa385168d5503` |
+| Precheck 06:00 (read-only) | `before`; farms 14, verified 0, pending 0, requests 0, audit rows 0; verified_without_approved_request / verified_without_admin_audit / request_user_not_farm_owner / reviewed_by_non_admin all **0** → no stop; `admin_review_farm_verification` identical to staging (definition md5 equal) |
+| **Migration** 06:01:49 | `20261101060149 verification_guard` — one transaction, `lock_timeout` 5 s, sha check, `schema_migrations` row in the same transaction; stored statement sha256 = file sha256 |
+| Postcheck | `after`; 2 triggers BEFORE INSERT OR UPDATE (invoker, `search_path=public`); farms verification fields md5 + row md5 unchanged from baseline; requests 0, audit 0 |
+| QA HTTP 06:02 (UA `whiskora-qa-probe`, no real farm touched) | anon review RPC 401; QA user (role user) review RPC 400 "Access denied"; anon request insert 401; user request for an unowned farm / already approved 403 `42501`; public farm read 200; global logout 204 |
+| Merge | 06:02:57 pinned → `adbe4da` (Ignored Build Step); bot `3b291a8` **v1.12.3** (version files only) → Production `whiskora-fijuhl8ik` |
+| Smoke | `www.whiskora.pet` shows 1.12.3; `/admin/verifications` bundle calls `admin_review_farm_verification`, no direct farms update left; bundle production ref only; `/th`, `/th/farm-hub`, `/th/login` 200 |
+| Data after deploy 06:05 | identical to baseline (farms 14, md5s equal, requests 0, audit 0) |
+| Logs 05:55–06:06 | edge = the 8 probe requests only; postgres errors = the 4 intended refusals; PostgREST schema reload after the migration; one PostgREST "Thread killed by timeout manager" 06:03:18 with no matching edge request (not attributed) |
+
+Not proven on production: admin approve / reject happy path (no QA farm; no production farm or request created) — proven on
+staging (API 30 / 30, E2E 4 / 4). Recovery: fix forward only — hide the broken button / entry, never drop the guard.
+
 ## Live
 | | |
 | --- | --- |

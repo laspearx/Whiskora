@@ -31,9 +31,27 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `staging_only/…_down_STAGING_ONLY.sql` | exact pre-migration state for staging rollback tests — re-opens the holes, **never on production** |
 | `../emergency/reservation_transfer_freeze.sql` / `…_unfreeze.sql` | production recovery: stop new reservation/transfer writes, keep reads + privacy, then fix forward |
 
+## Farm verification guard (`20261101180000`; staging only)
+| File | Use |
+|---|---|
+| `verification_guard_precheck.sql` | read-only: state, verified farms without an approved request / admin audit, pending without request, request user ≠ farm owner, reviewer not admin, review RPC grants |
+| `verification_guard_checks.cjs` | owner cannot set the result on farms or requests (INSERT in a rolled-back transaction), stranger cannot submit for another farm, verify-page path, admin RPC reject → resubmit → approve with audit rows, non-admins refused; synthetic `QA-VG farm` removed after |
+| `verification_fixture_staging.sql` + `../../web/e2e/verification.spec.ts` | admin approves / rejects on `/admin/verifications` through the RPC (desktop + mobile) |
+
 ## Workspace members via RPC + invitations (`20261101150000`; production `20261101011545` since 2026-11-01)
 | File | Use |
 |---|---|
 | `workspace_members_precheck.sql` | read-only gate before / after (guard, unique, forged owners, member counts, privileges, RPCs) |
 | `workspace_members_fixture_staging.sql` | farm 9001 = owner 01, manager 02, staff 03, viewer 04; shop 990101 workspace without member rows; clears invitations |
 | `workspace_members_checks.cjs` | every permission cell, invitations, remove / leave, direct writes refused, concurrency, business powers unchanged (`--compat-only` for the old-app calls) |
+
+## Create a business atomically (`20261101160000` + `20261101170000`; staging only — `docs/PARTNER_CREATE_BUSINESS.md`)
+| File | Use |
+|---|---|
+| `create_business_precheck.sql` | read-only gate: state `before` / `step1` / `step2`, counts, businesses without workspace, forged owners, RPC / claims-table privileges, fault triggers absent |
+| `create_business_checks.cjs` | owner = caller, field allow-list, photos, idempotency, concurrency, fault injection at every step (staging-only triggers, dropped after), installed rules on the new business, direct INSERT (step 2); removes every `QA-CB…` business |
+| `partner_photos_orphans.sql` | read-only count of register photos no business uses (deletes nothing) |
+| `staging_only/apply_migration_STAGING_ONLY.cjs` / `create_business_down_STAGING_ONLY.sql` | sha-checked single-transaction apply; rollback test back to `before` — **never on production** |
+| `../../web/e2e/register-business.spec.ts` | Preview: lost response → retry gives one shop; server refusal saves nothing |
+| `business_insert_compat_check.cjs` | the decision-only old-app grants (`../emergency/business_insert_old_app_compat_DECISION_REQUIRED.sql`) in one rolled-back transaction |
+| `../settings/set_storage_origin.cjs` | sets `platform_settings.storage_public_origin` from the connection's own project ref (`--dry-run` first) |

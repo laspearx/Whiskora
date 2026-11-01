@@ -106,19 +106,9 @@ export default function AdminVerificationsPage() {
   const handleApprove = async (v: Verification) => {
     setProcessing(v.id);
     try {
-      const now = new Date().toISOString();
-      const { error: e1 } = await supabase.from('farm_verifications').update({
-        status: 'approved',
-        reviewed_at: now,
-        admin_note: null,
-      }).eq('id', v.id);
-      if (e1) throw e1;
-
-      const { error: e2 } = await supabase.from('farms').update({
-        is_verified: true,
-        verification_status: 'verified',
-      }).eq('id', v.farm_id);
-      if (e2) throw e2;
+      // admin check, request + farm update and audit log happen together in the database
+      const { error } = await supabase.rpc('admin_review_farm_verification', { p_verification_id: v.id, p_action: 'approve' });
+      if (error) throw error;
 
       await fetchVerifications();
     } catch (err: any) {
@@ -133,19 +123,8 @@ export default function AdminVerificationsPage() {
     if (!note.trim()) { alert('กรุณาระบุเหตุผลในการปฏิเสธ'); return; }
     setProcessing(v.id);
     try {
-      const now = new Date().toISOString();
-      const { error: e1 } = await supabase.from('farm_verifications').update({
-        status: 'rejected',
-        reviewed_at: now,
-        admin_note: note.trim(),
-      }).eq('id', v.id);
-      if (e1) throw e1;
-
-      const { error: e2 } = await supabase.from('farms').update({
-        is_verified: false,
-        verification_status: 'rejected',
-      }).eq('id', v.farm_id);
-      if (e2) throw e2;
+      const { error } = await supabase.rpc('admin_review_farm_verification', { p_verification_id: v.id, p_action: 'reject', p_note: note.trim() });
+      if (error) throw error;
 
       await fetchVerifications();
     } catch (err: any) {

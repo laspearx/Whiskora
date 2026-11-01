@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-11-01 (v1.12.2 live — `2296a04`; members via RPC + invitations on production since v1.12.0, migration `20261101011545`; see `docs/WORKSPACE_MEMBERS_DESIGN.md` / `docs/STATUS.md`)
+**Last updated:** 2026-11-01 (v1.13.0 live — `0f8ba33`; businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -137,6 +137,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
+- Partner create **live since v1.13.0**: `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; API direct INSERT on farms / shops / services / workspaces closed; photos only from this environment's Storage origin (`platform_settings`). Production happy path proven on staging only. Open: manager profile edits save 0 rows; profile-edit rights by role approved, PR next (`docs/PARTNER_CREATE_BUSINESS.md` §6); `services.is_published` belongs to review / publish. 2 existing rows have an empty photo URL (`shops.image_url`, `workspaces.avatar_url`) — kept as is.
+
+- Farm verification guard **live since v1.12.3 (2026-11-01, migration `20261101060149` = file `20261101180000`)**: API users cannot set `farms.is_verified` / `verified_at` / `verification_*` or approve their own `farm_verifications`; owner path null|rejected → pending (with a pending request); admin decides only via `admin_review_farm_verification` (audit log). Production happy path (approve / reject) proven on staging only. Recovery = fix forward, never drop the guard.
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
@@ -164,6 +167,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-01**
+- v1.13.0 (PR #28) + migrations `20261101063842 create_business_atomic` (sha256 `6b8c4c78…fb70`) and, after the new app was live, `20261101064204 business_insert_via_rpc_only` (`032b7c91…ec7`); `platform_settings.storage_public_origin` set from the production connection. Register pages create entity + workspace + owner row in one transaction (idempotent); API cannot INSERT businesses / workspaces directly.
+- v1.12.3 (PR #29) + migration `20261101060149 verification_guard` (sha256 `bc8da387…5503`): no self-verification; admin page reviews through `admin_review_farm_verification`.
 - v1.12.2 (PR #26): `web/public` icons resized to 512 px PNG (99 MB → 24 MB), same file names.
 - v1.12.1 (PR #25): build scope — docs / tests-only pushes get no version bump and no Vercel build; Production builds only the bot bump commit. Verified on PR #24 merge `8ff37ff` (scope `none`, build skipped).
 - v1.11.0 (PR #22) + migration `20261101011545 workspace_members_rpc` (file `20261101150000`, sha256 `28e284bd…df17`): invitations, 9 member RPCs, no direct member writes. v1.12.0 (PR #23): shared members panel, `/profile/invitations`, register pages record the owner via RPC.

@@ -149,7 +149,7 @@ export default function VerifyFarmPage() {
         if (url) farmPhotoUrls.push(url);
       }
 
-      await supabase.from('farm_verifications').insert({
+      const { error: reqErr } = await supabase.from('farm_verifications').insert({
         farm_id: parseInt(farmId),
         user_id: userId,
         id_card_front_url: frontUrl,
@@ -159,8 +159,12 @@ export default function VerifyFarmPage() {
         phone,
         status: 'pending',
       });
+      if (reqErr) throw reqErr;
 
-      await supabase.from('farms').update({ verification_status: 'pending' }).eq('id', farmId);
+      // only null / rejected → pending, and only with the pending request above (farms_verification_guard)
+      const { data: marked, error: farmErr } = await supabase.from('farms').update({ verification_status: 'pending' }).eq('id', farmId).select('id');
+      if (farmErr) throw farmErr;
+      if (!marked?.length) throw new Error('บันทึกสถานะไม่สำเร็จ');
 
       router.push(`/farm-dashboard/${farmId}?verified=pending`);
     } catch (err: any) {
