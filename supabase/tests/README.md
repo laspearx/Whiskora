@@ -31,7 +31,7 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `staging_only/…_down_STAGING_ONLY.sql` | exact pre-migration state for staging rollback tests — re-opens the holes, **never on production** |
 | `../emergency/reservation_transfer_freeze.sql` / `…_unfreeze.sql` | production recovery: stop new reservation/transfer writes, keep reads + privacy, then fix forward |
 
-## Workspace members via RPC + invitations (`20261101150000`, staging only)
+## Workspace members via RPC + invitations (`20261101150000`; production `20261101011545` since 2026-11-01)
 | File | Use |
 |---|---|
 | `workspace_members_precheck.sql` | read-only gate before / after (guard, unique, forged owners, member counts, privileges, RPCs) |
