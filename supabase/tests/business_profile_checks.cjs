@@ -46,13 +46,28 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
   const step2 = !(await q(`select has_table_privilege('authenticated', 'public.shops', 'UPDATE') p`))[0].p;
   console.log(`schema: update_business_profile ${(await q(`select to_regprocedure('public.update_business_profile(text,bigint,jsonb)') is not null a`))[0].a ? 'installed' : 'MISSING'}; direct UPDATE ${step2 ? 'closed (20261101200000)' : 'still open'}\n`);
   const objects = [];
-  const cleanup = async () => {
-    for (const [t, col] of [['farms', 'farm_name'], ['shops', 'shop_name'], ['services', 'service_name']]) {
-      const typ = t.slice(0, -1);
-      await q(`delete from workspaces where type = $1 and (entity_id between 990301 and 990313 or entity_id in (select id from ${t} where ${col} like 'QA-BP%'))`, [typ]);
-      await q(`delete from ${t} where ${col} like 'QA-BP%' or id between 990301 and 990313`);
+  // Only the rows this suite owns: fixed ids + the synthetic account each one must belong to. Anything else at those ids
+  // (another owner, a non-QA name, a workspace of someone else) → STOP: report and delete nothing.
+  const OWNED = [['farm', 990301, 'owner'], ['farm', 990311, 'newuser'], ['shop', 990302, 'owner'], ['shop', 990312, 'newuser'],
+                 ['service', 990303, 'owner'], ['service', 990313, 'newuser']];
+  const ownedCheck = async () => {
+    const bad = [];
+    for (const [type, id, who] of OWNED) {
+      const e = (await q(`select user_id, ${type}_name n from ${TBL[type]} where id = $1`, [id]))[0];
+      if (e && (e.user_id !== uid(who) || !String(e.n).startsWith('QA-BP'))) bad.push(`${type} ${id}: user ${String(e.user_id).slice(-2)}, name "${String(e.n).slice(0, 30)}"`);
+      for (const w of await q(`select owner_id, name from workspaces where type = $1 and entity_id = $2`, [type, id]))
+        if (w.owner_id !== uid(who) || !String(w.name).startsWith('QA-BP')) bad.push(`workspace ${type} ${id}: owner ${String(w.owner_id).slice(-2)}, name "${String(w.name).slice(0, 30)}"`);
     }
-    await q(`delete from business_create_requests where entity_id is null or not exists (select 1 from workspaces w where w.id = business_create_requests.workspace_id)`);
+    if (bad.length) throw new Error(`STOP: ids of this suite hold data that is not its fixture — nothing deleted: ${bad.join('; ')}`);
+  };
+  const cleanup = async () => {
+    await ownedCheck();
+    for (const [type, id] of OWNED) {
+      const ws = (await q(`delete from workspaces where type = $1 and entity_id = $2 returning id`, [type, id])).map((r) => r.id);   // members cascade
+      if (ws.length) await q(`delete from business_create_requests where workspace_id = any($1::uuid[])`, [ws]);
+      await q(`delete from business_create_requests where type = $1 and entity_id = $2`, [type, id]);
+      await q(`delete from ${TBL[type]} where id = $1`, [id]);
+    }
   };
   const row = async (type, id) => (await q(`select * from ${TBL[type]} where id = $1`, [id]))[0];
   const snap = async (type, id) => JSON.stringify(await row(type, id));
@@ -191,8 +206,8 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
     // (3 per run, tiny, in folders of deleted QA farms); remove them with the Storage API + service role if wanted
     const left = (await q(`select count(*)::int n from storage.objects where (bucket_id, name) in (select * from unnest($1::text[], $2::text[]))`, [objects.map((o) => o[1]), objects.map((o) => o[2])]))[0].n;
     console.log(`synthetic storage objects left: ${left}`);
-    await cleanup().catch((e) => console.log('cleanup error', e.message));
-    console.log(`cleanup: QA-BP rows left ${(await q(`select (select count(*) from farms where farm_name like 'QA-BP%') + (select count(*) from shops where shop_name like 'QA-BP%') + (select count(*) from services where service_name like 'QA-BP%') n`))[0].n}`);
+    await cleanup().catch((e) => { fail++; console.log('FAIL cleanup', e.message); });
+    console.log(`cleanup: rows of this suite left ${(await q(`select (select count(*) from farms where id in (990301, 990311)) + (select count(*) from shops where id in (990302, 990312)) + (select count(*) from services where id in (990303, 990313)) + (select count(*) from workspaces where (type, entity_id) in (('farm', 990301), ('farm', 990311), ('shop', 990302), ('shop', 990312), ('service', 990303), ('service', 990313))) n`))[0].n}`);
     await db.end();
   }
   console.log(`\n${pass} passed, ${fail} failed`); process.exitCode = fail ? 1 : 0;
