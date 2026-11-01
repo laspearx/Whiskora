@@ -22,11 +22,35 @@ async function stored(page: Page) {
   expect(r.status()).toBe(200);
   return (await r.json())[0] as { shop_name: string; bio: string; phone: string; cover_url: string | null };
 }
+// Synthetic cover files this spec uploads go to shop-assets/990201/cover_<13 digits>.jpg (the app's own naming).
+// Before and after the run, every such file that the shop does NOT currently use is deleted one by one, by exact name,
+// as the owner (shop-assets has an owner / manager DELETE policy). Any file that cannot be deleted fails the run.
+async function removeUnusedCovers(request: import('@playwright/test').APIRequestContext) {
+  const base = env.E2E_SUPABASE_URL!, key = env.E2E_SUPABASE_ANON_KEY!;
+  const t = await (await request.post(`${base}/auth/v1/token?grant_type=password`, { headers: { apikey: key },
+    data: { email: env.E2E_OWNER_EMAIL, password: env.E2E_OWNER_PASSWORD } })).json();
+  const h = { apikey: key, Authorization: `Bearer ${t.access_token}` };
+  const row = await (await request.get(`${base}/rest/v1/shops?select=image_url,cover_url&id=eq.${SHOP}`, { headers: { apikey: key } })).json();
+  const inUse = new Set([row[0]?.image_url, row[0]?.cover_url].filter(Boolean).map((u: string) => u.split('?')[0].split('/').pop()));
+  const listed = await (await request.post(`${base}/storage/v1/object/list/shop-assets`, { headers: h, data: { prefix: `${SHOP}/`, limit: 1000 } })).json();
+  const names = (listed as { name: string }[]).map(o => o.name).filter(n => /^cover_\d{13}\.jpg$/.test(n) && !inUse.has(n));
+  const failed: string[] = [];
+  for (const n of names) {
+    const r = await request.delete(`${base}/storage/v1/object/shop-assets`, { headers: h, data: { prefixes: [`${SHOP}/${n}`] } });
+    const b = await r.json().catch(() => null);
+    if (!r.ok() || !Array.isArray(b) || b.length !== 1) failed.push(`${n} (HTTP ${r.status()})`);
+  }
+  expect(failed, 'synthetic cover files that could not be deleted').toEqual([]);
+  return names.length;
+}
+
 const alertsOf = (page: Page) => { const a: string[] = []; page.on('dialog', d => { a.push(d.message()); d.accept(); }); return a; };
 
 test.describe('business profile by role (shop 990201)', () => {
   test.skip(!has('E2E_OWNER_EMAIL', 'E2E_OWNER_PASSWORD', 'E2E_MANAGER_EMAIL', 'E2E_MANAGER_PASSWORD', 'E2E_STAFF_EMAIL', 'E2E_STAFF_PASSWORD',
     'E2E_SUPABASE_URL', 'E2E_SUPABASE_ANON_KEY'), 'staging accounts / Supabase env not configured');
+  test.beforeAll(async ({ request }) => { await removeUnusedCovers(request); });
+  test.afterAll(async ({ request }) => { await removeUnusedCovers(request); });
 
   test('owner saves the profile; the page shows what the server stored', async ({ page }, info) => {
     const bio = `owner bio ${info.project.name} ${Date.now()}`;

@@ -1,7 +1,11 @@
 // Profile edit by role (20261101190000 update_business_profile; 20261101200000 UPDATE privileges) — real REST on
-// whiskora-staging with synthetic QA accounts. For each type a "QA-BP" business is created by owner 01 through
-// create_business, with members manager 02 / staff 03 / viewer 04 added by the fixture step below; a second business
-// of newuser 08 is the "someone else's business". Everything named QA-BP and its storage objects are removed at the end.
+// whiskora-staging with synthetic QA accounts. Fixed synthetic ids (re-created each run, removed at the end):
+//   owner 01: farm 990301 / shop 990302 / service 990303, members manager 02 / staff 03 / viewer 04
+//   newuser 08: farm 990311 / shop 990312 / service 990313 ("someone else's business")
+// Test photos use FIXED object names (upsert), so a run never adds new files. Each object is then deleted through the
+// Storage API as its uploader and the result is printed per object; farm-assets has no API DELETE policy, so its
+// 3 files stay (farm-assets/990301/avatar_qa.jpg, /cover_qa.jpg, farm-assets/990311/avatar_qa.jpg) and are overwritten
+// by the next run instead of piling up.
 // usage: NODE_PATH=<dir with pg> STAGING_ANON_KEY=<key> node supabase/tests/business_profile_checks.cjs
 const { Client } = require('pg'); const fs = require('fs'); const os = require('os'); const crypto = require('crypto');
 const url = fs.readFileSync(os.homedir() + '/.whiskora/staging_db_url', 'utf8').trim();
@@ -45,8 +49,8 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
   const cleanup = async () => {
     for (const [t, col] of [['farms', 'farm_name'], ['shops', 'shop_name'], ['services', 'service_name']]) {
       const typ = t.slice(0, -1);
-      await q(`delete from workspaces where type = $1 and entity_id in (select id from ${t} where ${col} like 'QA-BP%')`, [typ]);
-      await q(`delete from ${t} where ${col} like 'QA-BP%'`);
+      await q(`delete from workspaces where type = $1 and (entity_id between 990301 and 990313 or entity_id in (select id from ${t} where ${col} like 'QA-BP%'))`, [typ]);
+      await q(`delete from ${t} where ${col} like 'QA-BP%' or id between 990301 and 990313`);
     }
     await q(`delete from business_create_requests where entity_id is null or not exists (select 1 from workspaces w where w.id = business_create_requests.workspace_id)`);
   };
@@ -54,14 +58,23 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
   const snap = async (type, id) => JSON.stringify(await row(type, id));
   try {
     await cleanup();
+    const IDS = { farm: [990301, 990311], shop: [990302, 990312], service: [990303, 990313] };
+    const mk = async (type, id, owner, name) => {
+      const extra = type === 'farm' ? ['species', 'cat'] : type === 'shop' ? ['supported_species', 'dog'] : ['supported_species', 'dog'];
+      await q(`insert into ${TBL[type]} (id, user_id, ${type}_name, owner_name, phone, bio, province, lat, lng, ${extra[0]}${type === 'service' ? ', category' : ''})
+               values ($1, $2, $3, 'QA Synthetic', '0800000000', 'synthetic', 'กรุงเทพมหานคร', 13.75, 100.5, $4${type === 'service' ? ", 'grooming'" : ''})`, [id, uid(owner), name, extra[1]]);
+      return (await q(`insert into workspaces (type, name, owner_id, entity_id) values ($1, $2, $3, $4) returning id`, [type, name, uid(owner), id]))[0].id;
+    };
     const biz = {}, other = {};
     for (const type of ['farm', 'shop', 'service']) {
-      const r = await rpc('owner', 'create_business', { p_type: type, p_fields: base(type, `QA-BP ${type}`), p_request_key: crypto.randomUUID() });
-      biz[type] = { id: r.body?.[0]?.entity_id, ws: r.body?.[0]?.workspace_id };
-      for (const [who, role] of [['manager', 'manager'], ['staff', 'staff'], ['viewer', 'viewer']])
-        await q(`insert into workspace_members (workspace_id, user_id, role) values ($1, $2, $3)`, [biz[type].ws, uid(who), role]);
-      const o = await rpc('newuser', 'create_business', { p_type: type, p_fields: base(type, `QA-BP other ${type}`), p_request_key: crypto.randomUUID() });
-      other[type] = { id: o.body?.[0]?.entity_id };
+      const [mine, theirs] = IDS[type];
+      const ws = await mk(type, mine, 'owner', `QA-BP ${type}`);
+      for (const [who, role] of [['owner', 'owner'], ['manager', 'manager'], ['staff', 'staff'], ['viewer', 'viewer']])
+        await q(`insert into workspace_members (workspace_id, user_id, role) values ($1, $2, $3)`, [ws, uid(who), role]);
+      biz[type] = { id: mine, ws };
+      const ows = await mk(type, theirs, 'newuser', `QA-BP other ${type}`);
+      await q(`insert into workspace_members (workspace_id, user_id, role) values ($1, $2, 'owner')`, [ows, uid('newuser')]);
+      other[type] = { id: theirs };
     }
     ok('S0 synthetic businesses + members ready', Object.values(biz).every((b) => b.id && b.ws) && Object.values(other).every((b) => b.id));
 
@@ -78,6 +91,9 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
       { const before = await snap(type, id); const r = await edit('owner', type, id, { bio: 'only bio' }); const d = await row(type, id);
         const b = JSON.parse(before);
         ok(`O2 ${type}: partial update changes only the sent key`, r.status === 200 && d.bio === 'only bio' && d[nk] === b[nk] && d.phone === b.phone && d.lat === b.lat, { status: r.status }); }
+      { const r = await edit('owner', type, id, { lat: 0, lng: 0 }); const d = await row(type, id);
+        ok(`O5 ${type}: lat / lng 0 are stored and returned as 0 (not dropped)`, r.status === 200 && d.lat === 0 && d.lng === 0 && r.body.lat === 0 && r.body.lng === 0, { status: r.status, lat: r.body?.lat });
+        await edit('owner', type, id, { lat: 13.75, lng: 100.5 }); }
       for (const [n, f] of [['user_id', { user_id: uid('stranger') }], ['owner_id', { owner_id: uid('stranger') }], ['role', { role: 'owner' }], ['id', { id: 1 }],
         ['created_at', { created_at: '2020-01-01' }], ['updated_at', { updated_at: '2020-01-01' }], ['is_verified', { is_verified: true }], ['verified_at', { verified_at: '2020-01-01' }],
         ['verification_status', { verification_status: 'verified' }], ['verification_note', { verification_note: 'x' }], ['is_published', { is_published: true }],
@@ -113,25 +129,25 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
 
       // ── photos ──
       const asset = `${type}-assets`; const ts = Date.now();
-      const okUp = await upload('owner', asset, `${id}/avatar_${ts}.jpg`); objects.push(['owner', asset, `${id}/avatar_${ts}.jpg`]);
-      { const u = `${pub(asset, `${id}/avatar_${ts}.jpg`)}?t=${ts}`; const r = await edit('owner', type, id, { image_url: u });
+      const okUp = await upload('owner', asset, `${id}/avatar_qa.jpg`); objects.push(['owner', asset, `${id}/avatar_qa.jpg`]);
+      { const u = `${pub(asset, `${id}/avatar_qa.jpg`)}?t=${ts}`; const r = await edit('owner', type, id, { image_url: u });
         const d = await row(type, id); const ws = (await q(`select avatar_url from workspaces where id = $1`, [biz[type].ws]))[0].avatar_url;
         ok(`P1 ${type}: dashboard photo (${asset}/<id>/…?t=) saved as sent, workspace avatar follows`, okUp === 200 && r.status === 200 && d.image_url === u && r.body.image_url === u && ws === u, { up: okUp, status: r.status, code: r.code, msg: r.msg }); }
-      { const up = await upload('manager', asset, `${id}/cover_${ts}.jpg`); objects.push(['manager', asset, `${id}/cover_${ts}.jpg`]);
-        const u = `${pub(asset, `${id}/cover_${ts}.jpg`)}?t=${ts}`; const r = await edit('manager', type, id, { cover_url: u });
+      { const up = await upload('manager', asset, `${id}/cover_qa.jpg`); objects.push(['manager', asset, `${id}/cover_qa.jpg`]);
+        const u = `${pub(asset, `${id}/cover_qa.jpg`)}?t=${ts}`; const r = await edit('manager', type, id, { cover_url: u });
         ok(`P2 ${type}: manager uploads + sets the cover`, up === 200 && r.status === 200 && (await row(type, id)).cover_url === u, { up, status: r.status, msg: r.msg }); }
       { const up = await upload('staff', asset, `${id}/staff_${ts}.jpg`);
         ok(`P3 ${type}: staff cannot upload to the business folder (storage scoping kept)`, up >= 400, { up }); }
-      { const reg = `${type}s/${uid('owner')}/qa-bp-${ts}.jpg`; const up = await upload('owner', 'partner-photos', reg); objects.push(['owner', 'partner-photos', reg]);
+      { const reg = `${type}s/${uid('owner')}/qa-bp.jpg`; const up = await upload('owner', 'partner-photos', reg); objects.push(['owner', 'partner-photos', reg]);
         const r = await edit('owner', type, id, { cover_url: pub('partner-photos', reg) });
         ok(`P4 ${type}: register-page photo (partner-photos/${type}s/<uid>/…) accepted`, up === 200 && r.status === 200, { up, status: r.status, msg: r.msg }); }
-      { const otherUp = await upload('newuser', `${type}-assets`, `${other[type].id}/avatar_${ts}.jpg`); objects.push(['newuser', `${type}-assets`, `${other[type].id}/avatar_${ts}.jpg`]);
-        const reg = `${type}s/${uid('newuser')}/qa-bp-${ts}.jpg`; const up2 = await upload('newuser', 'partner-photos', reg); objects.push(['newuser', 'partner-photos', reg]);
-        const good = `${pub(asset, `${id}/avatar_${ts}.jpg`)}`;
-        for (const [n, u] of [['another business folder', pub(`${type}-assets`, `${other[type].id}/avatar_${ts}.jpg`)], ['someone else\'s register photo', pub('partner-photos', reg)],
+      { const otherUp = await upload('newuser', `${type}-assets`, `${other[type].id}/avatar_qa.jpg`); objects.push(['newuser', `${type}-assets`, `${other[type].id}/avatar_qa.jpg`]);
+        const reg = `${type}s/${uid('newuser')}/qa-bp.jpg`; const up2 = await upload('newuser', 'partner-photos', reg); objects.push(['newuser', 'partner-photos', reg]);
+        const good = `${pub(asset, `${id}/avatar_qa.jpg`)}`;
+        for (const [n, u] of [['another business folder', pub(`${type}-assets`, `${other[type].id}/avatar_qa.jpg`)], ['someone else\'s register photo', pub('partner-photos', reg)],
           ['another website, same path', good.replace(SB, 'https://evil.example')], ['another Supabase project', good.replace(SB, 'https://zzzzzzzzzzzzzzzzzzzz.supabase.co')],
           ['query other than ?t=', `${good}?x=1`], ['?t= not digits', `${good}?t=abc`], ['never uploaded', pub(asset, `${id}/never_${ts}.jpg`)],
-          ['other bucket', pub('pet-photos', `${id}/avatar_${ts}.jpg`)], ['wrong type bucket', pub(type === 'farm' ? 'shop-assets' : 'farm-assets', `${id}/avatar_${ts}.jpg`)]]) {
+          ['other bucket', pub('pet-photos', `${id}/avatar_qa.jpg`)], ['wrong type bucket', pub(type === 'farm' ? 'shop-assets' : 'farm-assets', `${id}/avatar_qa.jpg`)]]) {
           const before = await snap(type, id); const r = await edit('owner', type, id, { image_url: u });
           ok(`P5 ${type}: photo ${n} → refused, nothing saved`, r.status === 400 && r.code === '22023' && before === await snap(type, id), { status: r.status, code: r.code, up: [otherUp, up2] });
         } }
@@ -163,7 +179,14 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
       await q(`delete from farm_verifications where farm_id = $1`, [id]); }
   } catch (e) { fail++; console.log('FAIL exception', e.message); }
   finally {
-    for (const [who, bucket, path] of objects) await fetch(`${SB}/storage/v1/object/${bucket}/${path}`, { method: 'DELETE', headers: { apikey: KEY, Authorization: `Bearer ${await tok(who)}` } }).catch(() => {});
+    const seen = new Set();
+    for (const [who, bucket, path] of objects) {
+      if (seen.has(bucket + '/' + path)) continue; seen.add(bucket + '/' + path);
+      const r = await fetch(`${SB}/storage/v1/object/${bucket}`, { method: 'DELETE', headers: { apikey: KEY, Authorization: `Bearer ${await tok(who)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: [path] }) });
+      const b = await r.json().catch(() => null);
+      const n = Array.isArray(b) ? b.length : 0;
+      if (n !== 1) console.log(`storage: NOT deleted ${bucket}/${path} as ${who} (HTTP ${r.status}, ${Array.isArray(b) ? 'refused by policy, 0 removed' : JSON.stringify(b)})`);
+    }
     // farm-assets has no DELETE policy for the API and SQL deletes on storage are blocked: those synthetic files stay
     // (3 per run, tiny, in folders of deleted QA farms); remove them with the Storage API + service role if wanted
     const left = (await q(`select count(*)::int n from storage.objects where (bucket_id, name) in (select * from unnest($1::text[], $2::text[]))`, [objects.map((o) => o[1]), objects.map((o) => o[2])]))[0].n;

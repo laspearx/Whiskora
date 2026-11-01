@@ -8,6 +8,7 @@ import Link from "next/link";
 import PageLoader from "@/app/components/PageLoader";
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
+import { profileRowToForm } from '@/lib/businessProfileForm';
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",
@@ -67,18 +68,15 @@ export default function EditFarmPage() {
 
       if (!farmRes.data) { router.push("/partner"); return; }
       const data = farmRes.data;
-      setFarmName(data.farm_name || "");
-      setOwnerName(data.owner_name || "");
-      setPhone(data.phone || "");
-      setAddr({
-        house_no: data.house_no || "", room_no: data.room_no || "",
-        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
-        sub_district: data.sub_district || "", district: data.district || "",
-        province: data.province || "", postal_code: data.postal_code || "",
-      });
-      setBio(data.bio || "");
-      if (data.lat) setMapLat(data.lat);
-      if (data.lng) setMapLng(data.lng);
+      // every value from the stored row, including 0 / '' / null (lib/businessProfileForm.ts)
+      const f = profileRowToForm(data, 'farm_name');
+      setFarmName(f.name);
+      setOwnerName(f.owner_name);
+      setPhone(f.phone);
+      setAddr(f.addr);
+      setBio(f.bio);
+      setMapLat(f.lat);
+      setMapLng(f.lng);
 
       if (profileRes.data) setProfileData(profileRes.data);
       setLoading(false);
@@ -92,7 +90,7 @@ export default function EditFarmPage() {
       const L = (window as any).L;
       if (!L || !mapRef.current || mapInstanceRef.current) return;
       const lat = mapLat ?? 13.7563, lng = mapLng ?? 100.5018;
-      const map = L.map(mapRef.current).setView([lat, lng], mapLat ? 15 : 13);
+      const map = L.map(mapRef.current).setView([lat, lng], mapLat !== null ? 15 : 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       marker.on("dragend", (e: any) => {

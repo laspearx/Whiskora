@@ -12,8 +12,9 @@ marketplace, bookings, payment.
 | Manager fields | none (silent 0 rows) | bio, phone, logo / cover, species / supported_species / category |
 | Staff / viewer / others | none | none (42501) |
 | Never via the profile RPC | — | `user_id`, owner / role, `id`, timestamps, `is_verified`, `verified_at`, `verification_status`, `verification_note`, `is_published`, `facebook_link`, `line_id`, unknown keys (22023); owner-only key from a manager → 42501 |
-| Dashboard logo / cover | direct UPDATE, error ignored (shops / services sent a non-existent `updated_at` → never saved) | RPC; the page shows the value the server stored; refusal → error, picture unchanged |
-| Edit pages | success after any non-error response | success only after the RPC returns the stored profile; the form is refilled from it; managers see identity fields locked (shop / service) |
+| Dashboard logo / cover (farm / shop / service overview) | direct UPDATE, error ignored, picture replaced on screen anyway (shops / services sent a non-existent `updated_at` → never saved) | RPC; the picture is set from the value the RPC returns (stored row); refusal → error alert, picture unchanged |
+| Shop edit / service settings | success after any non-error response (manager: 0 rows, still "saved") | success only after the RPC returns the stored profile; the form is refilled from that row (`lib/businessProfileForm.ts`: 0 / '' / null replace old values), then `router.back()` — the overview loads the row again; managers see identity fields locked |
+| Farm edit (owner only) | error alert or `router.back()` + `router.refresh()` | same navigation; success only after the RPC returned the stored row; the overview reloads from the server (the form itself is not refilled before leaving) |
 | Farm UI | owner-only `/edit`, owner-only photo change | unchanged (owner-only). The RPC also allows a farm manager's content fields; opening farm UI to managers is a separate decision |
 | Direct API UPDATE | all columns (RLS: owner) | step 2: only `farms.verification_status` (verify page; #29 trigger rules) and `services.is_published` (existing publish button, owner via RLS) |
 | Workspace | name / avatar not kept in step after renames | renames / logo changes are mirrored to the business workspace |
@@ -45,11 +46,20 @@ SQL deletes on storage are blocked) and the E2E covers in `shop-assets/990201/`.
 5. Merge (pinned) → bot bump → Production build; confirm the edit pages / dashboards call `update_business_profile`.
 
 **Step 2 — limit direct UPDATE (only after the new app is live)**
-6. Apply `20261101200000`; postcheck → `step2`, `api_update_columns_if_limited` = `farms.verification_status,services.is_published`.
+6. Apply `20261101200000`; postcheck → `step2` and `step2_verdict = OK` (effective UPDATE rights of anon / authenticated
+   from table grants, column grants and PUBLIC = exactly authenticated `farms.verification_status` + `services.is_published`).
+   Any `STOP …` → stop and report; do not change other ACLs to make it pass.
 
-**Recovery** — fix forward. If a page breaks, hide that entry and fix it; do not re-grant broad UPDATE. If the app
-itself has to go back to v1.13.0 while step 2 is applied, the old pages' profile saves fail with an error (no silent
-change); the verify page and the publish button keep working. A wider re-grant only on a separate owner decision.
+**Recovery — fix forward.** If a page breaks after step 2, hide that entry and fix it in a new PR; do not re-grant
+UPDATE on farms / shops / services. Rolling the **app** back to v1.13.0 while step 2 is applied is not a clean fallback —
+what that version would do (read from its code):
+| v1.13.0 path | Result after step 2 |
+|---|---|
+| Farm edit, shop edit, service settings | UPDATE refused (42501) → error alert, nothing saved |
+| Farm / shop / service overview: change logo / cover | the old code ignores the error and puts the new picture on screen; **nothing is saved** and the old picture returns on reload (shops / services already behaved like this before; farms did save) — misleading |
+| Verify page (`verification_status` → pending), publish button (`is_published`) | keep working (column grants kept) |
+So an app rollback would need step 2 undone, and that only on a separate owner decision with the exact columns
+(never a broad UPDATE grant). The preferred path is to keep step 2 and fix the new app forward.
 
 Checksums (sha256):
 - `20261101190000_business_profile_rpc.sql` `c3fff819d85028617fa447f35173712dc99ebd744f052ea312a00948fe02bb8f`

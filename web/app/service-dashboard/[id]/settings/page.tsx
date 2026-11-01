@@ -9,6 +9,7 @@ import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import { SPECIES_LIST } from '@/lib/species';
 import { updateBusinessProfile } from '@/lib/updateBusinessProfile';
+import { profileRowToForm } from '@/lib/businessProfileForm';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -63,26 +64,25 @@ export default function ServiceSettingsPage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row from select('*') / the RPC, same shape as before
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row from select('*') / the RPC
   const applyRow = (data: any) => {
+    // every value from the stored row, including 0 / '' / null (lib/businessProfileForm.ts)
+    const f = profileRowToForm(data, 'service_name');
     setForm({
-      service_name: data.service_name || '',
-      owner_name: data.owner_name || '',
-      phone: data.phone || '',
-      category: data.category || '',
-      bio: data.bio || '',
+      service_name: f.name,
+      owner_name: f.owner_name,
+      phone: f.phone,
+      category: f.category,
+      bio: f.bio,
     });
-    setAddr({
-      house_no: data.house_no || "", room_no: data.room_no || "",
-      moo: data.moo || "", soi: data.soi || "", road: data.road || "",
-      sub_district: data.sub_district || "", district: data.district || "",
-      province: data.province || "", postal_code: data.postal_code || "",
-    });
-    if (data.lat) setMapLat(data.lat);
-    if (data.lng) setMapLng(data.lng);
-    const sp = data.supported_species;
-    if (Array.isArray(sp)) setSelectedSpecies(sp);
-    else if (typeof sp === 'string' && sp) setSelectedSpecies(sp.split(',').filter(Boolean));
+    setAddr(f.addr);
+    setMapLat(f.lat);
+    setMapLng(f.lng);
+    setSelectedSpecies(f.species);
+    // keep an open map in step with the stored pin
+    if (f.lat !== null && f.lng !== null && mapInstanceRef.current && markerRef.current) {
+      markerRef.current.setLatLng([f.lat, f.lng]); mapInstanceRef.current.setView([f.lat, f.lng]);
+    }
   };
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function ServiceSettingsPage() {
       const L = (window as any).L;
       if (!L || !mapRef.current || mapInstanceRef.current) return;
       const lat = mapLat ?? 13.7563, lng = mapLng ?? 100.5018;
-      const map = L.map(mapRef.current).setView([lat, lng], mapLat ? 15 : 13);
+      const map = L.map(mapRef.current).setView([lat, lng], mapLat !== null ? 15 : 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       marker.on('dragend', (e: any) => {

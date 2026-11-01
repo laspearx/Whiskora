@@ -34,7 +34,8 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 ## Business profile by role (`20261101190000` + `20261101200000`; staging only — `docs/BUSINESS_PROFILE_PERMISSIONS.md`)
 | File | Use |
 |---|---|
-| `business_profile_precheck.sql` | read-only: state `before` / `step1` / `step2`, counts, RPC grants, API UPDATE columns left |
+| `business_profile_precheck.sql` | read-only: state `before` / `step1` / `step2`, counts, RPC grants, **effective** UPDATE rights of anon / authenticated (table + column grants + PUBLIC) and `step2_verdict` OK / STOP |
+| `business_profile_form_unit.test.mts` | `node --test`: edit-form state from a stored row (0 / '' / null replace old values) |
 | `business_profile_checks.cjs` | every role × type, forbidden keys, photos (assets / register / legacy / tampered), direct UPDATE, publish button + verify path regression; removes `QA-BP…` businesses (farm-assets files stay) |
 | `business_profile_fixture_staging.sql` + `../../web/e2e/business-profile.spec.ts` | shop 990201 (owner 01 / manager 02 / staff 03): edit page by role, refusal, dashboard cover change + tampered URL |
 
