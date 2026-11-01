@@ -2,7 +2,7 @@
 
 Status 2026-11-01: **live on production since v1.13.0** (step 1 `20261101063842`, origin set, app, step 2 `20261101064204`; record in `docs/STATUS.md`). Staging: both steps.
 Follows `docs/PARTNER_SYSTEM_AUDIT.md` §4–5. Out of scope here: review / publish, marketplace, bookings,
-payment, CI, and any change to who may edit a business profile (proposal in §6).
+payment, CI, and any change to who may edit a business profile (§6, separate PR).
 
 ## 1. What changes
 | | Before | After |
