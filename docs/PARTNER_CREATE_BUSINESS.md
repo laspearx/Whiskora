@@ -85,6 +85,23 @@ Direction approved 2026-11-01 (owner / manager / staff-viewer as above; `is_publ
 to show the real result. Publish / approval rules belong to the review PR (audit PR 3).
 
 ## 7. Rollout (production — not done; needs the owner's go-ahead per step)
+Order decided 2026-11-01: **#29 (verification guard) first — live since v1.12.3 — then this PR.** Re-checked on staging
+with both installed: create_business 75 / 75, workspace guard 21 / 21, verification guard 30 / 30, compat grants
+(rolled back) still cannot set verification fields.
+
+**Waiting for the owner (not done by Claude; the read was refused by the tool, so no value is guessed):**
+- Read-only, production — origins of stored business photo URLs; expected: only `https://<production ref>.supabase.co`:
+  ```sql
+  begin read only;
+  select substring(u from '^https?://[^/]+') origin, count(*) from (
+    select image_url u from farms union all select cover_url from farms union all select image_url from shops
+    union all select cover_url from shops union all select image_url from services union all select cover_url from services
+    union all select avatar_url from workspaces where type <> 'personal') x where u is not null group by 1 order by 2 desc;
+  rollback;
+  ```
+- The origin itself is set only by `set_storage_origin.cjs` from the production connection (step 4 below), after
+  `--dry-run`; it refuses if stored URLs belong to another project.
+
 **Step 1 — RPC (additive, old app keeps working)**
 1. Pin the PR head; confirm the sha256 values below and that `web/` differs from main only in the register pages,
    `lib/createBusiness.ts` and `e2e/`.
