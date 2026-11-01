@@ -215,9 +215,9 @@ export default function RegisterServicePage() {
         owner_id: userId, entity_id: svcData.id, avatar_url: imageUrl || null,
       }).select('id').single();
       if (wsData) {
-        await supabase.from('workspace_members').insert({
-          workspace_id: wsData.id, user_id: userId, role: 'owner',
-        });
+        // owner rights come from the business itself; this only records the owner row (idempotent, owner-checked)
+        const { error: ownErr } = await supabase.rpc('ensure_workspace_owner_membership', { p_workspace: wsData.id });
+        if (ownErr) console.warn('owner membership not recorded', ownErr.code);
       }
 
       alert('บันทึกข้อมูลบริการเรียบร้อยแล้ว');

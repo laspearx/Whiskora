@@ -1,6 +1,6 @@
 # Workspace members via RPC — design (staging first; not on production)
 
-Status 2026-10-31: **approved by the owner (rules below) — building on staging / Preview; not on production.** Partner audit PR "1 — Members via RPCs"
+Status 2026-10-31: **approved by the owner (rules below) — PR A (DB) + PR B (web) built and tested on staging / Preview; not merged, not on production.** Partner audit PR "1 — Members via RPCs"
 (`docs/PARTNER_SYSTEM_AUDIT.md`). Builds on the workspace ownership guard (v1.10.1), storage scoping (v1.10.2) and the
 grants clean-up (v1.10.3).
 

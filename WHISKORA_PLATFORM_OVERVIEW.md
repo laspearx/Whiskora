@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-10-31 (v1.10.3 live; public grants clean-up `20261031151651` — see `docs/STATUS.md`)
+**Last updated:** 2026-10-31 (v1.10.3 live; members via RPC + invitations on staging / Preview only, branch `feat/workspace-members-rpc` — see `docs/WORKSPACE_MEMBERS_DESIGN.md`)
 
 ## What Whiskora is
 
@@ -29,7 +29,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 - LINE identity can also be **linked** to an existing account from `/profile/connections`.
 - Two independent role layers:
   - Platform admin: `profiles.role === 'admin'` gates `/admin/*`.
-  - Workspace roles: `owner` / `manager` / `staff` / `viewer` per `workspaces` row (`personal`/`farm`/`shop`/`service` type), stored in `workspace_members`.
+  - Workspace roles: `owner` / `manager` / `staff` / `viewer` per `workspaces` row (`personal`/`farm`/`shop`/`service` type), stored in `workspace_members`. Owner authority = the business owner (`farms|shops|services.user_id`), not an `owner` row. Branch `feat/workspace-members-rpc` (not on production): members are added only by invitation (`workspace_invitations`, accept / decline at `/profile/invitations`, 14-day expiry) and changed only through RPCs; managers handle staff / viewer only.
 - "Buyer" is not a DB role — any authenticated non-owner on a public pet page is treated as a prospective buyer.
 
 ### Pets & lineage
@@ -124,13 +124,14 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - Tests: `npm run test:e2e` (Playwright, desktop + mobile). Signed-in specs need staging test accounts (see `web/e2e/README.md`). Lint baseline 2026-10-30: 320 errors, mostly `no-explicit-any` (296); compare by file/rule/code, not by total.
 - Always verify current schema against the live Supabase project (via MCP tools) rather than trusting `web/lib/types.ts` or `supabase/migrations/` alone.
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
+- **Workspace members** (branch `feat/workspace-members-rpc`): never write `workspace_members` from the app — use the RPCs (`list_workspace_members`, `invite_workspace_member`, `respond_workspace_invitation`, `set_workspace_member_role`, `remove_workspace_member`, `ensure_workspace_owner_membership`); UI is `WorkspaceMembersPanel`, which reloads from the server after every action. Caller role = `is_me` row of `list_workspace_members`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
 - Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
-- Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy), `products` table missing, no review/publish flow for shops.
+- Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes broken (42P17 / no UPDATE policy) — fixed on branch `feat/workspace-members-rpc` (staging only), `products` table missing, no review/publish flow for shops.
 
 - Pet privacy (live since 2026-10-31, migration `20261031072347`): still open — `pet-photos` files of private pets stay public (known URL loads; CDN may serve deleted files), no owner UI for `is_public` / per-pet tiers, original seller is not a previous owner, grant DELETE removes history. Pedigree fields: read only via `get_pet_pedigree_fields()` (not in `PET_COLUMNS`); access grants are revoke-only (UPDATE = `revoked_at` + trigger).
 - Vaccine reminders: live and scheduled (cron job 1 on since 2026-10-31; display verified on Chrome/Windows only — other browsers / iOS not verified); send-log history kept across unsubscribe since v1.10.0; the old open v5 endpoint is gone. FK `vaccines.pet_id` is a separate decision; 3 orphan rows kept.
@@ -158,6 +159,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-10-31**
+- Branch `feat/workspace-members-rpc` (staging / Preview only, not merged): migration `20261101150000_workspace_members_rpc` (invitations, member RPCs, no direct member writes) + shared members panel, `/profile/invitations`, register pages record the owner via RPC.
 - v1.10.3 (PR #21) + migration `20261031151651`: public grants clean-up — no TRUNCATE / TRIGGER / REFERENCES for API roles, per-function EXECUTE (`resolve_pet_tags` not callable directly; admin / signed-in RPCs not for anon), reduced default privileges; CRUD + column grants unchanged.
 - v1.10.2 (PR #20) + migration `20261031141649`: farm / shop / service asset buckets writable only in the folder of a business the caller owns or manages; register-page photo path (`farms|shops|services/<uid>/…`) works again.
 - v1.10.1 (PR #19) + migration `20261031135523`: workspace ownership guard — type / entity / owner immutable for the API, farm / shop / service workspaces only for the entity owner, unique (type, entity_id).

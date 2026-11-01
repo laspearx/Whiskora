@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { getMyProfile } from '@/lib/profile';
 import { PET_COLUMNS } from '@/lib/columns';
 import PageLoader from "@/app/components/PageLoader";
+import WorkspaceInvitationsBanner from "@/app/components/WorkspaceInvitationsBanner";
 
 const F = {
   ink: "#1f1a1c",
@@ -462,6 +463,8 @@ export default function ProfilePage() {
             </Link>
           </div>
         </div>
+
+        <WorkspaceInvitationsBanner />
 
         {/* Pet Bubbles */}
         <section className="pp-section">

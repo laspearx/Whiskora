@@ -280,6 +280,128 @@ test.describe('privacy: roles', () => {
   });
 });
 
+test.describe('workspace members (invitations)', () => {
+  // needs the members fixture (supabase/tests/workspace_members_fixture_staging.sql): farm 9001 = owner, manager, staff, viewer.
+  // One shared chain on the same farm: run with --workers=1 so desktop and mobile do not overlap.
+  test.skip(!has('E2E_OWNER_EMAIL', 'E2E_OWNER_PASSWORD', 'E2E_MANAGER_EMAIL', 'E2E_MANAGER_PASSWORD', 'E2E_STAFF_EMAIL',
+    'E2E_STAFF_PASSWORD', 'E2E_STRANGER_EMAIL', 'E2E_STRANGER_PASSWORD', 'E2E_FARM_ID'), 'member accounts not configured');
+  test.describe.configure({ mode: 'serial' });
+  const MEMBERS = `/farm-dashboard/${FARM_ID}/members`;
+  const switchTo = async (page: Page, who: string, redirect: string) => {
+    await page.context().clearCookies({ name: /^sb-/ });
+    await signIn(page, env[`E2E_${who}_EMAIL`]!, env[`E2E_${who}_PASSWORD`]!, redirect);
+  };
+  const inviteStranger = async (page: Page, role: string) => {
+    await page.locator('select[aria-label="บทบาทที่จะเชิญ"]').selectOption({ label: role });
+    await page.locator('input[placeholder="ค้นหาด้วยชื่อ, username หรืออีเมลแบบเต็ม"]').fill('QA Stranger');
+    await page.locator('.fm-search-btn').click();
+    await page.getByTestId('search-result').filter({ hasText: 'QA Stranger' }).getByRole('button', { name: 'ส่งคำเชิญ' }).click();
+  };
+
+  test('staff sees the team (names and roles only) but no invite, role or remove controls', async ({ page }) => {
+    await switchTo(page, 'STAFF', MEMBERS);
+    await expect(page.getByTestId('member-row')).toHaveCount(4);
+    await expect(page.getByTestId('member-row').filter({ hasText: 'QA Owner' })).toContainText('เจ้าของ');
+    await expect(page.getByText('เชิญสมาชิกใหม่')).toHaveCount(0);
+    await expect(page.locator('.fm-role-btn')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^นำ .* ออก$/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'ออกจากฟาร์มนี้' })).toBeVisible();
+    expect(await page.locator('body').innerText()).not.toMatch(/@example\.com/);
+  });
+
+  test('manager can invite staff/viewer only and cannot touch the other manager or the owner', async ({ page }) => {
+    await switchTo(page, 'MANAGER', MEMBERS);
+    await expect(page.getByTestId('member-row')).toHaveCount(4);
+    const opts = await page.locator('select[aria-label="บทบาทที่จะเชิญ"] option').allInnerTexts();
+    expect(opts).toEqual(['สตาฟ', 'ผู้ดู']);
+    await expect(page.getByText('ทำได้ทุกอย่าง')).toHaveCount(0);
+    // only staff and viewer rows are editable
+    await expect(page.locator('.fm-role-btn')).toHaveCount(2);
+    await expect(page.getByTestId('member-row').filter({ hasText: 'QA Owner' }).locator('.fm-role-btn')).toHaveCount(0);
+  });
+
+  test('owner invites; the invitation is pending, not a member yet', async ({ page }) => {
+    await switchTo(page, 'OWNER', MEMBERS);
+    await inviteStranger(page, 'ผู้ดู');
+    await expect(page.locator('.fm-notice.ok')).toContainText('รอผู้รับกดตอบรับ');
+    await expect(page.getByTestId('invitation-row').filter({ hasText: 'QA Stranger' })).toContainText('เชิญเป็นผู้ดู');
+    await expect(page.getByTestId('member-row')).toHaveCount(4);
+    // a second invitation for the same person is refused by the server and shown as an error
+    await page.reload();
+    await page.locator('input[placeholder="ค้นหาด้วยชื่อ, username หรืออีเมลแบบเต็ม"]').fill('QA Stranger');
+    await page.locator('.fm-search-btn').click();
+    await expect(page.getByTestId('search-result')).toHaveCount(0); // already invited → filtered out
+  });
+
+  test('invitee sees business, inviter and role, and declines', async ({ page }) => {
+    await switchTo(page, 'STRANGER', '/profile');
+    await page.getByTestId('invitations-banner').click();
+    const card = page.getByTestId('my-invitation');
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText('ฟาร์ม');
+    await expect(card).toContainText('QA Owner');
+    await expect(card).toContainText('ผู้ดู');
+    await card.getByRole('button', { name: 'ปฏิเสธ' }).click();
+    await expect(page.getByTestId('invitation-notice')).toContainText('ปฏิเสธคำเชิญแล้ว');
+    await expect(page.getByTestId('my-invitation')).toHaveCount(0);
+  });
+
+  test('owner invites again; invitee accepts and becomes a viewer', async ({ page }) => {
+    await switchTo(page, 'OWNER', MEMBERS);
+    await expect(page.getByTestId('invitation-row')).toHaveCount(0); // the declined one is gone
+    await inviteStranger(page, 'ผู้ดู');
+    await expect(page.locator('.fm-notice.ok')).toBeVisible();
+    await switchTo(page, 'STRANGER', '/profile/invitations');
+    await page.getByTestId('my-invitation').getByRole('button', { name: 'ตอบรับ' }).click();
+    await expect(page.getByTestId('invitation-notice')).toContainText('เป็นผู้ดูแล้ว');
+    await page.goto(`/th${MEMBERS}`);
+    await expect(page.getByTestId('member-row')).toHaveCount(5);
+    await expect(page.getByTestId('member-row').filter({ hasText: 'QA Stranger' })).toContainText('ผู้ดู');
+  });
+
+  test('owner changes the role and removes; the page shows the saved state', async ({ page }) => {
+    await switchTo(page, 'OWNER', MEMBERS);
+    const row = page.getByTestId('member-row').filter({ hasText: 'QA Stranger' });
+    await row.locator('.fm-role-btn').click();
+    await page.locator('.fm-role-opt').filter({ has: page.locator('.fm-role-opt-label', { hasText: /^สตาฟ$/ }) }).click();
+    await expect(page.locator('.fm-notice.ok')).toContainText('เปลี่ยนเป็นสตาฟแล้ว');
+    await page.reload();
+    await expect(page.getByTestId('member-row').filter({ hasText: 'QA Stranger' })).toContainText('สตาฟ');
+    page.once('dialog', d => d.accept());
+    await page.getByTestId('member-row').filter({ hasText: 'QA Stranger' }).getByRole('button', { name: /^นำ .* ออก$/ }).click();
+    await expect(page.locator('.fm-notice.ok')).toContainText('นำสมาชิกออกแล้ว');
+    await page.reload();
+    await expect(page.getByTestId('member-row')).toHaveCount(4);
+  });
+
+  test('shop owner without an owner member row still has full owner rights (shop 990101)', async ({ page }) => {
+    await switchTo(page, 'OWNER', '/shop-dashboard/990101/members');
+    await expect(page.getByTestId('member-row')).toHaveCount(1);
+    await expect(page.getByTestId('member-row')).toContainText('QA Owner (คุณ)');
+    await expect(page.getByTestId('member-row')).toContainText('เจ้าของ');
+    expect(await page.locator('select[aria-label="บทบาทที่จะเชิญ"] option').allInnerTexts()).toEqual(['ผู้จัดการ', 'สตาฟ', 'ผู้ดู']);
+    await expect(page.getByText('แก้ข้อมูลร้านยังเป็นของเจ้าของ')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ออกจากร้านนี้' })).toHaveCount(0);
+  });
+
+  test('a member can leave; the owner has no leave button', async ({ page }) => {
+    // re-invite the stranger as staff, accept, then leave
+    await switchTo(page, 'OWNER', MEMBERS);
+    await expect(page.getByRole('button', { name: 'ออกจากฟาร์มนี้' })).toHaveCount(0);
+    await inviteStranger(page, 'สตาฟ');
+    await expect(page.locator('.fm-notice.ok')).toBeVisible();
+    await switchTo(page, 'STRANGER', '/profile/invitations');
+    await page.getByTestId('my-invitation').getByRole('button', { name: 'ตอบรับ' }).click();
+    await expect(page.getByTestId('invitation-notice')).toContainText('เป็นสตาฟแล้ว');
+    await page.goto(`/th${MEMBERS}`);
+    page.once('dialog', d => d.accept());
+    await page.getByRole('button', { name: 'ออกจากฟาร์มนี้' }).click();
+    await page.waitForURL(u => u.pathname.endsWith('/profile'));
+    await switchTo(page, 'OWNER', MEMBERS);
+    await expect(page.getByTestId('member-row')).toHaveCount(4);
+  });
+});
+
 test.describe('admin', () => {
   test.skip(!has('E2E_ADMIN_EMAIL', 'E2E_ADMIN_PASSWORD'), 'admin test account not configured');
 
