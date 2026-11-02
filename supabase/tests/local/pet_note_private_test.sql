@@ -1,4 +1,4 @@
--- M4 (20261102130000): pets.note not readable through the API; writes and PET_COLUMNS reads unchanged. Rolled back.
+-- M4 (20261102160000): pets.note not readable through the API; writes and PET_COLUMNS reads unchanged. Rolled back.
 insert into auth.users (id, email) values ('e4000000-0000-4000-8000-000000000001', 'owner@m4.test'), ('e4000000-0000-4000-8000-000000000002', 'other@m4.test');
 insert into public.profiles (id, full_name, role) select id, email, 'user' from auth.users where email like '%@m4.test';
 insert into public.pets (id, name, user_id, is_public, note) values (994001, 'M4 pet', 'e4000000-0000-4000-8000-000000000001', true, 'health history');

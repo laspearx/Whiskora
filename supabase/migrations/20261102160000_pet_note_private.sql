@@ -1,6 +1,6 @@
 -- STATUS: proposed — security branch, not applied anywhere. Staging first, production only on the owner's go-ahead
--- (docs/SECURITY_PHASE1.md §M4). Deploy the app of this branch BEFORE this migration (the old app selects pets.note,
--- the request would fail with 42501 after it).
+-- (docs/SECURITY_PHASE1.md §M4). CONTRACT step, timestamped after every expand migration on purpose: apply only
+-- AFTER the app without pets.note is live (the old app selects pets.note and would get 42501).
 --
 -- M4: pets.note was readable by anyone (anon / authenticated column SELECT) for public pets — and the farm "add pet"
 -- form invites health history there ("บันทึกเพิ่มเติม เช่น ประวัติสุขภาพ…"), while the real health fields

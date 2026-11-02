@@ -5,7 +5,7 @@
 
 // pets: everything except private health fields and pedigree fields. Health comes from RPC get_pet_health()
 // (tier-checked server side): blood_type, allergies, chronic_diseases, health_notes, traits.
-// note is not readable through the API at all (20261102130000_pet_note_private) — never add it back here.
+// note is not readable through the API at all (20261102160000_pet_note_private) — never add it back here.
 // Pedigree fields (sire_id, dam_id, pedigree_number, pedigree_image_url, grand-parent names) are not readable
 // directly (migration 20261030140000) — tree: get_pet_pedigree(); raw fields for owner/team: get_pet_pedigree_fields().
 // One string literal (not '+' concatenation) so supabase-js can type the selected columns.

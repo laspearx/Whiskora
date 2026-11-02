@@ -1,4 +1,4 @@
-// Static check for M4 (20261102130000): no pets query in the app asks for `note`. node --test supabase/tests/pet_note_static.test.mjs
+// Static check for M4 (20261102160000): no pets query in the app asks for `note`. node --test supabase/tests/pet_note_static.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
