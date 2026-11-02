@@ -31,6 +31,12 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 | `staging_only/…_down_STAGING_ONLY.sql` | exact pre-migration state for staging rollback tests — re-opens the holes, **never on production** |
 | `../emergency/reservation_transfer_freeze.sql` / `…_unfreeze.sql` | production recovery: stop new reservation/transfer writes, keep reads + privacy, then fix forward |
 
+## No direct API DELETE on businesses / workspaces (`20261102100000`; staging only — `docs/BUSINESS_DELETE_PRIVILEGES.md`)
+| File | Use |
+|---|---|
+| `business_delete_precheck.sql` | read-only (`begin read only; … rollback;`): state `before` / `after`, **effective** DELETE of anon / authenticated / PUBLIC, `delete_verdict` OK / STOP, md5 of every other privilege (only anon / authenticated table DELETE excluded), policies, triggers, FKs |
+| `business_delete_checks.cjs` | after the migration only (exits without probes while DELETE is open): signup + synthetic account removal, create_business, profile edits, invite / accept / cancel / list, manager edit, direct DELETE by anon / owner / manager / stranger on entities, business + personal workspaces (refused, row unchanged), bulk DELETE, leave team; removes only this run's `QA-BD` rows |
+
 ## Business profile by role (`20261101190000` + `20261101200000`; staging only — `docs/BUSINESS_PROFILE_PERMISSIONS.md`)
 | File | Use |
 |---|---|

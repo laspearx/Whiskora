@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-11-01 (v1.14.0 live — `c9440db`; business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
+**Last updated:** 2026-11-02 (v1.14.0 live — `c9440db`; direct DELETE on businesses / workspaces closed on staging only (`docs/BUSINESS_DELETE_PRIVILEGES.md`); business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -137,7 +137,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 
 - Security: workspace takeover (repoint / forge farm, shop, service workspaces) **closed 2026-10-31 13:55 UTC** (v1.10.1, `20261031135523`); partner audit in `docs/PARTNER_SYSTEM_AUDIT.md`. Partner gaps: member writes fixed via RPCs + invitations (v1.12.0, 2026-11-01); `products` table missing, no review/publish flow for shops.
-- Partner create **live since v1.13.0**: `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; API direct INSERT on farms / shops / services / workspaces closed; photos only from this environment's Storage origin (`platform_settings`). Production happy path proven on staging only. Profile edits **live since v1.14.0**: `update_business_profile` (owner / manager fields from the server role); API UPDATE on farms / shops / services closed except `farms.verification_status` (verify page) and `services.is_published` (publish button, owner via RLS) — `docs/BUSINESS_PROFILE_PERMISSIONS.md`. Production happy path (owner / manager save) proven on staging only. `services.is_published` belongs to review / publish. 2 existing rows have an empty photo URL (`shops.image_url`, `workspaces.avatar_url`) — kept as is.
+- Partner create **live since v1.13.0**: `create_business` RPC = entity + workspace + owner row in one transaction, idempotent per request key; API direct INSERT on farms / shops / services / workspaces closed; photos only from this environment's Storage origin (`platform_settings`). Production happy path proven on staging only. Profile edits **live since v1.14.0**: `update_business_profile` (owner / manager fields from the server role); API UPDATE on farms / shops / services closed except `farms.verification_status` (verify page) and `services.is_published` (publish button, owner via RLS) — `docs/BUSINESS_PROFILE_PERMISSIONS.md`. Production happy path (owner / manager save) proven on staging only. `services.is_published` belongs to review / publish. 2 existing rows have an empty photo URL (`shops.image_url`, `workspaces.avatar_url`) — kept as is. Direct API DELETE on farms / shops / services / workspaces (incl. personal) still open on production (owner-own via RLS; the app never uses it) — closed on branch `fix/business-delete-privileges` (**staging only**, `docs/BUSINESS_DELETE_PRIVILEGES.md`).
 
 - Farm verification guard **live since v1.12.3 (2026-11-01, migration `20261101060149` = file `20261101180000`)**: API users cannot set `farms.is_verified` / `verified_at` / `verification_*` or approve their own `farm_verifications`; owner path null|rejected → pending (with a pending request); admin decides only via `admin_review_farm_verification` (audit log). Production happy path (approve / reject) proven on staging only. Recovery = fix forward, never drop the guard.
 
@@ -165,6 +165,9 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-11-02**
+- Staging only (`fix/business-delete-privileges`): migration `20261102100000` (staging `20261102040845`) withdraws direct DELETE of anon / authenticated on farms / shops / services / workspaces; other rights, RLS, triggers, FKs unchanged (md5 pre/post).
 
 **2026-11-01**
 - v1.14.0 (PR #31) + migrations `20261101122458 business_profile_rpc` (file `20261101190000`, sha256 `c3fff819…bb8f`) and, after the new app was live, `20261101122843 business_profile_update_privileges` (file `20261101200000`, `1d37f90c…49a2`): edit pages + dashboard photo changes save through `update_business_profile`; managers can edit content fields; direct API UPDATE closed except the two kept columns.
