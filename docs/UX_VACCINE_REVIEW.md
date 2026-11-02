@@ -179,6 +179,32 @@ Existing pet-page lint debt remains as documented above. Runtime warnings about 
 lockfiles, middleware convention and logo sizing were observed; they did not fail the suite.
 No push, merge, deployment, migration, RPC, cron or Edge Function changes were made.
 
+### Verification after merging main (2026-11-02)
+
+- Preserved reference commit `d0d5b3465acbd53a3b048b945d6bebdbbb9b1473` and merged
+  `origin/main` (`38860b2806b0d4f1b503d49b98e25fb16e5a7aee`) without rewriting history.
+  Merge commit: `2abe4ad34047bac898304e2b68af15e370a9a15c`. No conflicts.
+- `web/package.json` remains version **1.14.0**, with both vaccine test scripts retained.
+  Diff against main contains only the 11 vaccine UX/test/review files; PR #31/#32 code,
+  rollout documents and existing Preview env guard are unchanged relative to main.
+- Post-merge checks: **unit 22/22**, **local/mock UI 14/14** (desktop 7 + mobile 7,
+  port 3217, one worker, zero retries, 2.9 minutes), TypeScript and targeted ESLint passed.
+  Diff whitespace check passed. No passing suite was repeated without a new code change.
+- Run evidence is ignored locally under
+  `web/test-results/vaccine-mock/2026-11-02T04-08-28-902Z-52367/`;
+  full output is `/tmp/vaccine-ui-merged-main.log`. All 14 case observations have no page
+  errors, renderer crashes, unexpected mock API paths or detected writes.
+- Teardown started at 04:11:20.945 UTC, wrapper received SIGTERM at 04:11:20.947 UTC,
+  child and wrapper exited with code 0 at 04:11:21.371 UTC. Browser tests are finished.
+- Pre-push inspection: no runtime logs, traces, cookie/session files, tokens or browser
+  artifacts are included in Git. Synthetic session construction remains test code only;
+  the credential-pattern scan of changed files returned no findings.
+- Claude has reserved staging for DELETE tests. No Preview browser request, staging
+  read/write, shared QA login or fixture reset was performed. Only Preview build metadata
+  and build logs may be inspected until the owner explicitly lifts this restriction.
+  No migration/RPC/cron/Edge Function, environment configuration, merge to main or production
+  deployment is part of this work. Mock/RLS/persistence/reminder limitations above still apply.
+
 ## Draft PR
 
 Title: Fix pet appointment summaries and mobile vaccine navigation
