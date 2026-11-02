@@ -2,6 +2,22 @@
 
 Snapshot at end of day. No secrets, tokens or personal data in this file; counts are aggregates.
 
+## 2026-11-02 — PR #34 rollout: no direct API DELETE on farms / shops / services / workspaces (v1.14.1; UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `dc247a46e336579cc0761a8b8d3d847294f93b28` on main `38860b2` (merge-base = main tip; no other code); 7 files: migration, precheck, suite + unit test, tests README, doc, overview; scope `release`; sha256 migration `dea30431533c9bbe67e61ba74e9b27c100969f22c64ac8adc94fbc0c8ea18081`, precheck `01a93e398ed2ce0af5a7e35115ca91389fd35cfda5f271449e98d4002bf90186` |
+| Precheck 06:00 (read-only, final formula) | `before`, `delete_verdict` STOP (anon + authenticated DELETE on all 4, PUBLIC none — expected); RLS on ×4; `other_rights_md5 a8292ec7…0a68`, `policies_md5 39932b2b…e997`, `triggers_md5 6ffea885…be63`, `fks_md5 0c3b65c0…0700` = staging. Data baseline (count:md5 of rows): farms 14:`779d83f9…`, shops 2:`ef0fdb3b…`, services 1:`0f9d66f7…`, workspaces 124:`a7fa6ce1…` (personal 107, farm 14, shop 2, service 1), members 117:`520d0f55…`, invitations 0, pets 137, claims 0 |
+| **Apply** 06:00:56 | `20261102060056 business_delete_privileges` — one transaction, `lock_timeout` 5 s, state check (DELETE open, not applied yet), history row in the same transaction; stored statement sha256 = file sha256 |
+| Postcheck 06:01 | `after`, `delete_verdict` **OK** (no DELETE for anon / authenticated / PUBLIC); 4 md5 unchanged; every data md5 and count = baseline |
+| Probes 06:01:52–53 (UA `whiskora-qa-probe`; ids checked absent first: farms / shops / services `-1`, workspace all-zero uuid) | **8 / 8**: anon DELETE ×4 → 401 42501; QA stranger DELETE ×4 → 403 42501; global logout 204. Data md5 = baseline. No DELETE on any real row; `business_delete_checks.cjs` not run on production |
+| Pages 06:02 | `/th`, `/th/farm-hub`, `/th/login`, register-shop, farm / shop dashboard routes → 200 |
+| Logs 05:55–06:05 | edge = the probes only; postgres = the migration statement + 8 intended `permission denied`; no other errors |
+| Merge | 06:02:32 pinned → `219b3fa` (Vercel: ignored build); bot `45b8bd7` **v1.14.1** (scope `release`, version files only) → Production build success 06:04 |
+| Live check 06:04 | `www.whiskora.pet` serves 1.14.1; login bundles: production ref only (staging 0); pages 200 |
+
+Not proven on production: any delete path (there is none in the app); account removal (manual, system path) not exercised. Recovery: fix forward — a dedicated RPC for a real need, never a re-grant of DELETE.
+Untouched: cron, Edge Functions, FKs, orphan rows, QA pets, leftover storage files, Codex work.
+
 ## 2026-11-01 — PR #31 rollout: business profile edits by role (v1.14.0; UTC)
 | Step | Result |
 | --- | --- |
