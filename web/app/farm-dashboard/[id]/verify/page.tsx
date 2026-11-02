@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
+import { FARM_PUBLIC_COLUMNS } from '@/lib/farmColumns';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -65,7 +66,7 @@ export default function VerifyFarmPage() {
       if (!session) { router.push('/login'); return; }
       setUserId(session.user.id);
 
-      const { data: farmData } = await supabase.from('farms').select('*').eq('id', farmId).eq('user_id', session.user.id).single();
+      const { data: farmData } = await supabase.from('farms').select(FARM_PUBLIC_COLUMNS).eq('id', farmId).eq('user_id', session.user.id).single();
       if (!farmData) { router.push('/partner'); return; }
       if (farmData.is_verified) { router.push(`/farm-dashboard/${farmId}`); return; }
       if (farmData.verification_status === 'pending') { router.push(`/farm-dashboard/${farmId}`); return; }

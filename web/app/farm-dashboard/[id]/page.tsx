@@ -11,6 +11,7 @@ import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
 import { useFarmAccess, canEditFarmProfile } from '@/app/farm-dashboard/[id]/layout';
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
+import { FARM_PUBLIC_COLUMNS } from '@/lib/farmColumns';
 
 /* ── Design tokens ── */
 const F = {
@@ -158,7 +159,7 @@ function FarmDashboardContent() {
 
       // layout ตรวจสิทธิ์สมาชิก workspace แล้ว — ไม่กรอง farms.user_id ซ้ำ ไม่งั้น manager/staff/viewer ถูกเด้งออก
       const { data: farmData } = await supabase
-        .from('farms').select('*').eq('id', farmId).single();
+        .from('farms').select(FARM_PUBLIC_COLUMNS).eq('id', farmId).single();
       if (!farmData) { router.push('/partner'); return; }
       setFarm(farmData);
 

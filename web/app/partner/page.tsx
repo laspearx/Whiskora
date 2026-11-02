@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import { FARM_PUBLIC_COLUMNS } from '@/lib/farmColumns';
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -31,7 +32,7 @@ export default function PartnerHubPage() {
         if (!s) { setLoading(false); return; }
         const userId = s.user.id;
         const [farmsRes, shopsRes, servicesRes] = await Promise.all([
-          supabase.from("farms").select("*").eq("user_id", userId),
+          supabase.from("farms").select(FARM_PUBLIC_COLUMNS).eq("user_id", userId),
           supabase.from("shops").select("*").eq("user_id", userId),
           supabase.from("services").select("*").eq("user_id", userId),
         ]);
