@@ -1,7 +1,7 @@
-# No direct API DELETE on farms / shops / services / workspaces — staging only
+# No direct API DELETE on farms / shops / services / workspaces — live since v1.14.1
 
-Status 2026-11-02: branch `fix/business-delete-privileges`, migration `20261102100000` applied on **staging only**
-(recorded as `20261102040845 business_delete_privileges`). Not merged, not on production. Approach chosen by the owner
+Status 2026-11-02: PR #34 merged (`219b3fa`, v1.14.1 `45b8bd7`); migration `20261102100000` on staging (`20261102040845`)
+and **production** (`20261102060056`, 06:00:56 UTC; results in `docs/STATUS.md`). Approach chosen by the owner
 2026-11-02: withdraw direct DELETE of anon and authenticated on all four tables, personal workspaces included.
 Out of scope (not done here): new FKs, orphan clean-up, soft delete, closing a business, any RLS / FK change.
 
@@ -59,7 +59,7 @@ these only matter to system paths (service_role / database owner).
 Account deletion was tested only with the synthetic user this run created, as the database owner (system path), like
 the other suites; no shared QA account was removed. No GoTrue admin deletion (no service key used).
 
-## 5. Rollout (production — not done; on the owner's go-ahead)
+## 5. Rollout (production — done 2026-11-02 06:00–06:04 UTC, see `docs/STATUS.md`)
 1. Pin the PR head; sha256 of the migration below; no `web/` change. Build scope = `release` (a migration is included):
    the merge gets a bot patch bump (`fix:` → v1.14.1, version files only) and Production builds that bump commit; the
    app code is the same as v1.14.0. Preview builds of this branch are skipped.
