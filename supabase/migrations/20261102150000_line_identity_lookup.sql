@@ -15,6 +15,15 @@
 --    'unverified' = any other legacy claim (user_metadata.line_id on a real-email account, placeholder with a password,
 --                   changed email, mismatching ids): never migrated; the owner re-links through link mode.
 --    'already'    = app_metadata.line_id already set and consistent.
+--    Cut-off: 'verified' (and trusted-holder status) also requires that the account was created BEFORE this migration
+--    was applied (the time is fixed into the function when it is created). Reason: an anonymous user can set an email
+--    without confirmation when Confirm email is off (GoTrue: anonymous + autoconfirm → new email identity, no password,
+--    no pending change) and keep its session — i.e. forge the server-made shape for someone else's LINE id. Anonymous
+--    sign-ins are off on production and staging (checked 2026-11-02, /auth/v1/settings), but that is a setting, and the
+--    rules are public; after the cut-off the new app creates LINE accounts WITH app_metadata.line_id, so nothing
+--    legitimate needs the placeholder shape any more. Apply this migration ONCE per project (re-applying moves the
+--    cut-off), immediately before the app deploy; old-app LINE signups in that gap show up as
+--    'server-made shape but created after the cut-off' (unverified) → owner reviews them by hand.
 -- Both callable by service_role only. Read-only (no data change).
 create or replace function public.find_auth_user_by_line_id(p_line_id text)
 returns setof uuid language sql stable security definer set search_path = public, auth as $$
@@ -27,6 +36,8 @@ $$;
 revoke all on function public.find_auth_user_by_line_id(text) from public, anon, authenticated;
 grant execute on function public.find_auth_user_by_line_id(text) to service_role;
 
+-- created through dynamic SQL so the cut-off (now() at apply time) is a constant inside the function
+do $mig$ begin execute format($fn$
 create or replace function public.legacy_line_evidence(p_line_id text default null)
 returns table (user_id uuid, line_id text, class text, reason text)
 language sql stable security definer set search_path = public, auth as $$
@@ -43,7 +54,7 @@ language sql stable security definer set search_path = public, auth as $$
               and i.identity_data ->> 'email' = u.email and abs(extract(epoch from (i.created_at - u.created_at))) <= 60) email_ids_original
       from auth.users u
   ), shape as (
-    select u.*, (u.ph_line is not null and not u.has_password and not u.pending_change and u.email_ids = 1
+    select u.*, (u.created_at < %1$L::timestamptz and u.ph_line is not null and not u.has_password and not u.pending_change and u.email_ids = 1
                  and u.email_ids_original = 1 and (u.meta_line is null or u.meta_line = u.ph_line)) server_shape
       from u
   ), claims as ( -- trusted holders per LINE id: app_metadata, or a server-shaped placeholder
@@ -66,6 +77,9 @@ language sql stable security definer set search_path = public, auth as $$
       when s.server_shape and (select n from claims c where c.l = s.ph_line) > 1 then 'LINE id held by more than one trusted account'
       when s.server_shape then 'server-made LINE signup'
       when s.ph_line is null then 'claim only in user_metadata (user-writable)'
+      when s.created_at >= %1$L::timestamptz and not s.has_password and not s.pending_change and s.email_ids = 1
+           and s.email_ids_original = 1 and (s.meta_line is null or s.meta_line = s.ph_line)
+        then 'server-made shape but created after the cut-off'
       when s.has_password then 'placeholder email with a password'
       when s.pending_change or s.email_ids_original <> 1 or s.email_ids <> 1 then 'email identity not original'
       else 'user_metadata disagrees with placeholder' end
@@ -73,6 +87,7 @@ language sql stable security definer set search_path = public, auth as $$
   where (s.app_line is not null or s.meta_line is not null or s.ph_line is not null)
     and (p_line_id is null or p_line_id in (s.app_line, s.meta_line, s.ph_line));
 $$;
+$fn$, now()); end $mig$;
 revoke all on function public.legacy_line_evidence(text) from public, anon, authenticated;
 grant execute on function public.legacy_line_evidence(text) to service_role;
 
