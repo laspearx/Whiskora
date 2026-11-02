@@ -43,11 +43,13 @@ export default function ConnectionsPage() {
   const [unlinked, setUnlinked] = useState<string | null>(null);
 
   const [userMeta, setUserMeta] = React.useState<Record<string, any>>({});
+  const [appMeta, setAppMeta] = React.useState<Record<string, any>>({});
 
   const refreshIdentities = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIdentities(user?.identities ?? []);
     setUserMeta(user?.user_metadata ?? {});
+    setAppMeta(user?.app_metadata ?? {});
   };
 
   const [currentUserId, setCurrentUserId] = React.useState('');
@@ -105,7 +107,7 @@ export default function ConnectionsPage() {
     setError("");
     setUnlinked(null);
 
-    // LINE — ลบออกจาก user_metadata
+    // LINE — the link lives in app_metadata (server-only): the server removes it and refuses if LINE is the only way in
     if (provider === 'custom:line-login') {
       const linkedCount = PROVIDERS.filter(p => isLinked(p.id)).length;
       if (linkedCount <= 1 && !hasEmailAuth) {
@@ -113,11 +115,11 @@ export default function ConnectionsPage() {
         return;
       }
       setActionLoading(provider);
-      const { error } = await supabase.auth.updateUser({
-        data: { line_id: null, line_display_name: null },
-      });
-      if (error) setError(error.message);
-      else { await refreshIdentities(); setUnlinked('LINE'); }
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/auth/line', { method: 'DELETE', headers: { Authorization: `Bearer ${session?.access_token ?? ''}` } });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) setError(body?.error === 'line_only_login' ? 'ไม่สามารถยกเลิกได้ เนื่องจากเป็นช่องทางเข้าสู่ระบบเพียงช่องทางเดียว' : 'ยกเลิกการเชื่อมต่อ LINE ไม่สำเร็จ');
+      else { await supabase.auth.refreshSession(); await refreshIdentities(); setUnlinked('LINE'); }
       setActionLoading(null);
       return;
     }
@@ -142,7 +144,7 @@ export default function ConnectionsPage() {
   };
 
   const isLinked = (provider: string) => {
-    if (provider === 'custom:line-login') return !!userMeta.line_id;
+    if (provider === 'custom:line-login') return !!appMeta.line_id;
     return identities.some(i => i.provider === provider);
   };
   const getIdentityEmail = (provider: string) => {
