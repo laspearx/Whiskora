@@ -76,7 +76,8 @@ export async function notifyUser(
 
   const profile = profileRes.data
   const user = userRes.data.user
-  const lineId: string | undefined = user.user_metadata?.line_id
+  // app_metadata only: user_metadata is writable by the user (a forged line_id would send pushes to someone else)
+  const lineId: string | undefined = user.app_metadata?.line_id
   const realEmail =
     profile.email && !profile.email.includes('@line.whiskora.internal')
       ? profile.email

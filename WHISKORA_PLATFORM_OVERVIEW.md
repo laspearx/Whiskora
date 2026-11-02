@@ -133,6 +133,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
+- **Security Phase 1 prepared, not applied (2026-11-02, `docs/SECURITY_PHASE1.md`):** farm exact address / lat-lng / verification note public via API (H1); account takeover via unverified email signup + Google linking and LINE email matching (H2); pets / litters linkable to any farm (M1); `pets.note` public (M4); pet-documents upload any path (M7). Branches `security/*`, local tests only.
+
 - Bug (open, separate): `/placeholder-pet.jpg` is used as the no-photo fallback in `app/pets/[id]/page.tsx` and `app/p/[id]/page.tsx` but the file does not exist in `web/public` → broken image for pets without a photo.
 - Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 

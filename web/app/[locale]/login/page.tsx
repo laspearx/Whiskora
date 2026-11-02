@@ -86,7 +86,18 @@ function LoginContent() {
           </button>
         </div>
 
-        {authError && (
+        {authError === 'LINE_RELINK_SUGGESTED' && (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-2" data-testid="line-relink">
+            <p className="font-bold">บัญชี LINE นี้อาจเคยเชื่อมกับบัญชี Whiskora เดิม</p>
+            <p>ถ้ามีบัญชีเดิม: เข้าสู่ระบบด้วยอีเมลหรือ Google ด้านล่าง แล้วไปที่ โปรไฟล์ → การเชื่อมต่อ → เชื่อม LINE อีกครั้ง (ข้อมูลเดิมอยู่ครบ)</p>
+            <p>ถ้าไม่เคยมีบัญชี:</p>
+            <button type="button" className="w-full rounded-xl bg-[#06C755] py-2 font-bold text-white"
+              onClick={() => { window.location.href = `/api/auth/line?create=1&next=${encodeURIComponent(safeRedirect)}` }}>
+              สร้างบัญชีใหม่ด้วย LINE
+            </button>
+          </div>
+        )}
+        {authError && authError !== 'LINE_RELINK_SUGGESTED' && (
           <div className="mt-4 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-xs font-semibold text-red-600 break-words">
             {authError}
           </div>

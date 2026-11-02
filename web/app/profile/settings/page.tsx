@@ -100,7 +100,7 @@ export default function SettingsPage() {
 
   if (loading) return <PageLoader />;
 
-  const lineId: string | undefined = user?.user_metadata?.line_id;
+  const lineId: string | undefined = user?.app_metadata?.line_id; // set by the server only (LINE login / link)
   const email: string | undefined = profile?.email ?? user?.email;
   const hasRealEmail = !!email && !email.includes("@line.whiskora.internal");
   const hasAnyChannel = !!lineId || hasRealEmail;

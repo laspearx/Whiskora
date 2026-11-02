@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { isPreviewDeploy } from '@/lib/deploy-env'
+import { LINE_PLACEHOLDER_DOMAIN } from '@/lib/lineAuth'
 
 function makeAdmin() {
   return createClient(
@@ -39,6 +40,29 @@ export async function POST(request: Request) {
   cookieStore.set('line_uid',          uid,    opts)
   cookieStore.set('line_uid_verified', 'true', opts)
 
+  return Response.json({ ok: true })
+}
+
+// DELETE — unlink LINE from the signed-in account. The link lives in app_metadata.line_id (server-writable only).
+// Refused when LINE is the account's only way to sign in (placeholder email and no other provider) — no lockout.
+export async function DELETE(request: Request) {
+  if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
+  const authHeader = request.headers.get('Authorization') || ''
+  const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+  if (!accessToken) return Response.json({ error: 'unauthorized' }, { status: 401 })
+  const admin = makeAdmin()
+  const { data: { user }, error } = await admin.auth.getUser(accessToken)
+  if (error || !user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+  const placeholder = (user.email || '').endsWith(`@${LINE_PLACEHOLDER_DOMAIN}`)
+  const otherProviders = (user.identities || []).filter(i => i.provider !== 'email')
+  if (placeholder && otherProviders.length === 0) return Response.json({ error: 'line_only_login' }, { status: 409 })
+  const { line_id: _drop, ...rest } = (user.app_metadata || {}) as Record<string, unknown>
+  void _drop
+  const { error: upErr } = await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...rest, line_id: null },
+    user_metadata: { ...(user.user_metadata || {}), line_id: null, line_display_name: null }, // rollback-compat copy too
+  })
+  if (upErr) return Response.json({ error: 'unlink_failed' }, { status: 500 })
   return Response.json({ ok: true })
 }
 
@@ -95,13 +119,16 @@ export async function GET(request: Request) {
   cookieStore.set('line_origin', siteUrl, opts)
   cookieStore.set('line_mode',   mode,    opts)
   cookieStore.set('line_uid',    uid,     opts)
+  // explicit "create a new LINE account" after LINE_RELINK_SUGGESTED (login mode only)
+  cookieStore.set('line_create', mode === 'login' && searchParams.get('create') === '1' ? '1' : '', opts)
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.LINE_CHANNEL_ID!,
     redirect_uri:  `${siteUrl}/api/auth/line/callback`,
     state,
-    scope: 'profile openid email',
+    // no email scope: the LINE email is not used to pick or create accounts (docs/SECURITY_PHASE1.md §H2)
+    scope: 'profile openid',
   })
 
   return NextResponse.redirect(`https://access.line.me/oauth2/v2.1/authorize?${params}`)

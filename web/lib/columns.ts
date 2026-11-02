@@ -5,11 +5,12 @@
 
 // pets: everything except private health fields and pedigree fields. Health comes from RPC get_pet_health()
 // (tier-checked server side): blood_type, allergies, chronic_diseases, health_notes, traits.
+// note is not readable through the API at all (20261102160000_pet_note_private) — never add it back here.
 // Pedigree fields (sire_id, dam_id, pedigree_number, pedigree_image_url, grand-parent names) are not readable
 // directly (migration 20261030140000) — tree: get_pet_pedigree(); raw fields for owner/team: get_pet_pedigree_fields().
 // One string literal (not '+' concatenation) so supabase-js can type the selected columns.
 export const PET_COLUMNS =
-  'id, created_at, name, breed, species, gender, color, pattern, coat, ear, leg, eye_color, birth_date, status, price, image_url, cover_url, gallery_urls, user_id, farm_id, litter_id, is_public, is_neutered, microchip_number, pet_code, note, vaccine_status, weight';
+  'id, created_at, name, breed, species, gender, color, pattern, coat, ear, leg, eye_color, birth_date, status, price, image_url, cover_url, gallery_urls, user_id, farm_id, litter_id, is_public, is_neutered, microchip_number, pet_code, vaccine_status, weight';
 
 // profiles columns any signed-in user (or visitor) may read about someone else.
 // email / phone / address fields / notification settings are private — read your own via getMyProfile().
