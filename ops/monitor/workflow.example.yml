@@ -1,0 +1,49 @@
+# EXAMPLE ONLY — not active. Kept outside .github/workflows on purpose: nothing is scheduled until the owner approves
+# and it is copied to .github/workflows/monitor.yml in the private repo project-hq-ops (docs/OPS_DISCORD_MONITORING.md).
+# Secrets (repo Settings → Secrets and variables → Actions → Secrets): DISCORD_WEBHOOK_WHISKORA_ALERTS,
+#   DISCORD_WEBHOOK_WHISKORA_RELEASES.  Variable MONITOR_SEND = 1 turns posting on; unset → preview (posts nothing,
+#   changes no state).
+# State: artifact "monitor-state" (7-day retention), uploaded whenever a state file exists; each run downloads the
+#   newest one. No extra credential: GITHUB_TOKEN with actions: read. Never had one → --first-run; had one but it
+#   expired / was deleted → "state lost" notice (doc §4). Preview runs re-upload the state they downloaded unchanged.
+name: Project HQ monitor
+on:
+  workflow_dispatch: {}
+  # schedule:                      # OFF until Billing is checked and the owner approves (doc §2)
+  #   - cron: '7,37 * * * *'       # every 30 min, away from minute 0
+permissions:
+  contents: read
+  actions: read                    # read earlier runs' artifacts; nothing else (no write, no secrets, no id-token)
+concurrency:
+  group: project-hq-monitor
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4            # pin to a commit SHA when copying
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4          # pin to a commit SHA when copying
+        with: { node-version: '22' }
+      - name: Fetch the previous state
+        id: prev
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          # newest non-expired "monitor-state" artifact of this repo; none ever → first run; only expired / deleted → lost
+          arts=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=monitor-state&per_page=100")
+          total=$(jq '.total_count' <<<"$arts")
+          id=$(jq -r '[.artifacts[] | select(.expired | not)] | sort_by(.created_at) | last | .id // empty' <<<"$arts")
+          if [ "$total" = "0" ]; then echo "flags=--first-run" >> "$GITHUB_OUTPUT"
+          elif [ -n "$id" ]; then gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > state.zip && unzip -o -q state.zip monitor-state.json
+          else echo "state artifact expired or deleted → the run will report 'state lost'"; fi
+      - name: Run
+        env:
+          DISCORD_WEBHOOK_WHISKORA_ALERTS: ${{ secrets.DISCORD_WEBHOOK_WHISKORA_ALERTS }}
+          DISCORD_WEBHOOK_WHISKORA_RELEASES: ${{ secrets.DISCORD_WEBHOOK_WHISKORA_RELEASES }}
+          MONITOR_SEND: ${{ vars.MONITOR_SEND }}
+        run: node ops/monitor/src/cli.mjs --state monitor-state.json --send ${{ steps.prev.outputs.flags }}
+      - name: Keep the state for the next run
+        if: always() && hashFiles('monitor-state.json') != ''
+        uses: actions/upload-artifact@v4     # pin to a commit SHA when copying
+        with: { name: monitor-state, path: monitor-state.json, retention-days: 7, if-no-files-found: ignore }
