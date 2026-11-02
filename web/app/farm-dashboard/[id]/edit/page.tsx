@@ -7,6 +7,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from "@/app/components/PageLoader";
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from "@/app/components/AddressFields";
+import { FARM_PUBLIC_COLUMNS, getFarmPrivate } from "@/lib/farmColumns";
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 import { profileRowToForm } from '@/lib/businessProfileForm';
 
@@ -61,13 +62,21 @@ export default function EditFarmPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/login"); return; }
 
-      const [farmRes, profileRes] = await Promise.all([
-        supabase.from("farms").select("*").eq("id", farmId).eq("user_id", session.user.id).single(),
+      const [farmRes, privRes, profileRes] = await Promise.all([
+        supabase.from("farms").select(FARM_PUBLIC_COLUMNS).eq("id", farmId).eq("user_id", session.user.id).single(),
+        getFarmPrivate(supabase, farmId),
         getMyProfile(session.user.id).then(data => ({ data })),
       ]);
 
       if (!farmRes.data) { router.push("/partner"); return; }
-      const data = farmRes.data;
+      // The address / map pin come only from get_farm_private. Without them the form would show empty fields and a save
+      // would overwrite the stored address — so refuse to edit instead.
+      if (privRes.error || !privRes.data) {
+        alert("โหลดที่อยู่ของฟาร์มไม่สำเร็จ ลองใหม่อีกครั้ง");
+        router.push(`/farm-dashboard/${farmId}`);
+        return;
+      }
+      const data: Record<string, unknown> = { ...farmRes.data, ...privRes.data };
       // every value from the stored row, including 0 / '' / null (lib/businessProfileForm.ts)
       const f = profileRowToForm(data, 'farm_name');
       setFarmName(f.name);

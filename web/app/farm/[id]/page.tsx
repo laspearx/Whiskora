@@ -8,6 +8,7 @@ import Link from 'next/link';
 import PageLoader from '@/app/components/PageLoader';
 import { PET_STATUS } from '@/lib/constants';
 import { TRUST_COPY, isPublicListing } from '@/lib/trust';
+import { farmPublicArea } from '@/lib/farmColumns';
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -60,7 +61,7 @@ export default function PublicFarmProfile() {
         const { data: farmData, error: farmError } = await supabase
           .from('farms')
           // ระบุคอลัมน์ที่หน้านี้ใช้จริง — ไม่ดึงทั้งแถว (ข้อมูลยืนยันตัวตน/ที่อยู่ละเอียดของเจ้าของไม่ควรติดไปกับหน้าสาธารณะ)
-          .select('id, user_id, farm_name, species, bio, image_url, cover_url, phone, is_verified, owner_name, address, lat, lng, created_at')
+          .select('id, user_id, farm_name, species, bio, image_url, cover_url, phone, is_verified, owner_name, sub_district, district, province, created_at')
           .eq('id', farmId).single();
         if (farmError) throw farmError;
         setFarm(farmData);
@@ -143,8 +144,8 @@ export default function PublicFarmProfile() {
   if (!farm) return null;
 
   const ownerName = farm?.owner_name || owner?.full_name || owner?.username || 'เจ้าของฟาร์ม';
-  // ใช้เฉพาะที่อยู่ที่ฟาร์มกรอกเพื่อแสดงสาธารณะ ไม่ fallback ไปที่อยู่ส่วนตัวในโปรไฟล์เจ้าของ
-  const farmLocation = farm?.address || null;
+  // หน้าสาธารณะแสดงแค่พื้นที่ (ตำบล อำเภอ จังหวัด) — ที่อยู่เต็มและพิกัดเป็นข้อมูลส่วนตัว (20261102110000)
+  const farmLocation = farmPublicArea(farm);
   const uniqueBreeds = [...new Set(pets.map(p => extractThai(p.breed)).filter(Boolean))].slice(0, 4);
   const bioText = farm.bio || `ฟาร์ม${speciesLabel(farm.species)}คุณภาพ ดูแลด้วยความใส่ใจ`;
   const bioIsLong = bioText.length > 120;

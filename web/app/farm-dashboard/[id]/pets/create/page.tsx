@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { PET_GENDER, PET_STATUS, type PetGender, type PetStatus } from "@/lib/constants";
 import PageLoader from '@/app/components/PageLoader';
+import { FARM_PUBLIC_COLUMNS } from '@/lib/farmColumns';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -98,7 +99,7 @@ export default function CreateFarmPetPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) { router.push(`/login?redirect=${encodeURIComponent(`/farm-dashboard/${farmId}/pets/create`)}`); return; }
-        const { data: farmData, error } = await supabase.from("farms").select("*").eq("id", farmId).single();
+        const { data: farmData, error } = await supabase.from("farms").select(FARM_PUBLIC_COLUMNS).eq("id", farmId).single();
         if (error || !farmData) { router.push("/partner"); return; }
         setFarm(farmData);
         const { data: petsData } = await supabase.from("pets").select("id, name, gender, breed").eq("farm_id", farmId).order("created_at", { ascending: false });
