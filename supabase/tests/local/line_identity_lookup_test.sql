@@ -19,7 +19,11 @@ insert into auth.users (id, email, encrypted_password, email_change, created_at,
   ('b2000000-0000-4000-8000-0000000000e1', 'linked@h2.test', 'hash', '', '2026-10-06 00:00:00+00', '{"line_id":"Udup"}', '{}'),
   ('b2000000-0000-4000-8000-0000000000e2', 'line_Udup@line.whiskora.internal', '', '', '2026-10-06 00:00:00+00', '{}', '{"line_id":"Udup"}'),
   -- X: app_metadata differs from its own placeholder
-  ('b2000000-0000-4000-8000-0000000000f1', 'line_Ux1@line.whiskora.internal', '', '', '2026-10-07 00:00:00+00', '{"line_id":"Ux2"}', '{}');
+  ('b2000000-0000-4000-8000-0000000000f1', 'line_Ux1@line.whiskora.internal', '', '', '2026-10-07 00:00:00+00', '{"line_id":"Ux2"}', '{}'),
+  -- G: server-made shape but created AFTER the migration's cut-off (e.g. anonymous user + email set under autoconfirm)
+  ('b2000000-0000-4000-8000-0000000000a7', 'line_Ulate@line.whiskora.internal', '', '', '2999-01-01 00:00:00+00', '{}', '{}'),
+  -- H: the real holder of Ulate (app_metadata) — G must not turn it into a conflict
+  ('b2000000-0000-4000-8000-0000000000a8', 'late-owner@h2.test', 'hash', '', '2026-10-08 00:00:00+00', '{"line_id":"Ulate"}', '{}');
 insert into auth.identities (user_id, provider, identity_data, created_at)
 select id, 'email', jsonb_build_object('email', email), created_at + interval '1 second' from auth.users where email like '%h2.test' or email like 'line\_%';
 update auth.identities set created_at = '2026-10-20 00:00:00+00' where user_id = 'b2000000-0000-4000-8000-0000000000c2'; -- email changed later
@@ -39,6 +43,8 @@ select pg_temp.try('H2', 'A app_metadata set and consistent → already', 'postg
 select pg_temp.try('H2', 'C1 two trusted holders → conflict (app_metadata side)', 'postgres', null, pg_temp.is('b2000000-0000-4000-8000-0000000000e1', 'conflict'));
 select pg_temp.try('H2', 'C2 two trusted holders → conflict (placeholder side)', 'postgres', null, pg_temp.is('b2000000-0000-4000-8000-0000000000e2', 'conflict'));
 select pg_temp.try('H2', 'X app_metadata differs from its placeholder → conflict', 'postgres', null, pg_temp.is('b2000000-0000-4000-8000-0000000000f1', 'conflict'));
+select pg_temp.try('H2', 'G server-made shape created after the cut-off → unverified (never adopted)', 'postgres', null, pg_temp.is('b2000000-0000-4000-8000-0000000000a7', 'unverified:server-made shape but created after the cut-off'));
+select pg_temp.try('H2', 'G after the cut-off is not a trusted holder (real app_metadata holder stays already)', 'postgres', null, pg_temp.is('b2000000-0000-4000-8000-0000000000a8', 'already'));
 select pg_temp.try('H2', 'filter by id returns only rows for that id (victim + forger)', 'postgres', null,
   'select 1 / (case when (select count(*) from public.legacy_line_evidence(''Uvictim'')) = 2 then 1 else 0 end)');
 -- lookup
