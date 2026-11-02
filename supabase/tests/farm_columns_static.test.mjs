@@ -1,4 +1,4 @@
-// Static checks for H1 (20261102110000 expand + 20261102110100 contract): the app never selects '*' (or a private column) from farms, and the app's
+// Static checks for H1 (20261102110000 expand + 20261102170000 contract): the app never selects '*' (or a private column) from farms, and the app's
 // FARM_PUBLIC_COLUMNS equals the migration's column grant list. node --test supabase/tests/farm_columns_static.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const MIG = fs.readFileSync(path.join(ROOT, 'supabase/migrations/20261102110100_farm_private_columns.sql'), 'utf8');
+const MIG = fs.readFileSync(path.join(ROOT, 'supabase/migrations/20261102170000_farm_private_columns.sql'), 'utf8');
 const LIB = fs.readFileSync(path.join(ROOT, 'web/lib/farmColumns.ts'), 'utf8');
 const PRIVATE = ['address', 'house_no', 'room_no', 'moo', 'soi', 'road', 'postal_code', 'lat', 'lng', 'verification_note'];
 const list = (s) => s.split(',').map((x) => x.trim()).filter(Boolean).sort();

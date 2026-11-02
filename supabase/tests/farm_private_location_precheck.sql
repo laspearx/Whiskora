@@ -1,4 +1,4 @@
--- Read-only gate for H1: 20261102110000 (expand: RPC) and 20261102110100 (contract: column grants). Run inside `begin read only; … rollback;`. Aggregates only.
+-- Read-only gate for H1: 20261102110000 (expand: RPC) and 20261102170000 (contract: column grants). Run inside `begin read only; … rollback;`. Aggregates only.
 -- state: before (no RPC, columns open) | expanded (RPC present, columns still open — app can switch) | contracted. verdict OK only when no private column is readable by anon /
 -- authenticated / PUBLIC and every public column is. other_rights_md5: every other privilege of anon / authenticated /
 -- PUBLIC / service_role on farms (all table privileges except SELECT, column UPDATE / INSERT / REFERENCES) + RLS

@@ -1,6 +1,6 @@
 -- STATUS: proposed — security branch, not applied anywhere. H1 step 1 of 2 (EXPAND): additive only.
 -- Order (docs/SECURITY_PHASE1.md §H1): this → deploy the H1 app → verify dashboard / edit / verify / public farm →
--- 20261102110100_farm_private_columns (CONTRACT) → verify again.
+-- 20261102170000_farm_private_columns (CONTRACT) → verify again.
 -- Adds get_farm_private(farm): the private location fields + admin note for the entity owner, any workspace member of
 -- that farm, or a platform admin. Changes no grant, policy or data: the old app keeps working, the new app works.
 -- Private columns for the people who manage the farm: entity owner, any workspace member of that farm, platform admin.

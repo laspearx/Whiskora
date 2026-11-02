@@ -1,5 +1,6 @@
--- STATUS: proposed — security branch, not applied anywhere. H1 step 2 of 2 (CONTRACT). Apply ONLY after
--- 20261102110000_farm_private_rpc AND the H1 app are live and verified (the old app selects farms.* and would break).
+-- STATUS: proposed — security branch, not applied anywhere. H1 step 2 of 2 (CONTRACT), timestamped LAST of Phase 1 on
+-- purpose. Apply ONLY after 20261102110000_farm_private_rpc AND the H1 app are live and verified (the old app selects
+-- farms.* and would break).
 --
 -- H1: the exact location of a farm (usually the breeder's home) and the admin's verification note were readable by
 -- anyone through the API (policies "Public can read / view farms" USING true + table-level SELECT for anon /
