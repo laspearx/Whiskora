@@ -10,6 +10,8 @@ import QRCode from 'qrcode';
 import Cropper from 'react-easy-crop';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
+import { summarizeVaccines } from '@/lib/vaccine-summary';
+import PetHealthSummary from '@/app/components/PetHealthSummary';
 import { neuteredText } from '@/lib/trust';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────
@@ -95,6 +97,7 @@ export default function PetDetailPage() {
     health_notes: string | null; traits: string | null;
   } | null>(null);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
+  const [vaccineReadError, setVaccineReadError] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight: number; recorded_date: string }[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
@@ -316,6 +319,7 @@ export default function PetDetailPage() {
         supabase.from('pet_co_owners').select('*, profile:user_id(id, full_name, avatar_url)').eq('pet_id', petId),
         supabase.from('pet_weights').select('weight, recorded_date').eq('pet_id', petId).order('recorded_date', { ascending: true }),
       ]);
+      setVaccineReadError(!!vaccineRes.error);
       if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
       if (docRes.data) {
@@ -736,6 +740,13 @@ export default function PetDetailPage() {
 
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
   const isOwner = sessionUserId === pet.user_id;
+  // Keep the existing per-group rules; wait for access resolution before exposing a category.
+  const canRead = (group: string) => fieldAccess !== null && fieldAccess[group] !== false;
+  const visibleTabs = TABS.filter(tab => canRead(tab.fieldGroupKey));
+  const currentTab = visibleTabs.some(tab => tab.id === activeTab) ? activeTab : visibleTabs[0]?.id;
+  // The existing vaccine-create page permits the pet's primary owner only.
+  const canRecordVaccine = isOwner && canRead('vaccination');
+  const vaccineSummary = canRead('vaccination') && !vaccineReadError ? summarizeVaccines(vaccines) : null;
   const galleryImages = parseGallery(pet.gallery_urls || '');
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
   const combinedTimeline = generateCombinedTimeline();
@@ -991,8 +1002,7 @@ export default function PetDetailPage() {
         .health-tick-info { flex: 1; min-width: 0; }
         .health-tick-label { font-size: 13px; font-weight: 500; color: ${F.ink}; }
         .health-tick-detail { font-size: 11px; color: ${F.muted}; margin-top: 1px; }
-        /* ─── Mobile: hide tabs, show content always ─── */
-        @media (max-width: 768px) { .tabs-wrapper { display: none !important; } }
+        /* Categories remain available on mobile via the existing horizontal scroller. */
         /* ─── Owner Actions ─── */
         .owner-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
         .btn-owner-action { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 1.5px solid ${F.line}; background: white; font-family: inherit; font-size: 12px; font-weight: 600; color: ${F.inkSoft}; cursor: pointer; transition: all .15s; }
@@ -1261,16 +1271,16 @@ export default function PetDetailPage() {
           </div>
 
           {/* ─── Tabs ─── */}
-          <div className="tabs-wrapper"><div className="tabs-inner">
-            {TABS.filter(tab => fieldAccess === null || fieldAccess[tab.fieldGroupKey] !== false).map(tab => (
-              <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+          <nav className="tabs-wrapper" aria-label="หมวดข้อมูลสัตว์เลี้ยง"><div className="tabs-inner">
+            {visibleTabs.map(tab => (
+              <button key={tab.id} className={`tab-btn ${currentTab === tab.id ? 'active' : ''}`} aria-pressed={currentTab === tab.id} onClick={() => setActiveTab(tab.id)}>
                 <span className="tab-icon">{tab.icon}</span>{tab.label}
               </button>
             ))}
-          </div></div>
+          </div></nav>
 
           {/* ─── Overview ─── */}
-          {activeTab === 'overview' && (
+          {currentTab === 'overview' && (
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
@@ -1300,20 +1310,21 @@ export default function PetDetailPage() {
                   </div>
                 )}
 
-                {vaccines.length > 0 && (
+                {canRead('vaccination') && (
                   <div className="card">
                     <div className="card-header">
-                      <div className="card-title"><div className="card-title-icon" style={{ color: '#0D9488' }}><Icon.Syringe /></div>ประวัติการฉีดวัคซีน</div>
+                      <div className="card-title"><div className="card-title-icon" style={{ color: '#0D9488' }}><Icon.Syringe /></div>ประวัติวัคซีน / การดูแล</div>
                       <Link href={`/pets/${pet.id}/vaccines`} style={{ fontSize: '11px', color: F.pink, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>ดูทั้งหมด →</Link>
                     </div>
                     <div className="card-body">
+                      {vaccineReadError ? <p className="health-tick-detail">โหลดประวัติไม่สำเร็จ กรุณาลองโหลดหน้าอีกครั้ง</p> : vaccines.length === 0 && <p className="health-tick-detail">ยังไม่มีประวัติวัคซีน / การดูแล</p>}
                       {vaccines.slice(0, 4).map(v => (
                         <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
-                          <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || 'รับวัคซีนเรียบร้อย'}</div></div>
+                          <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || 'ไม่มีหมายเหตุ'}</div></div>
                           <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
                       ))}
                     </div>
-                    {vaccines.length > 4 && <div className="card-footer"><Link href={`/pets/${pet.id}/vaccines`}>ดูประวัติทั้งหมด →</Link></div>}
+                    {canRecordVaccine && <div className="card-footer"><Link href={`/pets/${pet.id}/vaccines/create`}>+ เพิ่มวัคซีน</Link></div>}
                   </div>
                 )}
 
@@ -1367,31 +1378,7 @@ export default function PetDetailPage() {
                 <div className="card">
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-health.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    <div className="health-tick-list">
-                      {(() => {
-                        const today = new Date();
-                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
-                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
-                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
-                        const checks = [
-                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
-                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
-                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
-                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: neuteredText(pet.is_neutered) },
-                        ];
-                        return checks.map((c, i) => (
-                          <div key={i} className="health-tick-row">
-                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}>
-                              <Icon.Check />
-                            </div>
-                            <div className="health-tick-info">
-                              <div className="health-tick-label">{c.label}</div>
-                              <div className="health-tick-detail">{c.detail}</div>
-                            </div>
-                          </div>
-                        ));
-                      })()}
-                    </div>
+                    <PetHealthSummary summary={vaccineSummary} readError={canRead('vaccination') && vaccineReadError} isNeutered={pet.is_neutered} />
                     {healthDetails?.allergies && (
                       <div style={{ marginTop: '12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '12px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#E11D48', textTransform: 'uppercase', marginBottom: '4px', display:'flex', alignItems:'center', gap:4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>สิ่งที่แพ้</div>
@@ -1422,7 +1409,7 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Pedigree tab ─── */}
-          {activeTab === 'pedigree' && (
+          {currentTab === 'pedigree' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-breeding.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>แผนผังสายเลือด (Pedigree)</div></div>
               <div className="card-body">{renderPedigree()}</div>
@@ -1430,34 +1417,13 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Health tab ─── */}
-          {activeTab === 'health' && (
+          {currentTab === 'health' && (
             <div className="content-grid">
               <div className="content-main">
                 <div className="card">
                   <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-health.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>สถานะสุขภาพ</div></div>
                   <div className="card-body">
-                    <div className="health-tick-list">
-                      {(() => {
-                        const today = new Date();
-                        const hasFVRCP = vaccines.some(v => v.vaccine_name?.includes('FVRCP'));
-                        const hasRabies = vaccines.some(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies'));
-                        const hasOverdue = vaccines.some(v => (v as any).next_due && new Date((v as any).next_due) < today);
-                        return [
-                          { label: 'วัคซีนรวม (FVRCP)', ok: hasFVRCP, detail: hasFVRCP ? `${vaccines.filter(v => v.vaccine_name?.includes('FVRCP')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
-                          { label: 'วัคซีนพิษสุนัขบ้า', ok: hasRabies, detail: hasRabies ? `${vaccines.filter(v => v.vaccine_name?.includes('พิษสุนัขบ้า') || v.vaccine_name?.toLowerCase().includes('rabies')).length} เข็ม` : 'ยังไม่มีข้อมูล' },
-                          { label: 'วัคซีนไม่เกินกำหนด', ok: vaccines.length > 0 && !hasOverdue, detail: hasOverdue ? 'มีวัคซีนเกินกำหนด' : vaccines.length === 0 ? 'ยังไม่มีข้อมูล' : 'ครบถ้วนสม่ำเสมอ' },
-                          { label: 'ทำหมัน', ok: !!pet.is_neutered, detail: neuteredText(pet.is_neutered) },
-                        ].map((c, i) => (
-                          <div key={i} className="health-tick-row">
-                            <div className={`health-tick ${c.ok ? 'ok' : 'no'}`}><Icon.Check /></div>
-                            <div className="health-tick-info">
-                              <div className="health-tick-label">{c.label}</div>
-                              <div className="health-tick-detail">{c.detail}</div>
-                            </div>
-                          </div>
-                        ));
-                      })()}
-                    </div>
+                    <PetHealthSummary summary={vaccineSummary} readError={canRead('vaccination') && vaccineReadError} isNeutered={pet.is_neutered} />
                     {healthDetails?.chronic_diseases && (
                       <div style={{ marginTop: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '14px' }}>
                         <div style={{ fontSize: '10px', fontWeight: 600, color: '#D97706', textTransform: 'uppercase', marginBottom: '6px' }}>โรคประจำตัว</div>
@@ -1485,13 +1451,13 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Vaccine tab ─── */}
-          {activeTab === 'vaccine' && (
+          {currentTab === 'vaccine' && (
             <div className="card">
-              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ color: '#0D9488' }}><Icon.Syringe /></div>ประวัติการฉีดวัคซีน</div>
-                <Link href={`/pets/${pet.id}/vaccines`} className="btn-pink" style={{ fontSize: '12px', padding: '6px 14px' }}><Icon.Plus /> เพิ่มวัคซีน</Link>
+              <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ color: '#0D9488' }}><Icon.Syringe /></div>ประวัติวัคซีน / การดูแล</div>
+                {canRecordVaccine && <Link href={`/pets/${pet.id}/vaccines/create`} className="btn-pink" style={{ fontSize: '12px', padding: '6px 14px' }}><Icon.Plus /> เพิ่มวัคซีน</Link>}
               </div>
               <div className="card-body">
-                {vaccines.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีประวัติวัคซีน</div> : vaccines.map(v => (
+                {vaccineReadError ? <p>โหลดประวัติไม่สำเร็จ กรุณาลองโหลดหน้าอีกครั้ง</p> : vaccines.length === 0 ? <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px' }}>ยังไม่มีประวัติวัคซีน</div> : vaccines.map(v => (
                   <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
                     <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || '-'}</div></div>
                     <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
@@ -1501,7 +1467,7 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Weight tab ─── */}
-          {activeTab === 'weight' && (
+          {currentTab === 'weight' && (
             <div className="card">
               <div className="card-header">
                 <div className="card-title"><div className="card-title-icon" style={{ color: F.pink }}><Icon.Weight /></div>ประวัติน้ำหนัก</div>
@@ -1530,7 +1496,7 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Activities tab ─── */}
-          {activeTab === 'activities' && (
+          {currentTab === 'activities' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" style={{ color: '#D97706' }}><Icon.Doc /></div>โน้ต & พฤติกรรม</div>
                 <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มโน้ต</button>
@@ -1561,7 +1527,7 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Docs tab ─── */}
-          {activeTab === 'docs' && (
+          {currentTab === 'docs' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-documents.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>เอกสารสำคัญ</div>
                 <button className="btn-add-gallery" onClick={() => docInputRef.current?.click()} disabled={uploadingDoc}><Icon.Plus /> {uploadingDoc ? 'กำลังอัปโหลด...' : 'เพิ่มเอกสาร'}</button>
@@ -1582,7 +1548,7 @@ export default function PetDetailPage() {
           )}
 
           {/* ─── Timeline tab ─── */}
-          {activeTab === 'timeline' && (
+          {currentTab === 'timeline' && (
             <div className="card">
               <div className="card-header"><div className="card-title"><div className="card-title-icon" ><img src="/icons/icon-pet-records.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>ไทม์ไลน์กิจกรรมทั้งหมด</div>
                 <button className="btn-add-gallery" onClick={() => router.push(`/pets/${petId}/activities/create`)}><Icon.Plus /> เพิ่มกิจกรรม</button>

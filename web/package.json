@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:unit:vaccine": "node tests/vaccine-summary.test.mjs",
+    "test:ui:vaccine": "playwright test --config playwright.vaccine-mock.config.ts"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.15.0",
