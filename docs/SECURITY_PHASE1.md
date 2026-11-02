@@ -10,12 +10,18 @@ Confirm-email impact on existing accounts + recovery plan + SMTP list; farm cont
 Revision 3 (final preflight): contract migrations timestamped last (M4 `…160000`, H1 contract `…170000`); LINE users
 with only an unverified legacy claim get a re-link prompt instead of a silent duplicate account.
 
+Revision 4 (resumed preflight, 2026-11-02): `security/phase1-integration` pushed + Draft PR #37 (Preview only, staging).
+H2: `legacy_line_evidence` trusts the placeholder shape only for accounts created **before the H2 migration was applied**
+(cut-off fixed into the function at apply time) — GoTrue lets an anonymous user set an email unconfirmed under
+autoconfirm and keep its session, which would forge the shape. Anonymous sign-ins: off on production and staging
+(public `/auth/v1/settings`, read-only, 2026-11-02). H2 migration sha256 changed (see PR #37).
+
 | Item | Branch (head) | Migrations (sha256) | App | Scope |
 |---|---|---|---|---|
 | H1 farm exact location | `security/h1-farm-private-location` (`4b3a334`) | `20261102110000_farm_private_rpc` (`bb5e1acb…56cf`) **expand** · `20261102170000_farm_private_columns` (`03fb2e43…fd78`) **contract** | yes | app |
 | M1 farm link guard | `security/m1-farm-link-guard` (`e3a0d13`) | `20261102120000_farm_link_guard` (`fde5c112…b16f`) | no | release |
 | M7 pet-documents storage | `security/m7-pet-documents-storage` (`7c896b7`) | `20261102140000_pet_documents_storage` (`5609244b…8d01`) | no | release |
-| H2 account linking (+M5, L1) | `security/h2-account-linking` (`f6139a9`) | `20261102150000_line_identity_lookup` (`a53561ff…9c45`) | yes | app |
+| H2 account linking (+M5, L1) | `security/h2-account-linking` (`33e2300`) | `20261102150000_line_identity_lookup` (sha256 in PR #37; changed in rev. 4) | yes | app |
 | M4 `pets.note` | `security/m4-pet-note-private` (`8d96d0a`) | `20261102160000_pet_note_private` (`7d6d6ddc…ef60`) **contract** | 3 lines | app |
 
 ### Migration order and app compatibility
@@ -105,7 +111,7 @@ same accounts.
 every legacy claim from server-side data only:
 | Class | Rule | Action |
 |---|---|---|
-| verified | placeholder email `line_<id>@line.whiskora.internal` (only our callback creates it), **no password**, exactly one email identity with the current email created with the account (≤ 60 s), no pending email change, `user_metadata.line_id` absent or equal, no other trusted holder | backfill may write `app_metadata.line_id`; the callback also adopts it at that user's next LINE login (the login proves the id) |
+| verified | account created **before the H2 migration's cut-off**, placeholder email `line_<id>@line.whiskora.internal` (only our callback creates it), **no password**, exactly one email identity with the current email created with the account (≤ 60 s), no pending email change, `user_metadata.line_id` absent or equal, no other trusted holder | backfill may write `app_metadata.line_id`; the callback also adopts it at that user's next LINE login (the login proves the id) |
 | conflict | two trusted holders (app_metadata / verified placeholder) or app_metadata ≠ placeholder | nothing written; login refused `LINE_ACCOUNT_CONFLICT`; admin resolves |
 | unverified | a claim only in `user_metadata` (e.g. a real-email account that once linked LINE, or a forged value), a placeholder with a password, a changed email, ids that disagree | **never migrated**; neither gets nor blocks a LINE login; the owner re-links |
 | already | app_metadata set and consistent | none |
@@ -153,6 +159,15 @@ identity / timestamps produced by `admin.createUser` vs. an email signup / email
   unconfirmed X → Google X → the unconfirmed identity is dropped / no shared account; confirmed password X → Google X
   (documents today's linking for group 1); resend; password reset; email change (both addresses); expired link; the
   LINE evidence shapes (admin-created placeholder vs. email signup vs. email change) on the real Auth server.
+
+**Cut-off (rev. 4):** apply `150000` once per project, immediately before the app deploy (re-applying moves the cut-off).
+Placeholders created later are `unverified` ("server-made shape but created after the cut-off") and are not trusted
+holders: never adopted, never a conflict for the real holder. Old-app LINE signups in the minutes between apply and
+deploy land there → after the deploy the owner reviews that reason in the evidence report (expected 0–few) and fixes
+each by hand (admin writes `app_metadata.line_id` after checking: no password, created by the old callback). Keep
+anonymous sign-ins OFF while Confirm email is off (otherwise the same shape can be made for a NEW victim id — the
+cut-off covers adoption, but the placeholder would still block that id's first LINE sign-in: availability only — already possible today through a password
+or OTP signup on a placeholder address; admin removes the account; a signup hook that refuses `@line.whiskora.internal` is a later option).
 
 **Production order:** audit (read-only) → migration → evidence report + backfill **dry run** (review conflicts /
 unverified) → backfill `--apply` (verified only) → deploy the app → Confirm email ON → SMTP → groups 1–3 → M6.
