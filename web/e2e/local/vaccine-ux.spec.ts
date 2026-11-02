@@ -13,15 +13,17 @@ const sampleRecords = [
 
 type MockOptions = {
   owner?: boolean; vaccination?: boolean; empty?: boolean; delayedAccess?: boolean; readError?: boolean;
+  accessError?: boolean; reloadFailure?: boolean; routeRace?: boolean;
   deniedGroups?: readonly (keyof typeof access)[];
 };
-type Observations = { pageErrors: string[]; unexpected: string[]; writes: string[]; runtimeEvents: string[]; apiPaths: string[]; releaseAccess: () => void };
+type Observations = { pageErrors: string[]; unexpected: string[]; writes: string[]; runtimeEvents: string[]; apiPaths: string[]; releaseAccess: () => void; slowStarted: Promise<void>; slowFinished: Promise<void>; releaseSlow: () => void };
 const observations = new WeakMap<Page, Observations>();
 
 test.afterEach(async ({ page }, testInfo) => {
   const observed = observations.get(page);
   if (!observed) return;
   observed.releaseAccess();
+  observed.releaseSlow();
   await testInfo.attach('mock-observations', {
     body: JSON.stringify(observed, null, 2), contentType: 'application/json',
   });
@@ -31,13 +33,22 @@ test.afterEach(async ({ page }, testInfo) => {
   expect(observed.writes).toEqual([]);
 });
 
-async function mockPet(page: Page, { owner = true, vaccination = true, empty = false, delayedAccess = false, readError = false, deniedGroups = [] }: MockOptions = {}) {
+async function mockPet(page: Page, { owner = true, vaccination = true, empty = false, delayedAccess = false, readError = false, accessError = false, reloadFailure = false, routeRace = false, deniedGroups = [] }: MockOptions = {}) {
   const pageErrors: string[] = [];
   const unexpected: string[] = [];
   const writes: string[] = [];
   const runtimeEvents: string[] = [];
   const apiPaths: string[] = [];
-  const observed: Observations = { pageErrors, unexpected, writes, runtimeEvents, apiPaths, releaseAccess: () => {} };
+  let releaseSlow = () => {};
+  let markSlowStarted = () => {};
+  let markSlowFinished = () => {};
+  const slowGate = new Promise<void>(resolve => { releaseSlow = resolve; });
+  const slowStarted = new Promise<void>(resolve => { markSlowStarted = resolve; });
+  const slowFinished = new Promise<void>(resolve => { markSlowFinished = resolve; });
+  let slowRequests = 0;
+  let slowResponses = 0;
+  let reloaded = false;
+  const observed: Observations = { pageErrors, unexpected, writes, runtimeEvents, apiPaths, releaseAccess: () => {}, releaseSlow, slowStarted, slowFinished };
   observations.set(page, observed);
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('crash', () => runtimeEvents.push('page-crash'));
@@ -72,18 +83,34 @@ async function mockPet(page: Page, { owner = true, vaccination = true, empty = f
     if (!isMock) return route.fulfill({ status: 200, body: '', contentType: 'text/plain' });
     const path = url.pathname.slice('/mock-supabase'.length);
     apiPaths.push(`${request.method()} ${path}`);
+    if (reloadFailure && path === '/rest/v1/pets' && request.method() === 'PATCH') {
+      reloaded = true;
+      return route.fulfill({ status: 204, body: '' });
+    }
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method()) && !path.startsWith('/rest/v1/rpc/')) writes.push(path);
+    const requestedPet = path.startsWith('/rest/v1/rpc/') ? String(request.postDataJSON()?.p_pet_id ?? PET) : (url.searchParams.get(path === '/rest/v1/pets' ? 'id' : 'pet_id')?.replace('eq.', '') ?? PET);
+    const isSlow = routeRace && requestedPet === '990002' && ['/rest/v1/rpc/get_my_pet_access', '/rest/v1/vaccines'].includes(path);
+    if (isSlow) {
+      if (++slowRequests === 2) markSlowStarted();
+      await slowGate;
+    }
     let body: unknown = [];
     if (path === '/rest/v1/pets') {
-      body = { id: PET, user_id: OWNER, name: 'Mock Pet', species: 'cat', gender: 'ตัวเมีย', is_neutered: null, is_public: true, gallery_urls: '[]', farm_id: null };
+      body = { id: requestedPet, user_id: OWNER, name: requestedPet === PET ? 'Mock Pet' : 'Slow Pet', species: 'cat', gender: 'ตัวเมีย', is_neutered: null, is_public: true, image_url: reloadFailure ? '/logo.png' : null, gallery_urls: reloadFailure && !reloaded ? '["/icons/icon-health.png"]' : '[]', farm_id: null };
     } else if (path === '/rest/v1/rpc/get_my_pet_access') {
+      if (accessError) return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ message: 'Mock access refusal', code: '42501' }) });
       if (delayedAccess) await gate;
-      body = { ...access, vaccination, ...Object.fromEntries(deniedGroups.map(group => [group, false])) };
+      body = { ...access, vaccination: isSlow ? false : vaccination, ...Object.fromEntries(deniedGroups.map(group => [group, false])) };
     } else if (path === '/rest/v1/rpc/get_pet_health') {
       body = [{ blood_type: null, allergies: null }];
     } else if (path === '/rest/v1/vaccines') {
-      if (readError) return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ message: 'Mock read refusal', code: '42501' }) });
-      body = empty ? [] : sampleRecords;
+      if (readError || (reloadFailure && reloaded)) return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ message: 'Mock read refusal', code: '42501' }) });
+      body = empty ? [] : isSlow ? [{ id: '99', vaccine_name: 'Stale Slow Record', next_due: null }] : sampleRecords;
+    } else if (path === '/rest/v1/rpc/get_pet_pedigree' && routeRace) {
+      body = [
+        { node_id: Number(requestedPet), child_id: null, name: requestedPet === PET ? 'Mock Pet' : 'Slow Pet', relation: 'self', generation: 0 },
+        { node_id: 990002, child_id: Number(PET), name: 'Slow Pet', relation: 'sire', generation: 1 },
+      ];
     } else if (path === '/rest/v1/pet_ownership_transfers') {
       body = null;
     } else if (!['/rest/v1/rpc/get_pet_pedigree', '/rest/v1/pet_activities', '/rest/v1/pet_documents', '/rest/v1/pet_co_owners', '/rest/v1/pet_weights', '/rest/v1/workspace_members', '/rest/v1/workspaces'].includes(path)) {
@@ -91,6 +118,7 @@ async function mockPet(page: Page, { owner = true, vaccination = true, empty = f
       return route.fulfill({ status: 501, contentType: 'application/json', body: JSON.stringify({ message: 'Unconfigured mock endpoint' }) });
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (isSlow && ++slowResponses === 2) markSlowFinished();
   });
   await page.goto(`/th/pets/${PET}`);
   await expect(page.locator('.pet-name')).toContainText('Mock Pet');
@@ -133,7 +161,8 @@ test('owner switches categories and sees identical neutral summaries; direct cre
   await expect(add).toHaveAttribute('href', `/pets/${PET}/vaccines/create`);
   await nav.getByRole('button', { name: 'ภาพรวม', exact: true }).click();
   await add.click();
-  await expect(page).toHaveURL(`/th/pets/${PET}/vaccines/create`);
+  // Cold compilation of the destination can exceed the normal 30-second assertion budget.
+  await expect(page).toHaveURL(`/th/pets/${PET}/vaccines/create`, { timeout: 90_000 });
   await expect(page.getByRole('heading', { name: 'เพิ่มประวัติวัคซีน' })).toBeVisible();
   expect(observed.pageErrors).toEqual([]);
   expect(observed.unexpected).toEqual([]);
@@ -196,4 +225,51 @@ test('navigation exposes only the categories allowed by fieldAccess', async ({ p
     await expect(nav.getByRole('button', { name: label, exact: true })).toHaveCount(0);
   }
   await expect(page.getByRole('link', { name: /เพิ่มวัคซีน/ })).toHaveCount(0);
+});
+
+
+test('successful history followed by an actual gallery-triggered reload failure clears old records', async ({ page }) => {
+  await mockPet(page, { reloadFailure: true });
+  await expect(page.getByText('วัคซีนรวม', { exact: true })).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  // This existing owner action calls fetchPetData again; the PATCH is intercepted locally.
+  await page.locator('.gallery-item').nth(1).hover();
+  await page.locator('.gallery-item-del').click();
+  await expect(summary(page)).toContainText('โหลดประวัติไม่สำเร็จ');
+  await expect(page.getByText('วัคซีนรวม', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.vaccine-row')).toHaveCount(0);
+  await categoryNav(page).getByRole('button', { name: 'วัคซีน', exact: true }).click();
+  await expect(page.getByText('โหลดประวัติไม่สำเร็จ', { exact: false })).toBeVisible();
+  await expect(page.locator('.vaccine-row')).toHaveCount(0);
+});
+
+test('late responses after pedigree navigation and browser back cannot replace the current pet or access', async ({ page }) => {
+  const observed = await mockPet(page, { routeRace: true });
+  await expect(summary(page)).toContainText('4 รายการ');
+  // Use the actual pedigree Link and browser history; no injected router or artificial route events.
+  await page.locator('a.ped-card-link[href="/pets/990002"]').first().click();
+  await expect(page).toHaveURL('/th/pets/990002');
+  await observed.slowStarted;
+  await page.goBack();
+  await expect(page).toHaveURL(`/th/pets/${PET}`);
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+  await expect(summary(page)).toContainText('4 รายการ');
+  observed.releaseSlow();
+  await observed.slowFinished;
+  // A browser render turn after the delayed fetch callbacks have been delivered.
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+  await expect(categoryNav(page).getByRole('button', { name: 'วัคซีน', exact: true })).toBeVisible();
+  await expect(summary(page)).toContainText('4 รายการ');
+  await expect(page.getByText('Stale Slow Record', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /เพิ่มวัคซีน/ })).toHaveAttribute('href', `/pets/${PET}/vaccines/create`);
+});
+
+test('failed access RPC shows an explicit error and keeps all unconfirmed categories and actions closed', async ({ page }) => {
+  await mockPet(page, { accessError: true });
+  await expect(page.getByRole('alert').filter({ hasText: 'โหลดสิทธิ์ไม่สำเร็จ' })).toBeVisible();
+  await expect(categoryNav(page).getByRole('button')).toHaveCount(0);
+  await expect(summary(page)).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /เพิ่มวัคซีน/ })).toHaveCount(0);
+  await expect(page.getByText('วัคซีนรวม', { exact: true })).toHaveCount(0);
 });

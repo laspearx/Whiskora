@@ -91,6 +91,8 @@ export default function PetDetailPage() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const loadSequence = useRef({ value: 0 });
+  const [accessReadError, setAccessReadError] = useState(false);
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
   const [healthDetails, setHealthDetails] = useState<{
     blood_type: string | null; allergies: string | null; chronic_diseases: string | null;
@@ -160,7 +162,11 @@ export default function PetDetailPage() {
     catch { return urls.split(',').map(s => s.trim()).filter(Boolean); }
   };
 
-  useEffect(() => { if (petId) fetchPetData(); }, [petId]);
+  useEffect(() => {
+    const sequence = loadSequence.current;
+    if (petId) fetchPetData();
+    return () => { sequence.value++; };
+  }, [petId]);
 
   // สร้าง QR เมื่อรู้ url แล้ว
   useEffect(() => {
@@ -276,9 +282,20 @@ export default function PetDetailPage() {
   };
 
   const fetchPetData = async () => {
+    const sequence = ++loadSequence.current.value;
+    const isCurrent = () => sequence === loadSequence.current.value;
+    setPet(null);
+    setVaccines([]);
+    setVaccineReadError(false);
+    setFieldAccess(null);
+    setAccessReadError(false);
+    setHealthDetails(null);
+    setPedigreeGens([]);
+    setActiveTab('overview');
     try {
       setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isCurrent()) return;
       if (!session) return router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       setSessionUserId(session.user.id);
 
@@ -300,16 +317,27 @@ export default function PetDetailPage() {
         .eq('id', petId)
         .single();
 
+      if (!isCurrent()) return;
       if (petError) throw petError;
       setPet(petData as unknown as Pet);
       if (petData.image_url) setSelectedImage(petData.image_url);
 
-      buildPedigreeTree(petData as unknown as Pet).then(setPedigreeGens).catch(() => setPedigreeGens([]));
-      supabase.rpc('get_my_pet_access', { p_pet_id: petData.id }).then(({ data }) => {
-        if (data) setFieldAccess(data as Record<string, boolean>);
+      buildPedigreeTree(petData as unknown as Pet).then(data => {
+        if (isCurrent()) setPedigreeGens(data);
+      }).catch(() => { if (isCurrent()) setPedigreeGens([]); });
+      Promise.resolve(supabase.rpc('get_my_pet_access', { p_pet_id: petData.id })).then(({ data, error }) => {
+        if (!isCurrent()) return;
+        if (error || !data) {
+          setFieldAccess(null);
+          setAccessReadError(true);
+        } else {
+          setFieldAccess(data as Record<string, boolean>);
+        }
+      }).catch(() => {
+        if (isCurrent()) { setFieldAccess(null); setAccessReadError(true); }
       });
       supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
-        if (data && data[0]) setHealthDetails(data[0]);
+        if (isCurrent() && data && data[0]) setHealthDetails(data[0]);
       });
 
       const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
@@ -319,8 +347,9 @@ export default function PetDetailPage() {
         supabase.from('pet_co_owners').select('*, profile:user_id(id, full_name, avatar_url)').eq('pet_id', petId),
         supabase.from('pet_weights').select('weight, recorded_date').eq('pet_id', petId).order('recorded_date', { ascending: true }),
       ]);
+      if (!isCurrent()) return;
       setVaccineReadError(!!vaccineRes.error);
-      if (vaccineRes.data) setVaccines(vaccineRes.data as Vaccine[]);
+      setVaccines(vaccineRes.error ? [] : (vaccineRes.data as Vaccine[] | null) ?? []);
       if (activityRes.data) setActivities(activityRes.data as Activity[]);
       if (docRes.data) {
         const docs = docRes.data as PetDocument[];
@@ -334,6 +363,7 @@ export default function PetDetailPage() {
           const { data } = await supabase.storage.from('pet-documents').createSignedUrl(path, 3600);
           if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
         }));
+        if (!isCurrent()) return;
         setDocSignedUrls(urlMap);
       }
       if (coOwnerRes.data) setCoOwners(coOwnerRes.data);
@@ -345,12 +375,19 @@ export default function PetDetailPage() {
         .eq('pet_id', petId)
         .eq('status', 'pending')
         .maybeSingle();
+      if (!isCurrent()) return;
       if (transferData) setPendingTransfer({ id: transferData.id, to_name: (transferData as any).profile?.full_name || null });
 
     } catch (error) {
-      console.error("Fetch Error:", error);
+      if (isCurrent()) {
+        setVaccines([]);
+        setVaccineReadError(true);
+        setFieldAccess(null);
+        setAccessReadError(true);
+        console.error("Fetch Error:", error);
+      }
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   };
 
@@ -730,7 +767,7 @@ export default function PetDetailPage() {
     );
   };
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading || (pet && String(pet.id) !== petId)) return <PageLoader />;
 
   if (!pet) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -1271,6 +1308,7 @@ export default function PetDetailPage() {
           </div>
 
           {/* ─── Tabs ─── */}
+          {accessReadError && <p role="alert">โหลดสิทธิ์ไม่สำเร็จ กรุณาลองโหลดหน้าอีกครั้ง</p>}
           <nav className="tabs-wrapper" aria-label="หมวดข้อมูลสัตว์เลี้ยง"><div className="tabs-inner">
             {visibleTabs.map(tab => (
               <button key={tab.id} className={`tab-btn ${currentTab === tab.id ? 'active' : ''}`} aria-pressed={currentTab === tab.id} onClick={() => setActiveTab(tab.id)}>
@@ -1318,7 +1356,7 @@ export default function PetDetailPage() {
                     </div>
                     <div className="card-body">
                       {vaccineReadError ? <p className="health-tick-detail">โหลดประวัติไม่สำเร็จ กรุณาลองโหลดหน้าอีกครั้ง</p> : vaccines.length === 0 && <p className="health-tick-detail">ยังไม่มีประวัติวัคซีน / การดูแล</p>}
-                      {vaccines.slice(0, 4).map(v => (
+                      {!vaccineReadError && vaccines.slice(0, 4).map(v => (
                         <div key={v.id} className="vaccine-row"><div className="vaccine-icon"><Icon.Syringe /></div>
                           <div className="vaccine-info"><div className="vaccine-name">{v.vaccine_name}</div><div className="vaccine-sub">{v.notes || 'ไม่มีหมายเหตุ'}</div></div>
                           <div className="vaccine-date">{formatDate(v.date_given)}</div></div>
