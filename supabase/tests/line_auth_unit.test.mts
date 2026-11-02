@@ -45,7 +45,12 @@ test("legacy adoption: only a verified server-made account for exactly this LINE
   assert.deepEqual(decideLegacy(L2, [{ user_id: "v", line_id: L2, class: "verified" }]), { action: "adopt", userId: "v" });
   // a forged claim (user_metadata on someone else's account) is unverified: neither adopted nor blocking
   assert.deepEqual(decideLegacy(L2, [{ user_id: "v", line_id: L2, class: "verified" }, { user_id: "attacker", line_id: L2, class: "unverified" }]), { action: "adopt", userId: "v" });
-  assert.deepEqual(decideLegacy(L2, [{ user_id: "attacker", line_id: L2, class: "unverified" }]), { action: "create" });
+  // an unverified claim alone: never linked; the user is asked first (no silent duplicate), explicit create proceeds
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "attacker", line_id: L2, class: "unverified" }]), { action: "relink_suggested" });
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "attacker", line_id: L2, class: "unverified" }], true), { action: "create" });
+  // explicit create never overrides a verified account or a conflict
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "v", line_id: L2, class: "verified" }], true), { action: "adopt", userId: "v" });
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "a", line_id: L2, class: "conflict" }], true), { action: "error", code: "LINE_ACCOUNT_CONFLICT" });
   // a verified row for ANOTHER id is never adopted
   assert.deepEqual(decideLegacy(L2, [{ user_id: "x", line_id: "Uother", class: "verified" }]), { action: "create" });
   // conflicts / two verified holders block
@@ -74,4 +79,13 @@ test("backfill script source: reads the server evidence, never user_metadata", (
   const src = fs.readFileSync(new URL("../scripts/line_identity_backfill.mjs", import.meta.url), "utf8");
   assert.ok(src.includes("rpc('legacy_line_evidence')"));
   assert.ok(!/user_metadata\?*\.line_id/.test(src.replace(/^\/\/.*$/gm, "")), "no user_metadata.line_id read outside comments");
+});
+
+test("re-link flow wiring: create flag only from an explicit request, cleared after use, shown on the login page", () => {
+  const r = fs.readFileSync(new URL("../../web/app/api/auth/line/route.ts", import.meta.url), "utf8");
+  assert.ok(r.includes("mode === 'login' && searchParams.get('create') === '1'"));
+  const c = fs.readFileSync(new URL("../../web/app/api/auth/line/callback/route.ts", import.meta.url), "utf8");
+  assert.ok(c.includes("cookieStore.delete('line_create')") && c.includes("fail('LINE_RELINK_SUGGESTED')"));
+  const l = fs.readFileSync(new URL("../../web/app/[locale]/login/page.tsx", import.meta.url), "utf8");
+  assert.ok(l.includes("LINE_RELINK_SUGGESTED") && l.includes("/api/auth/line?create=1"));
 });

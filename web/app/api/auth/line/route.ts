@@ -119,6 +119,8 @@ export async function GET(request: Request) {
   cookieStore.set('line_origin', siteUrl, opts)
   cookieStore.set('line_mode',   mode,    opts)
   cookieStore.set('line_uid',    uid,     opts)
+  // explicit "create a new LINE account" after LINE_RELINK_SUGGESTED (login mode only)
+  cookieStore.set('line_create', mode === 'login' && searchParams.get('create') === '1' ? '1' : '', opts)
 
   const params = new URLSearchParams({
     response_type: 'code',

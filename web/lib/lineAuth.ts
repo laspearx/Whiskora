@@ -40,13 +40,17 @@ export function decideLine(input: { lineUserId: unknown; mode: string; linkUid: 
 // user-writable user_metadata, placeholder with a password, changed email) are ignored: they neither get the login
 // nor block it. A 'conflict' blocks (admin resolves).
 export type EvidenceRow = { user_id: string; line_id: string | null; class: string; reason?: string };
-export function decideLegacy(lineUserId: string, rows: EvidenceRow[]):
-  { action: 'adopt'; userId: string } | { action: 'create' } | { action: 'error'; code: 'LINE_ACCOUNT_CONFLICT' } {
+// Unverified claims (e.g. a real-email account that once linked LINE, or a forged value) are never linked — but to
+// avoid a silent duplicate account the user is first asked (LINE_RELINK_SUGGESTED): sign in the usual way and link LINE
+// there, or explicitly create a new LINE account (createConfirmed). A forged claim costs one click, never the account.
+export function decideLegacy(lineUserId: string, rows: EvidenceRow[], createConfirmed = false):
+  { action: 'adopt'; userId: string } | { action: 'create' } | { action: 'relink_suggested' } | { action: 'error'; code: 'LINE_ACCOUNT_CONFLICT' } {
   const mine = rows.filter((r) => r.line_id === lineUserId);
   if (mine.some((r) => r.class === 'conflict')) return { action: 'error', code: 'LINE_ACCOUNT_CONFLICT' };
   const verified = mine.filter((r) => r.class === 'verified');
   if (verified.length > 1) return { action: 'error', code: 'LINE_ACCOUNT_CONFLICT' };
   if (verified.length === 1) return { action: 'adopt', userId: verified[0].user_id };
+  if (!createConfirmed && mine.some((r) => r.class === 'unverified')) return { action: 'relink_suggested' };
   return { action: 'create' };
 }
 
@@ -54,5 +58,5 @@ export function decideLegacy(lineUserId: string, rows: EvidenceRow[]):
 export const withLineId = (appMetadata: Record<string, unknown> | undefined, lineUserId: string) => ({ ...(appMetadata || {}), line_id: lineUserId });
 
 // Errors shown to the user: fixed codes only, never upstream bodies (L1).
-export const USER_ERROR_CODES = ['LINE_PROFILE_INVALID', 'LINE_ACCOUNT_CONFLICT', 'LINE_LINKED_TO_OTHER', 'LINE_LINK_UNAUTHORIZED',
+export const USER_ERROR_CODES = ['LINE_RELINK_SUGGESTED', 'LINE_PROFILE_INVALID', 'LINE_ACCOUNT_CONFLICT', 'LINE_LINKED_TO_OTHER', 'LINE_LINK_UNAUTHORIZED',
   'LINE_ACCOUNT_MIGRATION_PENDING', 'LINE_TOKEN_FAILED', 'LINE_SESSION_FAILED', 'state_mismatch', 'missing_code', 'auth_failed'] as const;

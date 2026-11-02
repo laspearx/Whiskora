@@ -46,11 +46,13 @@ export async function GET(request: Request) {
   const nextPath    = cookieStore.get('line_next')?.value || '/profile'
   const mode        = cookieStore.get('line_mode')?.value || 'login'
   const linkUid     = cookieStore.get('line_uid')?.value  || ''
+  const createConfirmed = cookieStore.get('line_create')?.value === '1'
   cookieStore.delete('line_state')
   cookieStore.delete('line_next')
   cookieStore.delete('line_origin')
   cookieStore.delete('line_mode')
   cookieStore.delete('line_uid')
+  cookieStore.delete('line_create')
 
   if (!savedState || savedState !== stateBack) return fail('state_mismatch')
 
@@ -117,8 +119,9 @@ export async function GET(request: Request) {
       // a legacy account made by our own callback (verified server-side evidence) is adopted, not duplicated
       const { data: evRows, error: evErr } = await admin.rpc('legacy_line_evidence', { p_line_id: lineProfile.userId })
       if (evErr) throw new LineAuthError('auth_failed', `evidence ${evErr.code ?? ''}`)
-      const legacy = decideLegacy(lineProfile.userId, (evRows ?? []) as EvidenceRow[])
+      const legacy = decideLegacy(lineProfile.userId, (evRows ?? []) as EvidenceRow[], createConfirmed)
       if (legacy.action === 'error') return fail(legacy.code)
+      if (legacy.action === 'relink_suggested') return fail('LINE_RELINK_SUGGESTED')
       if (legacy.action === 'adopt') {
         const { data: old, error: oldErr } = await admin.auth.admin.getUserById(legacy.userId)
         if (oldErr || !old.user?.email) throw new LineAuthError('auth_failed', 'adopt read')
