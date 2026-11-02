@@ -291,7 +291,7 @@ export default function PetDetailPage() {
           image_url, coat, ear, leg, eye_color, user_id, litter_id, vaccine_status,
           weight, species, farm_id, price, microchip_number,
           is_public, gallery_urls, is_neutered,
-          cover_url, pet_code, note,
+          cover_url, pet_code,
           farm:farm_id(farm_name)
         `)
         .eq('id', petId)
