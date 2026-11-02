@@ -1,5 +1,5 @@
--- STATUS: proposed — security branch, not applied anywhere. Staging first, production only on the owner's go-ahead
--- (docs/SECURITY_PHASE1.md §H1). Deploy the app of this branch BEFORE this migration (the old app selects farms.*).
+-- STATUS: proposed — security branch, not applied anywhere. H1 step 2 of 2 (CONTRACT). Apply ONLY after
+-- 20261102110000_farm_private_rpc AND the H1 app are live and verified (the old app selects farms.* and would break).
 --
 -- H1: the exact location of a farm (usually the breeder's home) and the admin's verification note were readable by
 -- anyone through the API (policies "Public can read / view farms" USING true + table-level SELECT for anon /
@@ -11,6 +11,13 @@
 -- Public : everything else — incl. phone, line_id, facebook_link (contact the owner chose to show) and the area
 --          (sub_district, district, province) used by farm-hub / the public farm page.
 -- shops / services are NOT changed here (storefront addresses are meant to be public; owner decision pending).
+-- Rollback: do NOT re-grant the table; see docs/SECURITY_PHASE1.md §H1 (fix forward; at most one column to
+-- authenticated, time-boxed, owner decision).
+do $$ begin
+  if to_regprocedure('public.get_farm_private(bigint)') is null then
+    raise exception 'STOP: get_farm_private missing — apply 20261102110000_farm_private_rpc and deploy the H1 app first'; end if;
+end $$;
+
 do $$
 declare missing text;
 begin
@@ -32,28 +39,6 @@ revoke select on public.farms from anon, authenticated;
 grant select (id, created_at, user_id, farm_name, species, phone, bio, image_url, facebook_link, line_id, is_verified, verified_at,
               cover_url, updated_at, verification_status, owner_name, sub_district, district, province)
   on public.farms to anon, authenticated;
-
--- Private columns for the people who manage the farm: entity owner, any workspace member of that farm, platform admin.
-create or replace function public.get_farm_private(p_farm_id bigint)
-returns table (address text, house_no text, room_no text, moo text, soi text, road text, postal_code text,
-               lat double precision, lng double precision, verification_note text)
-language plpgsql stable security definer set search_path = public as $$
-declare v_uid uuid := auth.uid();
-begin
-  if v_uid is null then raise exception 'not signed in' using errcode = '42501'; end if;
-  if not exists (select 1 from farms f where f.id = p_farm_id) then raise exception 'farm not found' using errcode = 'P0002'; end if;
-  if not (
-    exists (select 1 from farms f where f.id = p_farm_id and f.user_id = v_uid::text)
-    or exists (select 1 from workspaces w join workspace_members m on m.workspace_id = w.id
-                where w.type = 'farm' and w.entity_id = p_farm_id and m.user_id = v_uid)
-    or exists (select 1 from profiles p where p.id = v_uid and p.role = 'admin')
-  ) then raise exception 'not allowed' using errcode = '42501'; end if;
-  return query select f.address, f.house_no, f.room_no, f.moo, f.soi, f.road, f.postal_code,
-                      f.lat::double precision, f.lng::double precision, f.verification_note
-                 from farms f where f.id = p_farm_id;
-end $$;
-revoke all on function public.get_farm_private(bigint) from public, anon;
-grant execute on function public.get_farm_private(bigint) to authenticated;
 
 do $$
 declare c text;

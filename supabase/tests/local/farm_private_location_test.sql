@@ -1,4 +1,4 @@
--- H1 (20261102110000): exact farm location + verification note not readable through the API; owner / team / admin read
+-- H1 after BOTH steps (20261102110000 expand + 20261102110100 contract): exact farm location + verification note not readable through the API; owner / team / admin read
 -- them via get_farm_private(). Synthetic rows only (local container, rolled back).
 insert into auth.users (id, email) values
   ('f1000000-0000-4000-8000-000000000001', 'owner@h1.test'), ('f1000000-0000-4000-8000-000000000002', 'staff@h1.test'),

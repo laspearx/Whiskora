@@ -1,5 +1,5 @@
--- Read-only gate before / after 20261102110000 (H1). Run inside `begin read only; … rollback;`. Aggregates only.
--- state: before (anon can read house_no) | after. verdict OK only when no private column is readable by anon /
+-- Read-only gate for H1: 20261102110000 (expand: RPC) and 20261102110100 (contract: column grants). Run inside `begin read only; … rollback;`. Aggregates only.
+-- state: before (no RPC, columns open) | expanded (RPC present, columns still open — app can switch) | contracted. verdict OK only when no private column is readable by anon /
 -- authenticated / PUBLIC and every public column is. other_rights_md5: every other privilege of anon / authenticated /
 -- PUBLIC / service_role on farms (all table privileges except SELECT, column UPDATE / INSERT / REFERENCES) + RLS
 -- policies of farms — must be identical before and after.
@@ -25,7 +25,8 @@ other as (
     select 'policy:' || polname || ':' || polcmd::text || ':' || coalesce(pg_get_expr(polqual, polrelid), '-') || ':' || coalesce(pg_get_expr(polwithcheck, polrelid), '-')
       from pg_policy where polrelid = 'public.farms'::regclass) s)
 select
-  case when exists (select 1 from leaks) then 'before' else 'after' end state,
+  case when to_regprocedure('public.get_farm_private(bigint)') is null then 'before'
+       when exists (select 1 from leaks) then 'expanded' else 'contracted' end state,
   case when not exists (select 1 from leaks) and not exists (select 1 from missing) then 'OK'
        else 'STOP leaks=' || coalesce((select string_agg(x, ',') from leaks), '-') || ' missing=' || coalesce((select string_agg(x, ',') from missing), '-') end verdict,
   to_regprocedure('public.get_farm_private(bigint)') is not null rpc_present,
