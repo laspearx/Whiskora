@@ -2,6 +2,27 @@
 
 Snapshot at end of day. No secrets, tokens or personal data in this file; counts are aggregates.
 
+## 2026-11-01 — PR #31 rollout: business profile edits by role (v1.14.0; UTC)
+| Step | Result |
+| --- | --- |
+| Pin | head `de7dd1ef5f94d5e8256c8ab4410712e8ef387c0f` on main `d0e519a` (no main change since review; merge-base = main tip); `web/` + migrations unchanged since tested Preview commit `4ab389d`; sha256 step 1 `c3fff819d85028617fa447f35173712dc99ebd744f052ea312a00948fe02bb8f`, step 2 `1d37f90c5eb0275408d9d8cbcc5c289d4055d4665ca2e54a48cda4613b9949a2` |
+| Precheck (read-only) | `before`; farms / shops / services 14 / 2 / 1, published services 0, pending farms 0, business managers 0; guard present; origin = production; anon + authenticated UPDATE = ALL on the 3 tables → `step2_verdict` STOP (expected in `before`). Helpers (`business_field_text` / `_coord`, `workspace_role_of`), `create_business`, triggers: definition md5 = staging. Data md5 baseline: farms, shops, services, business workspaces 17, members 117, business storage objects 16, pets 137 |
+| **Step 1** 12:24:58 | `20261101122458 business_profile_rpc` — one transaction, `lock_timeout` 5 s, sha + state check, `schema_migrations` row in the same transaction; stored statement sha256 = file sha256 |
+| Postcheck step 1 | `step1`; RPC authenticated-only + definer; `update_business_profile` / `business_profile_image` definition md5 + grants = staging; data md5 = baseline |
+| QA probes 12:26:02–03 (UA `whiskora-qa-probe`, QA stranger = no business / membership; all refused before any write) | **8 / 8**: anon 401; bad type 22023; fields not an object 22023; someone else's shop 42501; forbidden keys (`is_published`, `user_id`) on someone else's shop 42501 (role is checked first); unknown farm PT404; global logout 204. Data md5 = baseline |
+| Merge | 12:26:19 pinned → `3a87a34`; bot `c9440db` **v1.14.0** (version files only) → Vercel success 12:27 |
+| App live check | `www.whiskora.pet` serves 1.14.0; farm / shop / service edit + dashboard bundles (6 pages) call `update_business_profile`, 0 direct entity updates; remaining direct writes = verify page `farms.verification_status` + manage-services `services.is_published` only; production ref only (staging 0) |
+| **Step 2** 12:28:43 | `20261101122843 business_profile_update_privileges` (state check: RPC present, UPDATE still open, origin = production) |
+| Postcheck step 2 | `step2`, `step2_verdict` **OK**: authenticated UPDATE only `farms.verification_status` + `services.is_published`, anon none; RPC / helper ACL + definitions, guards, table ACL (SELECT / INSERT / DELETE, RLS) = staging; data md5 = baseline |
+| QA probes 12:29:13–15 | **12 / 12**: the 8 above + direct PATCH `farms` / `shops` / `services` `bio` (signed in) 403 42501, anon 401 (non-existent id, nothing written); global logout 204. Data md5 = baseline |
+| Pages 12:29 | `/th`, `/th/farm-hub`, `/th/login`, register-shop, farm edit, shop dashboard, service settings → 200 |
+| Logs 12:20–12:35 | edge = the QA probes only; postgres errors = the intended refusals only; PostgREST schema reload after each migration; PostgREST "Thread killed by timeout manager" ×2 at 12:27:02 with no matching edge request (same pattern as 06:03 / 06:40; not attributed) |
+
+Not proven on production: an owner / manager save or photo change (no production business edited; no QA business or member created) — proven on staging (API 164 / 164, E2E `business-profile.spec.ts` 10 / 10). No real user traffic hit the new pages in the log window.
+Note: anon / authenticated still hold table DELETE on farms / shops / services / workspaces (RLS on; same as staging; not changed here).
+Recovery: fix forward — never re-grant broad UPDATE; an app rollback to v1.13.0 is not clean (see `docs/BUSINESS_PROFILE_PERMISSIONS.md` §3).
+Untouched: cron, Edge Functions, review / publish, Codex UX work, 47 QA pets, leftover `farm-assets` files.
+
 ## 2026-11-01 — PR #28 rollout: create a business atomically (v1.13.0; UTC)
 | Step | Result |
 | --- | --- |

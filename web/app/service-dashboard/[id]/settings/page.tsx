@@ -8,6 +8,8 @@ import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
 import { SPECIES_LIST } from '@/lib/species';
+import { updateBusinessProfile } from '@/lib/updateBusinessProfile';
+import { profileRowToForm } from '@/lib/businessProfileForm';
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -45,6 +47,8 @@ export default function ServiceSettingsPage() {
 
   const { myRole } = useServiceAccess();
   const canEdit = myRole === "owner" || myRole === "manager";
+  // managers change day-to-day content only; identity fields stay with the owner (the server checks this again)
+  const isOwner = myRole === "owner";
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,6 +64,27 @@ export default function ServiceSettingsPage() {
   const [mapLng, setMapLng] = useState<number | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row from select('*') / the RPC
+  const applyRow = (data: any) => {
+    // every value from the stored row, including 0 / '' / null (lib/businessProfileForm.ts)
+    const f = profileRowToForm(data, 'service_name');
+    setForm({
+      service_name: f.name,
+      owner_name: f.owner_name,
+      phone: f.phone,
+      category: f.category,
+      bio: f.bio,
+    });
+    setAddr(f.addr);
+    setMapLat(f.lat);
+    setMapLng(f.lng);
+    setSelectedSpecies(f.species);
+    // keep an open map in step with the stored pin
+    if (f.lat !== null && f.lng !== null && mapInstanceRef.current && markerRef.current) {
+      markerRef.current.setLatLng([f.lat, f.lng]); mapInstanceRef.current.setView([f.lat, f.lng]);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -74,24 +99,7 @@ export default function ServiceSettingsPage() {
 
       if (serviceRes.error || !serviceRes.data) return router.push('/partner');
       const data = serviceRes.data;
-      setForm({
-        service_name: data.service_name || '',
-        owner_name: data.owner_name || '',
-        phone: data.phone || '',
-        category: data.category || '',
-        bio: data.bio || '',
-      });
-      setAddr({
-        house_no: data.house_no || "", room_no: data.room_no || "",
-        moo: data.moo || "", soi: data.soi || "", road: data.road || "",
-        sub_district: data.sub_district || "", district: data.district || "",
-        province: data.province || "", postal_code: data.postal_code || "",
-      });
-      if (data.lat) setMapLat(data.lat);
-      if (data.lng) setMapLng(data.lng);
-      const sp = data.supported_species;
-      if (Array.isArray(sp)) setSelectedSpecies(sp);
-      else if (typeof sp === 'string' && sp) setSelectedSpecies(sp.split(',').filter(Boolean));
+      applyRow(data);
 
       if (profileRes.data) setProfileData(profileRes.data);
       setLoading(false);
@@ -105,7 +113,7 @@ export default function ServiceSettingsPage() {
       const L = (window as any).L;
       if (!L || !mapRef.current || mapInstanceRef.current) return;
       const lat = mapLat ?? 13.7563, lng = mapLng ?? 100.5018;
-      const map = L.map(mapRef.current).setView([lat, lng], mapLat ? 15 : 13);
+      const map = L.map(mapRef.current).setView([lat, lng], mapLat !== null ? 15 : 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       marker.on('dragend', (e: any) => {
@@ -161,17 +169,20 @@ export default function ServiceSettingsPage() {
     setSelectedSpecies(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   const handleSave = async () => {
-    if (!form.service_name.trim()) return alert('กรุณากรอกชื่อร้าน / ชื่อบริการ');
-    if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
+    if (isOwner) {
+      if (!form.service_name.trim()) return alert('กรุณากรอกชื่อร้าน / ชื่อบริการ');
+      if (!form.owner_name.trim()) return alert('กรุณากรอกชื่อ-สกุลเจ้าของ');
+      if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ / สถานที่ให้บริการ (จังหวัด)');
+      if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งบนแผนที่');
+    }
     if (!form.phone.trim()) return alert('กรุณากรอกเบอร์โทรศัพท์');
-    if (!addr.province.trim()) return alert('กรุณาระบุที่อยู่ / สถานที่ให้บริการ (จังหวัด)');
-    if (mapLat === null || mapLng === null) return alert('กรุณาปักหมุดตำแหน่งบนแผนที่');
     if (!form.category) return alert('กรุณาเลือกประเภทบริการ');
     if (selectedSpecies.length === 0) return alert('กรุณาเลือกสัตว์ที่รองรับอย่างน้อย 1 ชนิด');
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('services').update({
+      // server checks the role and the allowed fields; a manager's payload is reduced to manager fields
+      const saved = await updateBusinessProfile(supabase, 'service', serviceId, {
         service_name: form.service_name,
         owner_name: form.owner_name,
         phone: form.phone,
@@ -184,9 +195,9 @@ export default function ServiceSettingsPage() {
         province: addr.province || null, postal_code: addr.postal_code || null,
         lat: mapLat,
         lng: mapLng,
-        supported_species: selectedSpecies.join(','),
-      }).eq('id', serviceId);
-      if (error) throw error;
+        supported_species: selectedSpecies,
+      }, isOwner ? 'owner' : 'manager');
+      applyRow(saved);   // show what the server stored
       alert('บันทึกข้อมูลเรียบร้อยแล้ว');
       router.back();
     } catch (err: any) { alert('Error: ' + err.message); }
@@ -254,7 +265,11 @@ export default function ServiceSettingsPage() {
             </div>
           </div>
 
+          {!isOwner && (
+            <p style={{ fontSize: 12, color: F.muted, margin: '0 0 12px' }}>ผู้จัดการแก้ได้เฉพาะเบอร์โทร รายละเอียด และชนิดสัตว์ / ประเภทบริการ — ชื่อ เจ้าของ และที่อยู่ เจ้าของเป็นผู้แก้</p>
+          )}
           <div className="se-card">
+            <fieldset disabled={!isOwner} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <div className="se-field">
               <label className="se-label">ชื่อร้าน / ชื่อบริการ <span className="se-req">*</span></label>
               <input className="se-input" value={form.service_name} onChange={e => setForm({ ...form, service_name: e.target.value })} placeholder="ชื่อบริการของคุณ" />
@@ -263,6 +278,7 @@ export default function ServiceSettingsPage() {
               <label className="se-label">ชื่อ-สกุลเจ้าของ <span className="se-req">*</span></label>
               <input className="se-input" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} placeholder="ชื่อจริง นามสกุล" />
             </div>
+            </fieldset>
             <div className="se-field">
               <label className="se-label">ประเภทบริการ <span className="se-req">*</span></label>
               <select className="se-select" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
@@ -274,6 +290,7 @@ export default function ServiceSettingsPage() {
               <label className="se-label">เบอร์โทรศัพท์ <span className="se-req">*</span></label>
               <input type="tel" className="se-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="08X-XXX-XXXX" />
             </div>
+            <fieldset disabled={!isOwner} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <div className="se-field">
               <div className="se-addr-header">
                 <span className="se-addr-label">ที่อยู่ / สถานที่ให้บริการ <span className="se-req">*</span></span>
@@ -285,13 +302,14 @@ export default function ServiceSettingsPage() {
               </div>
               <AddressFields value={addr} onChange={setAddr} required />
             </div>
+            </fieldset>
             <div className="se-field">
               <label className="se-label">รายละเอียดเพิ่มเติม</label>
               <textarea className="se-textarea" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="อธิบายจุดเด่นหรือรายละเอียดของบริการ..." />
             </div>
           </div>
 
-          <div className="se-card">
+          <fieldset disabled={!isOwner} className="se-card" style={{ minWidth: 0, marginInline: 0 }}>
             <div className="se-card-title"><Icon.MapPin /> ตำแหน่งบนแผนที่ <span className="se-req">*</span></div>
             <button type="button" className={`se-map-toggle ${mapLat !== null ? 'has-pin' : ''}`} onClick={() => setMapVisible(v => !v)}>
               <Icon.MapPin />
@@ -307,7 +325,7 @@ export default function ServiceSettingsPage() {
                 <p style={{ fontSize: 11, color: F.muted, marginTop: 6 }}>ลากหมุดบนแผนที่เพื่อปรับตำแหน่ง</p>
               </>
             )}
-          </div>
+          </fieldset>
 
           <div className="se-card">
             <div className="se-card-title">บริการที่รองรับสัตว์ชนิดใดบ้าง? <span className="se-req">*</span></div>

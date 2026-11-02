@@ -10,6 +10,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
 import { useFarmAccess, canEditFarmProfile } from '@/app/farm-dashboard/[id]/layout';
+import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 /* ── Design tokens ── */
 const F = {
@@ -336,8 +337,12 @@ function FarmDashboardContent() {
       const { data: { publicUrl } } = supabase.storage.from('farm-assets').getPublicUrl(data.path);
       const url = `${publicUrl}?t=${Date.now()}`;
       const field = isAvatar ? 'image_url' : 'cover_url';
-      await supabase.from('farms').update({ [field]: url, updated_at: new Date().toISOString() }).eq('id', farmId);
-      setFarm((f: any) => ({ ...f, [field]: url }));
+      // saved through update_business_profile (role + photo origin / folder checked on the server); the page shows
+      // the value the server stored, and nothing changes on screen if the save is refused
+      let saved;
+      try { saved = await updateBusinessProfile(supabase, 'farm', farmId, { [field]: url }, 'owner'); }
+      catch (e) { alert('บันทึกรูปไม่สำเร็จ: ' + errorMessage(e)); return; }
+      setFarm((x: any) => ({ ...x, [field]: saved[field] }));
       cancelCrop();
     } catch (err) {
       console.error('Crop upload error:', err);
