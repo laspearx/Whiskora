@@ -1,0 +1,36 @@
+# EXAMPLE ONLY — not active. Lives outside .github/workflows on purpose: nothing is scheduled until the owner copies it
+# to .github/workflows/monitor.yml in the chosen repository (docs/OPS_DISCORD_MONITORING.md §6).
+# Secrets: DISCORD_WEBHOOK_ALERTS, DISCORD_WEBHOOK_RELEASES (Settings → Secrets and variables → Actions → Secrets).
+# Switch:  variable MONITOR_SEND = 1 (Settings → … → Variables). Unset → dry run (prints, posts nothing).
+name: Project HQ monitor
+on:
+  workflow_dispatch: {}
+  # schedule:                       # off until the owner turns it on; avoid minute 0 (GitHub's busiest minute)
+  #   - cron: '7,22,37,52 * * * *'  # every 15 min — cost depends on the repo being public / private (doc §2)
+permissions:
+  contents: read                    # nothing else: no write, no issues, no PRs, no id-token
+concurrency:
+  group: project-hq-monitor
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4   # pin to a commit SHA when copying
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Restore last state
+        uses: actions/cache/restore@v4
+        with: { path: monitor-state.json, key: 'monitor-state-${{ github.run_id }}', restore-keys: 'monitor-state-' }
+      - name: Run
+        env:
+          DISCORD_WEBHOOK_ALERTS: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          DISCORD_WEBHOOK_RELEASES: ${{ secrets.DISCORD_WEBHOOK_RELEASES }}
+          MONITOR_SEND: ${{ vars.MONITOR_SEND }}
+        run: node ops/monitor/src/cli.mjs --state monitor-state.json --send
+      - name: Save state
+        if: always() && hashFiles('monitor-state.json') != ''
+        uses: actions/cache/save@v4
+        with: { path: monitor-state.json, key: 'monitor-state-${{ github.run_id }}' }

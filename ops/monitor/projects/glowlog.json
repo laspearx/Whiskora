@@ -1,0 +1,9 @@
+{
+  "id": "glowlog",
+  "name": "glowlog",
+  "enabled": false,
+  "_todo": "URLs unknown — fill in from the project owner before enabling; never guess.",
+  "checks": [
+    { "id": "home", "type": "http", "url": null, "expectStatus": [200] }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "_comment": "Shared settings. Secrets are NOT here: routes name environment variables that the runtime fills from its secret store.",
+  "routes": {
+    "alerts": "DISCORD_WEBHOOK_ALERTS",
+    "releases": "DISCORD_WEBHOOK_RELEASES",
+    "monitor": "DISCORD_WEBHOOK_ALERTS"
+  },
+  "defaults": {
+    "timeoutMs": 10000,
+    "failThreshold": 2,
+    "recoverThreshold": 1,
+    "repeatMinutes": 360,
+    "releaseLagMinutes": 45
+  },
+  "canaries": [
+    "https://www.google.com/generate_204",
+    "https://www.cloudflare.com/cdn-cgi/trace"
+  ],
+  "delivery": {
+    "timeoutMs": 10000,
+    "maxAttempts": 3,
+    "budgetMs": 60000,
+    "outboxMax": 50,
+    "outboxMaxAgeMinutes": 1440
+  }
+}
