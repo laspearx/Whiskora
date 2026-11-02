@@ -1,4 +1,4 @@
-# Security hardening — Phase 1 (prepared, NOT applied) — revision 2
+# Security hardening — Phase 1 (prepared, NOT applied) — revision 3
 
 Status 2026-11-02: code + SQL on local branches only (not pushed: a push of app changes builds a Preview). Nothing
 applied to staging or production, no Auth setting / credential changed, no backfill run, nothing merged or deployed.
@@ -7,15 +7,35 @@ throwaway local Postgres 17 loaded with a **schema-only** dump of staging (no da
 Revision 2 (review of rev. 1): H1 split into expand / contract; H2 backfill and adoption only on server-side evidence;
 Confirm-email impact on existing accounts + recovery plan + SMTP list; farm contact options; M7 role matrix.
 
+Revision 3 (final preflight): contract migrations timestamped last (M4 `…160000`, H1 contract `…170000`); LINE users
+with only an unverified legacy claim get a re-link prompt instead of a silent duplicate account.
+
 | Item | Branch (head) | Migrations (sha256) | App | Scope |
 |---|---|---|---|---|
-| H1 farm exact location | `security/h1-farm-private-location` (`63b4c92`) | `20261102110000_farm_private_rpc` (`ab3a8cad…1806`) **expand** · `20261102110100_farm_private_columns` (`89785cbb…b081`) **contract** | yes | app |
-| H2 account linking (+M5, L1) | `security/h2-account-linking` (`7d9ab6b`) | `20261102150000_line_identity_lookup` (`a53561ff…9c45`) | yes | app |
+| H1 farm exact location | `security/h1-farm-private-location` (`4b3a334`) | `20261102110000_farm_private_rpc` (`bb5e1acb…56cf`) **expand** · `20261102170000_farm_private_columns` (`03fb2e43…fd78`) **contract** | yes | app |
 | M1 farm link guard | `security/m1-farm-link-guard` (`e3a0d13`) | `20261102120000_farm_link_guard` (`fde5c112…b16f`) | no | release |
-| M4 `pets.note` | `security/m4-pet-note-private` (`c420590`) | `20261102130000_pet_note_private` (`79bd2b7c…4314`) | 3 lines | app |
 | M7 pet-documents storage | `security/m7-pet-documents-storage` (`7c896b7`) | `20261102140000_pet_documents_storage` (`5609244b…8d01`) | no | release |
+| H2 account linking (+M5, L1) | `security/h2-account-linking` (`f6139a9`) | `20261102150000_line_identity_lookup` (`a53561ff…9c45`) | yes | app |
+| M4 `pets.note` | `security/m4-pet-note-private` (`8d96d0a`) | `20261102160000_pet_note_private` (`7d6d6ddc…ef60`) **contract** | 3 lines | app |
 
-**Tests (all local / mock):** every pair of branches and each with `codex/ux-audit` merges cleanly; all five merged:
+### Migration order and app compatibility
+File names sort into the order they must run (Supabase CLI / manual), all after the last applied production version
+(`20261102060056`). Production history versions are the apply time (project convention), so they also stay ordered.
+| Step | Migration | Old app (main) | New app (Phase 1) | Gate |
+|---|---|---|---|---|
+| 1 | `110000` H1 expand (RPC) | unaffected | **needs it** (`get_farm_private`) | — |
+| 2 | `120000` M1 guard | unaffected (viewer can no longer link farm pets) | unaffected | — |
+| 3 | `140000` M7 storage | uploads to `<pet id>/` keep working (and become readable) | same | — |
+| 4 | `150000` H2 functions | unaffected (does not call them) | **needs it** (lookup + evidence) | — |
+| — | **deploy the Phase 1 app** | | | steps 1–4 applied |
+| 5 | `160000` M4 contract | **breaks** (selects `pets.note`) | unaffected | new app live |
+| 6 | `170000` H1 contract | **breaks** (selects `farms.*`) | unaffected | new app live + verified |
+Before step 1 the new app must not be deployed (its farm edit page would refuse to open, LINE login would fail on the
+missing RPCs). Between 4 and 5 both apps work → app rollback is free there. After 5 / 6 the old app must not return
+(fix forward). Self-checks: the H1 contract STOPs if the RPC is missing; neither contract can see which app is live,
+so the "new app live" gate is procedural (deployment check + precheck + checklist in the PR).
+
+**Tests (all local / mock, rev. 3 numbers in the PR):** every pair of branches and each with `codex/ux-audit` merges cleanly; all five merged:
 tsc OK; unit / static **20 / 20**; local SQL suites with all migrations **71 / 71** (H1 17, M1 17, M4 8, M7 11, H2 18) +
 H1 expand-step suite **6 / 6**; the same H1 / M1 / M4 / M7 suites on the **old schema: 34 of 53 fail** (they still
 detect the holes; the H2 suite needs its functions). Shared harness files are byte-identical on every branch;
@@ -38,7 +58,7 @@ non-members.
    still works, new public-column select + RPC work, RPC refuses stranger / anon).
 3. **Verify** on staging / production: farm dashboard, edit (address shown, save, reload), verify page (request →
    pending), public farm page (area only), partner list, pets create; `business_profile_checks.cjs` + E2E.
-4. **Contract** `20261102110100_farm_private_columns` (STOPs if the RPC is missing): column grants. Precheck →
+4. **Contract** `20261102170000_farm_private_columns` (STOPs if the RPC is missing): column grants. Precheck →
    `contracted`, verdict OK, `other_rights_md5` unchanged.
 5. **Verify again** (same list + authorization: anon / stranger / owner direct select of private columns 42501).
 
@@ -92,8 +112,9 @@ every legacy claim from server-side data only:
 A forged `user_metadata.line_id` therefore can neither capture a victim's LINE login nor lock the victim out (tested).
 Not relied on: that LINE ids are hard to guess. **Re-link (safe path):** the owner signs in with their existing method
 (Google / email) → Profile → การเชื่อมต่อ → เชื่อม LINE → `POST /api/auth/line` verifies the session → LINE OAuth →
-`app_metadata` set for that verified account. Until then a LINE sign-in for that id creates a *new, separate* LINE
-account (placeholder) — announce the re-link before the deploy; merging such an account later is an admin task.
+`app_metadata` set for that verified account. Until then a LINE sign-in for that id is answered with `LINE_RELINK_SUGGESTED`: the login page explains how to sign
+in the usual way and re-link, or lets the user explicitly create a new LINE account (`create=1`, short-lived cookie).
+Nothing is linked without evidence; no silent duplicate; a forged claim costs one click, never the account.
 Edge (availability, not takeover): someone who pre-created a placeholder email *with a password* blocks that LINE id's
 first sign-in (`LINE_ACCOUNT_MIGRATION_PENDING`) → admin removes that account. Live verification needed: the email
 identity / timestamps produced by `admin.createUser` vs. an email signup / email change on the real Auth server
@@ -174,12 +195,12 @@ L7 `service_bookings`: Low now (no app write path, 0 rows) → Medium the day bo
 first). L8 `pet-photos`: Low–Medium (URL must be known); private bucket + signed URLs in Phase 2.
 
 ## Staging integration plan (no database touched yet)
-1. Push the 6 branches, open draft PRs; Codex independent security review on the pinned heads.
-2. Create `security/phase1-integration` = main + the 5 branches (merge order H1, M1, M4, M7, H2 — no conflicts) +
+1. Push only the integration branch (one Preview) and open one draft PR; per-item diffs = its merge commits; Codex reviews the pinned head.
+2. Create `security/phase1-integration` = main + the 5 branches + this plan (merge order H1, M1, M7, H2, M4, plan — no conflicts) +
    rerun local / static / unit suites on it; one Preview of it (staging).
 3. Staging window (owner approval; Codex off staging): precheck each → apply in this order, each followed by its
-   postcheck: `110000` (expand) → [Preview of the integration branch is live] → `120000` → `140000` → `150000` →
-   `130000` → `110100` (contract) last; then regression (business profile, create business, verification, members,
+   postcheck: `110000` → `120000` → `140000` → `150000` → [Preview of the integration branch is the app] →
+   `160000` (M4 contract) → `170000` (H1 contract) last; then regression (business profile, create business, verification, members,
    workspace guard, partner storage, reservation / transfer, pet privacy, public grants) + E2E full suite + Storage API
    checks for pet-documents (synthetic files) + the Confirm-email scenarios (separate Auth approval).
 4. Production per item later, each with its own approval, pinned head and pre / postcheck.
