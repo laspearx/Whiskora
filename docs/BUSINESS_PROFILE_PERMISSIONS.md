@@ -1,7 +1,7 @@
-# Business profile edits by role — staging only
+# Business profile edits by role — live since v1.14.0
 
-Status 2026-11-01: branch `feat/business-profile-permissions`, applied on **staging only** (both steps). Not merged,
-not on production. Scope approved 2026-11-01 (`docs/PARTNER_CREATE_BUSINESS.md` §6). Out of scope: review / publish,
+Status 2026-11-01: PR #31 merged (`3a87a34`, v1.14.0 `c9440db`); both steps on staging and **production** (12:24–12:29 UTC,
+results in `docs/STATUS.md`). Scope approved 2026-11-01 (`docs/PARTNER_CREATE_BUSINESS.md` §6). Out of scope: review / publish,
 marketplace, bookings, payment.
 
 ## 1. What changes
@@ -53,7 +53,7 @@ returns 200 but removes 0 (no DELETE policy) — left as recorded, no policy ope
 Existing test "owner can add a pet" adds 2 `QA e2e pet …` pets per full run (47 now) — behaviour of that older test, not
 removed here.
 
-## 3. Rollout (production — not done; each step on the owner's go-ahead)
+## 3. Rollout (production — done 2026-11-01 12:24–12:29 UTC, see `docs/STATUS.md`)
 **Step 1 — RPC (additive; the live app keeps working)**
 1. Pin the PR head; check sha256 below; `web/` = tested Preview.
 2. Read-only `business_profile_precheck.sql` → `before`; note counts (services published, farms pending, managers).
