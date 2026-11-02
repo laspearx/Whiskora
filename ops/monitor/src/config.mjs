@@ -22,7 +22,7 @@ function regex(src, where, errors) {
 export function validate(shared, projects) {
   const errors = [];
   for (const [k, v] of Object.entries(shared.routes || {})) if (!ENV.test(v)) errors.push(`routes.${k}: not an env var name`);
-  for (const k of ['alerts', 'releases', 'monitor']) if (!shared.routes?.[k]) errors.push(`routes.${k} missing`);
+  if (!shared.routes?.monitor) errors.push('routes.monitor missing');
   for (const c of shared.canaries || []) if (!httpsUrl(c)) errors.push(`canary ${c}: not https`);
   const seen = new Set();
   for (const p of projects) {
@@ -45,6 +45,7 @@ export function validate(shared, projects) {
       }
     }
     if (p.enabled && !(p.checks || []).length) errors.push(`${w}: enabled without checks`);
+    if (p.enabled) for (const k of ['alerts', 'releases']) if (!routeOf(shared, p, k)) errors.push(`${w}: no ${k} route (project routes.${k} or shared routes.${k})`);
   }
   if (errors.length) throw new ConfigError(errors.join('; '));
 }

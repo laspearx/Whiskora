@@ -1,105 +1,125 @@
 # Project HQ — Discord monitoring (first version, prepared, NOT installed)
 
-Status 2026-11-02: branch `ops/discord-monitoring` (from main `38860b2`), separate from PR #34. Code in `ops/monitor/`,
-tested with mocks only. Nothing sent to Discord, no schedule enabled, no secret created, nothing on production changed.
-No AI agent acts on production: the monitor only reads public pages and posts to Discord.
+Status 2026-11-02: branch `ops/discord-monitoring` (from main `38860b2`), PR #35 (draft), separate from PR #34. Code in
+`ops/monitor/`, tested with mocks only. Nothing sent to Discord, no schedule, no secret, no new repo, no runtime account,
+nothing on production changed. No AI agent acts on production: the monitor only reads public pages and posts to Discord.
+
+Owner direction (review of `2dffcff`): target = a new **private repo `project-hq-ops`** (not created yet; the code moves
+there once this review passes); **Whiskora only**; **every 30 min**; per-project routes **whiskora-alerts /
+whiskora-releases** (existing Discord structure — no shared channel to create); no DB role / migration for the cron
+check yet; Whiskora's build-scope stays as it is (the monitor does not merge into Whiskora).
 
 ## 1. What exists today (surveyed)
 | Item | State |
 |---|---|
-| GitHub repo `laspearx/Whiskora` | **public**; one workflow (`version-bump.yml`, push to main); Actions secrets / variables not readable from this session (403) |
-| Vercel | Production `www.whiskora.pet`, Previews protected; footer shows `V1.14.0` (`web/lib/version.ts` → `Footer.tsx`) |
-| Supabase | pg_cron job 1 (vaccine reminders 01:00 UTC) → Edge Function `send-push-notifications`; manual run check `supabase/tests/vaccine_reminder_run_check.sql`; no automatic watcher (`docs/NOTIFICATIONS_SETUP.md` §4) |
-| Monitoring / Discord | none in the repo |
-| Build scope | `ops/**` is classified `app` by `web/scripts/build-scope.sh` → merging this into Whiskora as is would bump the version and build Production (decision D2) |
+| GitHub repo `laspearx/Whiskora` | public; one workflow (`version-bump.yml`); Actions secrets / variables not readable from this session (403) |
+| Vercel | Production `www.whiskora.pet`; footer shows `V1.14.0` (`web/lib/version.ts` → `Footer.tsx`) |
+| Supabase | pg_cron job 1 (vaccine reminders 01:00 UTC) → Edge Function; manual check `supabase/tests/vaccine_reminder_run_check.sql`; no watcher |
+| Monitoring / Discord | none |
 
-## 2. Runtime (no terminal, no Codespace) — recommendation: GitHub Actions
-| Option | Cost (checked 2026-11-02) | Limits | Fit |
-|---|---|---|---|
-| **GitHub Actions, scheduled workflow** | Public repo + standard runners: **free**. Private repo: included usage on GitHub Free = **USD 12 / month** (shown as money, not minutes); Linux x64 2-core **USD 0.006 / min** (≈ 2,000 min / month — my arithmetic). Per-job rounding not stated on that page — treat each run as ≥ 1 min until measured. | shortest schedule **5 min**; runs can be **delayed or dropped** under load (avoid minute 0); runs only on the default branch; **public repos: schedules auto-disabled after 60 days without repo activity** | secrets UI built in, logs, failure e-mails to the owner, no extra account |
-| Cloudflare Workers (Cron Triggers) | Free plan: 100,000 requests / day, **5 cron triggers per account**, 10 ms CPU / invocation, 50 subrequests / invocation | state needs KV / D1 (own limits, not checked); new account + wrangler deploy | possible later; more setup |
-| Vercel Cron | not checked (Hobby limits not verified this round) | runs inside the thing it watches | not suitable as an outside watcher |
-| Supabase pg_cron + Edge Function | — | inside the watched system; would change cron / functions (out of scope) | no |
+## 2. Runtime — GitHub Actions in the private repo `project-hq-ops`
+Facts (GitHub docs, checked 2026-11-02):
+- Private repos on GitHub Free: included usage **USD 12 / month**, shown as money; Linux x64 2-core **USD 0.006 / min**.
+- **Each job is rounded up to a whole minute** ("GitHub rounds the minutes and partial minutes each job uses up to the
+  nearest whole minute").
+- The included amount belongs to the **account**: every private repo's Actions use (and other metered products that
+  draw from it) shares it — whether anything else already uses it is visible only in Billing.
+- Schedule: shortest 5 min; runs may be **delayed or dropped** under load (avoid minute 0); default branch only.
 
-Private-repo arithmetic (if D1 = private): every 15 min ≈ 2,880 runs / month → over the included USD 12 if each run is
-billed as 1 min; every 30 min ≈ 1,440 → inside. Public repo: free at any interval ≥ 5 min.
-Sources: docs.github.com/en/billing/concepts/product-billing/github-actions ·
-docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows (schedule) ·
+Cost of this monitor (30 min, 1 job / run): 48 runs / day × 28–31 days = **1,344–1,488 runs / month**, each billed
+**≥ 1 min** (2 min if a run passes 60 s, e.g. slow sites + Discord retries: budget 60 s + checks 10 s each).
+- all runs ≤ 1 min: 1,344–1,488 min ≈ **USD 8.06–8.93**;
+- if every run took 2 min: 2,688–2,976 min ≈ USD 16.13–17.86 (**over** the USD 12);
+- manual runs, retries and **any other private-repo Actions use on the account** come on top.
+So 30 min is **not guaranteed** to stay inside the included amount. Before any schedule: check Billing (current use,
+spending limit / budget = USD 0 so nothing is charged), measure real run time from a few manual runs, get approval.
+Paid usage stays off.
+
+Other runtimes considered: Cloudflare Workers Free (100,000 requests / day, 5 cron triggers / account, 10 ms CPU) — new
+account + state store, later option; Vercel Cron / Supabase pg_cron — inside the watched system, not suitable.
+Sources: docs.github.com/en/billing/reference/actions-runner-pricing ·
+docs.github.com/en/billing/concepts/product-billing/github-actions ·
+docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows ·
+docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching · github.com/actions/download-artifact ·
 developers.cloudflare.com/workers/platform/limits · docs.discord.com/developers/topics/rate-limits ·
 docs.discord.com/developers/resources/webhook
 
 ## 3. Config — one file per project
-- `ops/monitor/monitor.json`: routes (**names of env vars**, never URLs), defaults (timeout 10 s, 2 failures in a row →
-  down, 1 pass → recovered, reminder every 6 h while down, release lag 45 min), canaries, delivery limits.
-- `ops/monitor/projects/<id>.json`: `enabled`, `checks` (`http`: url, expected status, optional text / max ms;
-  `release`: page + version pattern, optional source of the expected version), optional own `routes`.
-- Enabled now: **whiskora** (home, login, farm-hub, release: served footer version vs `web/lib/version.ts` on main).
-  **likanara, natchworks, glowlog: disabled, URLs `null`** — the validator refuses to enable a project with an unknown URL.
-- New project later = one new JSON file (+ its own webhook env var name if it should post to its own channel).
+- `ops/monitor/monitor.json`: `routes.monitor` (monitor's own problems → `DISCORD_WEBHOOK_WHISKORA_ALERTS` while
+  Whiskora is the only project), defaults (timeout 10 s, 2 failures in a row → down, 1 pass → recovered, reminder every
+  6 h while down, release mismatch alert after 60 min), canaries, delivery limits, intended interval 30 min.
+- `ops/monitor/projects/whiskora.json`: `routes.alerts = DISCORD_WEBHOOK_WHISKORA_ALERTS` (→ #whiskora-alerts),
+  `routes.releases = DISCORD_WEBHOOK_WHISKORA_RELEASES` (→ #whiskora-releases); checks: home, login, farm-hub
+  (HTTP 200), release (footer version vs `web/lib/version.ts` on main).
+- likanara / natchworks / glowlog: `enabled: false`, URLs `null` (none guessed); the validator refuses to enable a
+  project with an unknown URL or without its own (or a shared) alerts / releases route.
+- Routes are **names of env vars**; a URL in a route is refused. New project = one JSON + its two webhook secrets.
 
 ## 4. Behaviour
 | Rule | How |
 |---|---|
-| alerts ≠ releases | `alerts` route: site down / recovered / release lag; `releases` route: new version seen live |
-| no noise | nothing posted for passing checks; 1 failure is not an alert (2 in a row are); one reminder per 6 h while down; first sight of a version is a baseline |
-| down **and** back to normal | `down` → 🔴, `recovered` → 🟢 with duration |
-| grouping | one message per project per run (several failing checks = one post) |
-| site problem ≠ monitor problem | if every canary fails, the run judges no site (states untouched) and reports **"ตัวตรวจมีปัญหา (ไม่ใช่เว็บล่ม)"** instead; bugs in a check, unreadable version / release source, delivery failures are monitor issues too, with their own down / recovered |
-| timeout | 10 s per probe (AbortController); Discord post 10 s |
-| rate limit | 429 → waits `retry_after` (float seconds) / `Retry-After`; `X-RateLimit-Remaining: 0` → waits `Reset-After` before the next post on that webhook; 5xx / timeout → up to 3 attempts; total delivery budget 60 s |
-| not delivered | kept in the state outbox for the next run (max 50, max 24 h); 401 / 403 / 404 → stop using that webhook this run, "replace the secret"; 400 → dropped + reported; the run exits 1 → GitHub's failed-run e-mail is the fallback signal |
-| secrets | webhook URLs only from env (runtime secrets); config refuses URLs as route values; logs redact any webhook URL; payload `allowed_mentions: {parse: []}` (no @everyone / roles) |
-| safety switch | dry run unless **both** `--send` and `MONITOR_SEND=1` |
+| alerts ≠ releases | `#whiskora-alerts`: down / recovered / served ≠ main for > 60 min; `#whiskora-releases`: served version changed |
+| release wording | only observed facts: **"ตรวจพบเวอร์ชันที่เสิร์ฟเปลี่ยน: a → b · ตรงกับ main / ไม่ตรงกับ main (main = x) / เทียบ main ไม่ได้ (…)"**. Never "deployed" / "build OK" (a footer number does not prove either), no GitHub Release links |
+| no noise | nothing for passing checks; 1 failure is not an alert, 2 in a row are; one reminder per 6 h while down; first sight of a version is a baseline |
+| down and back | 🔴 down, 🟢 recovered with duration and last reason |
+| grouping | one message per project per run |
+| site ≠ monitor | all canaries failing → no site is judged (states untouched), "ตัวตรวจมีปัญหา (ไม่ใช่เว็บล่ม)" instead; check bugs, unreadable version / main source, delivery failures and lost state are monitor problems |
+| timeout / rate limit | 10 s per probe and per post; 429 → `retry_after` (float s) / `Retry-After`; `X-RateLimit-Remaining: 0` → wait `Reset-After`; 5xx / timeout → up to 3 attempts; delivery budget 60 s |
+| not delivered | kept in the outbox (max 50, 24 h); 401 / 403 / 404 → stop using that webhook, "replace the secret"; 400 → dropped + reported; exit 1 → GitHub's failed-run notice |
+| secrets | webhook URLs only from env; logs redact webhook URLs; `allowed_mentions: {parse: []}` |
+| modes | **preview** (default): prints what would be posted (incl. the outbox), **changes and writes no state**, counts nothing as sent · **trial** (`--trial-state f`): advances a separate state file, posts nothing; refused if it is the real state file · **send**: only with `--send` **and** `MONITOR_SEND=1` |
 
-Tests: `node --test ops/monitor/test/*.test.mjs` → **23 / 23** (mock fetch + fake clock: thresholds, reminder,
-recovery, grouping, timeout, canary outage, check bug, release baseline / new version / lag / pattern drift, 429 short
-and beyond budget + outbox, bucket wait, timeout + 5xx retry, 404, missing / wrong secret, no mentions, 2,000 chars,
-dry run, redaction, no secret in config). Dry run against the live public pages (GET only, no Discord):
-4 checks, 0 failing, served 1.14.0 = main 1.14.0, 0 messages.
+### State between runs
+State = open incidents (down since …, last reminder), release baseline, monitor health, outbox. Text is stable (sorted,
+counters capped, no run timestamp), so a healthy run produces the same file as the one before.
+| Storage (first version) | Rights | Limits |
+|---|---|---|
+| **Artifact `monitor-state` (recommended)** — upload after each run, next run downloads the newest via the REST API | `GITHUB_TOKEN` `actions: read` (+ the upload that every job may do); **no new credential**, no write to code | not permanent: retention set to 7 days (retention defaults / maxima and storage billing for private repos **not verified** this round — check in Billing / Settings → Actions before choosing); deleting a run deletes its artifacts; assumes expired artifacts stay listed as `expired` (not verified — if they disappear, a long gap looks like a first run and the loss notice is skipped) |
+| Actions cache | none extra | evicted after **7 days without access**, 10 GB / repo with oldest-first eviction, restore from current or default branch — can vanish at any time |
+| Commit to a `monitor-state` branch | `contents: write` for the workflow (it could then push to any branch of that repo; branch protection on private repos may need a paid plan — not checked) | durable, history; more rights than needed for v1 |
 
-## 5. Vaccine cron (design only — nothing changed)
-Evidence of a real run (from `docs/NOTIFICATIONS_SETUP.md` §4): `cron.job_run_details` "succeeded" is **not** proof.
-Proof = `net._http_response` of the run (status 200 + `outcome`, kept **6 h**), the function summary log line, and
-`vaccine_reminder_deliveries` by status (`uncertain` / stuck `sending` need a person).
-Least privilege for an automatic check (needs a separate owner decision + migration + secret — not done):
-- one `SECURITY DEFINER` function, e.g. `ops_vaccine_run_status()`, returning **aggregates only** (last run time, HTTP
-  status, outcome, counts by delivery status, job active) — no rows, no user ids, no tokens;
-- a dedicated login role with **only `EXECUTE` on that function** (no table grants, not `anon` / `authenticated`, not
-  service_role, no Management API token); its connection string as a runtime secret;
-- run once a day ~01:30 UTC (inside the 6 h window); alert when no run / HTTP ≠ 200 / outcome error / uncertain > 0;
-  recovered on the next good day.
+Missing / corrupt state (detected on load: no file after earlier state existed, invalid JSON, wrong shape / version):
+the run starts fresh and posts at once (no threshold) to the monitor route: incidents being tracked are forgotten — one
+still failing is reported "down" again after the threshold, the "recovered" message of the old incident never comes;
+undelivered messages from the outbox are lost; the served version becomes the new baseline. `--first-run` (no earlier
+state at all) starts silently.
 
-## 6. Install plan (each step on the owner's go-ahead)
-**ชัช in Discord (Project HQ server, private; menu names from Discord's usual layout — the help page could not be fetched this round):**
-1. Create a category (e.g. `ops`) visible only to you: Edit Category → Permissions → `@everyone` → View Channel ✗.
-   Channels inside: `#alerts`, `#releases` (sync permissions with the category). No client rooms, no invites, no bot.
-2. In `#alerts`: Edit Channel → Integrations → Webhooks → New Webhook → name `Project HQ Monitor` → Copy Webhook URL.
-   Same in `#releases`. (Needs Manage Webhooks — you have it as server owner. No bot, no Administrator.)
-3. Do **not** paste the URLs in chat, in Git or in any file.
+Tests: `node --test ops/monitor/test/*.test.mjs` → **33 / 33** (mock fetch + fake clock): thresholds, reminder,
+recovery, grouping, timeout, canary outage, check bug, release baseline / change + main match / main unreadable /
+mismatch alert / pattern drift, 429 short + beyond budget + outbox, bucket wait, Discord timeout + 5xx, 404, missing /
+wrong secret, no mentions, 2,000 chars, preview with a pending outbox (state identical, nothing sent), previews before
+switching to send (alert still posted), trial (own state, no post), CLI refuses trial = real state, save → load across
+runs (incident → recovery with duration; outbox delivered next run), stable text on healthy runs, missing / corrupt /
+unsupported state (notice + re-detection), first run silent, no secret in config, redaction.
 
-**ชัช in GitHub (repository chosen in D1):**
-4. Settings → Secrets and variables → Actions → **Secrets** → New: `DISCORD_WEBHOOK_ALERTS`, `DISCORD_WEBHOOK_RELEASES`.
-5. Same page → **Variables**: leave `MONITOR_SEND` unset for the first manual run (dry run in the log).
+## 5. Knowing that the monitor stopped
+| | What it is | What it can / cannot tell |
+|---|---|---|
+| GitHub failed-run notice | e-mail when a run fails (exit 1: delivery problem, config error, bug) | only runs that **ran** and failed; a disabled schedule, an account / billing stop or dropped runs send nothing |
+| Weekly status post (optional, not built) | the monitor posts a short summary once a week | a person must notice that it **did not come**; it **cannot** detect its own absence |
+| External heartbeat (not set up) | each run pings an outside service; the service alerts when pings stop | the only one that detects "not running at all"; needs an account with an outside service (cost / terms not checked) — owner decision, nothing signed up |
 
-**Then (on approval, by Claude):** copy `ops/monitor/workflow.example.yml` to `.github/workflows/monitor.yml` with
-actions pinned to SHAs and only `workflow_dispatch`; you run it once (Actions → Run workflow) → dry-run log; set
-`MONITOR_SEND=1` → one manual run → expect **no** post (all healthy). Optional: one test post to `#alerts` only if you
-want to see the format. Then un-comment the schedule.
-Rollback: unset `MONITOR_SEND` (instant dry run) or disable the workflow; delete the webhook in Discord to revoke it.
+## 6. Vaccine cron (design only — nothing changed, no DB role / migration this round)
+Proof of a real run (`docs/NOTIFICATIONS_SETUP.md` §4): `cron.job_run_details` "succeeded" is **not** proof; proof =
+`net._http_response` of the run (HTTP 200 + `outcome`, kept **6 h**), the function summary log line, and
+`vaccine_reminder_deliveries` by status. Least privilege for a later automatic check: one `SECURITY DEFINER` function
+returning aggregates only + a dedicated login role with only `EXECUTE` on it (not anon / authenticated / service_role,
+no Management API token), its connection string as a runtime secret, checked once a day ~01:30 UTC.
 
-## 7. Decisions for the owner
-- **D1 Runtime home:** (a) a new **private** repo `project-hq-ops` (recommended: the project list stays private; costs
-  per §2 — 30-min interval stays inside the free USD 12, 15-min may not) or (b) a new public repo (free; URLs and project
-  names public; schedule disabled after 60 days without activity) or (c) inside Whiskora (public; needs D2).
-- **D2** If (c): add `ops/` to the `none` list of `web/scripts/build-scope.sh` (otherwise every monitor change bumps the
-  version and builds Production).
-- **D3 Interval:** 15 or 30 min (alerts need 2 failures → first alert after 30–60 min of downtime).
-- **D4 Channels:** one `#alerts` + `#releases` for all projects (per-project routes possible later), names / category.
-- **D5 Vaccine-cron check (§5):** whether to add the DB role + function (a migration on production + a new secret).
-- **D6 "Is the monitor itself running?"** GitHub e-mails failed scheduled runs by default (to the user who last edited the schedule; not re-checked), but a disabled / never-started schedule sends
-  nothing. Options: a weekly "still running" post (off by default), or an external heartbeat service (not checked).
-- URLs of likanara / natchworks / glowlog (none guessed).
+## 7. Install plan (each step on the owner's go-ahead)
+**Discord (existing Project HQ structure, private):** in **#whiskora-alerts**: Edit Channel → Integrations → Webhooks →
+New Webhook → name `Project HQ Monitor` → Copy Webhook URL; same in **#whiskora-releases**. No new channel, no bot,
+no Administrator, no invites. Don't paste the URLs in chat, Git or files. (Menu names from Discord's usual layout.)
+**GitHub (after `project-hq-ops` exists, private):** Settings → Secrets and variables → Actions → Secrets:
+`DISCORD_WEBHOOK_WHISKORA_ALERTS`, `DISCORD_WEBHOOK_WHISKORA_RELEASES`. Leave variable `MONITOR_SEND` unset.
+Billing: confirm current Actions use and set the budget / spending limit to USD 0 for metered Actions.
+**Then (on approval):** move `ops/monitor/` there; copy `workflow.example.yml` to `.github/workflows/monitor.yml` with
+actions pinned to SHAs, **manual trigger only**; a few manual preview runs (log only, no post, measure run time);
+`MONITOR_SEND=1` + one manual run → expect no post when healthy; schedule only after Billing + approval.
+Rollback: unset `MONITOR_SEND` (instant preview), disable the workflow, or delete the webhook in Discord.
 
-Not done / limits: no real Discord post, no schedule, no secrets, no new repo, no runtime account; Cloudflare / Vercel
-costs not fully verified; GitHub per-job minute rounding not confirmed on the billing page; state lives in the Actions
-cache (GitHub evicts caches unused for 7 days — from GitHub docs, not re-checked this round — a gap longer than that restarts from a fresh baseline: possibly one extra alert).
+## 8. Open decisions
+- Create `project-hq-ops` (private) and move the code — after this review.
+- State storage (§4): artifact (recommended) / cache / state branch.
+- Schedule + Billing check (§2); heartbeat option (§5); vaccine-cron role (§6, later).
+- URLs of likanara / natchworks / glowlog.

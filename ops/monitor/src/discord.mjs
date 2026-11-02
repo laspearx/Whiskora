@@ -4,7 +4,7 @@
 const WEBHOOK = /^https:\/\/(?:discord\.com|discordapp\.com|ptb\.discord\.com|canary\.discord\.com)\/api\/webhooks\/\d+\/[\w-]+$/;
 export const redact = (s) => String(s).replace(/https:\/\/[^\s]*discord(?:app)?\.com\/api\/webhooks\/[^\s"']*/gi, '[webhook]');
 
-export async function deliver(queue, { env, fetchImpl, sleep, now, cfg, dryRun, log = () => {} }) {
+export async function deliver(queue, { env, fetchImpl, sleep, now, cfg, log = () => {} }) {
   const startedAt = now();
   const remaining = () => cfg.budgetMs - (now() - startedAt);
   const nextAt = {};          // route → epoch ms when its bucket allows the next post
@@ -14,7 +14,6 @@ export async function deliver(queue, { env, fetchImpl, sleep, now, cfg, dryRun, 
 
   for (const m of queue) {
     const keep = (why) => { outbox.push({ ...m, attempts: (m.attempts || 0) + 1, lastError: why }); };
-    if (dryRun) { log(`[dry-run] → ${m.route}\n${m.content}`); sent++; continue; }
     if (dead.has(m.route)) { keep('route invalid this run'); continue; }
     const url = env[m.route];
     if (!url) { issues.push(`webhook not configured: ${m.route}`); dead.add(m.route); keep('not configured'); continue; }

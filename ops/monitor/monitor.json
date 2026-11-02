@@ -1,16 +1,14 @@
 {
-  "_comment": "Shared settings. Secrets are NOT here: routes name environment variables that the runtime fills from its secret store.",
+  "_comment": "Shared settings. Secrets are NOT here: routes name environment variables that the runtime fills from its secret store. Each project names its own alerts / releases routes; 'monitor' (problems of the monitor itself) goes to Whiskora's alerts channel while Whiskora is the only project.",
   "routes": {
-    "alerts": "DISCORD_WEBHOOK_ALERTS",
-    "releases": "DISCORD_WEBHOOK_RELEASES",
-    "monitor": "DISCORD_WEBHOOK_ALERTS"
+    "monitor": "DISCORD_WEBHOOK_WHISKORA_ALERTS"
   },
   "defaults": {
     "timeoutMs": 10000,
     "failThreshold": 2,
     "recoverThreshold": 1,
     "repeatMinutes": 360,
-    "releaseLagMinutes": 45
+    "releaseLagMinutes": 60
   },
   "canaries": [
     "https://www.google.com/generate_204",
@@ -22,5 +20,9 @@
     "budgetMs": 60000,
     "outboxMax": 50,
     "outboxMaxAgeMinutes": 1440
+  },
+  "schedule": {
+    "_comment": "Intended interval for the runtime (not enforced here).",
+    "everyMinutes": 30
   }
 }

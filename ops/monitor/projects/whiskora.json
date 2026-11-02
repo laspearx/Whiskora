@@ -2,10 +2,36 @@
   "id": "whiskora",
   "name": "Whiskora",
   "enabled": true,
+  "routes": {
+    "alerts": "DISCORD_WEBHOOK_WHISKORA_ALERTS",
+    "releases": "DISCORD_WEBHOOK_WHISKORA_RELEASES"
+  },
   "checks": [
-    { "id": "home", "type": "http", "url": "https://www.whiskora.pet/th", "expectStatus": [200], "contains": "Whiskora" },
-    { "id": "login", "type": "http", "url": "https://www.whiskora.pet/th/login", "expectStatus": [200] },
-    { "id": "farm-hub", "type": "http", "url": "https://www.whiskora.pet/th/farm-hub", "expectStatus": [200] },
+    {
+      "id": "home",
+      "type": "http",
+      "url": "https://www.whiskora.pet/th",
+      "expectStatus": [
+        200
+      ],
+      "contains": "Whiskora"
+    },
+    {
+      "id": "login",
+      "type": "http",
+      "url": "https://www.whiskora.pet/th/login",
+      "expectStatus": [
+        200
+      ]
+    },
+    {
+      "id": "farm-hub",
+      "type": "http",
+      "url": "https://www.whiskora.pet/th/farm-hub",
+      "expectStatus": [
+        200
+      ]
+    },
     {
       "id": "release",
       "type": "release",
@@ -14,8 +40,7 @@
       "expected": {
         "url": "https://raw.githubusercontent.com/laspearx/Whiskora/main/web/lib/version.ts",
         "versionPattern": "APP_VERSION = \"(\\d+\\.\\d+\\.\\d+)\""
-      },
-      "repoUrl": "https://github.com/laspearx/Whiskora"
+      }
     }
   ]
 }
