@@ -58,7 +58,10 @@ export async function DELETE(request: Request) {
   if (placeholder && otherProviders.length === 0) return Response.json({ error: 'line_only_login' }, { status: 409 })
   const { line_id: _drop, ...rest } = (user.app_metadata || {}) as Record<string, unknown>
   void _drop
-  const { error: upErr } = await admin.auth.admin.updateUserById(user.id, { app_metadata: { ...rest, line_id: null } })
+  const { error: upErr } = await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...rest, line_id: null },
+    user_metadata: { ...(user.user_metadata || {}), line_id: null, line_display_name: null }, // rollback-compat copy too
+  })
   if (upErr) return Response.json({ error: 'unlink_failed' }, { status: 500 })
   return Response.json({ ok: true })
 }

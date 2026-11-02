@@ -99,7 +99,8 @@ export async function GET(request: Request) {
       if (curErr || !cur.user) return linkFail('auth_failed')
       const { error: upErr } = await admin.auth.admin.updateUserById(decision.userId, {
         app_metadata:  withLineId(cur.user.app_metadata, lineProfile.userId),
-        user_metadata: { ...cur.user.user_metadata, line_display_name: lineProfile.displayName },
+        // user_metadata.line_id: compatibility copy for an app rollback only — never read by this code
+        user_metadata: { ...cur.user.user_metadata, line_id: lineProfile.userId, line_display_name: lineProfile.displayName },
       })
       if (upErr) return linkFail('auth_failed')
       return NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?linked=line`)
@@ -118,7 +119,8 @@ export async function GET(request: Request) {
         email: decision.email,
         email_confirm: true,
         app_metadata:  { line_id: lineProfile.userId, provider: 'line' },
-        user_metadata: { full_name: lineProfile.displayName, avatar_url: lineProfile.pictureUrl, line_display_name: lineProfile.displayName },
+        // user_metadata.line_id: compatibility copy for an app rollback only — never read by this code
+        user_metadata: { full_name: lineProfile.displayName, avatar_url: lineProfile.pictureUrl, line_id: lineProfile.userId, line_display_name: lineProfile.displayName, provider: 'line' },
       })
       // the placeholder already exists = a legacy LINE account not yet backfilled → never create a second one
       if (createErr) throw new LineAuthError(/already|exists|registered/i.test(createErr.message) ? 'LINE_ACCOUNT_MIGRATION_PENDING' : 'auth_failed', 'create')
