@@ -49,6 +49,7 @@ these only matter to system paths (service_role / database owner).
 | Apply 04:08:45 | `20261102040845 business_delete_privileges`; stored statement sha256 = file sha256 `dea30431…8081` |
 | Postcheck after | `after`, `delete_verdict OK`; all 4 md5 = before; counts = before |
 | `business_delete_checks.cjs` | **23 / 23**: signup → personal workspace + owner row; removal of this run's synthetic auth user (`…bd01`) → its workspace removed by cascade; owner creates farm / shop / service (`create_business`) and edits each profile; invite manager → accept; invite staff → cancel; list members; manager edits bio; direct DELETE of the 3 entities, 3 business workspaces, owner + manager personal workspaces: anon 401 / 42501, owner / manager / stranger 403 / 42501, row md5 unchanged; owner bulk DELETE (all shops, all own workspaces) 42501, nothing removed; manager leaves the team. Cleanup: farm 124, shop 145, service 113 + their workspaces and claim rows (1 / 1 / 1 each) |
+| Exit handling (offline, after the run, 2026-11-02) | the staging run above used the first version of the suite (`a156da53…287c`). The suite now always runs cleanup, never calls `process.exit` in `finally`, and exits non-zero on an unexpected exception, any cleanup failure, any FAIL or a pass count ≠ 23. `business_delete_checks_unit.test.cjs` 12 / 12 (simulated exceptions, no pg / network). The changed suite has not been re-run against staging (no window) — run it in the rollout window or the next staging window |
 | Regression | workspace guard 21 / 21, storage 23 / 23, members 51 / 51, create_business 75 / 75, verification guard 30 / 30, business profile 164 / 164 |
 | E2E full suite on Preview `whiskora-dfw9j3173` (PR #32 head `1dec2ce`; `web/` = main `38860b2` = v1.14.0; served 1.14.0; bundles: staging ref only) | **90 passed, 2 skipped** (the usual "listed but not public" pair), 0 failed, `--workers=1`, 11.7 min — incl. register-business, business-profile, members / invitations / leave, verification, pet health |
 | Final postcheck 04:25 | `after` / OK; 4 md5 = before; after clean-up counts = before (farms 1, shops 2, services 2, workspaces personal 8 / farm 1 / shop 2, members 15, invitations 0) |
@@ -77,7 +78,10 @@ the other suites; no shared QA account was removed. No GoTrue admin deletion (no
 **Recovery — fix forward.** If a real path turns out to need a delete, add a dedicated RPC for that path in a new PR; do
 not re-grant DELETE to anon / authenticated. The app does not use these deletes, so there is no app rollback to consider.
 
-Checksum (sha256): `20261102100000_business_delete_privileges.sql`
-`dea30431533c9bbe67e61ba74e9b27c100969f22c64ac8adc94fbc0c8ea18081`
+Checksums (sha256):
+- `20261102100000_business_delete_privileges.sql` `dea30431533c9bbe67e61ba74e9b27c100969f22c64ac8adc94fbc0c8ea18081`
+- `supabase/tests/business_delete_precheck.sql` `01a93e398ed2ce0af5a7e35115ca91389fd35cfda5f271449e98d4002bf90186`
+- `supabase/tests/business_delete_checks.cjs` `6fa9df0e0a4360e2aeda1784b0f87fa621a28f300a0997bc447cce20597d4cd0`
+- `supabase/tests/business_delete_checks_unit.test.cjs` `5a5c71e1c33b7baec0f8792167a7cd4d1b31639391efe7b43badafc1ab07a01d`
 
 **Preview ↔ staging:** staging has DELETE closed; no Preview uses these deletes.

@@ -36,6 +36,7 @@ after the pre-checks in `migrations/20261029100000_private_columns.sql`.
 |---|---|
 | `business_delete_precheck.sql` | read-only (`begin read only; … rollback;`): state `before` / `after`, **effective** DELETE of anon / authenticated / PUBLIC, `delete_verdict` OK / STOP, md5 of every other privilege (only anon / authenticated table DELETE excluded), policies, triggers, FKs |
 | `business_delete_checks.cjs` | after the migration only (exits without probes while DELETE is open): signup + synthetic account removal, create_business, profile edits, invite / accept / cancel / list, manager edit, direct DELETE by anon / owner / manager / stranger on entities, business + personal workspaces (refused, row unchanged), bulk DELETE, leave team; removes only this run's `QA-BD` rows |
+| `business_delete_checks_unit.test.cjs` | `node --test`, offline: exit code is non-zero on an unexpected exception, any cleanup failure, any FAIL, or a pass count ≠ 23; loading the suite opens no pg / network |
 
 ## Business profile by role (`20261101190000` + `20261101200000`; staging only — `docs/BUSINESS_PROFILE_PERMISSIONS.md`)
 | File | Use |

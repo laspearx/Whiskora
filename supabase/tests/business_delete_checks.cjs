@@ -6,17 +6,20 @@
 // 00000000-0000-4000-8000-00000000bd01 (inserted as the database owner, like the other suites), removed at the end.
 // Cleanup: only the QA-BD businesses this run created (id from the RPC + owner 01 + name prefix checked; anything else
 // → STOP, nothing deleted), their workspaces (cascade members / invitations) and their create_business claim rows.
+// Exit code: 0 only when the run reached the end with no unexpected exception, no cleanup failure, 0 FAIL and exactly
+// EXPECTED passed checks (a run that stops early or skips a block is not a success). 1 = any of those; 2 = config;
+// 3 = DELETE still open (nothing probed). `verdict` / `runSuite` are exported for the offline test
+// (business_delete_checks_unit.test.cjs), which needs no database or network.
 // usage: NODE_PATH=<dir with pg> STAGING_ANON_KEY=<key> node supabase/tests/business_delete_checks.cjs
-const { Client } = require('pg'); const fs = require('fs'); const os = require('os'); const crypto = require('crypto');
-const url = fs.readFileSync(os.homedir() + '/.whiskora/staging_db_url', 'utf8').trim();
-if (!url.includes('wpxcukrwmegwzfccbbga')) { console.error('refusing: not staging'); process.exit(2); }
+const fs = require('fs'); const os = require('os'); const crypto = require('crypto');
 const SB = 'https://wpxcukrwmegwzfccbbga.supabase.co';
-const KEY = process.env.STAGING_ANON_KEY; if (!KEY) { console.error('set STAGING_ANON_KEY'); process.exit(2); }
-const PW = fs.readFileSync(os.homedir() + '/.whiskora/staging_qa_password', 'utf8').trim();
+const EXPECTED = 23; // A 2 + B 3 + C 3 + D 5 + E 9 + F 1
+let KEY, PW;
 const U = { owner: '01', manager: '02', staff: '03', stranger: '06' };
 const uid = (who) => `a0000000-0000-4000-8000-0000000000${U[who]}`;
 const SIGNUP = '00000000-0000-4000-8000-00000000bd01';
 let pass = 0, fail = 0;
+const counts = () => ({ pass, fail });
 const ok = (n, c, i = {}) => { c ? pass++ : fail++; console.log(`${c ? 'PASS' : 'FAIL'} ${n} :: ${JSON.stringify(i)}`); };
 const toks = {};
 async function tok(who) {
@@ -35,17 +38,41 @@ const TBL = { farm: 'farms', shop: 'shops', service: 'services' };
 const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Synthetic', phone: '0800000000', province: 'กรุงเทพมหานคร', lat: 13.75, lng: 100.5,
   bio: 'synthetic', ...(type === 'farm' ? { species: 'cat' } : { supported_species: ['dog'] }), ...(type === 'service' ? { category: 'grooming' } : {}) });
 
-(async () => {
+// Pure: the exit code and the reasons for a non-zero one.
+function verdict({ pass, fail, expected, error, cleanupErrors }) {
+  const reasons = [];
+  if (error) reasons.push(`unexpected exception: ${error.message || error}`);
+  for (const c of cleanupErrors) reasons.push(`cleanup: ${c}`);
+  if (fail) reasons.push(`${fail} check(s) failed`);
+  if (pass !== expected) reasons.push(`${pass} of ${expected} expected checks passed`);
+  return { code: reasons.length ? 1 : 0, reasons };
+}
+
+// body() runs the checks; cleanup(errors) always runs afterwards and records each failure it meets in `errors` (a throw
+// out of cleanup is recorded too). Neither can hide the other, and nothing here calls process.exit.
+async function runSuite({ body, cleanup, expected, counts }) {
+  let error = null; const cleanupErrors = [];
+  try { await body(); } catch (e) { error = e; }
+  try { await cleanup(cleanupErrors); } catch (e) { cleanupErrors.push(e.message || String(e)); }
+  return verdict({ ...counts(), expected, error, cleanupErrors });
+}
+
+async function main() {
+  const url = fs.readFileSync(os.homedir() + '/.whiskora/staging_db_url', 'utf8').trim();
+  if (!url.includes('wpxcukrwmegwzfccbbga')) { console.error('refusing: not staging'); return 2; }
+  KEY = process.env.STAGING_ANON_KEY; if (!KEY) { console.error('set STAGING_ANON_KEY'); return 2; }
+  PW = fs.readFileSync(os.homedir() + '/.whiskora/staging_qa_password', 'utf8').trim();
+  const { Client } = require('pg');
   const db = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } }); await db.connect();
   const q = async (s, p = []) => (await db.query(s, p)).rows;
   const open = (await q(`select r || ':' || t x from (values ('anon'), ('authenticated'), ('public')) a(r), (values ('farms'), ('shops'), ('services'), ('workspaces')) b(t)
                          where has_table_privilege(r, 'public.' || t, 'DELETE')`)).map((r) => r.x);
-  if (open.length) { console.log(`schema: DELETE still open (${open.join(',')}) — migration 20261102100000 not applied; no REST DELETE probes run`); await db.end(); process.exit(3); }
+  if (open.length) { console.log(`schema: DELETE still open (${open.join(',')}) — migration 20261102100000 not applied; no REST DELETE probes run`); await db.end(); return 3; }
   console.log('schema: direct DELETE closed (20261102100000)\n');
 
   const created = []; // [type, id, workspace]
   const rowMd5 = async (tbl, col, id) => (await q(`select md5(t::text) m from public.${tbl} t where ${col} = $1`, [id]))[0]?.m ?? null;
-  try {
+  const body = async () => {
     // ── signup still creates the personal workspace (handle_new_user), account removal still cascades
     { await q(`delete from auth.users where id = $1`, [SIGNUP]);
       await q(`insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at) values ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'whiskora-qa+bd-signup@example.com', '{"full_name":"QA BD"}', now(), now())`, [SIGNUP]);
@@ -116,21 +143,33 @@ const base = (type, name) => ({ [`${type}_name`]: name, owner_name: 'QA Syntheti
       const still = await q(`select count(*)::int n from workspace_members where workspace_id = $1 and user_id = $2`, [shop.ws, uid('manager')]);
       ok('F manager leaves the team', r.body === 'left' && still[0].n === 0, { s: r.status, b: r.body });
     }
-  } finally {
-    // ── cleanup: only what this run created, after an owner + name check
+  };
+  // ── cleanup: only what this run created, after an owner + name check; every failure is recorded, the rest still runs
+  const cleanup = async (errors) => {
     for (const [type, id, ws] of created) {
-      const e = (await q(`select user_id, ${type}_name n from ${TBL[type]} where id = $1`, [id]))[0];
-      const w = (await q(`select owner_id, entity_id, type from workspaces where id = $1`, [ws]))[0];
-      if (!e || e.user_id !== uid('owner') || !String(e.n).startsWith('QA-BD') || (w && (w.owner_id !== uid('owner') || Number(w.entity_id) !== id || w.type !== type))) {
-        console.log(`STOP cleanup ${type} ${id}: not this run's synthetic row — nothing deleted`); fail++; continue;
-      }
-      const d1 = await db.query(`delete from workspaces where id = $1`, [ws]);
-      const d2 = await db.query(`delete from ${TBL[type]} where id = $1`, [id]);
-      const d3 = await db.query(`delete from business_create_requests where user_id = $1 and entity_id = $2 and workspace_id = $3`, [uid('owner'), id, ws]);
-      console.log(`cleanup ${type} ${id}: workspace ${d1.rowCount}, entity ${d2.rowCount}, claim ${d3.rowCount}`);
+      try {
+        const e = (await q(`select user_id, ${type}_name n from ${TBL[type]} where id = $1`, [id]))[0];
+        const w = (await q(`select owner_id, entity_id, type from workspaces where id = $1`, [ws]))[0];
+        if (!e || e.user_id !== uid('owner') || !String(e.n).startsWith('QA-BD') || (w && (w.owner_id !== uid('owner') || Number(w.entity_id) !== id || w.type !== type))) {
+          console.log(`STOP cleanup ${type} ${id}: not this run's synthetic row — nothing deleted`); errors.push(`STOP ${type} ${id}`); continue;
+        }
+        const d1 = await db.query(`delete from workspaces where id = $1`, [ws]);
+        const d2 = await db.query(`delete from ${TBL[type]} where id = $1`, [id]);
+        const d3 = await db.query(`delete from business_create_requests where user_id = $1 and entity_id = $2 and workspace_id = $3`, [uid('owner'), id, ws]);
+        console.log(`cleanup ${type} ${id}: workspace ${d1.rowCount}, entity ${d2.rowCount}, claim ${d3.rowCount}`);
+        if (d2.rowCount !== 1) errors.push(`${type} ${id}: entity rows removed ${d2.rowCount}`);
+      } catch (x) { errors.push(`${type} ${id}: ${x.message}`); }
     }
-    await q(`delete from auth.users where id = $1`, [SIGNUP]);
-    console.log(`\n${pass} passed, ${fail} failed`);
-    await db.end(); process.exit(fail ? 1 : 0);
-  }
-})().catch((e) => { console.error(e); process.exit(1); });
+    try { await q(`delete from auth.users where id = $1`, [SIGNUP]); } catch (x) { errors.push(`signup user: ${x.message}`); }
+    try { await db.end(); } catch (x) { errors.push(`db.end: ${x.message}`); }
+  };
+  const v = await runSuite({ body, cleanup, expected: EXPECTED, counts });
+  console.log(`\n${pass} passed, ${fail} failed (expected ${EXPECTED} passed)`);
+  for (const r of v.reasons) console.log(`NOT OK: ${r}`);
+  return v.code;
+}
+
+module.exports = { verdict, runSuite, EXPECTED };
+if (require.main === module) {
+  main().then((code) => { process.exitCode = code; }, (e) => { console.error(e); process.exitCode = 1; });
+}
