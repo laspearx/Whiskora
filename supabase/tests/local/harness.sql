@@ -11,5 +11,8 @@ begin
   execute format('set local role %I', p_role);
   begin execute p_sql; got := 'ok'; exception when others then got := sqlstate; end;
   execute 'reset role';
+  -- clear the simulated caller so fixtures of the next suite run without a stale auth.uid()
+  perform set_config('request.jwt.claim.sub', '', true);
+  perform set_config('request.jwt.claim.role', '', true);
   insert into results values (p_suite, p_name, p_expect, got, got = p_expect);
 end $$;
