@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { decideLine, placeholderEmail, withLineId } from "../../web/lib/lineAuth.ts";
+import { decideLine, decideLegacy, placeholderEmail, withLineId } from "../../web/lib/lineAuth.ts";
 import { plan } from "../scripts/line_identity_backfill.mjs";
 
 const L = "U0123456789abcdef0123456789abcdef";
@@ -40,20 +40,38 @@ test("callback source: no email lookup, no user_metadata lookup, no listUsers, n
   const r = fs.readFileSync(new URL("../../web/app/api/auth/line/route.ts", import.meta.url), "utf8");
   assert.ok(r.includes("scope: 'profile openid',") && !r.includes("openid email"));
 });
-test("backfill plan: copies unique legacy ids, skips already-set, reports conflicts, never writes conflicts", () => {
-  const users = [
-    { id: "a1", user_metadata: { line_id: "Uaaa" }, app_metadata: { provider: "email" } },     // write
-    { id: "b1", user_metadata: { line_id: "Ubbb" }, app_metadata: {} },                        // conflict (also b2)
-    { id: "b2", user_metadata: { line_id: "Ubbb" }, app_metadata: {} },
-    { id: "c1", user_metadata: { line_id: "Uccc" }, app_metadata: { line_id: "Uccc" } },       // already
-    { id: "d1", user_metadata: { line_id: "Uxxx" }, app_metadata: { line_id: "Uddd" } },       // conflict (differs)
-    { id: "e1", user_metadata: {}, app_metadata: {} },                                          // nothing
-    { id: "f1", user_metadata: { line_id: "bad id!" }, app_metadata: {} },                     // invalid
-    { id: "g1", user_metadata: { line_id: "Uccc" }, app_metadata: {} },                         // conflict with c1's app_metadata
+test("legacy adoption: only a verified server-made account for exactly this LINE id", () => {
+  const L2 = "Uvictim";
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "v", line_id: L2, class: "verified" }]), { action: "adopt", userId: "v" });
+  // a forged claim (user_metadata on someone else's account) is unverified: neither adopted nor blocking
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "v", line_id: L2, class: "verified" }, { user_id: "attacker", line_id: L2, class: "unverified" }]), { action: "adopt", userId: "v" });
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "attacker", line_id: L2, class: "unverified" }]), { action: "create" });
+  // a verified row for ANOTHER id is never adopted
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "x", line_id: "Uother", class: "verified" }]), { action: "create" });
+  // conflicts / two verified holders block
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "a", line_id: L2, class: "conflict" }]), { action: "error", code: "LINE_ACCOUNT_CONFLICT" });
+  assert.deepEqual(decideLegacy(L2, [{ user_id: "a", line_id: L2, class: "verified" }, { user_id: "b", line_id: L2, class: "verified" }]), { action: "error", code: "LINE_ACCOUNT_CONFLICT" });
+  assert.deepEqual(decideLegacy(L2, []), { action: "create" });
+});
+test("backfill plan: writes ONLY verified rows; unverified / conflict / already never written", () => {
+  const rows = [
+    { user_id: "v1", line_id: "Uaaa", class: "verified", reason: "server-made LINE signup" },
+    { user_id: "f1", line_id: "Uaaa", class: "unverified", reason: "claim only in user_metadata (user-writable)" }, // forged
+    { user_id: "f2", line_id: "Ufree", class: "unverified", reason: "claim only in user_metadata (user-writable)" },
+    { user_id: "p1", line_id: "Upw", class: "unverified", reason: "placeholder email with a password" },
+    { user_id: "c1", line_id: "Udup", class: "conflict", reason: "LINE id held by more than one trusted account" },
+    { user_id: "a1", line_id: "Uok", class: "already", reason: "app_metadata set" },
+    { user_id: "x1", line_id: "bad id!", class: "verified", reason: "?" },                         // unsafe id → invalid
+    { user_id: "d1", line_id: "Uzzz", class: "verified" }, { user_id: "d2", line_id: "Uzzz", class: "verified" }, // dup in report
   ];
-  const p = plan(users);
-  assert.deepEqual(p.write.map((w) => [w.id, w.line_id]), [["a1", "Uaaa"]]);
-  assert.equal(p.write[0].app_metadata.provider, "email");
-  assert.equal(p.skipAlready, 1); assert.equal(p.invalid, 1);
-  assert.deepEqual(p.conflicts.map((c) => c.id).sort(), ["b1", "b2", "d1", "g1"]);
+  const p = plan(rows);
+  assert.deepEqual(p.write, [{ id: "v1", line_id: "Uaaa" }]);
+  assert.deepEqual(p.unverified.map((u) => u.id).sort(), ["f1", "f2", "p1"]);
+  assert.deepEqual(p.conflicts.map((c) => c.id).sort(), ["c1", "d1", "d2"]);
+  assert.equal(p.already, 1); assert.equal(p.invalid, 1);
+});
+test("backfill script source: reads the server evidence, never user_metadata", () => {
+  const src = fs.readFileSync(new URL("../scripts/line_identity_backfill.mjs", import.meta.url), "utf8");
+  assert.ok(src.includes("rpc('legacy_line_evidence')"));
+  assert.ok(!/user_metadata\?*\.line_id/.test(src.replace(/^\/\/.*$/gm, "")), "no user_metadata.line_id read outside comments");
 });

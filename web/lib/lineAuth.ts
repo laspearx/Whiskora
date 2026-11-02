@@ -34,6 +34,22 @@ export function decideLine(input: { lineUserId: unknown; mode: string; linkUid: 
   return { action: 'create', email: placeholderEmail(lineUserId) }; // never the LINE email
 }
 
+// No app_metadata holder yet: may a legacy account be adopted? rows = legacy_line_evidence(lineUserId).
+// Only a 'verified' row (server-made LINE signup, see the migration) for exactly this id is adopted — the current
+// LINE login proves the id, the server-made shape proves the account was created for it. 'unverified' rows (claims in
+// user-writable user_metadata, placeholder with a password, changed email) are ignored: they neither get the login
+// nor block it. A 'conflict' blocks (admin resolves).
+export type EvidenceRow = { user_id: string; line_id: string | null; class: string; reason?: string };
+export function decideLegacy(lineUserId: string, rows: EvidenceRow[]):
+  { action: 'adopt'; userId: string } | { action: 'create' } | { action: 'error'; code: 'LINE_ACCOUNT_CONFLICT' } {
+  const mine = rows.filter((r) => r.line_id === lineUserId);
+  if (mine.some((r) => r.class === 'conflict')) return { action: 'error', code: 'LINE_ACCOUNT_CONFLICT' };
+  const verified = mine.filter((r) => r.class === 'verified');
+  if (verified.length > 1) return { action: 'error', code: 'LINE_ACCOUNT_CONFLICT' };
+  if (verified.length === 1) return { action: 'adopt', userId: verified[0].user_id };
+  return { action: 'create' };
+}
+
 // app_metadata to write: keep what is there, set line_id (service role only).
 export const withLineId = (appMetadata: Record<string, unknown> | undefined, lineUserId: string) => ({ ...(appMetadata || {}), line_id: lineUserId });
 

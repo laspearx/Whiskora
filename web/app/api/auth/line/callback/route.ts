@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { isPreviewDeploy } from '@/lib/deploy-env'
 import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
-import { decideLine, withLineId } from '@/lib/lineAuth'
+import { decideLine, decideLegacy, withLineId, type EvidenceRow } from '@/lib/lineAuth'
 
 class LineAuthError extends Error {
   constructor(public code: string, public detail: string) { super(code) }
@@ -114,6 +114,18 @@ export async function GET(request: Request) {
       if (getErr || !found.user?.email) throw new LineAuthError('auth_failed', 'user')
       targetEmail = found.user.email
     } else if (decision.action === 'create') {
+      // a legacy account made by our own callback (verified server-side evidence) is adopted, not duplicated
+      const { data: evRows, error: evErr } = await admin.rpc('legacy_line_evidence', { p_line_id: lineProfile.userId })
+      if (evErr) throw new LineAuthError('auth_failed', `evidence ${evErr.code ?? ''}`)
+      const legacy = decideLegacy(lineProfile.userId, (evRows ?? []) as EvidenceRow[])
+      if (legacy.action === 'error') return fail(legacy.code)
+      if (legacy.action === 'adopt') {
+        const { data: old, error: oldErr } = await admin.auth.admin.getUserById(legacy.userId)
+        if (oldErr || !old.user?.email) throw new LineAuthError('auth_failed', 'adopt read')
+        const { error: adErr } = await admin.auth.admin.updateUserById(legacy.userId, { app_metadata: withLineId(old.user.app_metadata, lineProfile.userId) })
+        if (adErr) throw new LineAuthError('auth_failed', 'adopt write')
+        targetEmail = old.user.email
+      } else {
       // new LINE user: placeholder email only — never a (possibly unverified) real address
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email: decision.email,
@@ -131,6 +143,7 @@ export async function GET(request: Request) {
         updated_at: new Date(),
       })
       targetEmail = decision.email
+      }
     } else {
       throw new LineAuthError('auth_failed', 'decision')
     }
