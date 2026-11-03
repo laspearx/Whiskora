@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import NextLink from "next/link";
 import { useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "@/i18n/context";
+import { formatDate } from "@/lib/format";
 
 type IconName =
   | "id"
@@ -41,197 +43,121 @@ function IconImg({ name, size = 48 }: { name: IconName; size?: number }) {
 
 const siteUrl = "https://whiskora.pet";
 
-// ─── ช่วยอะไร: ปัญหาจริงที่ Whiskora แก้ ─────────────────────────────────
+// Content keys of the `landing` namespace (messages/{th,en}.json); icons stay here. Order = display order.
 const problemCards = [
-  {
-    title: "ประวัติสุขภาพอยู่หลายที่",
-    desc: "วัคซีน น้ำหนัก ใบนัด และรูปเอกสารกระจายอยู่ในสมุด แชต และอัลบั้มรูป",
-    icon: "health",
-  },
-  {
-    title: "ต้องเล่าข้อมูลเดิมซ้ำ",
-    desc: "ทุกครั้งที่ฝากเลี้ยง พาไปหาหมอ หรือเปลี่ยนผู้ดูแล ต้องบอกข้อมูลชุดเดิมใหม่",
-    icon: "clinic",
-  },
-  {
-    title: "ดูข้อมูลฟาร์มยาก",
-    desc: "ผู้รับเลี้ยงอยากเห็นข้อมูลฟาร์ม พ่อแม่พันธุ์ และสุขภาพก่อนตัดสินใจ แต่โพสต์ขายทั่วไปไม่พอ",
-    icon: "breeder",
-  },
-  {
-    title: "ย้ายบ้านแล้วข้อมูลหาย",
-    desc: "เมื่อสัตว์มีเจ้าของใหม่ ประวัติที่ฟาร์มหรือเจ้าของเดิมเก็บไว้มักไม่ถูกส่งต่อ",
-    icon: "transfer",
-  },
-] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+  { key: "health", icon: "health" },
+  { key: "repeat", icon: "clinic" },
+  { key: "farm", icon: "breeder" },
+  { key: "transfer", icon: "transfer" },
+] satisfies Array<{ key: string; icon: IconName }>;
 
 // ─── ประโยชน์สำหรับเจ้าของ (ทุกข้อเปิดใช้งานแล้ว) ──────────────────────────
 const ownerFeatures = [
-  {
-    title: "บัตร Pet ID พร้อม QR",
-    desc: "สร้างบัตรประจำตัวดิจิทัล ดาวน์โหลดเก็บในโทรศัพท์หรือพิมพ์ใช้งานได้",
-    icon: "id",
-  },
-  {
-    title: "หน้าโปรไฟล์เมื่อสแกน QR",
-    desc: "คนที่สแกนเห็นโปรไฟล์ได้โดยไม่ต้องสมัคร และเห็นเฉพาะข้อมูลที่เปิดไว้",
-    icon: "qr",
-  },
-  {
-    title: "สมุดสุขภาพ วัคซีน และน้ำหนัก",
-    desc: "บันทึกวัคซีน นัดหมาย น้ำหนัก และกิจกรรมดูแลไว้ในโปรไฟล์เดียว",
-    icon: "health",
-  },
-  {
-    title: "เอกสารสำคัญ",
-    desc: "เก็บรูปสมุดวัคซีน ใบรับรอง และเอกสารอื่นของสัตว์เลี้ยงแต่ละตัว",
-    icon: "doc",
-  },
-] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+  { key: "id", icon: "id" },
+  { key: "qr", icon: "qr" },
+  { key: "health", icon: "health" },
+  { key: "docs", icon: "doc" },
+] satisfies Array<{ key: string; icon: IconName }>;
 
 // ─── ประโยชน์สำหรับฟาร์ม (ทุกข้อเปิดใช้งานแล้ว) ─────────────────────────────
 const farmFeatures = [
-  {
-    title: "โปรไฟล์ฟาร์มและสัตว์พร้อมย้ายบ้าน",
-    desc: "แสดงข้อมูลฟาร์มและรายการที่พร้อมย้ายบ้านหรือเปิดจองในหน้ารวมฟาร์ม",
-    icon: "breeder",
-  },
-  {
-    title: "ครอก พ่อแม่พันธุ์ และสายเลือด",
-    desc: "บันทึกการผสม การคลอด น้ำหนักลูก และผังสายเลือดที่เชื่อมกันอัตโนมัติ",
-    icon: "tree",
-  },
-  {
-    title: "รับจองและโอนเจ้าของ",
-    desc: "ผู้สนใจส่งคำขอจองได้ และโอนโปรไฟล์ให้เจ้าของใหม่กดยอมรับเอง",
-    icon: "transfer",
-  },
-  {
-    title: "ยืนยันตัวตนฟาร์ม",
-    desc: "ส่งเอกสารให้ทีมงานตรวจ เมื่อผ่านแล้วฟาร์มจะได้ตรา \"ฟาร์มยืนยันตัวตนแล้ว\"",
-    icon: "shield",
-  },
-] satisfies Array<{ title: string; desc: string; icon: IconName }>;
+  { key: "profile", icon: "breeder" },
+  { key: "lineage", icon: "tree" },
+  { key: "transfer", icon: "transfer" },
+  { key: "verify", icon: "shield" },
+] satisfies Array<{ key: string; icon: IconName }>;
 
 // ─── กำลังพัฒนา: แยกจากฟีเจอร์ที่ใช้ได้แล้วให้ชัด ───────────────────────────
-const roadmapItems = [
-  "จองคลินิกและบริการผ่าน Whiskora",
-  "คอมมูนิตี้คนรักสัตว์",
-  "บทความความรู้ฉบับเต็ม",
-];
+const roadmapItems = ["booking", "community", "articles"];
+const faqKeys = ["what", "cost", "scan", "verified", "gps", "clinics"];
 
-const seoFaqs = [
-  {
-    question: "Whiskora คืออะไร?",
-    answer:
-      "Whiskora คือระบบเก็บข้อมูลสัตว์เลี้ยงที่รวม Pet ID, QR Profile, ประวัติสุขภาพ เอกสาร และข้อมูลฟาร์มไว้ในที่เดียว เพื่อให้ดูแลและแชร์ข้อมูลได้ง่ายขึ้น",
-  },
-  {
-    question: "เริ่มใช้งาน Whiskora ต้องเสียค่าใช้จ่ายไหม?",
-    answer:
-      "เจ้าของสัตว์เลี้ยงสร้างโปรไฟล์และบัตร Pet ID ได้ฟรี ส่วนฟาร์ม ร้านค้า และบริการเปิดใช้ได้ฟรีในช่วง Genesis Program",
-  },
-  {
-    question: "คนที่สแกน QR จะเห็นข้อมูลอะไรบ้าง?",
-    answer:
-      "เห็นหน้าโปรไฟล์สาธารณะของสัตว์เลี้ยง ข้อมูลสุขภาพ สายเลือด และเอกสารจะแสดงตามระดับสิทธิ์ที่เจ้าของหรือฟาร์มตั้งไว้ และไม่แสดงที่อยู่ของเจ้าของ",
-  },
-  {
-    question: "ตรา \"ฟาร์มยืนยันตัวตนแล้ว\" หมายถึงอะไร?",
-    answer:
-      "หมายถึงทีม Whiskora ตรวจเอกสารยืนยันตัวตนของเจ้าของฟาร์มแล้ว ตรานี้ไม่ได้รับรองสุขภาพหรือสายเลือดของสัตว์แต่ละตัว ฟาร์มที่ยังไม่ผ่านจะแสดงว่ายังไม่ยืนยันตัวตน",
-  },
-  {
-    question: "QR ติดตามตำแหน่งสัตว์เลี้ยงได้ไหม?",
-    answer:
-      "ไม่ได้ QR เป็นลิงก์ไปหน้าโปรไฟล์ ไม่ใช่อุปกรณ์ GPS ผู้ที่พบสัตว์เลี้ยงต้องสแกนเองจึงจะเห็นข้อมูล",
-  },
-  {
-    question: "คลินิกหรือร้านบริการใช้ Whiskora ได้แล้วหรือยัง?",
-    answer:
-      "ผู้ให้บริการลงทะเบียนหน้าร้านได้แล้ว ส่วนการจองบริการผ่านเว็บยังอยู่ระหว่างพัฒนา ระหว่างนี้เจ้าของแชร์ข้อมูลสัตว์เลี้ยงให้คลินิกดูผ่าน QR ได้",
-  },
-];
+type T = (key: string, vars?: Record<string, string | number>) => string;
 
-const homeJsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "@id": `${siteUrl}/#organization`,
-      name: "Whiskora",
-      url: siteUrl,
-      logo: `${siteUrl}/logo.png`,
-      description:
-        "แพลตฟอร์ม pet-tech สำหรับ Pet ID, QR Profile, ประวัติสุขภาพ, เพ็ดดิกรี, เอกสารสำคัญ, ฟาร์มสัตว์เลี้ยง และการแชร์ข้อมูลสัตว์เลี้ยงที่เชื่อถือได้",
-    },
-    {
-      "@type": "WebSite",
-      "@id": `${siteUrl}/#website`,
-      url: siteUrl,
-      name: "Whiskora",
-      inLanguage: ["th-TH", "en"],
-      publisher: { "@id": `${siteUrl}/#organization` },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${siteUrl}/th/search?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
+// structured data in the page language (same text as the visible FAQ / features)
+function homeJsonLd(t: T, locale: string) {
+  const page = `${siteUrl}/${locale}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: "Whiskora",
+        url: siteUrl,
+        logo: `${siteUrl}/logo.png`,
+        description: t("orgDescription"),
       },
-    },
-    {
-      "@type": "WebPage",
-      "@id": `${siteUrl}/th#webpage`,
-      url: `${siteUrl}/th`,
-      name: "Whiskora | Trusted Pet Identity, Health Records และ QR Profile",
-      description:
-        "Whiskora คือแพลตฟอร์มสัตว์เลี้ยงที่เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี, เอกสาร และการแชร์ข้อมูลสัตว์เลี้ยงไว้ในระบบเดียว",
-      isPartOf: { "@id": `${siteUrl}/#website` },
-      about: { "@id": `${siteUrl}/#organization` },
-      primaryImageOfPage: {
-        "@type": "ImageObject",
-        url: `${siteUrl}/home/hero-visual-desktop-v1.png`,
-      },
-    },
-    {
-      "@type": "WebApplication",
-      "@id": `${siteUrl}/th#webapp`,
-      name: "Whiskora",
-      url: `${siteUrl}/th`,
-      applicationCategory: "LifestyleApplication",
-      operatingSystem: "Web",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "THB",
-      },
-      featureList: [...ownerFeatures, ...farmFeatures].map((feature) => feature.title),
-    },
-    {
-      "@type": "FAQPage",
-      "@id": `${siteUrl}/th#faq`,
-      mainEntity: seoFaqs.map((faq) => ({
-        "@type": "Question",
-        name: faq.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: faq.answer,
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: "Whiskora",
+        inLanguage: ["th-TH", "en"],
+        publisher: { "@id": `${siteUrl}/#organization` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${page}/search?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
         },
-      })),
-    },
-    {
-      "@type": "BreadcrumbList",
-      "@id": `${siteUrl}/th#breadcrumb`,
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Whiskora",
-          item: `${siteUrl}/th`,
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${page}#webpage`,
+        url: page,
+        inLanguage: locale === "en" ? "en" : "th-TH",
+        name: t("pageName"),
+        description: t("pageDescription"),
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: { "@id": `${siteUrl}/#organization` },
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/home/hero-visual-desktop-v1.png`,
         },
-      ],
-    },
-  ],
-};
+      },
+      {
+        "@type": "WebApplication",
+        "@id": `${page}#webapp`,
+        name: "Whiskora",
+        url: page,
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "Web",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "THB",
+        },
+        featureList: [
+          ...ownerFeatures.map((f) => t(`owner.${f.key}.title`)),
+          ...farmFeatures.map((f) => t(`farm.${f.key}.title`)),
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${page}#faq`,
+        mainEntity: faqKeys.map((k) => ({
+          "@type": "Question",
+          name: t(`faq.${k}.q`),
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: t(`faq.${k}.a`),
+          },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${page}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Whiskora",
+            item: page,
+          },
+        ],
+      },
+    ],
+  };
+}
 
 function PawIcon({ color = "#e84677" }: { color?: string }) {
   if (color === "#fff") {
@@ -271,6 +197,8 @@ function SectionHeader({
 
 export default function Home() {
   const router = useRouter();
+  const t = useTranslations("landing");
+  const locale = useLocale();
 
   useEffect(() => {
     const revealItems = Array.from(document.querySelectorAll<HTMLElement>(".home-page [data-reveal]"));
@@ -1623,13 +1551,13 @@ export default function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c"),
+          __html: JSON.stringify(homeJsonLd(t, locale)).replace(/</g, "\\u003c"),
         }}
       />
 
       <main className="home-page">
         {/* 1. ช่วยอะไร */}
-        <section className="hero-section" aria-label="Whiskora homepage hero">
+        <section className="hero-section" aria-label={t("heroLabel")}>
           <div className="hero-inner">
             <div className="hero-copy-block">
               <div className="eyebrow">
@@ -1637,26 +1565,26 @@ export default function Home() {
                 PET ID · QR PROFILE · HEALTH RECORDS
               </div>
               <h1 className="hero-title">
-                เก็บข้อมูลสัตว์เลี้ยงไว้ที่เดียว
-                <span>แชร์ได้ด้วย QR</span>
+                {t("heroTitle")}
+                <span>{t("heroTitleHighlight")}</span>
               </h1>
               <p className="hero-copy">
-                สร้าง Pet ID ฟรี บันทึกวัคซีน น้ำหนัก และเอกสาร แล้วให้คนที่ดูแลสแกน QR เพื่อดูข้อมูลที่คุณอนุญาต สำหรับทั้งเจ้าของและฟาร์ม
+                {t("heroCopy")}
               </p>
               <div className="hero-actions">
                 <button className="primary-btn" onClick={() => router.push("/register")}>
                   <PawIcon color="#fff" />
-                  สร้าง Pet ID ฟรี
+                  {t("ctaCreate")}
                 </button>
                 {/* หน้า preview ไม่มี locale prefix (middleware ข้าม) จึงใช้ next/link ตรงๆ แทน router ที่เติม /th */}
                 <NextLink className="secondary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
-                  ดูตัวอย่าง Pet ID
+                  {t("ctaPreview")}
                 </NextLink>
               </div>
-              <div className="hero-product-note" aria-label="สิ่งที่ใช้ได้ทันที">
-                <div><IconImg name="id" size={24} /> บัตร Pet ID ฟรี</div>
-                <div><IconImg name="qr" size={24} /> โปรไฟล์ QR</div>
-                <div><IconImg name="health" size={24} /> สมุดสุขภาพ</div>
+              <div className="hero-product-note" aria-label={t("readyNowLabel")}>
+                <div><IconImg name="id" size={24} /> {t("noteIdCard")}</div>
+                <div><IconImg name="qr" size={24} /> {t("noteQr")}</div>
+                <div><IconImg name="health" size={24} /> {t("noteHealth")}</div>
               </div>
             </div>
           </div>
@@ -1666,18 +1594,18 @@ export default function Home() {
           <div className="section-inner">
             <SectionHeader
               eyebrow="WHY WHISKORA"
-              title="ข้อมูลสัตว์เลี้ยงไม่ควรหายไป"
-              highlight="ระหว่างสมุด แชต และความจำ"
-              copy="Whiskora รวมข้อมูลที่ต้องใช้บ่อยไว้กับสัตว์เลี้ยงแต่ละตัว เปิดดูและส่งต่อได้ในจังหวะที่ต้องใช้"
+              title={t("problemsTitle")}
+              highlight={t("problemsHighlight")}
+              copy={t("problemsCopy")}
             />
             <div className="problem-grid">
               {problemCards.map((problem) => (
-                <article className="problem-card" key={problem.title} data-reveal>
+                <article className="problem-card" key={problem.key} data-reveal>
                   <div className="icon-box">
                     <IconImg name={problem.icon} />
                   </div>
-                  <h3>{problem.title}</h3>
-                  <p>{problem.desc}</p>
+                  <h3>{t(`problem.${problem.key}.title`)}</h3>
+                  <p>{t(`problem.${problem.key}.desc`)}</p>
                 </article>
               ))}
             </div>
@@ -1686,13 +1614,13 @@ export default function Home() {
 
         {/* 2. ตัวอย่างระบบ */}
         <section className="section-inner feature-showcase" id="product-preview" aria-labelledby="product-preview-title">
-          <div className="product-preview" aria-label="ตัวอย่างหน้าโปรไฟล์ (ข้อมูลสาธิต)" data-reveal="panel">
+          <div className="product-preview" aria-label={t("previewLabel")} data-reveal="panel">
             <div className="preview-phone">
               <div className="preview-screen">
                 <div className="pet-hero-card">
                   <div className="pet-avatar" />
                   <div className="pet-name">LUNA</div>
-                  <div className="pet-sub">Scottish Fold · ข้อมูลสาธิต</div>
+                  <div className="pet-sub">Scottish Fold · {t("previewDemo")}</div>
                 </div>
                 <div className="preview-tabs">
                   <span>Profile</span>
@@ -1702,10 +1630,10 @@ export default function Home() {
                 </div>
                 <div className="preview-list">
                   {[
-                    ["วันเกิด", "10 มี.ค. 2567"],
-                    ["สายพันธุ์", "Scottish Fold"],
-                    ["วัคซีนล่าสุด", "บันทึกแล้ว"],
-                    ["ติดต่อเจ้าของ", "ตามที่เจ้าของเลือก"],
+                    [t("previewBirthday"), formatDate("2024-03-10", locale)],
+                    [t("previewBreed"), "Scottish Fold"],
+                    [t("previewLastVaccine"), t("previewRecorded")],
+                    [t("previewContact"), t("previewContactValue")],
                   ].map(([label, value]) => (
                     <div className="preview-row" key={label}>
                       <span>{label}</span>
@@ -1716,7 +1644,7 @@ export default function Home() {
                     <div className="qr-mark" />
                     <div>
                       <h4>QR Public Profile</h4>
-                      <p>สแกนแล้วเห็นเฉพาะข้อมูลที่เจ้าของเปิดไว้</p>
+                      <p>{t("previewQrText")}</p>
                     </div>
                   </div>
                 </div>
@@ -1728,16 +1656,16 @@ export default function Home() {
             <SectionHeader
               id="product-preview-title"
               eyebrow="SEE IT IN ACTION"
-              title="ดูหน้าตาจริงก่อนสมัคร"
-              highlight="บัตร Pet ID และหน้าโปรไฟล์ QR"
-              copy="ลองดูบัตรตัวอย่าง เลือกธีม และดูว่าคนที่สแกน QR จะเห็นอะไร โดยใช้ข้อมูลสาธิตทั้งหมด ไม่ต้องเข้าสู่ระบบ"
+              title={t("showcaseTitle")}
+              highlight={t("showcaseHighlight")}
+              copy={t("showcaseCopy")}
             />
             <div className="farm-story-actions">
               <NextLink className="primary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
-                ดูตัวอย่าง Pet ID
+                {t("ctaPreview")}
               </NextLink>
               <button className="secondary-btn" onClick={() => router.push("/register")}>
-                สร้างของจริงฟรี
+                {t("ctaCreateReal")}
               </button>
             </div>
           </div>
@@ -1748,19 +1676,19 @@ export default function Home() {
           <div className="section-inner">
             <SectionHeader
               eyebrow="FOR PET OWNERS"
-              title="สำหรับเจ้าของสัตว์เลี้ยง"
-              highlight="ใช้ได้แล้ววันนี้"
-              copy="เริ่มจากโปรไฟล์หนึ่งตัว แล้วค่อยเติมข้อมูลสุขภาพและเอกสารเมื่อสะดวก"
+              title={t("ownersTitle")}
+              highlight={t("ownersHighlight")}
+              copy={t("ownersCopy")}
             />
             <div className="audience-grid">
               {ownerFeatures.map((feature) => (
-                <article className="audience-card" key={feature.title} data-reveal>
+                <article className="audience-card" key={feature.key} data-reveal>
                   <div className="icon-box">
                     <IconImg name={feature.icon} />
                   </div>
-                  <div className="audience-label">พร้อมใช้งาน</div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.desc}</p>
+                  <div className="audience-label">{t("availableLabel")}</div>
+                  <h3>{t(`owner.${feature.key}.title`)}</h3>
+                  <p>{t(`owner.${feature.key}.desc`)}</p>
                 </article>
               ))}
             </div>
@@ -1772,34 +1700,34 @@ export default function Home() {
           <div className="section-inner">
             <SectionHeader
               eyebrow="FOR BREEDERS & FARMS"
-              title="สำหรับฟาร์มและผู้เพาะพันธุ์"
-              highlight="ข้อมูลที่ผู้รับเลี้ยงตรวจดูได้"
-              copy="ฟาร์มที่มีตรา “ฟาร์มยืนยันตัวตนแล้ว” ผ่านการตรวจเอกสารยืนยันตัวตนจากทีมงาน ส่วนฟาร์มที่ยังไม่ผ่านจะแสดงสถานะให้เห็นชัดทุกหน้า"
+              title={t("farmsTitle")}
+              highlight={t("farmsHighlight")}
+              copy={t("farmsCopy")}
             />
             <div className="audience-grid">
               {farmFeatures.map((feature) => (
-                <article className="audience-card" key={feature.title} data-reveal>
+                <article className="audience-card" key={feature.key} data-reveal>
                   <div className="icon-box">
                     <IconImg name={feature.icon} />
                   </div>
-                  <div className="audience-label">พร้อมใช้งาน</div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.desc}</p>
+                  <div className="audience-label">{t("availableLabel")}</div>
+                  <h3>{t(`farm.${feature.key}.title`)}</h3>
+                  <p>{t(`farm.${feature.key}.desc`)}</p>
                 </article>
               ))}
             </div>
             <div className="farm-story-actions">
               <button className="primary-btn" onClick={() => router.push("/farm-hub")}>
-                ดูฟาร์มในระบบ
+                {t("farmsBrowse")}
               </button>
               <button className="secondary-btn" onClick={() => router.push("/partner/register-farm")}>
-                สมัครฟาร์มกับ Whiskora
+                {t("farmsRegister")}
               </button>
             </div>
             <div className="roadmap-box" data-reveal>
-              <div className="roadmap-title">กำลังพัฒนา (ยังไม่เปิดใช้งาน)</div>
+              <div className="roadmap-title">{t("roadmapTitle")}</div>
               <ul>
-                {roadmapItems.map((item) => <li key={item}>{item}</li>)}
+                {roadmapItems.map((item) => <li key={item}>{t(`roadmap.${item}`)}</li>)}
               </ul>
             </div>
           </div>
@@ -1809,33 +1737,33 @@ export default function Home() {
           <SectionHeader
             id="whiskora-faq-title"
             eyebrow="FAQ"
-            title="คำถามที่พบบ่อย"
-            copy="คำตอบสั้นๆ ก่อนเริ่มใช้งาน หากมีคำถามเพิ่มเติม ติดต่อทีมงานได้จากหน้าติดต่อ"
+            title={t("faqTitle")}
+            copy={t("faqCopy")}
           />
           <div className="faq-grid">
-            {seoFaqs.map((faq) => (
-              <article className="faq-card" key={faq.question} data-reveal>
-                <h3>{faq.question}</h3>
-                <p>{faq.answer}</p>
+            {faqKeys.map((k) => (
+              <article className="faq-card" key={k} data-reveal>
+                <h3>{t(`faq.${k}.q`)}</h3>
+                <p>{t(`faq.${k}.a`)}</p>
               </article>
             ))}
           </div>
         </section>
 
         {/* 5. เริ่มใช้งาน */}
-        <section className="cta-band" aria-label="Start using Whiskora" data-reveal="panel">
+        <section className="cta-band" aria-label={t("ctaBandLabel")} data-reveal="panel">
           <div className="section-inner">
-            <h2>เริ่มต้นจากโปรไฟล์สัตว์เลี้ยงหนึ่งตัว</h2>
+            <h2>{t("ctaBandTitle")}</h2>
             <p>
-              สร้าง Pet ID ฟรี แล้วค่อย ๆ เติมข้อมูลสุขภาพและเอกสาร เมื่อพร้อมก็แชร์ QR ให้คนที่ดูแลสัตว์เลี้ยงของคุณ
+              {t("ctaBandCopy")}
             </p>
             <div className="cta-actions">
               <button className="secondary-btn" onClick={() => router.push("/register")}>
                 <PawIcon />
-                สร้าง Pet ID ฟรี
+                {t("ctaCreate")}
               </button>
               <NextLink className="secondary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
-                ดูตัวอย่าง Pet ID
+                {t("ctaPreview")}
               </NextLink>
             </div>
           </div>

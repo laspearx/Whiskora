@@ -254,3 +254,17 @@ Run: `cd web && node --test tests/i18n-consistency.test.mjs` and `npx playwright
    in this order: owner pet profile + transfer (after PR #33), pet create / edit / vaccine / weight, profile area,
    home, partner registration, dashboards; articles and privacy policy by a human translator.
 5. **CTA contrast**: use `--pink-deep` for filled buttons with small text (UI-17).
+
+## Phase 1 follow-up (2026-11-03, `fix/i18n-foundation-phase1`)
+
+Details: `docs/I18N_PHASE1.md`.
+
+| Finding | Status after Phase 1 |
+|---|---|
+| UI-01 server `<html lang>` | ✅ fixed (middleware header → root layout) |
+| UI-02 Thai titles on /en | ✅ partly: English site title / description on every /en page; own title, description, canonical, hreflang for home (layout), farm-hub, search |
+| UI-06 Thai-only routes | ✅ `/`, `/farm-hub`, `/search` translated → 69 routes remain |
+| UI-09 load failure shown as empty | ✅ farm-hub and search (error state + retry); `/p/[id]` pending (PR #37) |
+| UI-10 dates / prices | ✅ partly: `lib/format.ts` (TH Buddhist year / EN Gregorian, Bangkok time zone); 27 call sites remain |
+| UI-12 global CSS vs Tailwind | assessed with before / after evidence — 56 / 80 screenshots change → Design System phase |
+| UI-15 farm-hub | ✅ also translated; unknown sex no longer shows the female icon |

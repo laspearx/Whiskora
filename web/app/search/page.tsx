@@ -4,7 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { speciesTh } from '@/lib/species';
+import { speciesName } from '@/lib/species';
+import { useLocale, useTranslations } from '@/i18n/context';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
@@ -21,25 +22,32 @@ const Icon = {
 function SearchResults() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
+  const query = searchParams.get('q') || '';   // sent exactly as before
+  const t = useTranslations('search');
+  const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [farms, setFarms] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const fetchResults = async () => {
       setIsLoading(true);
+      setLoadError(false);
       try {
         const { data, error } = await supabase.from('farms').select('id, farm_name, species, bio, image_url').ilike('farm_name', `%${query}%`);
         if (error) throw error;
         setFarms(data || []);
       } catch (error) {
         console.error("Error searching farms:", error);
+        setLoadError(true);   // a failed search is an error, not "no results" (audit UI-09)
       } finally { setIsLoading(false); }
     };
     if (query) fetchResults();
     else { setFarms([]); setIsLoading(false); }
-  }, [query]);
+  }, [query, attempt]);
 
   return (
     <>
@@ -65,26 +73,39 @@ function SearchResults() {
         .sr-empty { background: white; border: 1px solid ${F.line}; border-radius: 24px; padding: 48px 24px; text-align: center; }
         .sr-empty-emoji { font-size: 48px; opacity: 0.6; margin-bottom: 12px; }
         .sr-empty-title { font-family: inherit; font-size: 18px; font-weight: 700; color: ${F.ink}; margin-bottom: 4px; }
-        .sr-empty-text { font-size: 14px; font-weight: 500; color: ${F.muted}; }
+        .sr-empty-text { font-size: 14px; font-weight: 500; color: ${F.inkSoft}; }
+        .sr-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 18px; padding: 0 20px; border-radius: 12px; border: 0; background: #111827; color: #fff !important; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; }
       `}</style>
 
       <div className="sr-page">
         <div className="sr-body">
           <div className="sr-header">
-            <button className="sr-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <button type="button" className="sr-back" onClick={() => router.back()} aria-label={tc('back')}><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="sr-title">ผลการค้นหา</h1>
-              <p className="sr-sub">คำค้นหา: "{query}"</p>
+              <h1 className="sr-title">{t('title')}</h1>
+              {query && <p className="sr-sub">{t('queryLabel', { q: query })}</p>}
             </div>
           </div>
 
           {isLoading ? (
             <PageLoader />
+          ) : loadError ? (
+            <div className="sr-empty" role="alert" data-testid="search-error">
+              <h2 className="sr-empty-title">{tc('loadErrorTitle')}</h2>
+              <p className="sr-empty-text">{tc('loadErrorText')}</p>
+              <button type="button" className="sr-btn" onClick={() => setAttempt((a) => a + 1)}>{tc('retry')}</button>
+            </div>
+          ) : !query ? (
+            <div className="sr-empty" data-testid="search-no-query">
+              <h2 className="sr-empty-title">{t('noQueryTitle')}</h2>
+              <p className="sr-empty-text">{t('noQueryText')}</p>
+              <Link href="/farm-hub" className="sr-btn">{t('browseFarms')}</Link>
+            </div>
           ) : farms.length === 0 ? (
-            <div className="sr-empty">
+            <div className="sr-empty" data-testid="search-empty">
               <div className="sr-empty-emoji"><img src="/icons/icon-scan.png" alt="" style={{width:52,height:52,objectFit:'contain',opacity:0.3}} /></div>
-              <h2 className="sr-empty-title">ไม่พบฟาร์มที่คุณค้นหา</h2>
-              <p className="sr-empty-text">ลองใช้คำค้นหาอื่นดูอีกครั้งนะครับ</p>
+              <h2 className="sr-empty-title">{t('emptyTitle')}</h2>
+              <p className="sr-empty-text">{t('emptyText')}</p>
             </div>
           ) : (
             <div className="sr-grid">
@@ -95,7 +116,7 @@ function SearchResults() {
                   </div>
                   <div className="sr-card-info">
                     <div className="sr-card-name">{farm.farm_name}</div>
-                    <div className="sr-card-meta">{farm.bio || `ฟาร์ม${speciesTh(farm.species) || 'สัตว์เลี้ยง'}บน Whiskora`}</div>
+                    <div className="sr-card-meta">{farm.bio || t('farmFallback', { species: speciesName(farm.species, locale) || t('petsFallback') })}</div>
                   </div>
                   <span className="sr-card-arrow"><Icon.Chevron /></span>
                 </Link>

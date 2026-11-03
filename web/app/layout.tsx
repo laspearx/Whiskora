@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
 import ClientProviders from "@/app/components/ClientProviders";
@@ -70,9 +71,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // set by middleware.ts for /th/* and /en/* (validated: anything else → Thai, the default locale)
+  const lang = (await headers()).get("x-whiskora-locale") === "en" ? "en" : "th";
   return (
-    <html suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
