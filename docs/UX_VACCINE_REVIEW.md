@@ -499,3 +499,22 @@ diff. No push, PR mutation, merge, deployment, migration, secrets or environment
   reset are not established by these mocks. No production deployment is approved by this work.
 - New commits stay local on `codex/ux-audit`; remote Draft PR #33 remains at `4195a27` until
   the owner separately authorizes a push. PR #37 and HQ Monitor were not modified.
+
+### Continuation on 2026-11-03
+
+- Resumed from local commit `436e9f2` with a clean working tree. No application or test
+  configuration changes were needed for the new attempt.
+- The sandbox attempt could not bind the local mock port: `port-unavailable`, `EPERM`.
+  It started no test cases. Log: `/tmp/whiskora-ux-continuation-20261103.log`.
+- The authorized attempt outside the sandbox started Next.js, but exited while compiling
+  `/[locale]/pets/[id]`, before any of the 36 cases could start. Server events at
+  `2026-11-03T16:07:28.945Z` record child PID 148947 exiting with `code: 143`,
+  `signal: null`, `forwardedSignal: null`; the wrapper then exited 143. This is a
+  server-start failure, not a failed UI assertion. Sender and cause are unestablished
+  for this attempt; the prior diagnostic's sender metadata must not be attributed to it.
+  Log: `/tmp/whiskora-ux-continuation-20261103-escalated.log`; server evidence:
+  `web/test-results/vaccine-mock/2026-11-03T16-06-48-431Z-148920/server-events.jsonl`.
+- Vaccine unit tests passed **22/22**, with zero failures or skips; TypeScript
+  `tsc --noEmit --incremental false` passed with exit 0. The complete UI
+  regression and Preview gates remain open. No push, merge, deployment, database,
+  environment, or unrelated-workstream changes were made.
