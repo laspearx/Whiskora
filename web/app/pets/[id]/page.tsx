@@ -91,6 +91,8 @@ export default function PetDetailPage() {
   const [pet, setPet] = useState<Pet | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [pedigreeGens, setPedigreeGens] = useState<PedigreeNode[][]>([]);
+  const [pedigreeLoading, setPedigreeLoading] = useState(true);
+  const [pedigreeReadError, setPedigreeReadError] = useState(false);
   const loadSequence = useRef({ value: 0 });
   const [accessReadError, setAccessReadError] = useState(false);
   const [fieldAccess, setFieldAccess] = useState<Record<string, boolean> | null>(null);
@@ -164,14 +166,37 @@ export default function PetDetailPage() {
 
   useEffect(() => {
     const sequence = loadSequence.current;
+    let identity: string | null | undefined;
+    let refresh: ReturnType<typeof setTimeout> | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextIdentity = session?.user.id ?? null;
+      const changed = identity !== undefined && identity !== nextIdentity;
+      identity = nextIdentity;
+      if (event !== 'SIGNED_OUT' && !changed) return;
+      // Invalidate reads immediately; never await another auth call inside this callback.
+      sequence.value++;
+      clearPetData();
+      setSessionUserId(null);
+      setIsLoading(!!session);
+      if (refresh) clearTimeout(refresh);
+      if (!session) router.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      else refresh = setTimeout(() => { void fetchPetData(); }, 0);
+    });
     if (petId) fetchPetData();
-    return () => { sequence.value++; };
-  }, [petId]);
+    return () => {
+      sequence.value++;
+      if (refresh) clearTimeout(refresh);
+      subscription.unsubscribe();
+    };
+  }, [petId, router]);
 
   // สร้าง QR เมื่อรู้ url แล้ว
   useEffect(() => {
+    let cancelled = false;
+    setQrDataUrl('');
     if (shareUrl) QRCode.toDataURL(shareUrl, { width: 320, margin: 1, color: { dark: '#111827', light: '#FFFFFF' } })
-      .then(setQrDataUrl).catch(() => {});
+      .then(url => { if (!cancelled) setQrDataUrl(url); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [shareUrl]);
 
   // เมื่อเปิด modal ผังเต็ม → คำนวณ zoom ให้ผังพอดีกับพื้นที่ (fit-to-screen)
@@ -217,7 +242,8 @@ export default function PetDetailPage() {
     const { data, error } = await supabase.rpc('get_pet_pedigree', {
       p_pet_id: rootPet.id, p_max_gen: MAX_GENERATIONS - 1,
     });
-    if (error || !data) return [];
+    if (error) throw error;
+    if (!data) return [];
     const rows = data as PedigreeRow[];
     const selfRow = rows.find(r => r.relation === 'self');
     if (!selfRow) return []; // ไม่มีสิทธิ์ดู หรือไม่พบข้อมูล
@@ -281,9 +307,7 @@ export default function PetDetailPage() {
     return gens.reverse();
   };
 
-  const fetchPetData = async () => {
-    const sequence = ++loadSequence.current.value;
-    const isCurrent = () => sequence === loadSequence.current.value;
+  function clearPetData() {
     setPet(null);
     setVaccines([]);
     setVaccineReadError(false);
@@ -291,7 +315,33 @@ export default function PetDetailPage() {
     setAccessReadError(false);
     setHealthDetails(null);
     setPedigreeGens([]);
+    setPedigreeLoading(true);
+    setPedigreeReadError(false);
+    setActivities([]);
+    setWeightHistory([]);
+    setDocuments([]);
+    setDocSignedUrls({});
+    setCoOwners([]);
+    setPendingTransfer(null);
+    setSelectedImage(null);
+    setLightboxImage(null);
+    setShowQrModal(false);
+    setShowPedigreeModal(false);
+    setShowTransferModal(false);
+    setTransferTarget(null);
+    setTransferEmail('');
+    setShowCoOwnerModal(false);
+    setCoOwnerEmail('');
+    setShowStatusSheet(false);
+    setCropImageSrc(null);
     setActiveTab('overview');
+  }
+
+  const fetchPetData = async () => {
+    const sequence = ++loadSequence.current.value;
+    const isCurrent = () => sequence === loadSequence.current.value;
+    clearPetData();
+    setSessionUserId(null);
     try {
       setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -324,7 +374,9 @@ export default function PetDetailPage() {
 
       buildPedigreeTree(petData as unknown as Pet).then(data => {
         if (isCurrent()) setPedigreeGens(data);
-      }).catch(() => { if (isCurrent()) setPedigreeGens([]); });
+      }).catch(() => {
+        if (isCurrent()) { setPedigreeGens([]); setPedigreeReadError(true); }
+      }).finally(() => { if (isCurrent()) setPedigreeLoading(false); });
       Promise.resolve(supabase.rpc('get_my_pet_access', { p_pet_id: petData.id })).then(({ data, error }) => {
         if (!isCurrent()) return;
         if (error || !data) {
@@ -336,9 +388,9 @@ export default function PetDetailPage() {
       }).catch(() => {
         if (isCurrent()) { setFieldAccess(null); setAccessReadError(true); }
       });
-      supabase.rpc('get_pet_health', { p_pet_id: petData.id }).then(({ data }) => {
+      Promise.resolve(supabase.rpc('get_pet_health', { p_pet_id: petData.id })).then(({ data }) => {
         if (isCurrent() && data && data[0]) setHealthDetails(data[0]);
-      });
+      }).catch(() => { if (isCurrent()) setHealthDetails(null); });
 
       const [vaccineRes, activityRes, docRes, coOwnerRes, weightRes] = await Promise.all([
         supabase.from('vaccines').select('*').eq('pet_id', petId).order('date_given', { ascending: false }),
@@ -690,18 +742,20 @@ export default function PetDetailPage() {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
-  const generateCombinedTimeline = () => {
+  const generateCombinedTimeline = (includeVaccines: boolean, includeActivities: boolean) => {
     const timeline: { id: string; date: string; title: string; description: string; type: string; color: string; tag?: string; image_url?: string | null }[] = [];
     if (pet?.birth_date) timeline.push({ id: 'birth', date: pet.birth_date, title: 'สมัครเข้าระบบ Whiskora', description: '', type: 'registration', color: '#E84677', tag: pet.microchip_number || '' });
-    vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `อัปเดตวัคซีน ${v.vaccine_name}`, description: v.notes || '', type: 'vaccine', color: '#0D9488' }));
-    activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type === 'ความสำเร็จ' ? '#D97706' : '#9CA3AF', image_url: a.image_url || null }));
+    if (includeVaccines) vaccines.forEach(v => timeline.push({ id: `vac-${v.id}`, date: v.date_given, title: `อัปเดตวัคซีน ${v.vaccine_name}`, description: v.notes || '', type: 'vaccine', color: '#0D9488' }));
+    if (includeActivities) activities.forEach(a => timeline.push({ id: `act-${a.id}`, date: a.activity_date, title: a.title, description: a.description || '', type: a.activity_type || '', color: a.activity_type === 'ความสำเร็จ' ? '#D97706' : '#9CA3AF', image_url: a.image_url || null }));
     return timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   // ─── Pedigree node renderer ───
   const renderPedigree = () => {
+    if (pedigreeLoading) return <p style={{ textAlign: 'center', padding: '32px 0', color: F.muted }}>กำลังโหลดข้อมูลสายเลือด...</p>;
+    if (pedigreeReadError) return <p role="alert" style={{ textAlign: 'center', padding: '32px 0', color: F.muted }}>โหลดข้อมูลสายเลือดไม่สำเร็จ กรุณาลองโหลดหน้าอีกครั้ง</p>;
     if (pedigreeGens.length === 0) {
-      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>Loading...</div>;
+      return <div style={{ textAlign: 'center', padding: '32px 0', color: F.muted, fontSize: '13px', letterSpacing: '0.05em' }}>ไม่มีข้อมูลสายเลือดที่แสดงได้</div>;
     }
 
     const totalGens = pedigreeGens.length;
@@ -776,7 +830,7 @@ export default function PetDetailPage() {
   );
 
   const isMale = pet.gender === 'male' || pet.gender === 'ตัวผู้';
-  const isOwner = sessionUserId === pet.user_id;
+  const isOwner = fieldAccess !== null && !accessReadError && sessionUserId === pet.user_id;
   // Keep the existing per-group rules; wait for access resolution before exposing a category.
   const canRead = (group: string) => fieldAccess !== null && fieldAccess[group] !== false;
   const visibleTabs = TABS.filter(tab => canRead(tab.fieldGroupKey));
@@ -786,12 +840,12 @@ export default function PetDetailPage() {
   const vaccineSummary = canRead('vaccination') && !vaccineReadError ? summarizeVaccines(vaccines) : null;
   const galleryImages = parseGallery(pet.gallery_urls || '');
   const allImages = [pet.image_url, ...galleryImages].filter(Boolean) as string[];
-  const combinedTimeline = generateCombinedTimeline();
+  const combinedTimeline = generateCombinedTimeline(canRead('vaccination') && !vaccineReadError, canRead('medical_notes'));
   const filteredActivities = activeActivityFilter === 'ทั้งหมด'
     ? activities
     : activities.filter(a => a.activity_type?.includes(activeActivityFilter));
 
-  const latestWeight = weightHistory[weightHistory.length - 1]?.weight;
+  const latestWeight = canRead('weight') ? weightHistory[weightHistory.length - 1]?.weight : undefined;
   const latestWeightDisplay = latestWeight
     ? latestWeight >= 1000 ? `${(latestWeight / 1000).toFixed(2)} กก.` : `${latestWeight} กรัม`
     : '-';
@@ -1242,9 +1296,9 @@ export default function PetDetailPage() {
                   {([
                     { label: 'วันเกิด', val: pet.birth_date ? `${formatDate(pet.birth_date)} (${calculateAge(pet.birth_date)})` : '-' },
                     { label: 'สายพันธุ์', val: pet.breed || speciesTh(pet.species) || '-' },
-                    { label: 'น้ำหนัก', val: latestWeightDisplay, link: `/pets/${pet.id}/weight` },
+                    { label: 'น้ำหนัก', val: latestWeightDisplay, link: isOwner && canRead('weight') ? `/pets/${pet.id}/weight` : undefined },
                     { label: 'สี / ลาย', val: [pet.color, pet.pattern].filter(Boolean).join(' · ') || '-' },
-                    { label: 'กรุ๊ปเลือด', val: healthDetails?.blood_type || '-' },
+                    { label: 'กรุ๊ปเลือด', val: canRead('health') ? healthDetails?.blood_type || '-' : '-' },
                     { label: 'ไมโครชิพ', val: pet.microchip_number || '-', mono: true },
                     { label: 'ทำหมัน', val: neuteredText(pet.is_neutered) },
                     (pet.status && pet.farm_id) ? { label: 'สถานะ', val: pet.status, green: true } : null,
