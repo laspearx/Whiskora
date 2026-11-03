@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "@/i18n/context";
 import React from "react";
 import { useRouter } from "next/navigation";
 
@@ -37,6 +38,8 @@ const Icon = {
 };
 
 export default function CommunityComingSoonPage() {
+  const t = useTranslations("community");
+  const tc = useTranslations("common");
   const router = useRouter();
 
   return (
@@ -94,18 +97,18 @@ export default function CommunityComingSoonPage() {
           {/* 🏷️ Coming Soon Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6" style={{ background: F.paper, borderColor: F.line }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: F.pink }}></span>
-            <span className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: F.pink }}>Coming Soon</span>
+            <span className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: F.pink }}>{t("badge")}</span>
           </div>
 
           {/* 📝 Text Content */}
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight">
-            Whiskora <span className="ml-3" style={{ WebkitTextStroke: `1px ${F.pink}`, color: 'transparent' }}>Community</span>
+            {t("titleLead")} <span className="ml-3" style={{ WebkitTextStroke: `1px ${F.pink}`, color: 'transparent' }}>{t("titleWord")}</span>
           </h1>
           
           <p className="max-w-lg mx-auto text-sm md:text-base font-medium leading-relaxed mb-10" style={{ color: F.inkSoft }}>
-            เตรียมพบกับพื้นที่แลกเปลี่ยนประสบการณ์ระดับพรีเมียมของคนรักสัตว์ แหล่งรวมกูรูสายบรีด และพื้นที่แชร์ความน่ารักของเด็กๆ ที่ปลอดภัยและอบอุ่นที่สุด
+            {t("copy")}
             <span className="block mt-4 italic font-medium" style={{ color: F.muted }}>
-              "เพราะเราเชื่อว่ามิตรภาพที่ดี เริ่มต้นที่ความใส่ใจ"
+              {t("quote")}
             </span>
           </p>
 
@@ -116,7 +119,7 @@ export default function CommunityComingSoonPage() {
             style={{ background: F.ink, color: '#fff', boxShadow: '0 10px 25px rgba(17, 24, 39, 0.15)' }}
           >
             <span className="group-hover:-translate-x-1 transition-transform opacity-70"><Icon.ArrowLeft /></span>
-            กลับสู่หน้าหลัก
+            {tc("backHome")}
           </button>
 
         </div>

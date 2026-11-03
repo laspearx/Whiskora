@@ -268,3 +268,15 @@ Details: `docs/I18N_PHASE1.md`.
 | UI-10 dates / prices | ✅ partly: `lib/format.ts` (TH Buddhist year / EN Gregorian, Bangkok time zone); 27 call sites remain |
 | UI-12 global CSS vs Tailwind | assessed with before / after evidence — 56 / 80 screenshots change → Design System phase |
 | UI-15 farm-hub | ✅ also translated; unknown sex no longer shows the female icon |
+
+## Phase 2 follow-up (2026-11-03, `fix/i18n-phase2`)
+
+Details and per-route status (Complete / Partial / Pending): `docs/I18N_PHASE2.md`.
+
+| Finding | Status after Phase 2 |
+|---|---|
+| UI-06 Thai-only routes | ✅ `/marketplace`, `/service-hub`, `/community`, `/about` → Complete 13, Partial 1, Pending 65 |
+| UI-09 load failure shown as empty | ✅ also marketplace and service-hub |
+| UI-21 unused message keys | `about` replaced in place; `home` (113) still unused |
+| New | service-hub cards show a hard-coded rating "4.9 (120)" (P2, trust) — not changed |
+| Performance | every page now ships only its message namespaces: gzip HTML 23–49 % smaller than Phase 1 and smaller than before i18n started |

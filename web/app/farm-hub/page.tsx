@@ -53,7 +53,7 @@ export default function FarmHubPage() {
   const petTypes = [
     { label: tc("all"), value: ALL },
     ...(["cat", "dog", "rabbit", "bird"] as const).map((id) => ({ label: speciesName(id, locale), value: id })),
-    { label: t("otherSpecies"), value: "other" },
+    { label: tc("otherPets"), value: "other" },
   ];
 
   useEffect(() => {

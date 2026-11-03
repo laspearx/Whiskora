@@ -124,7 +124,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - Tests: `npm run test:e2e` (Playwright, desktop + mobile). Signed-in specs need staging test accounts (see `web/e2e/README.md`). Lint baseline 2026-10-30: 320 errors, mostly `no-explicit-any` (296); compare by file/rule/code, not by total.
 - Always verify current schema against the live Supabase project (via MCP tools) rather than trusting `web/lib/types.ts` or `supabase/migrations/` alone.
 - **Global CSS vs Tailwind v4**: `a { color: inherit }` and `h1–h3` sizes in `globals.css` are unlayered and override Tailwind utilities on links / headings (audit UI-12) — use inline style or fix with `@layer base`.
-- **i18n**: system text via `useTranslations(ns)` (`t(key, vars)`), dates / prices via `lib/format.ts`, page metadata via `localeMetadata()` in the `[locale]` shim; `<html lang>` comes from the middleware header (`x-whiskora-locale`).
+- **i18n**: a page gets only the namespaces in its `<ScopedMessages ns>` (+ global `nav` / `footer` / `common`); system text via `useTranslations(ns)` (`t(key, vars)`), dates / prices via `lib/format.ts`, page metadata via `localeMetadata()` in the `[locale]` shim; `<html lang>` comes from the middleware header (`x-whiskora-locale`).
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
 - **Workspace members** (live since v1.12.0): never write `workspace_members` from the app — use the RPCs (`list_workspace_members`, `invite_workspace_member`, `respond_workspace_invitation`, `set_workspace_member_role`, `remove_workspace_member`, `ensure_workspace_owner_membership`); UI is `WorkspaceMembersPanel`, which reloads from the server after every action. Caller role = `is_me` row of `list_workspace_members`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
@@ -169,6 +169,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-03**
+- Prepared (not merged, `fix/i18n-phase2`): scoped messages per page (gzip HTML 23–49 % smaller), marketplace / clinics & services / community / about TH / EN — `docs/I18N_PHASE2.md`.
 - Prepared (not merged, `fix/i18n-foundation-phase1`): server `<html lang>`, locale metadata (canonical / hreflang), `lib/format.ts`, `t(key, vars)`; homepage, farm-hub, search fully TH / EN; farm-hub / search error states — `docs/I18N_PHASE1.md`.
 - Prepared (not merged): UI / i18n audit — Navbar TH/EN via `nav.*`, language switch keeps query / hash, branded TH/EN 404 (no hydration error), Navbar / farm-hub contrast + labels; 23 findings in `docs/UI_I18N_CONSISTENCY_AUDIT.md`.
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLocale, useTranslations } from "@/i18n/context";
+import { speciesName } from "@/lib/species";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -26,28 +28,39 @@ const Icon = {
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
+// service categories are stored in Thai (services.category): the API value and the badge lookup use it as is; only
+// the label is translated (serviceHub.category.*). Unknown stored values are shown as stored.
+const ALL = "all";
+const CATEGORIES: { value: string; key: string }[] = [
+  { value: "อาบน้ำ-ตัดขน", key: "grooming" },
+  { value: "คลินิก/โรงพยาบาล", key: "clinic" },
+  { value: "โรงแรมสัตว์เลี้ยง", key: "hotel" },
+  { value: "ฝึกสอนสัตว์", key: "training" },
+  { value: "บริการอื่นๆ", key: "other" },
+];
+const SPECIES = ["cat", "dog", "rabbit", "hamster", "bird", "squirrel", "hedgehog", "fish"];
+
 export default function ServiceHubPage() {
   const router = useRouter();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("ทั้งหมด");
-  const [activePetType, setActivePetType] = useState("ทั้งหมด");
+  const [activeCategory, setActiveCategory] = useState(ALL);
+  const [activePetType, setActivePetType] = useState(ALL);
+  const [loadError, setLoadError] = useState(false);
+  const t = useTranslations("serviceHub");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+  const categoryLabel = (value: string) => {
+    const c = CATEGORIES.find((x) => x.value === value);
+    return c ? t(`category.${c.key}`) : value;
+  };
 
-  const categories = ["ทั้งหมด", "อาบน้ำ-ตัดขน", "คลินิก/โรงพยาบาล", "โรงแรมสัตว์เลี้ยง", "ฝึกสอนสัตว์", "บริการอื่นๆ"];
-  
-  // 🌟 ปรับดีไซน์ Data ให้ไม่มี Emoji
+  const categories = [{ value: ALL, label: tc("all") }, ...CATEGORIES.map((c) => ({ value: c.value, label: t(`category.${c.key}`) }))];
   const petTypes = [
-    { label: "ทั้งหมด", value: "ทั้งหมด" },
-    { label: "แมว", value: "cat" },
-    { label: "สุนัข", value: "dog" },
-    { label: "กระต่าย", value: "rabbit" },
-    { label: "หนูแฮมสเตอร์", value: "hamster" },
-    { label: "นก", value: "bird" },
-    { label: "กระรอก", value: "squirrel" },
-    { label: "เม่นแคระ", value: "hedgehog" },
-    { label: "ปลา", value: "fish" },
-    { label: "สัตว์อื่นๆ", value: "other" },
+    { value: ALL, label: tc("all") },
+    ...SPECIES.map((id) => ({ value: id, label: speciesName(id, locale) })),
+    { value: "other", label: tc("otherPets") },
   ];
 
   useEffect(() => {
@@ -56,13 +69,14 @@ export default function ServiceHubPage() {
 
   const fetchServices = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       let query = supabase.from("services").select("*").eq("is_published", true).order("created_at", { ascending: false });
 
-      if (activeCategory !== "ทั้งหมด") {
+      if (activeCategory !== ALL) {
         query = query.eq("category", activeCategory);
       }
-      if (activePetType !== "ทั้งหมด") {
+      if (activePetType !== ALL) {
         query = query.contains("pet_types", [activePetType]);
       }
 
@@ -71,6 +85,7 @@ export default function ServiceHubPage() {
       setServices(data || []);
     } catch (error) {
       console.error("Error:", error);
+      setLoadError(true);   // a failed load is an error, not "no services"
     } finally {
       setLoading(false);
     }
@@ -105,16 +120,17 @@ export default function ServiceHubPage() {
         <div className="mb-10 space-y-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Service</h1>
-              <p className="text-sm font-medium" style={{ color: F.muted }}>ค้นหาบริการดูแลรักษาสัตว์เลี้ยงระดับมืออาชีพ</p>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">{t("title")}</h1>
+              <p className="text-sm font-medium" style={{ color: F.inkSoft }}>{t("subtitle")}</p>
             </div>
             
             {/* Sleek Search Bar */}
             <div className="relative w-full md:max-w-md">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
               <input 
-                type="text" 
-                placeholder="ค้นหาชื่อบริการ หรือคลินิก..."
+                type="search" 
+                aria-label={t("searchLabel")}
+                placeholder={`${t("searchLabel")}…`}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-sky-400 focus:ring-4 focus:ring-sky-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -123,17 +139,18 @@ export default function ServiceHubPage() {
           </div>
 
           {/* 🏷️ Minimal Category Tabs */}
-          <div className="flex gap-6 border-b border-gray-100 overflow-x-auto no-scrollbar pb-px">
+          <div className="flex gap-6 border-b border-gray-100 overflow-x-auto no-scrollbar pb-px" role="group" aria-label={t("categoryLabel")}>
             {categories.map((cat) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={cat.value}
+                aria-pressed={activeCategory === cat.value}
+                onClick={() => setActiveCategory(cat.value)}
                 className={`pb-4 text-sm font-semibold transition-all shrink-0 relative whitespace-nowrap ${
-                  activeCategory === cat ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                  activeCategory === cat.value ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {cat}
-                {activeCategory === cat && (
+                {cat.label}
+                {activeCategory === cat.value && (
                   <div className="absolute bottom-0 left-0 w-full h-0.5 rounded-t-full" style={{ background: F.sky }}></div>
                 )}
               </button>
@@ -141,13 +158,14 @@ export default function ServiceHubPage() {
           </div>
 
           {/* 🐶 Premium Pet Type Pills */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar" role="group" aria-label={t("speciesLabel")}>
             {petTypes.map((type) => {
-              const isActive = activePetType === type.value || (activePetType === "ทั้งหมด" && type.label === "ทั้งหมด");
+              const isActive = activePetType === type.value;
               return (
                 <button
-                  key={type.label}
-                  onClick={() => setActivePetType(type.label === "ทั้งหมด" ? "ทั้งหมด" : type.value!)}
+                  key={type.value}
+                  aria-pressed={isActive}
+                  onClick={() => setActivePetType(type.value)}
                   className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all shrink-0 border ${
                     isActive
                     ? "bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200" 
@@ -163,28 +181,35 @@ export default function ServiceHubPage() {
 
         {/* 🏥 Service Cards Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true">
+            <span className="sr-only">{tc("loading")}</span>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-[4/3] bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+              <div key={i} className="aspect-[4/3] bg-gray-50 animate-pulse rounded-2xl border border-gray-100" aria-hidden="true"></div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div role="alert" data-testid="service-hub-error" className="py-20 px-6 text-center bg-red-50 rounded-3xl border border-red-100">
+            <p className="font-semibold text-red-900">{tc("loadErrorTitle")}</p>
+            <p className="text-sm text-red-800 mt-1">{tc("loadErrorText")}</p>
+            <button type="button" onClick={fetchServices} className="mt-5 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold">{tc("retry")}</button>
           </div>
         ) : filteredServices.length === 0 ? (
           <div className="py-20 px-6 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.Search /></div>
-            {services.length === 0 && activeCategory === "ทั้งหมด" && activePetType === "ทั้งหมด" ? (
+            {services.length === 0 && activeCategory === ALL && activePetType === ALL ? (
               <>
                 {/* ยังไม่มีบริการเปิดในระบบเลย — ไม่ให้ผู้ใช้เข้าใจว่าแค่ค้นผิดคำ */}
-                <p className="text-gray-600 font-semibold">ยังไม่มีคลินิกหรือบริการเปิดในระบบ</p>
-                <p className="text-sm text-gray-400 mt-1">Whiskora กำลังรับสมัครผู้ให้บริการ ระหว่างนี้ยังจองบริการผ่านเว็บไม่ได้</p>
+                <p className="text-gray-600 font-semibold">{t("noServicesTitle")}</p>
+                <p className="text-sm text-gray-500 mt-1">{t("noServicesText")}</p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <Link href="/partner/register-service" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>ลงทะเบียนบริการของคุณ</Link>
-                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">ดูฟาร์มในระบบ</Link>
+                  <Link href="/partner/register-service" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>{t("registerService")}</Link>
+                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">{tc("browseFarms")}</Link>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-gray-500 font-semibold">ไม่พบสถานบริการที่ตรงกับตัวกรอง</p>
-                <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+                <p className="text-gray-600 font-semibold">{t("noMatchTitle")}</p>
+                <p className="text-sm text-gray-500 mt-1">{t("noMatchText")}</p>
               </>
             )}
           </div>
@@ -215,7 +240,7 @@ export default function ServiceHubPage() {
                     className="absolute top-4 left-4 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm backdrop-blur-md"
                     style={{ background: 'rgba(14, 165, 233, 0.9)' }} // Sky-500
                   >
-                    {service.category}
+                    {categoryLabel(service.category)}
                   </div>
                 </div>
 
@@ -229,7 +254,7 @@ export default function ServiceHubPage() {
                   {/* Address */}
                   <div className="flex items-start gap-1.5 text-xs font-medium text-gray-500 line-clamp-2 mb-4 h-8">
                     <span className="mt-0.5 shrink-0 text-gray-400"><Icon.MapPin /></span>
-                    <span>{service.address || "พร้อมให้บริการดูแลรักษาสัตว์เลี้ยงอย่างมืออาชีพ"}</span>
+                    <span>{service.address || t("addressFallback")}</span>
                   </div>
 
                   {/* Footer (Rating & Action) */}
@@ -241,7 +266,7 @@ export default function ServiceHubPage() {
                     </div>
                     
                     <span className="text-[13px] font-bold text-sky-600 group-hover:translate-x-1 transition-transform">
-                      ดูรายละเอียด ➔
+                      {tc("viewDetails")} <span aria-hidden="true">➔</span>
                     </span>
                   </div>
                 </div>

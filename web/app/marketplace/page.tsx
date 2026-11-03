@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLocale, useTranslations } from "@/i18n/context";
+import { speciesName } from "@/lib/species";
+import { formatPrice } from "@/lib/format";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
 const F = {
@@ -23,28 +26,35 @@ const Icon = {
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
+// product categories are stored in Thai (products.category) — the value sent to the API stays as is; only the label
+// is translated (marketplace.category.*)
+const ALL = "all";
+const CATEGORIES: { value: string; key: string }[] = [
+  { value: "อาหาร", key: "food" },
+  { value: "ของเล่น", key: "toys" },
+  { value: "อุปกรณ์", key: "gear" },
+  { value: "ที่นอน/กรง", key: "beds" },
+  { value: "สุขภาพ/อาบน้ำ", key: "care" },
+];
+const SPECIES = ["cat", "dog", "rabbit", "hamster", "bird", "squirrel", "hedgehog", "fish"];
+
 export default function MarketplacePage() {
+  const t = useTranslations("marketplace");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("ทั้งหมด");
-  const [activePetType, setActivePetType] = useState("ทั้งหมด");
+  const [loadError, setLoadError] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(ALL);
+  const [activePetType, setActivePetType] = useState(ALL);
 
-  const categories = ["ทั้งหมด", "อาหาร", "ของเล่น", "อุปกรณ์", "ที่นอน/กรง", "สุขภาพ/อาบน้ำ"];
-  
-  // 🌟 ปรับดีไซน์ Data ให้ไม่มี Emoji เพื่อความคลีน (ใช้แค่ Text ใน UI)
+  const categories = [{ value: ALL, label: tc("all") }, ...CATEGORIES.map((c) => ({ value: c.value, label: t(`category.${c.key}`) }))];
   const petTypes = [
-    { label: "ทั้งหมด", value: "ทั้งหมด" },
-    { label: "แมว", value: "cat" },
-    { label: "สุนัข", value: "dog" },
-    { label: "กระต่าย", value: "rabbit" },
-    { label: "หนูแฮมสเตอร์", value: "hamster" },
-    { label: "นก", value: "bird" },
-    { label: "กระรอก", value: "squirrel" },
-    { label: "เม่นแคระ", value: "hedgehog" },
-    { label: "ปลา", value: "fish" },
-    { label: "สัตว์อื่นๆ", value: "other" },
+    { value: ALL, label: tc("all") },
+    ...SPECIES.map((id) => ({ value: id, label: speciesName(id, locale) })),
+    { value: "other", label: tc("otherPets") },
   ];
 
   useEffect(() => {
@@ -53,16 +63,17 @@ export default function MarketplacePage() {
 
   const fetchProducts = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       let query = supabase
         .from("products")
         .select("*, shops(shop_name, id)")
         .order("created_at", { ascending: false });
 
-      if (activeCategory !== "ทั้งหมด") {
+      if (activeCategory !== ALL) {
         query = query.eq("category", activeCategory);
       }
-      if (activePetType !== "ทั้งหมด") {
+      if (activePetType !== ALL) {
         query = query.eq("pet_type", activePetType);
       }
 
@@ -71,6 +82,7 @@ export default function MarketplacePage() {
       setProducts(data || []);
     } catch (error) {
       console.error("Error:", error);
+      setLoadError(true);   // a failed load is an error, not "no products"
     } finally {
       setLoading(false);
     }
@@ -107,16 +119,17 @@ export default function MarketplacePage() {
         <div className="mb-10 space-y-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Marketplace</h1>
-              <p className="text-sm font-medium" style={{ color: F.muted }}>ค้นหาสินค้าคุณภาพสำหรับสัตว์เลี้ยงจากพาร์ทเนอร์ของเรา</p>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">{t("title")}</h1>
+              <p className="text-sm font-medium" style={{ color: F.inkSoft }}>{t("subtitle")}</p>
             </div>
             
             {/* Sleek Search Bar */}
             <div className="relative w-full md:max-w-md">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
               <input 
-                type="text" 
-                placeholder="ค้นหาสินค้า, แบรนด์ หรือชื่อร้าน..."
+                type="search" 
+                aria-label={t("searchLabel")}
+                placeholder={`${t("searchLabel")}…`}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -125,17 +138,18 @@ export default function MarketplacePage() {
           </div>
 
           {/* 🏷️ Minimal Category Tabs */}
-          <div className="flex gap-6 border-b border-gray-100 overflow-x-auto no-scrollbar pb-px">
+          <div className="flex gap-6 border-b border-gray-100 overflow-x-auto no-scrollbar pb-px" role="group" aria-label={t("categoryLabel")}>
             {categories.map((cat) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={cat.value}
+                aria-pressed={activeCategory === cat.value}
+                onClick={() => setActiveCategory(cat.value)}
                 className={`pb-4 text-sm font-semibold transition-all shrink-0 relative whitespace-nowrap ${
-                  activeCategory === cat ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                  activeCategory === cat.value ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {cat}
-                {activeCategory === cat && (
+                {cat.label}
+                {activeCategory === cat.value && (
                   <div className="absolute bottom-0 left-0 w-full h-0.5 rounded-t-full" style={{ background: F.pink }}></div>
                 )}
               </button>
@@ -143,13 +157,14 @@ export default function MarketplacePage() {
           </div>
 
           {/* 🐶 Premium Pet Type Pills */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar" role="group" aria-label={t("speciesLabel")}>
             {petTypes.map((type) => {
-              const isActive = activePetType === type.value || (activePetType === "ทั้งหมด" && type.label === "ทั้งหมด");
+              const isActive = activePetType === type.value;
               return (
                 <button
-                  key={type.label}
-                  onClick={() => setActivePetType(type.label === "ทั้งหมด" ? "ทั้งหมด" : type.value!)}
+                  key={type.value}
+                  aria-pressed={isActive}
+                  onClick={() => setActivePetType(type.value)}
                   className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all shrink-0 border ${
                     isActive
                     ? "bg-gray-900 text-white border-gray-900 shadow-md shadow-gray-200" 
@@ -165,27 +180,34 @@ export default function MarketplacePage() {
 
         {/* 📦 Product Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6" aria-busy="true">
+            <span className="sr-only">{tc("loading")}</span>
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-[3/4] bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+              <div key={i} className="aspect-[3/4] bg-gray-50 animate-pulse rounded-2xl border border-gray-100" aria-hidden="true"></div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div role="alert" data-testid="marketplace-error" className="py-20 px-6 text-center bg-red-50 rounded-3xl border border-red-100">
+            <p className="font-semibold text-red-900">{tc("loadErrorTitle")}</p>
+            <p className="text-sm text-red-800 mt-1">{tc("loadErrorText")}</p>
+            <button type="button" onClick={fetchProducts} className="mt-5 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold">{tc("retry")}</button>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-20 px-6 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.Search /></div>
-            {products.length === 0 && activeCategory === "ทั้งหมด" && activePetType === "ทั้งหมด" ? (
+            {products.length === 0 && activeCategory === ALL && activePetType === ALL ? (
               <>
-                <p className="text-gray-600 font-semibold">ยังไม่มีสินค้าเปิดขายในระบบ</p>
-                <p className="text-sm text-gray-400 mt-1">ร้านค้าพาร์ทเนอร์กำลังทยอยเข้าร่วม</p>
+                <p className="text-gray-600 font-semibold">{t("noProductsTitle")}</p>
+                <p className="text-sm text-gray-500 mt-1">{t("noProductsText")}</p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <Link href="/partner/register-shop" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>เปิดร้านค้ากับ Whiskora</Link>
-                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">ดูฟาร์มในระบบ</Link>
+                  <Link href="/partner/register-shop" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E84677' }}>{t("openShop")}</Link>
+                  <Link href="/farm-hub" className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-600">{tc("browseFarms")}</Link>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-gray-500 font-semibold">ไม่พบสินค้าในหมวดหมู่นี้</p>
-                <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือหมวดหมู่ดูอีกครั้ง</p>
+                <p className="text-gray-600 font-semibold">{t("noMatchTitle")}</p>
+                <p className="text-sm text-gray-500 mt-1">{t("noMatchText")}</p>
               </>
             )}
           </div>
@@ -218,7 +240,7 @@ export default function MarketplacePage() {
                       className="absolute top-3 left-3 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm"
                       style={{ background: F.pink }}
                     >
-                      Sale {product.discount}%
+                      {t("sale", { n: product.discount })}
                     </div>
                   )}
                 </div>
@@ -239,11 +261,11 @@ export default function MarketplacePage() {
                   {/* Price Section (Pushed to bottom) */}
                   <div className="mt-auto flex items-baseline gap-2">
                     <span className="text-lg md:text-xl font-extrabold text-gray-900 tracking-tight">
-                      ฿{product.price?.toLocaleString()}
+                      {formatPrice(product.price, locale)}
                     </span>
                     {product.original_price && (
-                      <span className="text-xs font-medium text-gray-400 line-through">
-                        ฿{product.original_price.toLocaleString()}
+                      <span className="text-xs font-medium text-gray-500 line-through" aria-label={t("originalPrice", { price: formatPrice(product.original_price, locale) })}>
+                        {formatPrice(product.original_price, locale)}
                       </span>
                     )}
                   </div>

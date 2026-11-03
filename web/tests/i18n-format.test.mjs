@@ -53,7 +53,7 @@ test('ages: years / months / days per language; future or invalid → empty', ()
 // ── dynamic keys built in code exist in both languages ─────────────────────────────────────────────────────────
 const get = (o, path) => path.split('.').reduce((n, p) => (n && typeof n === 'object' ? n[p] : undefined), o);
 test('home page: every problem / feature / FAQ / roadmap key in the page exists in th and en', () => {
-  const src = readFileSync(new URL('../app/[locale]/page.tsx', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../app/[locale]/_home/HomePage.tsx', import.meta.url), 'utf8');
   const block = (name) => [...(src.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\]`))?.[1] ?? '').matchAll(/key: "(\w+)"/g)].map((m) => m[1]);
   const list = (name) => [...(src.match(new RegExp(`const ${name} = \\[([^\\]]*)\\]`))?.[1] ?? '').matchAll(/"(\w+)"/g)].map((m) => m[1]);
   const keys = [
@@ -77,4 +77,42 @@ test('glossary: shared terms are spelled the same everywhere in English', () => 
   assert.equal(en.common.statusOpenReserve, 'Open for reservation');
   assert.equal(en.common.statusAvailable, 'Ready for a new home');
   assert.ok(en.nav.farmHubSub.includes('ready for a new home'));
+});
+
+// ── Phase 2 pages ──────────────────────────────────────────────────────────────────────────────────────────────
+const keysOf = (file, name) => {
+  const src = readFileSync(new URL(file, import.meta.url), 'utf8');
+  const block = src.match(new RegExp(`const ${name}[^=]*= \\[([\\s\\S]*?)\\];`))?.[1] ?? '';
+  return [...block.matchAll(/key: ['"](\w+)['"]/g)].map((m) => m[1]);
+};
+test('about: every mission / feature key exists in th and en', () => {
+  const keys = [
+    ...keysOf('../app/about/page.tsx', 'missions').flatMap((k) => [`mission.${k}.title`, `mission.${k}.desc`]),
+    ...keysOf('../app/about/page.tsx', 'features').flatMap((k) => [`feature.${k}.title`, `feature.${k}.desc`]),
+  ];
+  assert.equal(keys.length, 8 + 12);
+  for (const k of keys) for (const [m, n] of [[th, 'th'], [en, 'en']]) assert.equal(typeof get(m.about, k), 'string', `${n}:about.${k}`);
+});
+test('marketplace / service-hub: every category has a label; stored Thai values are unchanged', () => {
+  for (const [file, ns, n] of [['../app/marketplace/page.tsx', 'marketplace', 5], ['../app/service-hub/page.tsx', 'serviceHub', 5]]) {
+    const keys = keysOf(file, 'CATEGORIES');
+    assert.equal(keys.length, n);
+    for (const k of keys) for (const m of [th, en]) assert.equal(typeof m[ns].category[k], 'string', `${ns}.category.${k}`);
+  }
+  const ms = readFileSync(new URL('../app/marketplace/page.tsx', import.meta.url), 'utf8');
+  for (const v of ['อาหาร', 'ของเล่น', 'อุปกรณ์', 'ที่นอน/กรง', 'สุขภาพ/อาบน้ำ']) assert.ok(ms.includes(`value: "${v}"`), v);
+  const ss = readFileSync(new URL('../app/service-hub/page.tsx', import.meta.url), 'utf8');
+  for (const v of ['อาบน้ำ-ตัดขน', 'คลินิก/โรงพยาบาล', 'โรงแรมสัตว์เลี้ยง', 'ฝึกสอนสัตว์', 'บริการอื่นๆ']) assert.ok(ss.includes(`value: "${v}"`), v);
+});
+test('Phase 2 metadata keys exist; English titles have no Thai', () => {
+  for (const p of ['marketplace', 'serviceHub', 'community', 'about'])
+    for (const m of [th, en]) { assert.ok(m.meta[`${p}Title`]?.length > 3, p); assert.ok(m.meta[`${p}Description`]?.length > 10, p); }
+  for (const p of ['marketplace', 'serviceHub', 'community', 'about']) assert.doesNotMatch(en.meta[`${p}Title`], /[฀-๿]/);
+});
+test('glossary across pages: one English word per concept', () => {
+  assert.equal(en.common.otherPets, 'Other pets');
+  assert.equal(en.common.browseFarms, en.landing.farmsBrowse);
+  assert.equal(en.serviceHub.title, en.nav.clinics);
+  assert.equal(en.meta.serviceHubTitle.toLowerCase().includes('clinics'), true);
+  assert.equal(th.serviceHub.title, th.nav.clinics);
 });

@@ -53,7 +53,15 @@
     "farmHubTitle": "Pet farms and pets ready for a new home",
     "farmHubDescription": "Browse pet farms on Whiskora and the pets that are ready for a new home or open for reservation — with verified-farm badges, province and price.",
     "searchTitle": "Search farms",
-    "searchDescription": "Search pet farms on Whiskora by name."
+    "searchDescription": "Search pet farms on Whiskora by name.",
+    "marketplaceTitle": "Pet product marketplace",
+    "marketplaceDescription": "Find food, toys, accessories and care products for your pet from Whiskora partner shops.",
+    "serviceHubTitle": "Pet clinics and services",
+    "serviceHubDescription": "Find vets, grooming, pet hotels and training from service providers on Whiskora.",
+    "communityTitle": "Pet lovers community (coming soon)",
+    "communityDescription": "A place for pet lovers to share experiences on Whiskora — coming soon.",
+    "aboutTitle": "About Whiskora",
+    "aboutDescription": "Our mission, our team and what you can do on Whiskora, the digital platform for pet lovers."
   },
   "common": {
     "all": "All",
@@ -71,7 +79,11 @@
     "loadErrorTitle": "Couldn't load this page",
     "loadErrorText": "Check your connection and try again.",
     "bangkok": "Bangkok",
-    "bangkokDistrict": "{district}, Bangkok"
+    "bangkokDistrict": "{district}, Bangkok",
+    "otherPets": "Other pets",
+    "backHome": "Back to home",
+    "viewDetails": "View details",
+    "browseFarms": "Browse farms"
   },
   "landing": {
     "heroLabel": "Whiskora introduction",
@@ -213,7 +225,6 @@
     "viewFarms": "Farms",
     "viewPets": "Pets",
     "speciesLabel": "Species",
-    "otherSpecies": "Other pets",
     "noFarmsTitle": "No farms found",
     "noPetsTitle": "No pets found",
     "emptyHint": "Try another search or species",
@@ -231,6 +242,54 @@
     "emptyText": "Try a different search term.",
     "farmFallback": "{species} farm on Whiskora",
     "petsFallback": "Pet"
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "subtitle": "Quality products for your pet from our partner shops",
+    "searchLabel": "Search products, brands or shops",
+    "categoryLabel": "Product category",
+    "speciesLabel": "Species",
+    "category": {
+      "food": "Food",
+      "toys": "Toys",
+      "gear": "Accessories",
+      "beds": "Beds & cages",
+      "care": "Health & grooming"
+    },
+    "noProductsTitle": "No products for sale yet",
+    "noProductsText": "Partner shops are joining step by step.",
+    "openShop": "Open a shop on Whiskora",
+    "noMatchTitle": "No products in this category",
+    "noMatchText": "Try another search or category.",
+    "sale": "Sale {n}%",
+    "originalPrice": "Was {price}"
+  },
+  "serviceHub": {
+    "title": "Clinics & services",
+    "subtitle": "Find professional care for your pet",
+    "searchLabel": "Search services or clinics",
+    "categoryLabel": "Service category",
+    "speciesLabel": "Species",
+    "category": {
+      "grooming": "Grooming",
+      "clinic": "Clinics & hospitals",
+      "hotel": "Pet hotels",
+      "training": "Training",
+      "other": "Other services"
+    },
+    "noServicesTitle": "No clinics or services yet",
+    "noServicesText": "Whiskora is welcoming service providers; online booking isn't available yet.",
+    "registerService": "Register your service",
+    "noMatchTitle": "No services match your filters",
+    "noMatchText": "Try another search or category.",
+    "addressFallback": "Professional pet care"
+  },
+  "community": {
+    "badge": "Coming soon",
+    "titleLead": "Whiskora",
+    "titleWord": "Community",
+    "copy": "Coming soon: a warm, safe place for pet lovers to share experiences, learn from experienced breeders and show off their pets.",
+    "quote": "\"Because good friendships start with care.\""
   },
   "footer": {
     "sectionUsers": "Users",
@@ -457,37 +516,58 @@
   },
   "about": {
     "title": "About Whiskora",
-    "subtitle": "About Us",
-    "heroTagline": "The digital platform for pet lovers\nConnect, care for, and manage your pets in one place",
-    "statPets": "Registered Pets",
-    "statFarms": "Breeders & Farms",
-    "statSpecies": "Pet Species",
-    "statFree": "Free, No Fees",
-    "missionTitle": "Why Was Whiskora Created?",
-    "featuresTitle": "What You Can Do on Whiskora",
-    "tryIt": "Try It",
-    "mission1Title": "Built for Every Pet",
-    "mission1Desc": "Whiskora was born from the belief that every pet deserves the best care. We build tools that help owners manage their pets systematically and with data-backed decisions.",
-    "mission2Title": "A Community Connecting Breeders",
-    "mission2Desc": "A central hub where professional breeders, farms, and general pet owners can connect, share information, and find their ideal pet with transparency.",
-    "mission3Title": "Transparency & Trustworthiness",
-    "mission3Desc": "Our identity verification and traceable pet history system ensures every transaction and adoption is built on accurate, trustworthy data.",
-    "mission4Title": "Accessible Knowledge",
-    "mission4Desc": "We compile expert knowledge on pet health, nutrition, and behavior so every owner can make informed decisions.",
-    "founderNote": "Whiskora was built out of love for animals. We believe every cat, dog, and pet deserves the best possible care. So we built tools that make caring for pets easy, fun, and organized. Whether you're a new pet owner or an experienced breeder, Whiskora is always ready to be your trusted companion.",
-    "founderSig": "— The Whiskora Team 🐾",
-    "feat1Title": "Pet Profile",
-    "feat1Desc": "Create digital profiles for each pet with health history and vaccines.",
-    "feat2Title": "Farm & Breeder",
-    "feat2Desc": "Create a farm page and manage breeding litters professionally.",
-    "feat3Title": "Pet ID Card",
-    "feat3Desc": "A digital card with QR code that others can scan to view your pet's info instantly.",
-    "feat4Title": "Knowledge Base",
-    "feat4Desc": "Articles and knowledge for owners of all pet types.",
-    "feat5Title": "Pet Tools",
-    "feat5Desc": "Calculators and decision tools for owners: food, vaccines, breeding, and more.",
-    "feat6Title": "Finance Tracker",
-    "feat6Desc": "Track pet expenses and view monthly and yearly summaries easily."
+    "subtitle": "The digital platform for pet lovers",
+    "tagline": "Connect, care for and manage your pets in one place",
+    "whyLabel": "Why Whiskora exists",
+    "mission": {
+      "everyPet": {
+        "title": "Built for every pet",
+        "desc": "Whiskora started from the belief that every pet deserves the best care. We build tools that help owners care for their pets in an organised, well-informed way."
+      },
+      "community": {
+        "title": "A community that connects breeders",
+        "desc": "A shared space where professional breeders, farms and pet owners connect, exchange information and find the right pet, openly."
+      },
+      "trust": {
+        "title": "Transparency and trust",
+        "desc": "Identity verification and traceable pet records mean every sale and adoption rests on accurate, trustworthy information."
+      },
+      "knowledge": {
+        "title": "Accessible knowledge",
+        "desc": "Expert knowledge on pet health, nutrition and behaviour, so every owner can make informed decisions."
+      }
+    },
+    "featuresLabel": "What you can do on Whiskora",
+    "feature": {
+      "profile": {
+        "title": "Pet profile",
+        "desc": "Create a digital profile for each pet, with health records and vaccines."
+      },
+      "farm": {
+        "title": "Farms & breeders",
+        "desc": "Create a farm page and manage your litters professionally."
+      },
+      "idCard": {
+        "title": "Pet ID card",
+        "desc": "A digital card with a QR code others can scan to see your pet's details instantly."
+      },
+      "knowledge": {
+        "title": "Knowledge base",
+        "desc": "Articles and guides for every kind of pet owner."
+      },
+      "tools": {
+        "title": "Pet tools",
+        "desc": "Calculators and decision helpers for owners — food, vaccines and breeding."
+      },
+      "finance": {
+        "title": "Finance tracker",
+        "desc": "Log pet expenses and see monthly and yearly summaries."
+      }
+    },
+    "tryIt": "Try it",
+    "noteFrom": "From the Whiskora team",
+    "noteText": "Whiskora was built out of love for pets. We believe every cat, dog and every other pet deserves the best care, so we build tools that make caring for them easy, enjoyable and organised. Whether you're a first-time owner or a professional breeder, Whiskora is here as a partner you can rely on.",
+    "noteSig": "— The Whiskora team"
   },
   "petIdCard": {
     "title": "Pet ID Card",

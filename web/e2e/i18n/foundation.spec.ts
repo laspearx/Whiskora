@@ -29,7 +29,8 @@ async function offline(page: Page, data?: 'ok' | 'fail') {
 }
 const lang = (page: Page) => page.evaluate(() => document.documentElement.lang);
 const mainText = (page: Page) => page.locator('main').first().innerText();
-const THAI = /[฀-๿]/;
+// Thai script, excluding the baht sign U+0E3F (used in English prices too)
+const THAI = /[\u0E00-\u0E3E\u0E40-\u0E7F]/;
 
 // ── server HTML ────────────────────────────────────────────────────────────────────────────────────────────────
 test('server HTML carries <html lang> for /th, /en and the 404', async ({ request }) => {
@@ -167,7 +168,7 @@ test('switching keeps path, query and hash; refresh / back / forward keep the ri
 
 // ── layout ─────────────────────────────────────────────────────────────────────────────────────────────────────
 test('no horizontal overflow or hydration errors at 1440 / 768 / 390 / 360 in TH and EN', async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(600_000);   // 24 fresh tabs on `next dev`
   // a fresh tab per URL: reloading the image-heavy home page many times in one tab can crash Chromium in dev mode
   const ctx = page.context();
   for (const width of [1440, 768, 390, 360]) {
@@ -175,7 +176,7 @@ test('no horizontal overflow or hydration errors at 1440 / 768 / 390 / 360 in TH
       const p = await ctx.newPage();
       const errors = await offline(p, 'ok');
       await p.setViewportSize({ width, height: 900 });
-      await p.goto(path).catch(() => p.goto(path));   // the dev server may abort a navigation while it compiles
+      await p.goto(path, { timeout: 60_000 }).catch(() => p.goto(path, { timeout: 60_000 }));   // dev server: a navigation can be aborted or stall while it compiles
       await p.waitForLoadState('networkidle');
       const over = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(over, `${path} @${width}`).toBeLessThanOrEqual(0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
 type Messages = Record<string, any>;
 
@@ -11,6 +11,8 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue>({ locale: 'th', messages: {} });
 
+// Providers nest: a page-level provider (app/components/ScopedMessages.tsx) adds its own namespaces on top of the
+// layout's global ones, so each page ships only the messages it uses (i18n Phase 2).
 export function I18nProvider({
   locale,
   messages,
@@ -20,7 +22,12 @@ export function I18nProvider({
   messages: Messages;
   children: React.ReactNode;
 }) {
-  return <I18nContext.Provider value={{ locale, messages }}>{children}</I18nContext.Provider>;
+  const parent = useContext(I18nContext);
+  const value = useMemo(
+    () => ({ locale, messages: parent.locale === locale ? { ...parent.messages, ...messages } : messages }),
+    [locale, messages, parent.locale, parent.messages],
+  );
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useLocale(): string {
