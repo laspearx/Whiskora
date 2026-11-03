@@ -424,7 +424,7 @@ export default function PetToolsPage() {
         <div className="pt-wrap">
 
           <div className="pt-topbar">
-            <button onClick={() => router.back()} className="pt-back"><Icon.ArrowLeft /></button>
+            <button type="button" onClick={() => router.back()} className="pt-back" aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
             <div className="pt-head">
               <h1>Pet Utility Tools</h1>
               <p>เครื่องมือสำหรับผู้เลี้ยง</p>

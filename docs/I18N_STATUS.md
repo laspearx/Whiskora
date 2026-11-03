@@ -12,9 +12,11 @@
 | Transfer inbox (accept/decline) | `app/profile/transfers/page.tsx` | `transfers` |
 | Farm reservations | `app/farm-dashboard/[id]/reservations/page.tsx` | `reservations` |
 | Footer | `app/components/Footer.tsx` | `footer` |
+| Header nav, mobile menu, bottom tab bar (2026-11-03, branch `audit/ui-i18n-consistency`) | `app/components/Navbar.tsx` | `nav` |
+| 404 page (local TH/EN copy) | `app/not-found.tsx` | — |
 | Terms, Contact | `app/terms`, `app/contact` | local TH/EN copy |
 
-**Still Thai-only under /en** (73 pages): homepage, navbar menus, owner pet pages (`/pets/[id]`, edit, vaccines, weight, ID card incl. the transfer/co-owner modal), farm/shop/service dashboards, partner registration, profile area, admin, knowledge articles, pet tools, privacy policy. `messages/en.json` → `home` has 113 keys from an older homepage that the current homepage does not use.
+**Still Thai-only under /en** (72 routes — full list and priorities in `docs/UI_I18N_CONSISTENCY_AUDIT.md`): homepage, owner pet pages (`/pets/[id]`, edit, vaccines, weight, ID card incl. the transfer/co-owner modal), farm/shop/service dashboards, partner registration, profile area, admin, knowledge articles, pet tools, privacy policy. `messages/en.json` → `home` has 113 keys from an older homepage that the current homepage does not use.
 
 **Not to be machine-written:** knowledge articles (`pet-knowledge/articles.ts`) and the privacy policy need a human translation/review; until then they stay Thai and should be marked as Thai-only if linked from English pages.
 

@@ -164,6 +164,7 @@ export default function FarmHubPage() {
           cursor: pointer;
           transition: all .18s ease;
           font-family: inherit;
+          white-space: nowrap;
         }
       `}</style>
 
@@ -180,7 +181,8 @@ export default function FarmHubPage() {
             <div className="relative w-full md:max-w-md">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
               <input
-                type="text"
+                type="search"
+                aria-label={viewMode === 'farms' ? "ค้นหาฟาร์ม หรือจังหวัด" : "ค้นหาสายพันธุ์ ฟาร์ม หรือจังหวัด"}
                 placeholder={viewMode === 'farms' ? "ค้นหาฟาร์ม หรือจังหวัด..." : "ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
@@ -193,14 +195,16 @@ export default function FarmHubPage() {
           <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl w-full md:w-auto md:inline-flex">
             <button
               className="mode-tab"
-              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              aria-pressed={viewMode === 'farms'}
+              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.inkSoft }}
               onClick={() => setViewMode('farms')}
             >
               ดูฟาร์ม
             </button>
             <button
               className="mode-tab"
-              style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              aria-pressed={viewMode === 'pets'}
+              style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.inkSoft }}
               onClick={() => setViewMode('pets')}
             >
               ดูสัตว์เลี้ยง
