@@ -1,6 +1,6 @@
 # UI / i18n consistency audit — Whiskora web
 
-Date 2026-11-03 · branch `audit/ui-i18n-consistency` (from `origin/main` `a86b35a`) · local only: not pushed, not deployed.
+Date 2026-11-03 · branch `audit/ui-i18n-consistency` (from `origin/main` `a86b35a`) · audit + fixes commit `76d1124` · local only: not pushed, not deployed.
 Method: static analysis of the repository + a **local production build** (`next build && next start`) with an
 **unreachable dummy Supabase URL** (no production / staging data, no accounts; every non-local request blocked) crawled
 with Playwright at **1440 / 768 / 390 / 360 px** in **/th and /en**, plus a locally-invented mock session (never sent
