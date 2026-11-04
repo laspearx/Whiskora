@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "@/i18n/context";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -24,12 +25,13 @@ const Icon = {
 
 const features = [
   { icon: <Icon.IdCard />, title: 'ข้อมูลครบถ้วน', desc: 'ชื่อ สายพันธุ์ สี วันเกิด อายุ และกรุ๊ปเลือด' },
-  { icon: <Icon.QrCode />, title: 'QR Code โปรไฟล์', desc: 'สแกนเพื่อดูข้อมูลสัตว์เลี้ยงได้ทุกที่ทุกเวลา' },
-  { icon: <Icon.Shield />, title: 'ตราพิสูจน์ตัวตน', desc: 'ตรา WHISKORA VERIFIED รับรองความถูกต้อง' },
+  { icon: <Icon.QrCode />, titleKey: 'qrTitle', descKey: 'qrShortDescription' },
+  { icon: <Icon.Shield />, titleKey: 'registeredLabel', descKey: 'registeredHint' },
   { icon: <Icon.Download />, title: 'ดาวน์โหลด & แชร์', desc: 'บันทึกเป็นรูปภาพหรือแชร์ลิงก์ให้ผู้อื่นได้เลย' },
 ];
 
 export default function PetIdCardLandingPage() {
+  const trustCopy = useTranslations('trustCopy');
   const router = useRouter();
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,8 +159,8 @@ export default function PetIdCardLandingPage() {
               <div key={i} className="pic-feat">
                 <div className="pic-feat-icon">{f.icon}</div>
                 <div>
-                  <div className="pic-feat-title">{f.title}</div>
-                  <div className="pic-feat-desc">{f.desc}</div>
+                  <div className="pic-feat-title">{'titleKey' in f ? trustCopy(f.titleKey!) : f.title}</div>
+                  <div className="pic-feat-desc">{'descKey' in f ? trustCopy(f.descKey!) : f.desc}</div>
                 </div>
               </div>
             ))}

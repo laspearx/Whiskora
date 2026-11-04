@@ -7,6 +7,7 @@ import { speciesTh } from '@/lib/species';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
+import { useTranslations } from '@/i18n/context';
 import Cropper from 'react-easy-crop';
 import type { Pet, Vaccine, Activity, UserProfile, PetDocument } from '@/lib/types';
 import PageLoader from '@/app/components/PageLoader';
@@ -82,6 +83,7 @@ type PedigreeNode = {
 };
 
 export default function PetDetailPage() {
+  const trustCopy = useTranslations('trustCopy');
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -1281,7 +1283,7 @@ export default function PetDetailPage() {
               <input ref={mainPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMainPhotoFileChange} />
             </div>
             <div className="hero-info">
-              <div className="verified-badge"><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> Verified by Whiskora</div>
+              <div className="verified-badge" title={trustCopy('registeredHint')}><img src="/icons/icon-verified.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} /> {trustCopy('registeredLabel')}</div>
               <div className="pet-name">
                 <span>{pet.name}</span>
                 <div className="gender-chip">{isMale ? <Icon.Male /> : <Icon.Female />}</div>
@@ -1681,7 +1683,7 @@ export default function PetDetailPage() {
           <div className="modal-box" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-pad" style={{ textAlign: 'center' }}>
               <div className="modal-title">QR โปรไฟล์ {pet.name}</div>
-              <div className="modal-sub">สแกนเพื่อเปิดหน้าโปรไฟล์สาธารณะ</div>
+              <div className="modal-sub">{trustCopy('qrDescription')}</div>
               <div className="qr-modal-img">{qrDataUrl && <img src={qrDataUrl} alt="QR Code" />}</div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => setShowQrModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#F3F4F6', color: F.muted, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>ปิด</button>

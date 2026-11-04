@@ -94,7 +94,6 @@ export default function Footer() {
           <span>{t('madeIn')}</span>
         </div>
         <div className="flex items-center gap-6">
-          <span>{t('pdpa')}</span>
           <span className="opacity-50">V{APP_VERSION}</span>
         </div>
       </div>

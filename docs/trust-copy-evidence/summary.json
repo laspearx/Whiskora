@@ -1,0 +1,179 @@
+{
+  "status": "PASSED — PENDING INDEPENDENT REVIEW",
+  "baseline": "0ded0682b80e7a78e5703e02f19179c01e13e943",
+  "scope": "Trust copy only; no Legal/Security/Release Approval",
+  "build": {
+    "clean": true,
+    "webpack_exit": 0,
+    "dummy_loopback_only": true,
+    "typescript_generated_validators": "passed",
+    "typescript_after_restoring_next_env_exit": 0
+  },
+  "units": {
+    "passed": 72,
+    "failed": 0,
+    "skipped": 0,
+    "breakdown": [
+      6,
+      13,
+      7,
+      16,
+      8,
+      22
+    ]
+  },
+  "browser": {
+    "trust_copy": 4,
+    "ux": 44,
+    "farm": 2,
+    "i18n": 72,
+    "flows_total": 122,
+    "desktop": 61,
+    "mobile": 61,
+    "measurement": 1,
+    "retries": 0,
+    "stats": {
+      "trust-copy": {
+        "startTime": "2026-11-04T13:34:07.553Z",
+        "duration": 47207.801999999996,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "i18n": {
+        "startTime": "2026-11-04T13:36:58.743Z",
+        "duration": 377825.22000000003,
+        "expected": 72,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "bundle": {
+        "startTime": "2026-11-04T13:43:17.266Z",
+        "duration": 22050.748,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "ux_farm_stats": [
+      {
+        "startTime": "2026-11-04T13:34:56.564Z",
+        "duration": 104439.99299999999,
+        "expected": 44,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      {
+        "startTime": "2026-11-04T13:36:42.353Z",
+        "duration": 15533.696999999998,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    ],
+    "exits": {
+      "trust-copy": 0,
+      "ux": 0,
+      "farm": 0,
+      "i18n": 0,
+      "bundle": 0
+    }
+  },
+  "bundle": {
+    "root_chunks": [
+      {
+        "path": "static/chunks/app/layout-b2f219b72720427f.js",
+        "rawBytes": 2232,
+        "gzipBytes": 1027,
+        "catalogueSentinel": false
+      }
+    ],
+    "catalogue_sentinel_chunks": [],
+    "full_catalogue_client_import_check": "passed existing namespace suite"
+  },
+  "preservation": {
+    "candidate_ref_unchanged": true,
+    "all_original_refs_unchanged": true,
+    "original_evidence_files_present_same_size": 552,
+    "protected_paths_unchanged": [
+      "supabase",
+      "web/app/api",
+      "web/app/privacy",
+      "web/app/terms",
+      "web/app/register",
+      "web/app/[locale]/login",
+      "web/lib/trust.ts",
+      "web/lib/columns.ts",
+      "web/lib/deploy-env-guard.mjs",
+      "web/lib/deploy-env.ts"
+    ],
+    "worktree_count": 4,
+    "database_provider_calls": 0
+  },
+  "limitations": [
+    "Actual-card external QR asset blocked intentionally by offline mock",
+    "Mobile actual-card right clipping seen in screenshot; card CSS unchanged; no baseline pixel comparison or full card scan/export certification",
+    "Other owner/card/marketing copy remains Thai where not translated before",
+    "Terms/Privacy/support facts and signup policy need owner/legal review",
+    "Lint initial invocation from repo root had no config; correct web cwd run exit 0; no config changed"
+  ],
+  "artifacts": {
+    "browser-exits.json": "57da2502f23ee1395335956bf2ef648b745bbd237d59cabbffb6779180612dba",
+    "build.log": "40652445df86abc38c9fbff2fda53b3e64d72cf86b994363f8ec0343310a772a",
+    "bundle-browser-artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "bundle-browser.log": "69aa9d7f9537896927c9282ccea1127f0c84c08bd729384776dd4c9af484afd3",
+    "bundle-javascript.json": "a3b89507c63334c167492a1bfdca4be371debe31bbfae5dd3de9751464865685",
+    "bundle-playwright.json": "99dba8690ffdfe8164e12f328d1e4cf1dbe2bd5bfaab98b2b218bbf22294d2e8",
+    "catalogue-race.test.log": "581e3a9c6b7987a4b25bb1b5a3a63c362eb2bbd247a55e15652b6aa66992aa1e",
+    "dashboard-layout-regression.test.log": "d21af736364e9bc0fdf0b3b003d790a8e8692ee1dad9270e496a9c7a96de5cd4",
+    "evidence-before.json": "83acbcd4cad13603797988cd2148393d84fa1d21e0174311d28e9ed3fae64ef1",
+    "farm-browser.log": "f9e14e096931470be067a7a2d00f881f60e456eb185d6eeb47ea398e992e44be",
+    "i18n-browser-artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "i18n-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-desktop/service-hub-en.png": "e90918f9f5cad5fd3bae6350a8fbc4e412845b0be005644b34a04c8ecb4b12c5",
+    "i18n-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-desktop/service-hub-th.png": "606cbb11be564fef2cbc85b4d6c262a25629e5bd0fd09dc5cd309c130b050285",
+    "i18n-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-mobile/service-hub-en.png": "75e0a4fbc921daeeaf9ddad93f8e9de1702a7397f06664161df57765e979bae8",
+    "i18n-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-mobile/service-hub-th.png": "0c6c747c5f1c3454cdaf5bc93caa07093db006c1e5a9023d05c722dd00291c3f",
+    "i18n-browser.log": "1e9349f7f4ccea7f752ef58f7b62390b11c6f97eb252201e293798bfb5c063bc",
+    "i18n-consistency.test.log": "f6fc41d8ea82326ae57e0c8b121343b09d42060ce27fe8e83a587d7b0ac944ef",
+    "i18n-format.test.log": "784193d0b92fdd256ce271ef2c38ecfb00a5daea711fecd3b720be0f9c1f1b88",
+    "i18n-namespaces.test.log": "74824f4f45e95e26da3e75a8facba09fca009164636b62e500e6bd1a5cc0ca16",
+    "i18n-playwright.json": "4e3b88d950f8d6b72d40eb9a32afcc2a2f954e85d79cca8509f371e78fdf1616",
+    "preservation.json": "bf9cef8c83c7717eded8aad6eafc001740c5d075e6969ef2f88fdba7fbeb8143",
+    "refs-before.txt": "fe4c522e080cd3054bf7b5372a693b4d91d1afcca3d75396abfc668a524ca501",
+    "run_browsers.py": "a27f563b7a66c911c3c8d415c0ed999de613340c4f9ad5a6104dd8c5172ae3a4",
+    "test-eslint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test-eslint.log": "857e2947e893f4b44e8c0ea617d43fa41dcf956932e978c5ecedbe14d8a12256",
+    "trust-copy-browser-artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "trust-copy-browser-artifacts/trust-copy-card-themes-do--9f684-mo-or-actual-synthetic-card-desktop/card-en.png": "eb769b9d6078188d87dc5b559dc521222b003ebaa3ebede3a9f14ec7b6ba786b",
+    "trust-copy-browser-artifacts/trust-copy-card-themes-do--9f684-mo-or-actual-synthetic-card-desktop/card-th.png": "5303655a3ec92444de00a840a0374a92ff1692021cbce122ac2af979e6a7ffdf",
+    "trust-copy-browser-artifacts/trust-copy-card-themes-do--9f684-mo-or-actual-synthetic-card-mobile/card-en.png": "0c3f0a3689976ede3db62a6b1ba9595854b6994f655bd8b50ceee935104e4660",
+    "trust-copy-browser-artifacts/trust-copy-card-themes-do--9f684-mo-or-actual-synthetic-card-mobile/card-th.png": "a0919d9b4e1952a2c485ce8f9b619ab933e5ad009b92568d1dc78b77c2227d04",
+    "trust-copy-browser.log": "cce5ef9d5ff30c42d1bcd5a1b901b2c8f49738ebf2d085daa2883a740a1f852a",
+    "trust-copy-playwright.json": "10b73ece790fefa8a76cf64f1d5ad5caecf8ee233c8cb3c3181db0e0a153ac55",
+    "typescript-before-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typescript-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ux-browser.log": "fed446102eadb24f9734c217afae7c23abfd3fe64d52a35c6d26f67381c194c9",
+    "ux-farm-artifacts/2026-11-04T13-34-56-548Z-268508/artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "ux-farm-artifacts/2026-11-04T13-34-56-548Z-268508/case-events.jsonl": "d1605bfdd6feb32ef2b3a176f244789cbefc37b27f9c3c499b0db31194f690af",
+    "ux-farm-artifacts/2026-11-04T13-34-56-548Z-268508/results.json": "b2f96c9b1b93293b2b10bfbb9d9d3b4e99ab881733ad7f048b28ef4788a29e66",
+    "ux-farm-artifacts/2026-11-04T13-34-56-548Z-268508/server-events.jsonl": "c13d9bdf7f3f81e82650d3563bb044ba12197b7db0aa506ae751ca386e271e9b",
+    "ux-farm-artifacts/2026-11-04T13-35-00-004Z-268593/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/categories.png": "a3c85749e28aae2d64b48057f44b825faf2b026e81233c87d8d13fc44e616e97",
+    "ux-farm-artifacts/2026-11-04T13-35-00-004Z-268593/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/summary.png": "b7376272629bce6b67724581d0b78aa79a20ec1daf99c5b2467c6b02d8b71e2a",
+    "ux-farm-artifacts/2026-11-04T13-35-53-057Z-270078/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-mobile/categories.png": "073c8bb0dfe5eb5af73e42a8b47d0619494754afb1478df0b20e27f61870553e",
+    "ux-farm-artifacts/2026-11-04T13-35-53-057Z-270078/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-mobile/summary.png": "4b13ec035edf58733d48a2bad7cbd39f33f85190a76711fc19f02b43a97b29a9",
+    "ux-farm-artifacts/2026-11-04T13-36-42-346Z-271553/artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "ux-farm-artifacts/2026-11-04T13-36-42-346Z-271553/case-events.jsonl": "f64bc334ac6c481c6c70db6dd8afdf35048e3c494922af92b413905754b86373",
+    "ux-farm-artifacts/2026-11-04T13-36-42-346Z-271553/results.json": "53b36196195d6cc3dc2099058639a94055ade6df2f537e6dd397bec32152e3d9",
+    "ux-farm-artifacts/2026-11-04T13-36-42-346Z-271553/server-events.jsonl": "a40d701830c9b72b91ce02d129c9b3673c8c24eab6c876e727a951a19caaa356",
+    "ux-farm-artifacts/2026-11-04T13-36-44-903Z-271607/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-desktop/farm-en.png": "b05ba7ca24efeead32cbc7c3231a9982e351087c10f0b61632990a232f2f764a",
+    "ux-farm-artifacts/2026-11-04T13-36-44-903Z-271607/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-desktop/farm-th.png": "1e7e8106fc6791ac47370f331734e6e7b5d5cfe8c26b7454294c4b6e5c93f3ff",
+    "ux-farm-artifacts/2026-11-04T13-36-51-757Z-271821/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-mobile/farm-en.png": "f1692e1ae7885c57d8d34ae04475acdcee80ca2117921d02f4b8563c3edaed72",
+    "ux-farm-artifacts/2026-11-04T13-36-51-757Z-271821/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-mobile/farm-th.png": "8f60c7cb06a0f0e786d44d4e3cb4f10ca19e0c6c0e89c683afbcf5789aefeff5",
+    "vaccine-summary.test.log": "94a3278eee976709e1cb0cdb1b94d3a60092139924208eae7f3bc76bbd65de57"
+  }
+}

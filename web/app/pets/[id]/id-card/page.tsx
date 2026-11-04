@@ -61,7 +61,7 @@ const CARD_THEMES: CardTheme[] = [
     petIdBg: 'linear-gradient(135deg, #C2844B 0%, #E8B873 100%)',
     preview: 'linear-gradient(135deg, #fffdf8 0%, #f3d8b8 100%)',
     shadow: '0 24px 64px rgba(194,132,75,0.19)' },
-  { id: 'rose-gold', name: 'Rose Gold', caption: 'Verified',
+  { id: 'rose-gold', name: 'Rose Gold', caption: 'Rose Gold',
     bg: '/id-card/pet-id-card-bg-rose-gold-v1.png',
     accent: '#CD7168', accent2: '#F0A39A', border: '#F8C9C3', soft: '#FFF2F0',
     petIdBg: 'linear-gradient(135deg, #CD7168 0%, #F0A39A 100%)',

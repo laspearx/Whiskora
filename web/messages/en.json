@@ -312,8 +312,7 @@
     "tagline": "The Hub for Every Pet Life",
     "taglineSub": "One platform, every pet life.",
     "copyright": "© 2026 Whiskora",
-    "madeIn": "Made in Bangkok",
-    "pdpa": "PDPA compliant"
+    "madeIn": "Made in Bangkok"
   },
   "home": {
     "heroBadge": "🐾 WHISKORA PLATFORM",
@@ -729,5 +728,12 @@
     "sub": "Buyer reservations — confirming unlocks the “reserved buyer” data tier",
     "empty": "No reservations for this farm yet",
     "history": "History"
+  },
+  "trustCopy": {
+    "registeredLabel": "Pet ID registered",
+    "registeredHint": "This pet has a Whiskora profile. This does not certify its health, lineage or documents.",
+    "qrTitle": "QR profile link",
+    "qrShortDescription": "Open the pet profile with the information and access supported by the system.",
+    "qrDescription": "Scan to open the pet profile with its existing access permissions. The QR code is not a certificate of health, lineage or ownership."
   }
 }

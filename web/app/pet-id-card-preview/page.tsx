@@ -100,7 +100,7 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: "rose-gold",
     name: "Rose Gold",
-    caption: "Verified",
+    caption: "Rose Gold",
     bg: "/id-card/pet-id-card-bg-rose-gold-v1.png",
     accent: "#CD7168",
     accent2: "#F0A39A",

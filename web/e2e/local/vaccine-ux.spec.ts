@@ -168,6 +168,9 @@ test('integration: locale switching retains pet and vaccine summary after refres
   await mockPet(page);
   await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
   await integrationLocale(page, 'EN');
+  await expect(page.getByText('Pet ID registered', { exact: true })).toBeVisible();
+  await expect(page.locator('.verified-badge')).toHaveAttribute('title', /does not certify/);
+  await expect(page.locator('body')).not.toContainText(/Verified by Whiskora|PDPA compliant/);
   await expect(page).toHaveURL(/\/en\/pets\/990001$/);
   await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
   await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
@@ -175,9 +178,11 @@ test('integration: locale switching retains pet and vaccine summary after refres
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
   await integrationLocale(page, 'TH');
+  await expect(page.getByText('ลงทะเบียน Pet ID แล้ว', { exact: true })).toBeVisible();
   await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
   await page.getByRole('button', { name: 'ดู / ดาวน์โหลด QR' }).click();
   await expect(page.getByAltText('QR Code', { exact: true })).toHaveAttribute('src', /^data:image\/png/);
+  await expect(page.locator('.modal-sub').filter({ hasText: 'QR ไม่ใช่ใบรับรองสุขภาพ' })).toBeVisible();
 });
 
 test('integration: locale switching and browser history retain current pet content', async ({ page }) => {

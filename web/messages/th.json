@@ -312,8 +312,7 @@
     "tagline": "ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง",
     "taglineSub": "One platform, every pet life.",
     "copyright": "© 2026 Whiskora",
-    "madeIn": "Made in Bangkok",
-    "pdpa": "PDPA compliant"
+    "madeIn": "Made in Bangkok"
   },
   "home": {
     "heroBadge": "🐾 WHISKORA PLATFORM",
@@ -729,5 +728,12 @@
     "sub": "รายการจองจากผู้ซื้อ — ยืนยันเพื่อปลดล็อกข้อมูลระดับ “ผู้ที่จองไว้”",
     "empty": "ยังไม่มีใครจองสัตว์เลี้ยงในฟาร์มนี้",
     "history": "ประวัติ"
+  },
+  "trustCopy": {
+    "registeredLabel": "ลงทะเบียน Pet ID แล้ว",
+    "registeredHint": "มีโปรไฟล์ใน Whiskora ไม่ใช่การรับรองสุขภาพ สายเลือด หรือเอกสารของสัตว์เลี้ยง",
+    "qrTitle": "QR เชื่อมโยงโปรไฟล์",
+    "qrShortDescription": "เปิดหน้าโปรไฟล์สัตว์เลี้ยงตามข้อมูลและสิทธิ์ที่ระบบรองรับ",
+    "qrDescription": "สแกนเพื่อเปิดหน้าโปรไฟล์สัตว์เลี้ยงตามสิทธิ์ที่ระบบรองรับ QR ไม่ใช่ใบรับรองสุขภาพ สายเลือด หรือความเป็นเจ้าของ"
   }
 }
