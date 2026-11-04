@@ -3,6 +3,13 @@
 Date 2026-11-03 · branch `fix/i18n-phase2` (from `fix/i18n-foundation-phase1` `c2277cc`) · local only: not pushed,
 not deployed. Previous: `docs/I18N_PHASE1.md`, `docs/UI_I18N_CONSISTENCY_AUDIT.md`.
 
+**2026-11-04 review fixes:** all four requested findings are resolved locally on
+`fix/i18n-phase2-review-findings`. See [I18N_PHASE2_FINDINGS.md](I18N_PHASE2_FINDINGS.md)
+for full clean-build, JavaScript (not HTML-only), race, namespace and browser evidence.
+The historical payload measurements below concern HTML. They did not detect the
+full Thai catalogue that RootChrome still imported into client JavaScript; that
+separate issue is corrected and measured in the review fixes.
+
 ## 1. Foundation impact review (Phase 1 root layout reading the locale header)
 
 Three local production builds, same dummy env, measured on the same machine (`next start`, 40 sequential requests
@@ -67,7 +74,7 @@ authentication or data-writing logic:
 | Route | What changed | Notes |
 |---|---|---|
 | `/marketplace` | heading, subtitle, search label, category tabs (labels translated, **stored Thai values still sent to the API** — checked in the browser test), species pills, loading (`aria-busy`), **error state + retry**, empty states, prices via `formatPrice`, sale badge, own metadata | product names / shop names = data |
-| `/service-hub` | same pattern; the stored Thai category is shown with its translated label (unknown values shown as stored); "View details"; own metadata | **finding**: every card shows a hard-coded rating "4.9 (120)" — not real data (§5) |
+| `/service-hub` | same pattern; the stored Thai category is shown with its translated label (unknown values shown as stored); "View details"; own metadata | Hard-coded rating removed in the 2026-11-04 review fixes; no replacement review system |
 | `/community` | badge, title, copy, quote, back button, own metadata | |
 | `/about` | heading, tagline, 4 missions, 6 features, note, back label, own metadata | old unused `about` keys (audit UI-21) replaced in place |
 
@@ -183,7 +190,7 @@ machine; the suites run with `--workers=1`. Failures seen during development wer
 | Item | Status / acceptance criteria |
 |---|---|
 | **farm-hub pet cards link to `/pets/[id]`** (owner page — anonymous visitors are sent to sign-in) instead of the public `/p/[id]` | Not changed (routing; `/pets/[id]` is PR #33 / #37 territory). **Acceptance criteria for the fix**: (1) an anonymous visitor clicking a card lands on `/{locale}/p/{id}` with no sign-in prompt; (2) only fields allowed by the visibility tiers are shown (the page already uses `get_my_pet_access` / `get_pet_health`) — no new data access; (3) owners / farm team still reach management from `/p/{id}` or their dashboard; (4) the locale prefix is kept; (5) e2e: anonymous click → `/p/`, signed-in owner → manage link works; (6) lands after PR #33 and PR #37 (both touch these pages) |
-| service-hub hard-coded rating "4.9 (120)" on every card | **new finding (P2, trust)**: shows a rating that does not exist; remove or replace with real reviews — product decision, not changed here |
+| service-hub hard-coded rating "4.9 (120)" on every card | **Resolved 2026-11-04:** rating and star removed; action aligned to the right; TH/EN Desktop/Mobile layout verified |
 | PR #33 pages (`/pets/[id]`, vaccine UI) | translate after PR #33 lands |
 | Login / auth flow (PR #37): `/login` heading Thai, register password toggles, `/p/[id]` error vs not-found | after PR #37; then move `login` from `LAYOUT_EXTRA_NAMESPACES` to a `ScopedMessages` in the login route |
 | Global CSS vs Tailwind (UI-12) | unchanged; Phase 1 evidence (56 / 80 screenshots change) — Design System phase |

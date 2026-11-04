@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -49,6 +49,7 @@ export default function MarketplacePage() {
   const [loadError, setLoadError] = useState(false);
   const [activeCategory, setActiveCategory] = useState(ALL);
   const [activePetType, setActivePetType] = useState(ALL);
+  const loadSequence = useRef(0);
 
   const categories = [{ value: ALL, label: tc("all") }, ...CATEGORIES.map((c) => ({ value: c.value, label: t(`category.${c.key}`) }))];
   const petTypes = [
@@ -57,11 +58,9 @@ export default function MarketplacePage() {
     { value: "other", label: tc("otherPets") },
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, [activeCategory, activePetType]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    const isCurrent = () => sequence === loadSequence.current;
     setLoading(true);
     setLoadError(false);
     try {
@@ -78,15 +77,23 @@ export default function MarketplacePage() {
       }
 
       const { data, error } = await query;
+      if (!isCurrent()) return;
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
+      if (!isCurrent()) return;
       console.error("Error:", error);
       setLoadError(true);   // a failed load is an error, not "no products"
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  };
+  }, [activeCategory, activePetType]);
+
+  useEffect(() => {
+    void fetchProducts();
+    // Invalidates filter loads and manual retries, including after unmount.
+    return () => { loadSequence.current += 1; };
+  }, [fetchProducts]);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

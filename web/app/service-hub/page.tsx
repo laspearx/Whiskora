@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +24,6 @@ const Icon = {
   Search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
   Stethoscope: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>,
   MapPin: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
-  Star: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
@@ -48,6 +47,7 @@ export default function ServiceHubPage() {
   const [activeCategory, setActiveCategory] = useState(ALL);
   const [activePetType, setActivePetType] = useState(ALL);
   const [loadError, setLoadError] = useState(false);
+  const loadSequence = useRef(0);
   const t = useTranslations("serviceHub");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -63,11 +63,9 @@ export default function ServiceHubPage() {
     { value: "other", label: tc("otherPets") },
   ];
 
-  useEffect(() => {
-    fetchServices();
-  }, [activeCategory, activePetType]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    const isCurrent = () => sequence === loadSequence.current;
     setLoading(true);
     setLoadError(false);
     try {
@@ -81,15 +79,23 @@ export default function ServiceHubPage() {
       }
 
       const { data, error } = await query;
+      if (!isCurrent()) return;
       if (error) throw error;
       setServices(data || []);
     } catch (error) {
+      if (!isCurrent()) return;
       console.error("Error:", error);
       setLoadError(true);   // a failed load is an error, not "no services"
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  };
+  }, [activeCategory, activePetType]);
+
+  useEffect(() => {
+    void fetchServices();
+    // Invalidates filter loads and manual retries, including after unmount.
+    return () => { loadSequence.current += 1; };
+  }, [fetchServices]);
 
   const filteredServices = services.filter(s => 
     s.service_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -257,14 +263,8 @@ export default function ServiceHubPage() {
                     <span>{service.address || t("addressFallback")}</span>
                   </div>
 
-                  {/* Footer (Rating & Action) */}
-                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[#FBBF24]"><Icon.Star /></span>
-                      <span className="text-sm font-bold text-gray-900">4.9</span>
-                      <span className="text-xs text-gray-400 font-medium">(120)</span>
-                    </div>
-                    
+                  {/* No rating is shown until backed by real review data. */}
+                  <div className="mt-auto flex items-center justify-end pt-4 border-t border-gray-100">
                     <span className="text-[13px] font-bold text-sky-600 group-hover:translate-x-1 transition-transform">
                       {tc("viewDetails")} <span aria-hidden="true">➔</span>
                     </span>

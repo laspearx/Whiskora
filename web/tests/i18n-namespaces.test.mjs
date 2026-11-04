@@ -77,3 +77,25 @@ test('relative path helper sanity', () => {
   assert.equal(routeFileFor('app/farm-dashboard/[id]/reservations/page.tsx'), 'app/[locale]/farm-dashboard/[id]/reservations/page.tsx');
   assert.equal(relative('a', 'a/b'), 'b');
 });
+
+test('client components never import a complete translation catalogue', () => {
+  for (const f of files) {
+    const source = read(f);
+    if (/^\s*['"]use client['"]/.test(source)) {
+      assert.doesNotMatch(source, /(?:from\s*|import\s*\()['"][^'"]*messages\/(?:th|en)\.json/, f);
+    }
+  }
+  assert.match(read('app/components/ScopedMessages.tsx'), /import 'server-only'/);
+});
+
+test('RootChrome receives only fallback globals from the server; route scopes remain independent', () => {
+  const root = read('app/layout.tsx');
+  assert.match(root, /<RootChrome messages=\{pickMessages\('th', GLOBAL_NAMESPACES\)\}/);
+  assert.doesNotMatch(read('app/components/RootChrome.tsx'), /messages\/(th|en)\.json|ScopedMessages/);
+  for (const locale of ['th', 'en']) {
+    const all = JSON.parse(read(`messages/${locale}.json`));
+    const globals = Object.fromEntries(GLOBAL.map(n => [n, all[n]]));
+    assert.deepEqual(Object.keys(globals), ['nav', 'footer', 'common']);
+    assert.ok(!('marketplace' in globals) && !('serviceHub' in globals));
+  }
+});

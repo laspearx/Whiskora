@@ -4,6 +4,8 @@ import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
 import ClientProviders from "@/app/components/ClientProviders";
 import PushSetup from "@/app/components/PushSetup";
+import { pickMessages } from "@/app/components/ScopedMessages";
+import { GLOBAL_NAMESPACES } from "@/lib/i18n-namespaces";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whiskora.pet"),
@@ -93,7 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ClientProviders>
           <PushSetup />
-          <RootChrome>{children}</RootChrome>
+          <RootChrome messages={pickMessages('th', GLOBAL_NAMESPACES)}>{children}</RootChrome>
         </ClientProviders>
       </body>
     </html>
