@@ -1,0 +1,30 @@
+[
+  {
+    "branch": "feat/explore-discovery",
+    "sha": "9d21e183ee473d8c82688e3d2a744a700d80e482",
+    "merge_base": "a86b35a4548ff9edf26f94bf5e1d7059904f7a34",
+    "temporary_partial_source_snapshot": "/tmp/whiskora-i18n-static-fz84swrn",
+    "overlapping_files": [
+      "WHISKORA_PLATFORM_OVERVIEW.md",
+      "web/messages/en.json",
+      "web/messages/th.json"
+    ],
+    "textual_conflicts": [
+      "WHISKORA_PLATFORM_OVERVIEW.md"
+    ],
+    "namespace_exit_without_adapter": 1,
+    "namespace_exit_with_adapter": 0
+  },
+  {
+    "branch": "security/phase1-integration",
+    "sha": "26e4b4fdecf96dad2647b7182c229c315ca07bb7",
+    "merge_base": "a86b35a4548ff9edf26f94bf5e1d7059904f7a34",
+    "temporary_partial_source_snapshot": "/tmp/whiskora-i18n-static-dnj26ahn",
+    "overlapping_files": [
+      "WHISKORA_PLATFORM_OVERVIEW.md",
+      "web/app/farm-dashboard/[id]/page.tsx"
+    ],
+    "textual_conflicts": [],
+    "namespace_exit_without_adapter": 0
+  }
+]

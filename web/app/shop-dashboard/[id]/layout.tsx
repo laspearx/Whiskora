@@ -1,26 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { ShopAccessContext, type ShopRole } from "@/lib/shop-access";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import DefaultBottomNav from "@/app/components/DefaultBottomNav";
-
-export type ShopRole = "owner" | "manager" | "staff" | "viewer";
-
-interface ShopAccessContextValue {
-  shopId: string;
-  myRole: ShopRole;
-}
-
-const ShopAccessContext = createContext<ShopAccessContextValue | null>(null);
-
-export function useShopAccess() {
-  const ctx = useContext(ShopAccessContext);
-  if (!ctx) throw new Error("useShopAccess must be used inside shop-dashboard layout");
-  return ctx;
-}
 
 export default function ShopDashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();

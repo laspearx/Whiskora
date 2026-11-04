@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "@/app/globals.css";
 import RootChrome from "@/app/components/RootChrome";
 import ClientProviders from "@/app/components/ClientProviders";
 import PushSetup from "@/app/components/PushSetup";
+import { pickMessages } from "@/app/components/ScopedMessages";
+import { GLOBAL_NAMESPACES } from "@/lib/i18n-namespaces";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whiskora.pet"),
@@ -70,9 +73,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // set by middleware.ts for /th/* and /en/* (validated: anything else → Thai, the default locale)
+  const lang = (await headers()).get("x-whiskora-locale") === "en" ? "en" : "th";
   return (
-    <html suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -90,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ClientProviders>
           <PushSetup />
-          <RootChrome>{children}</RootChrome>
+          <RootChrome messages={pickMessages('th', GLOBAL_NAMESPACES)}>{children}</RootChrome>
         </ClientProviders>
       </body>
     </html>

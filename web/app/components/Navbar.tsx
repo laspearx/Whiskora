@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { useLocale } from '@/i18n/context';
+import { useLocale, useTranslations } from '@/i18n/context';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import PetQRSheet from '@/app/components/PetQRSheet';
@@ -13,20 +13,14 @@ import type { Workspace } from '@/app/contexts/WorkspaceContext';
 // ─── Nav config ───────────────────────────────────────────────────────────────
 type Href = string;
 
-const PRIMARY: { key: string; label: string; href: Href }[] = [
-  { key: 'home',      label: 'หน้าแรก',   href: '/' },
-  { key: 'petid',     label: 'Pet ID',     href: '/pet-id-card' },
-  { key: 'knowledge', label: 'ความรู้',    href: '/pet-knowledge' },
-  { key: 'partner',   label: 'พาร์ทเนอร์', href: '/partner' },
-];
-
+// labels / subtitles are message keys of the `nav` namespace (messages/{th,en}.json)
 const EXPLORE: { key: string; label: string; sub: string; href: Href; badge?: string }[] = [
-  { key: 'farm',        label: 'ฟาร์มสัตว์เลี้ยง',   sub: 'ฟาร์มในระบบและสัตว์พร้อมย้ายบ้าน', href: '/farm-hub' },
-  { key: 'marketplace', label: 'เพ็ทช็อป',           sub: 'สินค้าจากร้านค้าในระบบ',          href: '/marketplace' },
-  { key: 'services',    label: 'คลินิกและบริการ',     sub: 'ค้นหาคลินิก กรูมมิ่ง ฝากเลี้ยง',  href: '/service-hub' },
-  { key: 'community',   label: 'ชุมชนคนรักสัตว์',    sub: 'กำลังพัฒนา ยังไม่เปิดใช้งาน',      href: '/community', badge: 'เร็วๆ นี้' },
-  { key: 'tools',       label: 'เครื่องมือ',          sub: 'คำนวณอายุ แคลอรี วันคลอด',        href: '/pet-tools' },
-  { key: 'about',       label: 'เกี่ยวกับ Whiskora',  sub: 'พันธกิจ ทีมงาน และวิสัยทัศน์',    href: '/about' },
+  { key: 'farm',        label: 'farmHub',       sub: 'farmHubSub',    href: '/farm-hub' },
+  { key: 'marketplace', label: 'petShop',       sub: 'petShopSub',    href: '/marketplace' },
+  { key: 'services',    label: 'clinics',       sub: 'clinicsSub',    href: '/service-hub' },
+  { key: 'community',   label: 'communityFull', sub: 'communitySub',  href: '/community', badge: 'soon' },
+  { key: 'tools',       label: 'toolsLabel',    sub: 'toolsSub',      href: '/pet-tools' },
+  { key: 'about',       label: 'aboutFull',     sub: 'aboutSub',      href: '/about' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,6 +48,7 @@ export default function Navbar() {
   const { workspaces, activeWorkspace, switchWorkspace } = useWorkspace();
 
   const locale   = useLocale();
+  const t        = useTranslations('nav');
   const pathname = usePathname();
   const router   = useRouter();
   const navRef   = useRef<HTMLElement>(null);
@@ -125,8 +120,8 @@ export default function Navbar() {
   };
 
   const wsLabel = (type: Workspace['type']) => {
-    const map: Record<string, string> = { personal: 'ส่วนตัว', farm: 'ฟาร์ม', shop: 'ร้านค้า', service: 'บริการ' };
-    return map[type] ?? type;
+    const map: Record<string, string> = { personal: 'wsPersonal', farm: 'wsFarm', shop: 'wsShop', service: 'wsService' };
+    return map[type] ? t(map[type]) : type;
   };
 
   const switchLocale = (next: 'th' | 'en') => {
@@ -145,18 +140,18 @@ export default function Navbar() {
   const navLink = (isActive: boolean) =>
     `text-sm font-medium whitespace-nowrap px-3 py-1.5 rounded-xl transition-colors ${
       isActive
-        ? 'text-pink-500 bg-pink-50'
-        : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'
+        ? 'text-pink-700 bg-pink-50'
+        : 'text-gray-600 hover:text-pink-700 hover:bg-gray-50'
     }`;
 
   const langBtn = (on: boolean) =>
     `px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
-      on ? 'bg-white text-pink-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+      on ? 'bg-white text-pink-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
     }`;
 
   const dropItem = (isActive: boolean) =>
     `block w-full text-left px-4 py-2.5 text-sm transition-colors ${
-      isActive ? 'text-pink-500 bg-pink-50 font-semibold' : 'text-gray-600 hover:text-pink-500 hover:bg-gray-50'
+      isActive ? 'text-pink-700 bg-pink-50 font-semibold' : 'text-gray-600 hover:text-pink-700 hover:bg-gray-50'
     }`;
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -188,15 +183,16 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-0.5">
 
             {/* หน้าแรก */}
-            <Link href="/" className={navLink(active('/'))}>หน้าแรก</Link>
+            <Link href="/" className={navLink(active('/'))}>{t('home')}</Link>
 
             {/* สำรวจ dropdown */}
             <div className="relative">
               <button
                 onClick={() => { setExploreOpen(o => !o); setUserOpen(false); }}
                 className={`${navLink(exploreActive)} flex items-center gap-1`}
+                aria-expanded={exploreOpen}
               >
-                สำรวจ
+                {t('explore')}
                 <ChevronDown open={exploreOpen} />
               </button>
 
@@ -212,11 +208,11 @@ export default function Navbar() {
                           active(item.href) ? 'bg-pink-50' : 'hover:bg-gray-50'
                         }`}
                       >
-                        <div className={`text-sm font-semibold leading-tight ${active(item.href) ? 'text-pink-500' : 'text-gray-700 group-hover:text-pink-500'}`}>
-                          {item.label}
-                          {item.badge && <span className="ml-1.5 align-middle text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-500">{item.badge}</span>}
+                        <div className={`text-sm font-semibold leading-tight ${active(item.href) ? 'text-pink-700' : 'text-gray-700 group-hover:text-pink-700'}`}>
+                          {t(item.label)}
+                          {item.badge && <span className="ml-1.5 align-middle text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-700">{t(item.badge)}</span>}
                         </div>
-                        <div className="text-xs text-gray-400 mt-0.5 leading-tight">{item.sub}</div>
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight">{t(item.sub)}</div>
                       </Link>
                     ))}
                   </div>
@@ -225,13 +221,13 @@ export default function Navbar() {
             </div>
 
             {/* Pet ID */}
-            <Link href="/pet-id-card" className={navLink(active('/pet-id-card'))}>Pet ID</Link>
+            <Link href="/pet-id-card" className={navLink(active('/pet-id-card'))}>{t('petId')}</Link>
 
             {/* ความรู้ */}
-            <Link href="/pet-knowledge" className={navLink(active('/pet-knowledge'))}>ความรู้</Link>
+            <Link href="/pet-knowledge" className={navLink(active('/pet-knowledge'))}>{t('knowledge')}</Link>
 
             {/* พาร์ทเนอร์ */}
-            <Link href="/partner" className={navLink(active('/partner'))}>พาร์ทเนอร์</Link>
+            <Link href="/partner" className={navLink(active('/partner'))}>{t('partnerShort')}</Link>
           </div>
 
           {/* ── Desktop right side ────────────────────────────────────── */}
@@ -243,7 +239,8 @@ export default function Navbar() {
                 <button
                   onClick={() => { setWorkspaceOpen(o => !o); setExploreOpen(false); setUserOpen(false); }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-600 text-sm font-semibold hover:bg-gray-100 transition-colors"
-                  title="เปลี่ยนพื้นที่ใช้งาน"
+                  title={t('switchWorkspace')}
+                  aria-label={t('switchWorkspace')}
                 >
                   <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={36} height={36} style={{ objectFit: 'contain' }} />
                   <span className="max-w-[110px] truncate">{activeWorkspace?.name ?? '—'}</span>
@@ -253,15 +250,15 @@ export default function Navbar() {
                 {workspaceOpen && (
                   <div className="absolute top-full right-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
-                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">พื้นที่ใช้งาน</div>
+                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('workspaces')}</div>
                       {workspaces.map((ws) => (
                         <button key={ws.id} onClick={() => switchWs(ws)}
-                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
+                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-700' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-700'}`}
                         >
                           <img src={wsIconSrc(ws.type)} alt="" width={44} height={44} style={{ objectFit: 'contain', flexShrink: 0 }} />
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold truncate leading-tight">{ws.name}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>
+                            <div className="text-[11px] text-gray-500 mt-0.5">{wsLabel(ws.type)}</div>
                           </div>
                           {ws.id === activeWorkspace?.id && (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
@@ -270,10 +267,10 @@ export default function Navbar() {
                       ))}
                       <div className="border-t border-gray-100 mt-1 pt-1">
                         <button onClick={() => { setWorkspaceOpen(false); go('/partner'); }}
-                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-500 hover:text-pink-500 hover:bg-gray-50 transition-colors font-medium"
+                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:text-pink-700 hover:bg-gray-50 transition-colors font-medium"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>
-                          เพิ่มพื้นที่ใหม่
+                          {t('addWorkspace')}
                         </button>
                       </div>
                     </div>
@@ -284,8 +281,7 @@ export default function Navbar() {
 
             {/* Language switcher */}
             <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-0.5">
-              <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
-              <button onClick={() => switchLocale('en')} className={langBtn(locale === 'en')}>EN</button>
+              <LangButtons locale={locale} onSwitch={switchLocale} className={langBtn} t={t} />
             </div>
 
             {/* Auth */}
@@ -299,7 +295,7 @@ export default function Navbar() {
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                   </svg>
-                  โปรไฟล์
+                  {t('profileShort')}
                   <ChevronDown open={userOpen} />
                 </button>
 
@@ -307,7 +303,7 @@ export default function Navbar() {
                   <div className="absolute top-full right-0 mt-1 w-48 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
                       <button onClick={() => go('/profile')} className={dropItem(active('/profile'))}>
-                        โปรไฟล์ของฉัน
+                        {t('profile')}
                       </button>
                     </div>
                   </div>
@@ -318,7 +314,7 @@ export default function Navbar() {
                 href="/login"
                 className="px-4 py-1.5 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors shadow-sm shadow-pink-200"
               >
-                เข้าสู่ระบบ
+                {t('login')}
               </Link>
             )}
           </div>
@@ -331,7 +327,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => { setWorkspaceOpen(o => !o); setMobileOpen(false); }}
-                  aria-label="เปลี่ยนพื้นที่ใช้งาน"
+                  aria-label={t('switchWorkspace')}
                   className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
                   <img src={wsIconSrc(activeWorkspace?.type ?? 'personal')} alt="" width={44} height={44} style={{ objectFit: 'contain' }} />
@@ -340,15 +336,15 @@ export default function Navbar() {
                 {workspaceOpen && (
                   <div className="absolute top-full right-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
-                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">พื้นที่ใช้งาน</div>
+                      <div className="px-4 pt-1 pb-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('workspaces')}</div>
                       {workspaces.map((ws) => (
                         <button key={ws.id} onClick={() => switchWs(ws)}
-                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-500'}`}
+                          className={`flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm transition-colors ${ws.id === activeWorkspace?.id ? 'bg-pink-50 text-pink-700' : 'text-gray-600 hover:bg-gray-50 hover:text-pink-700'}`}
                         >
                           <img src={wsIconSrc(ws.type)} alt="" width={44} height={44} style={{ objectFit: 'contain', flexShrink: 0 }} />
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold truncate leading-tight">{ws.name}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5">{wsLabel(ws.type)}</div>
+                            <div className="text-[11px] text-gray-500 mt-0.5">{wsLabel(ws.type)}</div>
                           </div>
                           {ws.id === activeWorkspace?.id && (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
@@ -357,10 +353,10 @@ export default function Navbar() {
                       ))}
                       <div className="border-t border-gray-100 mt-1 pt-1">
                         <button onClick={() => { setWorkspaceOpen(false); go('/partner'); }}
-                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-500 hover:text-pink-500 hover:bg-gray-50 transition-colors font-medium"
+                          className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:text-pink-700 hover:bg-gray-50 transition-colors font-medium"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>
-                          เพิ่มพื้นที่ใหม่
+                          {t('addWorkspace')}
                         </button>
                       </div>
                     </div>
@@ -371,7 +367,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setMobileOpen(o => !o)}
-              aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+              aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
               aria-expanded={mobileOpen}
               className="w-11 h-11 grid place-items-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
             >
@@ -392,22 +388,22 @@ export default function Navbar() {
           <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">
 
             {/* Main links */}
-            <button onClick={() => go('/')} className={dropItem(active('/'))}>หน้าแรก</button>
-            <button onClick={() => go('/pet-id-card')} className={dropItem(active('/pet-id-card'))}>Pet ID Card</button>
-            <button onClick={() => go('/pet-knowledge')} className={dropItem(active('/pet-knowledge'))}>ความรู้สัตว์เลี้ยง</button>
-            <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>พาร์ทเนอร์</button>
+            <button onClick={() => go('/')} className={dropItem(active('/'))}>{t('home')}</button>
+            <button onClick={() => go('/pet-id-card')} className={dropItem(active('/pet-id-card'))}>{t('petIdCard')}</button>
+            <button onClick={() => go('/pet-knowledge')} className={dropItem(active('/pet-knowledge'))}>{t('knowledgeFull')}</button>
+            <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>{t('partnerShort')}</button>
 
             {/* Explore group */}
             <div className="border-t border-gray-100 mt-1.5 pt-1.5">
-              <div className="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">สำรวจ</div>
+              <div className="px-4 py-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('explore')}</div>
               {EXPLORE.map(item => (
                 <button
                   key={item.key}
                   onClick={() => go(item.href)}
                   className={dropItem(active(item.href))}
                 >
-                  {item.label}
-                  {item.badge && <span className="ml-1.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-500">{item.badge}</span>}
+                  {t(item.label)}
+                  {item.badge && <span className="ml-1.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-pink-50 text-pink-700">{t(item.badge)}</span>}
                 </button>
               ))}
             </div>
@@ -415,8 +411,7 @@ export default function Navbar() {
             {/* Language + Auth */}
             <div className="border-t border-gray-100 mt-1.5 pt-2 pb-1 px-1 flex items-center justify-between">
               <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 p-0.5">
-                <button onClick={() => switchLocale('th')} className={langBtn(locale === 'th')}>TH</button>
-                <button onClick={() => switchLocale('en')} className={langBtn(locale === 'en')}>EN</button>
+                <LangButtons locale={locale} onSwitch={switchLocale} className={langBtn} t={t} />
               </div>
               {!session && (
                 <Link
@@ -424,7 +419,7 @@ export default function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="px-4 py-1.5 rounded-xl bg-pink-500 text-white text-sm font-bold hover:bg-pink-600 transition-colors"
                 >
-                  เข้าสู่ระบบ
+                  {t('login')}
                 </Link>
               )}
             </div>
@@ -437,7 +432,7 @@ export default function Navbar() {
 
     {/* ── Floating Bottom Tab Bar (mobile only, hidden on farm dashboard) ── */}
     {!pathname.includes('/farm-dashboard') && <nav
-      aria-label="เมนูหลัก"
+      aria-label={t('mainMenu')}
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: 'rgba(255,255,255,0.92)',
@@ -452,7 +447,7 @@ export default function Navbar() {
 
         {/* หน้าแรก */}
         <TabBtn
-          label="หน้าแรก"
+          label={t('home')}
           active={pathname === '/'}
           onClick={() => go('/')}
           icon={<img src="/icons/icon-tab-home.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
@@ -460,7 +455,7 @@ export default function Navbar() {
 
         {/* สัตว์เลี้ยง */}
         <TabBtn
-          label="สัตว์เลี้ยง"
+          label={t('tabPets')}
           active={(pathname.startsWith('/pets') && !pathname.includes('/create')) || pathname === '/profile/pets'}
           onClick={() => guarded('/profile/pets')}
           icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
@@ -470,7 +465,7 @@ export default function Navbar() {
         <div className="flex-1 flex flex-col items-center justify-center" style={{ position: 'relative' }}>
           <button
             onClick={() => setShowQrSheet(true)}
-            aria-label="QR สัตว์เลี้ยง"
+            aria-label={t('tabQr')}
             style={{
               position: 'absolute',
               top: -22,
@@ -487,12 +482,12 @@ export default function Navbar() {
           >
             <img src="/icons/icon-scan-qr-code.png" alt="QR" width={64} height={64} style={{ objectFit: 'contain' }} />
           </button>
-          <span style={{ marginTop: 40, fontSize: 10, fontWeight: 600, color: '#e84677', lineHeight: 1 }}>QR</span>
+          <span style={{ marginTop: 40, fontSize: 10, fontWeight: 600, color: '#c4325f', lineHeight: 1 }}>QR</span>
         </div>
 
         {/* ชั่งน้ำหนัก */}
         <TabBtn
-          label="ชั่งน้ำหนัก"
+          label={t('tabWeigh')}
           active={pathname.startsWith('/weigh-in')}
           onClick={() => guarded('/weigh-in')}
           icon={<img src="/icons/icon-weight.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
@@ -500,7 +495,7 @@ export default function Navbar() {
 
         {/* โปรไฟล์ */}
         <TabBtn
-          label="โปรไฟล์"
+          label={t('profileShort')}
           active={pathname === '/profile'}
           onClick={() => guarded('/profile')}
           icon={<img src="/icons/icon-tab-profile.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
@@ -511,6 +506,19 @@ export default function Navbar() {
 
     {showQrSheet && <PetQRSheet onClose={() => setShowQrSheet(false)} />}
   </>
+  );
+}
+
+// TH / EN switch: the visible label stays "TH" / "EN"; screen readers get the language name, the pressed state and
+// the right pronunciation (lang attribute)
+function LangButtons({ locale, onSwitch, className, t }: {
+  locale: string; onSwitch: (l: 'th' | 'en') => void; className: (on: boolean) => string; t: (k: string) => string;
+}) {
+  return (
+    <span role="group" aria-label={t('language')} className="contents">
+      <button type="button" lang="th" onClick={() => onSwitch('th')} className={className(locale === 'th')} aria-pressed={locale === 'th'}>TH<span className="sr-only"> — {t('langTh')}</span></button>
+      <button type="button" lang="en" onClick={() => onSwitch('en')} className={className(locale === 'en')} aria-pressed={locale === 'en'}>EN<span className="sr-only"> — {t('langEn')}</span></button>
+    </span>
   );
 }
 
@@ -527,7 +535,7 @@ function TabBtn({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className="flex-1 flex flex-col items-center justify-center gap-0.5"
-      style={{ color: active ? '#e84677' : '#b0a0a8' }}
+      style={{ color: active ? '#c4325f' : '#6f6066' }}   // --pink-deep / darker muted: ≥ 4.5:1 for 10px labels
     >
       <span style={{
         width: 72,

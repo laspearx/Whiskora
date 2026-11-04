@@ -12,7 +12,284 @@
     "about": "About Us",
     "login": "Sign In",
     "logout": "Sign Out",
-    "knowledgeFull": "Pet Knowledge"
+    "knowledgeFull": "Pet Knowledge",
+    "explore": "Explore",
+    "petId": "Pet ID",
+    "petIdCard": "Pet ID Card",
+    "partnerShort": "Partners",
+    "farmHub": "Pet farms",
+    "farmHubSub": "Farms on Whiskora and pets ready for a new home",
+    "petShopSub": "Products from shops on Whiskora",
+    "clinics": "Clinics & services",
+    "clinicsSub": "Find vets, grooming and pet boarding",
+    "communityFull": "Pet lovers community",
+    "communitySub": "In development, not open yet",
+    "soon": "Soon",
+    "toolsLabel": "Tools",
+    "toolsSub": "Age, calorie and due-date calculators",
+    "aboutFull": "About Whiskora",
+    "aboutSub": "Our mission, team and vision",
+    "profileShort": "Profile",
+    "workspaces": "Workspaces",
+    "switchWorkspace": "Switch workspace",
+    "addWorkspace": "Add a workspace",
+    "wsPersonal": "Personal",
+    "wsFarm": "Farm",
+    "wsShop": "Shop",
+    "wsService": "Service",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mainMenu": "Main menu",
+    "language": "Language",
+    "langTh": "Thai",
+    "langEn": "English",
+    "tabPets": "Pets",
+    "tabQr": "Pet QR",
+    "tabWeigh": "Weigh-in"
+  },
+  "meta": {
+    "siteTitle": "Whiskora | Pet ID, QR profiles and trusted pet farms",
+    "siteDescription": "Whiskora is a pet platform to create a free Pet ID, share a QR profile, keep health records, pedigrees and documents, and find verified pet farms.",
+    "farmHubTitle": "Pet farms and pets ready for a new home",
+    "farmHubDescription": "Browse pet farms on Whiskora and the pets that are ready for a new home or open for reservation — with verified-farm badges, province and price.",
+    "searchTitle": "Search farms",
+    "searchDescription": "Search pet farms on Whiskora by name.",
+    "marketplaceTitle": "Pet product marketplace",
+    "marketplaceDescription": "Find food, toys, accessories and care products for your pet from Whiskora partner shops.",
+    "serviceHubTitle": "Pet clinics and services",
+    "serviceHubDescription": "Find vets, grooming, pet hotels and training from service providers on Whiskora.",
+    "communityTitle": "Pet lovers community (coming soon)",
+    "communityDescription": "A place for pet lovers to share experiences on Whiskora — coming soon.",
+    "aboutTitle": "About Whiskora",
+    "aboutDescription": "Our mission, our team and what you can do on Whiskora, the digital platform for pet lovers."
+  },
+  "common": {
+    "all": "All",
+    "statusAvailable": "Ready for a new home",
+    "statusOpenReserve": "Open for reservation",
+    "priceOnRequest": "Price on request",
+    "ageLabel": "Age {age}",
+    "ageUnknown": "Age not specified",
+    "male": "Male",
+    "female": "Female",
+    "verifiedFarm": "Verified farm",
+    "back": "Back",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "loadErrorTitle": "Couldn't load this page",
+    "loadErrorText": "Check your connection and try again.",
+    "bangkok": "Bangkok",
+    "bangkokDistrict": "{district}, Bangkok",
+    "otherPets": "Other pets",
+    "backHome": "Back to home",
+    "viewDetails": "View details",
+    "browseFarms": "Browse farms"
+  },
+  "landing": {
+    "heroLabel": "Whiskora introduction",
+    "heroTitle": "All your pet's records in one place",
+    "heroTitleHighlight": "shared with a QR code",
+    "heroCopy": "Create a free Pet ID, log vaccines, weight and documents, and let carers scan a QR code to see only what you allow — for owners and farms alike.",
+    "ctaCreate": "Create a free Pet ID",
+    "ctaPreview": "See a sample Pet ID",
+    "ctaCreateReal": "Create yours for free",
+    "readyNowLabel": "Available now",
+    "noteIdCard": "Free Pet ID card",
+    "noteQr": "QR profile",
+    "noteHealth": "Health records",
+    "problemsTitle": "Your pet's records shouldn't get lost",
+    "problemsHighlight": "between notebooks, chats and memory",
+    "problemsCopy": "Whiskora keeps the information you need most with each pet, ready to open and share when it matters.",
+    "problem": {
+      "health": {
+        "title": "Health records are scattered",
+        "desc": "Vaccines, weight, appointments and document photos are spread across notebooks, chats and photo albums."
+      },
+      "repeat": {
+        "title": "Repeating the same details",
+        "desc": "Every boarding stay, vet visit or new carer means explaining the same information again."
+      },
+      "farm": {
+        "title": "Farm details are hard to check",
+        "desc": "New owners want to see the farm, the parents and health details before deciding — a typical sale post isn't enough."
+      },
+      "transfer": {
+        "title": "Records get lost when pets change homes",
+        "desc": "When a pet gets a new owner, the history kept by the farm or previous owner often isn't passed on."
+      }
+    },
+    "previewLabel": "Sample profile page (demo data)",
+    "previewDemo": "Demo data",
+    "previewBirthday": "Birthday",
+    "previewBreed": "Breed",
+    "previewLastVaccine": "Latest vaccine",
+    "previewRecorded": "Recorded",
+    "previewContact": "Contact owner",
+    "previewContactValue": "As the owner chooses",
+    "previewQrText": "Scanning shows only what the owner has made visible",
+    "showcaseTitle": "See how it looks before you sign up",
+    "showcaseHighlight": "Pet ID card and QR profile",
+    "showcaseCopy": "Try a sample card, pick a theme and see what people who scan the QR code will see — all with demo data, no sign-in needed.",
+    "ownersTitle": "For pet owners",
+    "ownersHighlight": "available today",
+    "ownersCopy": "Start with one pet profile and add health records and documents when it suits you.",
+    "availableLabel": "Available",
+    "owner": {
+      "id": {
+        "title": "Pet ID card with QR",
+        "desc": "Create a digital ID card to keep on your phone or print."
+      },
+      "qr": {
+        "title": "Profile page when the QR is scanned",
+        "desc": "Anyone who scans sees the profile without signing up — and only the information you made visible."
+      },
+      "health": {
+        "title": "Health records, vaccines and weight",
+        "desc": "Keep vaccines, appointments, weight and care activities in one profile."
+      },
+      "docs": {
+        "title": "Important documents",
+        "desc": "Store photos of vaccine books, certificates and other documents for each pet."
+      }
+    },
+    "farmsTitle": "For farms and breeders",
+    "farmsHighlight": "information new owners can check",
+    "farmsCopy": "Farms with the “Verified farm” badge have had their identity documents checked by our team; farms that haven't are clearly marked on every page.",
+    "farm": {
+      "profile": {
+        "title": "Farm profile and pets ready for a new home",
+        "desc": "Show your farm and the pets that are ready for a new home or open for reservation in the farm directory."
+      },
+      "lineage": {
+        "title": "Litters, parents and pedigree",
+        "desc": "Record matings, births and puppy or kitten weights, with a pedigree that links up automatically."
+      },
+      "transfer": {
+        "title": "Reservations and owner transfer",
+        "desc": "Interested buyers send reservation requests, and the new owner accepts the profile transfer themselves."
+      },
+      "verify": {
+        "title": "Farm verification",
+        "desc": "Send your documents to our team; once approved, your farm gets the \"Verified farm\" badge."
+      }
+    },
+    "farmsBrowse": "Browse farms",
+    "farmsRegister": "Register your farm",
+    "roadmapTitle": "In development (not available yet)",
+    "roadmap": {
+      "booking": "Booking clinics and services through Whiskora",
+      "community": "Pet lovers community",
+      "articles": "Full knowledge articles"
+    },
+    "faqTitle": "Frequently asked questions",
+    "faqCopy": "Quick answers before you start. For anything else, reach our team from the contact page.",
+    "faq": {
+      "what": {
+        "q": "What is Whiskora?",
+        "a": "Whiskora keeps your pet's Pet ID, QR profile, health records, documents and farm details in one place, so caring for your pet and sharing its information is easier."
+      },
+      "cost": {
+        "q": "Does Whiskora cost anything?",
+        "a": "Pet owners create profiles and Pet ID cards for free. Farms, shops and services can join for free during the Genesis Program."
+      },
+      "scan": {
+        "q": "What do people see when they scan the QR code?",
+        "a": "They see the pet's public profile. Health, pedigree and documents follow the visibility the owner or farm has set, and the owner's address is never shown."
+      },
+      "verified": {
+        "q": "What does the \"Verified farm\" badge mean?",
+        "a": "It means the Whiskora team has checked the farm owner's identity documents. It does not certify the health or pedigree of individual animals. Farms that haven't been checked are shown as not verified."
+      },
+      "gps": {
+        "q": "Can the QR code track my pet's location?",
+        "a": "No. The QR code links to the profile page; it isn't a GPS device. Someone who finds your pet has to scan it to see the information."
+      },
+      "clinics": {
+        "q": "Can clinics and service providers use Whiskora yet?",
+        "a": "Providers can already register a storefront; online booking is still in development. Meanwhile, owners can share their pet's records with a clinic through the QR code."
+      }
+    },
+    "ctaBandLabel": "Start using Whiskora",
+    "ctaBandTitle": "Start with one pet profile",
+    "ctaBandCopy": "Create a free Pet ID, add health records and documents over time, and share the QR code with the people who look after your pet when you're ready.",
+    "orgDescription": "A pet-tech platform for Pet ID, QR profiles, health records, pedigrees, important documents, pet farms and trustworthy sharing of pet information.",
+    "pageName": "Whiskora | Trusted Pet Identity, Health Records and QR Profile",
+    "pageDescription": "Whiskora connects Pet ID, QR profiles, health records, farms, pedigrees, documents and sharing of pet information in one platform."
+  },
+  "farmHub": {
+    "title": "Pet Market",
+    "subtitle": "Farms on Whiskora and pets ready for a new home or open for reservation",
+    "searchFarms": "Search farms or provinces",
+    "searchPets": "Search breeds, farms or provinces",
+    "viewLabel": "Show",
+    "viewFarms": "Farms",
+    "viewPets": "Pets",
+    "speciesLabel": "Species",
+    "noFarmsTitle": "No farms found",
+    "noPetsTitle": "No pets found",
+    "emptyHint": "Try another search or species",
+    "readyCount": "{n} ready or open for reservation",
+    "noneReady": "None available yet",
+    "statusReadyNow": "Ready now"
+  },
+  "search": {
+    "title": "Search results",
+    "queryLabel": "Results for \"{q}\"",
+    "noQueryTitle": "Type a farm name to search",
+    "noQueryText": "Use the search box on the pet farms page, or add ?q= to the link.",
+    "browseFarms": "Browse all farms",
+    "emptyTitle": "No farms match your search",
+    "emptyText": "Try a different search term.",
+    "farmFallback": "{species} farm on Whiskora",
+    "petsFallback": "Pet"
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "subtitle": "Quality products for your pet from our partner shops",
+    "searchLabel": "Search products, brands or shops",
+    "categoryLabel": "Product category",
+    "speciesLabel": "Species",
+    "category": {
+      "food": "Food",
+      "toys": "Toys",
+      "gear": "Accessories",
+      "beds": "Beds & cages",
+      "care": "Health & grooming"
+    },
+    "noProductsTitle": "No products for sale yet",
+    "noProductsText": "Partner shops are joining step by step.",
+    "openShop": "Open a shop on Whiskora",
+    "noMatchTitle": "No products in this category",
+    "noMatchText": "Try another search or category.",
+    "sale": "Sale {n}%",
+    "originalPrice": "Was {price}"
+  },
+  "serviceHub": {
+    "title": "Clinics & services",
+    "subtitle": "Find professional care for your pet",
+    "searchLabel": "Search services or clinics",
+    "categoryLabel": "Service category",
+    "speciesLabel": "Species",
+    "category": {
+      "grooming": "Grooming",
+      "clinic": "Clinics & hospitals",
+      "hotel": "Pet hotels",
+      "training": "Training",
+      "other": "Other services"
+    },
+    "noServicesTitle": "No clinics or services yet",
+    "noServicesText": "Whiskora is welcoming service providers; online booking isn't available yet.",
+    "registerService": "Register your service",
+    "noMatchTitle": "No services match your filters",
+    "noMatchText": "Try another search or category.",
+    "addressFallback": "Professional pet care"
+  },
+  "community": {
+    "badge": "Coming soon",
+    "titleLead": "Whiskora",
+    "titleWord": "Community",
+    "copy": "Coming soon: a warm, safe place for pet lovers to share experiences, learn from experienced breeders and show off their pets.",
+    "quote": "\"Because good friendships start with care.\""
   },
   "footer": {
     "sectionUsers": "Users",
@@ -239,37 +516,58 @@
   },
   "about": {
     "title": "About Whiskora",
-    "subtitle": "About Us",
-    "heroTagline": "The digital platform for pet lovers\nConnect, care for, and manage your pets in one place",
-    "statPets": "Registered Pets",
-    "statFarms": "Breeders & Farms",
-    "statSpecies": "Pet Species",
-    "statFree": "Free, No Fees",
-    "missionTitle": "Why Was Whiskora Created?",
-    "featuresTitle": "What You Can Do on Whiskora",
-    "tryIt": "Try It",
-    "mission1Title": "Built for Every Pet",
-    "mission1Desc": "Whiskora was born from the belief that every pet deserves the best care. We build tools that help owners manage their pets systematically and with data-backed decisions.",
-    "mission2Title": "A Community Connecting Breeders",
-    "mission2Desc": "A central hub where professional breeders, farms, and general pet owners can connect, share information, and find their ideal pet with transparency.",
-    "mission3Title": "Transparency & Trustworthiness",
-    "mission3Desc": "Our identity verification and traceable pet history system ensures every transaction and adoption is built on accurate, trustworthy data.",
-    "mission4Title": "Accessible Knowledge",
-    "mission4Desc": "We compile expert knowledge on pet health, nutrition, and behavior so every owner can make informed decisions.",
-    "founderNote": "Whiskora was built out of love for animals. We believe every cat, dog, and pet deserves the best possible care. So we built tools that make caring for pets easy, fun, and organized. Whether you're a new pet owner or an experienced breeder, Whiskora is always ready to be your trusted companion.",
-    "founderSig": "— The Whiskora Team 🐾",
-    "feat1Title": "Pet Profile",
-    "feat1Desc": "Create digital profiles for each pet with health history and vaccines.",
-    "feat2Title": "Farm & Breeder",
-    "feat2Desc": "Create a farm page and manage breeding litters professionally.",
-    "feat3Title": "Pet ID Card",
-    "feat3Desc": "A digital card with QR code that others can scan to view your pet's info instantly.",
-    "feat4Title": "Knowledge Base",
-    "feat4Desc": "Articles and knowledge for owners of all pet types.",
-    "feat5Title": "Pet Tools",
-    "feat5Desc": "Calculators and decision tools for owners: food, vaccines, breeding, and more.",
-    "feat6Title": "Finance Tracker",
-    "feat6Desc": "Track pet expenses and view monthly and yearly summaries easily."
+    "subtitle": "The digital platform for pet lovers",
+    "tagline": "Connect, care for and manage your pets in one place",
+    "whyLabel": "Why Whiskora exists",
+    "mission": {
+      "everyPet": {
+        "title": "Built for every pet",
+        "desc": "Whiskora started from the belief that every pet deserves the best care. We build tools that help owners care for their pets in an organised, well-informed way."
+      },
+      "community": {
+        "title": "A community that connects breeders",
+        "desc": "A shared space where professional breeders, farms and pet owners connect, exchange information and find the right pet, openly."
+      },
+      "trust": {
+        "title": "Transparency and trust",
+        "desc": "Identity verification and traceable pet records mean every sale and adoption rests on accurate, trustworthy information."
+      },
+      "knowledge": {
+        "title": "Accessible knowledge",
+        "desc": "Expert knowledge on pet health, nutrition and behaviour, so every owner can make informed decisions."
+      }
+    },
+    "featuresLabel": "What you can do on Whiskora",
+    "feature": {
+      "profile": {
+        "title": "Pet profile",
+        "desc": "Create a digital profile for each pet, with health records and vaccines."
+      },
+      "farm": {
+        "title": "Farms & breeders",
+        "desc": "Create a farm page and manage your litters professionally."
+      },
+      "idCard": {
+        "title": "Pet ID card",
+        "desc": "A digital card with a QR code others can scan to see your pet's details instantly."
+      },
+      "knowledge": {
+        "title": "Knowledge base",
+        "desc": "Articles and guides for every kind of pet owner."
+      },
+      "tools": {
+        "title": "Pet tools",
+        "desc": "Calculators and decision helpers for owners — food, vaccines and breeding."
+      },
+      "finance": {
+        "title": "Finance tracker",
+        "desc": "Log pet expenses and see monthly and yearly summaries."
+      }
+    },
+    "tryIt": "Try it",
+    "noteFrom": "From the Whiskora team",
+    "noteText": "Whiskora was built out of love for pets. We believe every cat, dog and every other pet deserves the best care, so we build tools that make caring for them easy, enjoyable and organised. Whether you're a first-time owner or a professional breeder, Whiskora is here as a partner you can rely on.",
+    "noteSig": "— The Whiskora team"
   },
   "petIdCard": {
     "title": "Pet ID Card",

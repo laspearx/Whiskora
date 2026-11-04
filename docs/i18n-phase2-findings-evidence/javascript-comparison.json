@@ -1,0 +1,102 @@
+{
+  "baseline": "e5e3273 (aa1b03e plus shared build fix)",
+  "root_before": [
+    {
+      "path": "static/chunks/app/layout-63a92b529dbd472c.js",
+      "rawBytes": 60560,
+      "gzipBytes": 13522,
+      "catalogueSentinel": true
+    }
+  ],
+  "root_after": [
+    {
+      "path": "static/chunks/app/layout-b2f219b72720427f.js",
+      "rawBytes": 2232,
+      "gzipBytes": 1027,
+      "catalogueSentinel": false
+    }
+  ],
+  "before_total_raw": 3519595,
+  "after_total_raw": 3460932,
+  "before_total_gzip": 1046946,
+  "after_total_gzip": 1034430,
+  "before_catalogue_chunks": [
+    "static/chunks/app/layout-63a92b529dbd472c.js"
+  ],
+  "after_catalogue_chunks": [],
+  "routes": [
+    {
+      "route": "/en/terms",
+      "before_raw": 820674,
+      "after_raw": 762346,
+      "raw_reduction": 58328,
+      "before_gzip": 231514,
+      "after_gzip": 219019,
+      "gzip_reduction": 12495
+    },
+    {
+      "route": "/th/terms",
+      "before_raw": 820674,
+      "after_raw": 762346,
+      "raw_reduction": 58328,
+      "before_gzip": 231514,
+      "after_gzip": 219019,
+      "gzip_reduction": 12495
+    },
+    {
+      "route": "/en/marketplace",
+      "before_raw": 782922,
+      "after_raw": 724735,
+      "raw_reduction": 58187,
+      "before_gzip": 225145,
+      "after_gzip": 212710,
+      "gzip_reduction": 12435
+    },
+    {
+      "route": "/th/marketplace",
+      "before_raw": 782922,
+      "after_raw": 724735,
+      "raw_reduction": 58187,
+      "before_gzip": 225145,
+      "after_gzip": 212710,
+      "gzip_reduction": 12435
+    },
+    {
+      "route": "/en/service-hub",
+      "before_raw": 782442,
+      "after_raw": 723638,
+      "raw_reduction": 58804,
+      "before_gzip": 224856,
+      "after_gzip": 212280,
+      "gzip_reduction": 12576
+    },
+    {
+      "route": "/th/service-hub",
+      "before_raw": 782442,
+      "after_raw": 723638,
+      "raw_reduction": 58804,
+      "before_gzip": 224856,
+      "after_gzip": 212280,
+      "gzip_reduction": 12576
+    },
+    {
+      "route": "/en/about",
+      "before_raw": 779037,
+      "after_raw": 720709,
+      "raw_reduction": 58328,
+      "before_gzip": 222971,
+      "after_gzip": 210476,
+      "gzip_reduction": 12495
+    },
+    {
+      "route": "/th/about",
+      "before_raw": 779037,
+      "after_raw": 720709,
+      "raw_reduction": 58328,
+      "before_gzip": 222971,
+      "after_gzip": 210476,
+      "gzip_reduction": 12495
+    }
+  ],
+  "measurement": "Actual JS response bodies in fresh browser contexts plus on-disk production JS. Gzip computed per file, not claimed wire bytes. No HTML in these totals."
+}

@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { speciesTh } from "@/lib/species";
+import { speciesName } from "@/lib/species";
+import { useLocale, useTranslations } from "@/i18n/context";
+import { formatAge, formatPrice } from "@/lib/format";
 import { PUBLIC_LISTING_STATUSES, isPublicListing } from "@/lib/trust";
+import { PET_STATUS } from "@/lib/constants";
 import Link from "next/link";
 
 // ─── Premium CI Tokens ─────────────────────────────────────────────────────
@@ -28,26 +31,29 @@ const Icon = {
   Farm: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Pin: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   Verified: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="#E84677"><path d="M12 2l2.4 1.8 3 .2.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3 .2L12 22l-2.4-1.8-3-.2-.9-2.9L3.3 15l.9-2.9-.9-2.9 2.4-1.8.9-2.9 3-.2L12 2z"/><path d="M9.5 12.5l1.8 1.8 3.7-3.7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  Male: () => <img src="/icons/icon-men.png" alt="male" style={{width:22,height:22,objectFit:'contain'}} />,
-  Female: () => <img src="/icons/icon-women.png" alt="female" style={{width:22,height:22,objectFit:'contain'}} />,
+  Male: ({ label }: { label: string }) => <img src="/icons/icon-men.png" alt={label} style={{width:22,height:22,objectFit:'contain'}} />,
+  Female: ({ label }: { label: string }) => <img src="/icons/icon-women.png" alt={label} style={{width:22,height:22,objectFit:'contain'}} />,
   ImagePlaceholder: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
+
+const ALL = "all";   // UI-only filter value
 
 export default function FarmHubPage() {
   const [viewMode, setViewMode] = useState<'farms' | 'pets'>('farms');
   const [farms, setFarms] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activePetType, setActivePetType] = useState("ทั้งหมด");
+  const [activePetType, setActivePetType] = useState(ALL);
+  const t = useTranslations("farmHub");
+  const tc = useTranslations("common");
+  const locale = useLocale();
 
   const petTypes = [
-    { label: "ทั้งหมด", value: "ทั้งหมด" },
-    { label: "แมว", value: "cat" },
-    { label: "สุนัข", value: "dog" },
-    { label: "กระต่าย", value: "rabbit" },
-    { label: "นก", value: "bird" },
-    { label: "สัตว์อื่นๆ", value: "other" },
+    { label: tc("all"), value: ALL },
+    ...(["cat", "dog", "rabbit", "bird"] as const).map((id) => ({ label: speciesName(id, locale), value: id })),
+    { label: tc("otherPets"), value: "other" },
   ];
 
   useEffect(() => {
@@ -56,6 +62,7 @@ export default function FarmHubPage() {
 
   const fetchData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [{ data: farmsData, error: farmsErr }, { data: petsData, error: petsErr }] = await Promise.all([
         supabase.from("farms").select("id, farm_name, cover_url, image_url, species, province, district, is_verified"),
@@ -71,6 +78,7 @@ export default function FarmHubPage() {
       setPets((petsData || []).filter(isPublicListing));
     } catch (error) {
       console.error("Error fetching pet market data:", error);
+      setLoadError(true);   // a failed load is an error, not "no farms" (audit UI-09)
     } finally {
       setLoading(false);
     }
@@ -79,53 +87,39 @@ export default function FarmHubPage() {
   function farmLocation(farm: any): string {
     if (!farm) return '';
     const { province, district } = farm;
-    if (province === 'กรุงเทพมหานคร') return district ? `เขต${district}` : 'กรุงเทพฯ';
+    // province / district names are data (kept as stored); only the Bangkok wording is UI text
+    if (province === 'กรุงเทพมหานคร') return district ? tc('bangkokDistrict', { district }) : tc('bangkok');
     return province || '';
   }
 
-  function calcAge(birthDate: string | null) {
-    if (!birthDate) return null;
-    const birth = new Date(birthDate);
-    const now = new Date();
-    let years = now.getFullYear() - birth.getFullYear();
-    let months = now.getMonth() - birth.getMonth();
-    if (months < 0) { years--; months += 12; }
-    if (years > 0) return `${years} ปี${months > 0 ? ` ${months} เดือน` : ''}`;
-    if (months > 0) return `${months} เดือน`;
-    const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
-    return days > 0 ? `${days} วัน` : null;
-  }
-
-  function thaiBreedName(breed: string | null, species?: string): string {
-    if (!breed) return speciesTh(species) || '—';
-    const hasThai = /[฀-๿]/.test(breed);
-    if (!hasThai) return breed;
+  // breeds are stored as entered, often "English (ไทย)": show the part in the UI language when both exist
+  function breedName(breed: string | null, species?: string): string {
+    if (!breed) return speciesName(species, locale) || '—';
     const parts = breed.split('(');
-    if (parts.length > 1) {
-      const first = parts[0].trim();
-      const inParens = parts[1].replace(')', '').trim();
-      if (/[฀-๿]/.test(first)) return first;
-      if (/[฀-๿]/.test(inParens)) return inParens;
-      return first;
-    }
-    return breed;
+    if (parts.length < 2) return breed;
+    const first = parts[0].trim();
+    const inParens = parts[1].replace(')', '').trim();
+    const thai = (x: string) => /[฀-๿]/.test(x);
+    if (locale === 'en') return !thai(first) ? first : !thai(inParens) ? inParens : first;
+    return thai(first) ? first : thai(inParens) ? inParens : first;
   }
 
   // ─── สัตว์เลี้ยงพร้อมขาย ───
   const q = searchQuery.toLowerCase().trim();
-  const petTypeFiltered = activePetType === "ทั้งหมด" ? pets : pets.filter(p => p.species === activePetType);
+  const petTypeFiltered = activePetType === ALL ? pets : pets.filter(p => p.species === activePetType);
   const filteredPets = !q ? petTypeFiltered : petTypeFiltered.filter(p =>
     p.breed?.toLowerCase().includes(q) ||
     p.farms?.farm_name?.toLowerCase().includes(q) ||
     p.farms?.address?.toLowerCase().includes(q) ||
-    speciesTh(p.species)?.toLowerCase().includes(q)
+    speciesName(p.species, 'th').toLowerCase().includes(q) ||
+    speciesName(p.species, 'en').toLowerCase().includes(q)
   );
 
   // ─── ฟาร์มพาร์ทเนอร์ ───
   const readyCountForFarm = (farmId: number) =>
     petTypeFiltered.filter(p => p.farm_id === farmId).length;
 
-  const farmTypeFiltered = activePetType === "ทั้งหมด" ? farms : farms.filter(f => f.species === activePetType);
+  const farmTypeFiltered = activePetType === ALL ? farms : farms.filter(f => f.species === activePetType);
   const searchedFarms = !q ? farmTypeFiltered : farmTypeFiltered.filter(f =>
     f.farm_name?.toLowerCase().includes(q) || farmLocation(f).toLowerCase().includes(q)
   );
@@ -164,6 +158,7 @@ export default function FarmHubPage() {
           cursor: pointer;
           transition: all .18s ease;
           font-family: inherit;
+          white-space: nowrap;
         }
       `}</style>
 
@@ -173,15 +168,16 @@ export default function FarmHubPage() {
         <div className="mb-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Pet Market</h1>
-              <p className="text-sm font-medium" style={{ color: F.muted }}>รวมฟาร์มในระบบและสัตว์ที่พร้อมย้ายบ้านหรือเปิดจอง</p>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">{t("title")}</h1>
+              <p className="text-sm font-medium" style={{ color: F.inkSoft }}>{t("subtitle")}</p>
             </div>
 
             <div className="relative w-full md:max-w-md">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Icon.Search /></span>
               <input
-                type="text"
-                placeholder={viewMode === 'farms' ? "ค้นหาฟาร์ม หรือจังหวัด..." : "ค้นหาสายพันธุ์, ฟาร์ม หรือจังหวัด..."}
+                type="search"
+                aria-label={viewMode === 'farms' ? t("searchFarms") : t("searchPets")}
+                placeholder={`${viewMode === 'farms' ? t("searchFarms") : t("searchPets")}…`}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-50 font-medium text-sm transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -190,30 +186,33 @@ export default function FarmHubPage() {
           </div>
 
           {/* 🗂️ Mode switcher: ดูฟาร์ม / ดูสัตว์เลี้ยง */}
-          <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl w-full md:w-auto md:inline-flex">
+          <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl w-full md:w-auto md:inline-flex" role="group" aria-label={t("viewLabel")}>
             <button
               className="mode-tab"
-              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              aria-pressed={viewMode === 'farms'}
+              style={viewMode === 'farms' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.inkSoft }}
               onClick={() => setViewMode('farms')}
             >
-              ดูฟาร์ม
+              {t("viewFarms")}
             </button>
             <button
               className="mode-tab"
-              style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.muted }}
+              aria-pressed={viewMode === 'pets'}
+              style={viewMode === 'pets' ? { background: '#111827', color: 'white' } : { background: 'transparent', color: F.inkSoft }}
               onClick={() => setViewMode('pets')}
             >
-              ดูสัตว์เลี้ยง
+              {t("viewPets")}
             </button>
           </div>
 
           {/* 🐾 Pet Type Pills */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar" role="group" aria-label={t("speciesLabel")}>
             {petTypes.map((type) => {
               const isActive = activePetType === type.value;
               return (
                 <button
-                  key={type.label}
+                  key={type.value}
+                  aria-pressed={isActive}
                   onClick={() => setActivePetType(type.value)}
                   className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all shrink-0 border ${
                     isActive
@@ -230,17 +229,24 @@ export default function FarmHubPage() {
 
         {/* 📦 Content */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6" aria-busy="true">
+            <span className="sr-only">{tc("loading")}</span>
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-square bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+              <div key={i} className="aspect-square bg-gray-50 animate-pulse rounded-2xl border border-gray-100" aria-hidden="true"></div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div role="alert" data-testid="farm-hub-error" className="py-20 px-6 text-center bg-red-50 rounded-3xl border border-red-100">
+            <p className="font-semibold text-red-900">{tc("loadErrorTitle")}</p>
+            <p className="text-sm text-red-800 mt-1">{tc("loadErrorText")}</p>
+            <button type="button" onClick={fetchData} className="mt-5 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold">{tc("retry")}</button>
           </div>
         ) : viewMode === 'farms' ? (
           sortedFarms.length === 0 ? (
             <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
               <div className="text-gray-300 mb-3 flex justify-center"><Icon.ImagePlaceholder /></div>
-              <p className="text-gray-500 font-semibold">ไม่พบฟาร์มในขณะนี้</p>
-              <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือประเภทสัตว์เลี้ยงดูนะครับ</p>
+              <p className="text-gray-600 font-semibold">{t("noFarmsTitle")}</p>
+              <p className="text-sm text-gray-500 mt-1">{t("emptyHint")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
@@ -275,11 +281,11 @@ export default function FarmHubPage() {
                       <div className="flex items-center gap-1.5 mb-2">
                         <h3 className="text-[15px] font-bold text-gray-900 truncate">{farm.farm_name}</h3>
                         <img src="/icons/icon-paw-pink.png" alt="" className="w-4 h-4 object-contain flex-shrink-0" />
-                        {farm.is_verified && <span title="ฟาร์มยืนยันตัวตนแล้ว" style={{ display: 'inline-flex' }}><Icon.Verified /></span>}
+                        {farm.is_verified && <span title={tc("verifiedFarm")} role="img" aria-label={tc("verifiedFarm")} style={{ display: 'inline-flex' }}><Icon.Verified /></span>}
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-[13px] font-semibold" style={{ color: readyCount > 0 ? F.pink : F.muted }}>
-                          {readyCount > 0 ? `${readyCount} ตัวพร้อมย้ายบ้าน/เปิดจอง` : 'ยังไม่มีตัวพร้อมขาย'}
+                          {readyCount > 0 ? t("readyCount", { n: readyCount }) : t("noneReady")}
                         </div>
                         {location && (
                           <div className="flex items-center gap-1 text-[12px] font-medium text-gray-400">
@@ -297,8 +303,8 @@ export default function FarmHubPage() {
         ) : filteredPets.length === 0 ? (
           <div className="py-24 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
             <div className="text-gray-300 mb-3 flex justify-center"><Icon.ImagePlaceholder /></div>
-            <p className="text-gray-500 font-semibold">ไม่พบข้อมูลในขณะนี้</p>
-            <p className="text-sm text-gray-400 mt-1">ลองเปลี่ยนคำค้นหา หรือประเภทสัตว์เลี้ยงดูนะครับ</p>
+            <p className="text-gray-600 font-semibold">{t("noPetsTitle")}</p>
+            <p className="text-sm text-gray-500 mt-1">{t("emptyHint")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -325,12 +331,12 @@ export default function FarmHubPage() {
                   {/* Status Badge */}
                   <div
                     className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-md tracking-wider shadow-sm"
-                    style={pet.status === 'เปิดจอง'
+                    style={pet.status === PET_STATUS.OPEN_RESERVE
                       ? { background: F.tealSoft, color: F.teal }
                       : { background: F.goldSoft, color: F.gold }
                     }
                   >
-                    {pet.status === 'เปิดจอง' ? 'เปิดจอง' : 'พร้อมย้ายเลย'}
+                    {pet.status === PET_STATUS.OPEN_RESERVE ? tc("statusOpenReserve") : t("statusReadyNow")}
                   </div>
                 </div>
 
@@ -339,16 +345,18 @@ export default function FarmHubPage() {
                   {/* Breed + gender */}
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <h3 className="text-sm font-bold text-gray-900 truncate leading-snug group-hover:text-pink-600 transition-colors">
-                      {thaiBreedName(pet.breed, pet.species)}
+                      {breedName(pet.breed, pet.species)}
                     </h3>
                     <span className="flex-shrink-0">
-                      {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? <Icon.Male /> : <Icon.Female />}
+                      {/* unknown sex → no icon (it used to show "female") */}
+                      {pet.gender === 'male' || pet.gender === 'ตัวผู้' ? <Icon.Male label={tc("male")} />
+                        : pet.gender === 'female' || pet.gender === 'ตัวเมีย' ? <Icon.Female label={tc("female")} /> : null}
                     </span>
                   </div>
 
                   {/* Age */}
                   <p className="text-[11px] font-medium text-gray-400 mb-2 leading-tight">
-                    {calcAge(pet.birth_date) ? `อายุ ${calcAge(pet.birth_date)}` : "ไม่ระบุอายุ"}
+                    {formatAge(pet.birth_date, locale) ? tc("ageLabel", { age: formatAge(pet.birth_date, locale) }) : tc("ageUnknown")}
                   </p>
 
                   <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-1.5">
@@ -362,7 +370,7 @@ export default function FarmHubPage() {
                     </div>
                     {/* Price */}
                     <div className="text-base md:text-lg font-extrabold tracking-tight" style={{ color: F.ink }}>
-                      {pet.price ? `฿${pet.price.toLocaleString()}` : "สอบถามราคา"}
+                      {pet.price ? formatPrice(pet.price, locale) : tc("priceOnRequest")}
                     </div>
                   </div>
                 </div>
