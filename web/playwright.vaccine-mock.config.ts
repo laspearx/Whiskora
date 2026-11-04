@@ -30,7 +30,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node scripts/vaccine-mock-server.mjs',
-    env: { VACCINE_MOCK_SERVER_LOG: resolve(runDir, 'server-events.jsonl') },
+    env: { VACCINE_MOCK_SERVER_LOG: resolve(runDir, 'server-events.jsonl'), UX_PRODUCTION: process.env.UX_PRODUCTION || '0' },
     url: 'http://127.0.0.1:3217/th/pets/990001',
     reuseExistingServer: false,
     stdout: 'pipe',

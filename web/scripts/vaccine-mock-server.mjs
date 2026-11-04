@@ -31,7 +31,8 @@ try {
 // No inherited app credentials: the only API origin is the intercepted local mock.
 const child = spawn(process.execPath, [
   resolve(webDir, 'node_modules/next/dist/bin/next'),
-  'dev', '--webpack', '--hostname', '127.0.0.1', '-p', String(port),
+  ...(process.env.UX_PRODUCTION === '1' ? ['start'] : ['dev', '--webpack']),
+  '--hostname', '127.0.0.1', '-p', String(port),
 ], {
   cwd: webDir,
   stdio: 'inherit',

@@ -94,11 +94,12 @@ async function mockPet(page: Page, { owner = true, vaccination = true, empty = f
   await page.route('**/*', async route => {
     const request = route.request();
     const url = new URL(request.url());
-    const isMock = url.origin === 'http://127.0.0.1:3217' && url.pathname.startsWith('/mock-supabase/');
+    const isMock = (url.origin === 'http://127.0.0.1:3217' && url.pathname.startsWith('/mock-supabase/'))
+      || url.origin === 'http://127.0.0.1:9';
     if (url.origin === 'http://127.0.0.1:3217' && !isMock) return route.continue();
     // Everything external is intercepted; no request reaches a real API or asset host.
     if (!isMock) return route.fulfill({ status: 200, body: '', contentType: 'text/plain' });
-    const path = url.pathname.slice('/mock-supabase'.length);
+    const path = url.origin === 'http://127.0.0.1:9' ? url.pathname : url.pathname.slice('/mock-supabase'.length);
     apiPaths.push(`${request.method()} ${path}`);
     if ((reloadFailure || refreshOwnership) && path === '/rest/v1/pets' && request.method() === 'PATCH') {
       reloaded = true;
@@ -153,6 +154,62 @@ async function mockPet(page: Page, { owner = true, vaccination = true, empty = f
 
 const categoryNav = (page: Page) => page.getByRole('navigation', { name: 'หมวดข้อมูลสัตว์เลี้ยง' });
 const summary = (page: Page) => page.getByLabel('สรุปข้อมูลสุขภาพที่บันทึก');
+
+// Local integration checks use the existing synthetic session, never a provider login.
+async function integrationLocale(page: Page, locale: 'TH' | 'EN') {
+  if ((page.viewportSize()?.width ?? 1440) < 768) {
+    await page.getByRole('button', { name: /Open menu|เปิดเมนู/ }).click();
+  }
+  await page.locator('nav').first().getByRole('button', { name: new RegExp(`^${locale}\\b`) }).filter({ visible: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('lang', locale.toLowerCase());
+}
+
+test('integration: locale switching retains pet and vaccine summary after refresh', async ({ page }) => {
+  await mockPet(page);
+  await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
+  await integrationLocale(page, 'EN');
+  await expect(page).toHaveURL(/\/en\/pets\/990001$/);
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+  await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
+  await integrationLocale(page, 'TH');
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+  await page.getByRole('button', { name: 'ดู / ดาวน์โหลด QR' }).click();
+  await expect(page.getByAltText('QR Code', { exact: true })).toHaveAttribute('src', /^data:image\/png/);
+});
+
+test('integration: locale switching and browser history retain current pet content', async ({ page }) => {
+  await mockPet(page);
+  await categoryNav(page).getByRole('button', { name: 'วัคซีน', exact: true }).click();
+  await expect(page.getByText('วัคซีนรวม', { exact: true }).first()).toBeVisible();
+  await integrationLocale(page, 'EN');
+  await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
+  await page.goBack();
+  await expect(page).toHaveURL(/\/th\/pets\/990001$/);
+  await expect(summary(page)).toContainText('ถึงวันนัดวันนี้');
+  await page.goForward();
+  await expect(page).toHaveURL(/\/en\/pets\/990001$/);
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+});
+
+test('integration: locale change preserves explicit history error', async ({ page }) => {
+  await mockPet(page, { readError: true });
+  await expect(summary(page)).toContainText('โหลดประวัติไม่สำเร็จ');
+  await integrationLocale(page, 'EN');
+  await expect(summary(page)).toContainText('โหลดประวัติไม่สำเร็จ');
+  await expect(summary(page)).not.toContainText('ยังไม่มีประวัติ');
+});
+
+test('integration: empty history remains neutral after locale change and refresh', async ({ page }) => {
+  await mockPet(page, { empty: true });
+  await expect(summary(page)).toContainText('ยังไม่มีประวัติ');
+  await integrationLocale(page, 'EN');
+  await page.reload();
+  await expect(summary(page)).toContainText('ยังไม่มีประวัติ');
+  await expect(page.locator('.pet-name')).toHaveText('Mock Pet');
+});
 
 test('owner switches categories and sees identical neutral summaries; direct create link opens the form', async ({ page }, testInfo) => {
   const observed = await mockPet(page);

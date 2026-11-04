@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import base from './playwright.i18n.config';
 
 const label = process.env.I18N_RUN_LABEL || 'findings';
-const evidence = resolve('../local-evidence/i18n-phase2-findings-20261104');
+const evidence = resolve(process.env.I18N_EVIDENCE_DIR || '../local-evidence/i18n-phase2-findings-20261104');
 const bundleOnly = process.env.I18N_BUNDLE_ONLY === '1';
 export default defineConfig({
   ...base,

@@ -49,7 +49,7 @@ test('cold-page JavaScript and production chunks', async ({ browser }) => {
   }
   walk('.next/static');
   const label = process.env.I18N_RUN_LABEL || 'bundle';
-  const out = resolve('../local-evidence/i18n-phase2-findings-20261104');
+  const out = resolve(process.env.I18N_EVIDENCE_DIR || '../local-evidence/i18n-phase2-findings-20261104');
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, `${label}-javascript.json`), JSON.stringify({
     label, routes, chunks,
