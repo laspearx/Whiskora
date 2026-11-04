@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import { useLocale, useTranslations } from "@/i18n/context";
 import { PET_STATUS } from "@/lib/constants";
-import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
+import { useFarmAccess } from "@/lib/farm-access";
 
 const F = {
   ink: "#111827", inkSoft: "#4B5563", muted: "#9CA3AF",

@@ -9,7 +9,7 @@ import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
-import { useFarmAccess, canEditFarmProfile } from '@/app/farm-dashboard/[id]/layout';
+import { useFarmAccess, canEditFarmProfile } from '@/lib/farm-access';
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 /* ── Design tokens ── */
