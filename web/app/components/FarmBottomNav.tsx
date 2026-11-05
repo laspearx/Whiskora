@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from 'react';
+import { useFarmAccess } from '@/lib/farm-access';
+import { useLocale } from '@/i18n/context';
 import Link from 'next/link';
 
 const F = {
@@ -10,9 +12,10 @@ const F = {
 };
 
 export default function FarmBottomNav({ farmId }: { farmId: string }) {
+  const { myRole } = useFarmAccess();
+  const locale = useLocale();
   const base = `/farm-dashboard/${farmId}`;
 
-  const [showAddAnimalSheet, setShowAddAnimalSheet] = useState(false);
   const [showApptSheet, setShowApptSheet] = useState(false);
 
   return (
@@ -41,28 +44,6 @@ export default function FarmBottomNav({ farmId }: { farmId: string }) {
         @media (prefers-reduced-motion:reduce) { .fbn-add-sheet { animation:none!important; } }
       `}</style>
 
-      {showAddAnimalSheet && (
-        <div className="fbn-sheet-overlay" onClick={() => setShowAddAnimalSheet(false)}>
-          <div className="fbn-add-sheet" onClick={e => e.stopPropagation()}>
-            <div className="fbn-sheet-handle" />
-            <div className="fbn-sheet-title">เพิ่มสัตว์เลี้ยง</div>
-            <div className="fbn-add-grid">
-              <Link href={`${base}/pets/create`} className="fbn-add-card" onClick={() => setShowAddAnimalSheet(false)}>
-                <img src="/icons/icon-foster-home.png" alt="" />
-                <div className="fbn-add-card-title">เพิ่มทีละตัว</div>
-                <div className="fbn-add-card-sub">บันทึกข้อมูลพร้อมประวัติครบถ้วน</div>
-              </Link>
-              <Link href={`${base}/pets/bulk-create`} className="fbn-add-card" onClick={() => setShowAddAnimalSheet(false)}>
-                <img src="/icons/icon-vet-care.png" alt="" />
-                <div className="fbn-add-card-title">เพิ่มหลายตัว</div>
-                <div className="fbn-add-card-sub">เพิ่มลูกสัตว์ทั้งครอกในครั้งเดียว</div>
-              </Link>
-            </div>
-            <button className="fbn-sheet-close" onClick={() => setShowAddAnimalSheet(false)}>ปิด</button>
-          </div>
-        </div>
-      )}
-
       {showApptSheet && (
         <div className="fbn-sheet-overlay" onClick={() => setShowApptSheet(false)}>
           <div className="fbn-add-sheet" onClick={e => e.stopPropagation()}>
@@ -87,10 +68,10 @@ export default function FarmBottomNav({ farmId }: { farmId: string }) {
 
       <nav aria-label="เมนูฟาร์ม" className="fbn-nav">
         <div className="fbn-nav-inner">
-          <button className="fbn-nav-tab" onClick={() => setShowAddAnimalSheet(true)}>
+          {myRole === 'owner' && <Link className="fbn-nav-tab" href={`${base}/pets/create`}>
             <div className="fbn-tab-icon"><img src="/icons/icon-tab-add.png" alt="" /></div>
-            <span>เพิ่มสัตว์</span>
-          </button>
+            <span>{locale === 'en' ? 'Add a pet' : 'เพิ่มสัตว์เลี้ยง'}</span>
+          </Link>}
           <Link href={`${base}/litters/create`} className="fbn-nav-tab">
             <div className="fbn-tab-icon"><img src="/icons/icon-my-pets.png" alt="" /></div>
             <span>จับคู่บรีด</span>

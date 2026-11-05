@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import Cropper from "react-easy-crop";
 import { PET_GENDER, PET_STATUS, type PetGender, type PetStatus } from "@/lib/constants";
+import Link from 'next/link';
+import { useLocale } from '@/i18n/context';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
@@ -31,6 +33,7 @@ const breedData: Record<string, string[]> = {
 };
 
 const CAT_EYE_OPTIONS = ["เขียว", "เหลือง", "ส้ม/คอปเปอร์", "ฟ้า", "ตาสองสี", "อื่นๆ"];
+const OPTION_LABELS: Record<string, string> = {"เขียว": "Green", "เหลือง": "Yellow", "ส้ม/คอปเปอร์": "Orange / copper", "ฟ้า": "Blue", "ตาสองสี": "Odd eyes", "อื่นๆ": "Other", "หูตั้ง": "Upright", "หูพับ": "Folded", "หูพลิก": "Curled", "ขาสั้น": "Short legs", "ขายาว": "Long legs", "ขนสั้น": "Short coat", "ขนยาว": "Long coat", "ขนหยิก": "Curly coat", "ไม่มีขน": "Hairless"};
 const EAR_OPTIONS = ["หูตั้ง", "หูพับ", "หูพลิก"];
 const LEG_OPTIONS = ["ขาสั้น", "ขายาว"];
 const COAT_OPTIONS = ["ขนสั้น", "ขนยาว", "ขนหยิก", "ไม่มีขน"];
@@ -63,13 +66,18 @@ async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<Blob | n
 
 type FormData = {
   name: string; breed: string; customBreed: string;
-  gender: PetGender; birthDate: string; status: PetStatus; price: string;
+  gender: PetGender | ''; birthDate: string; status: PetStatus; price: string;
   color: string; ear: string; leg: string; coat: string; eye_color: string; custom_eye_color: string;
   sire_id: string; dam_id: string; note: string;
 };
 
 export default function CreateFarmPetPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const copy = (th: string, en: string) => locale === 'en' ? en : th;
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const params = useParams();
   const farmId = params.id as string;
 
@@ -87,7 +95,7 @@ export default function CreateFarmPetPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<FormData>({
-    name: '', breed: '', customBreed: '', gender: PET_GENDER.MALE, birthDate: '',
+    name: '', breed: '', customBreed: '', gender: '', birthDate: '',
     status: PET_STATUS.UNSPECIFIED, price: '',
     color: '', ear: '', leg: '', coat: '', eye_color: '', custom_eye_color: '',
     sire_id: '', dam_id: '', note: '',
@@ -138,18 +146,21 @@ export default function CreateFarmPetPage() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!form.name.trim()) return alert("กรุณาใส่ชื่อสัตว์เลี้ยง");
+    if (saving || saved) return;
+    setSaveError('');
+    if (!form.name.trim()) return alert(copy("กรุณาใส่ชื่อสัตว์เลี้ยง", "Please enter a pet name."));
     let finalBreed = form.breed;
     if (form.breed === "อื่นๆ") {
-      if (!form.customBreed.trim()) return alert("กรุณาระบุสายพันธุ์");
+      if (!form.customBreed.trim()) return alert(copy("กรุณาระบุสายพันธุ์", "Please enter a breed."));
       finalBreed = form.customBreed.trim();
-    } else if (!form.breed) return alert("กรุณาระบุสายพันธุ์");
-    if (form.birthDate && form.birthDate > new Date().toISOString().split('T')[0]) return alert("วันเกิดต้องไม่ใช่วันในอนาคต");
+    } else if (!form.breed) return alert(copy("กรุณาระบุสายพันธุ์", "Please enter a breed."));
+    if (form.birthDate && form.birthDate > new Date().toISOString().split('T')[0]) return alert(copy("วันเกิดต้องไม่ใช่วันในอนาคต", "Date of birth cannot be in the future."));
 
+    if (!form.gender) return alert(copy('กรุณาเลือกเพศด้วยตัวเอง', 'Please select the pet’s sex.'));
     setSaving(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) throw new Error(copy('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง', 'Session expired. Please sign in again.'));
       let imageUrl = null;
       if (croppedImage) {
         const fileName = `farm-${farm.id}-${Date.now()}.jpg`;
@@ -158,7 +169,7 @@ export default function CreateFarmPetPage() {
         const { data: { publicUrl } } = supabase.storage.from("pet-photos").getPublicUrl(`${session.user.id}/${fileName}`);
         imageUrl = publicUrl;
       }
-      const { error } = await supabase.from("pets").insert([{
+      const { data: createdPets, error } = await supabase.from("pets").insert([{
         user_id: session.user.id, farm_id: farm.id, species: farm.species,
         name: form.name.trim(), breed: finalBreed, gender: form.gender,
         birth_date: form.birthDate || null, status: form.status || null,
@@ -168,13 +179,12 @@ export default function CreateFarmPetPage() {
         eye_color: (form.eye_color === 'อื่นๆ' ? form.custom_eye_color : form.eye_color) || null,
         sire_id: form.sire_id || null, dam_id: form.dam_id || null,
         note: form.note.trim() || null, is_public: true,
-      }]);
+      }]).select("id");
       if (error) throw error;
-      alert("เพิ่มสัตว์เลี้ยงเข้าฟาร์มเรียบร้อยแล้ว");
-      router.push(`/farm-dashboard/${farm.id}/pets`);
-      router.refresh();
+      setSavedId(createdPets?.[0]?.id != null ? String(createdPets[0].id) : null);
+      setSaved(true);
     } catch (error: any) {
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      setSaveError(copy('บันทึกไม่สำเร็จ: ', 'Could not save: ') + error.message);
     } finally { setSaving(false); }
   };
 
@@ -182,12 +192,25 @@ export default function CreateFarmPetPage() {
 
   if (loading || !farm) return <PageLoader />;
 
+  if (saved) return (
+    <main style={{ maxWidth: 640, margin: '0 auto', padding: '32px 20px 120px' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>{copy('บันทึกข้อมูลสัตว์แล้ว', 'Pet saved')}</h1>
+      <p>{form.name}</p>
+      <p>{copy('Public Share: Pending Review — ยังไม่ยืนยันการเข้าถึงของผู้ชมสาธารณะ การบันทึกนี้ไม่ใช่ร่างส่วนตัวหรือการอนุมัติประกาศ', 'Public Share: Pending Review — public access has not been confirmed. This save is not a private draft or listing approval.')}</p>
+      <nav aria-label={copy('ขั้นตอนถัดไป', 'Next steps')} style={{ display: 'grid', gap: 20, marginTop: 24 }}>
+        {savedId && <Link href={`/pets/${savedId}`}>{copy('ดูรายละเอียดสัตว์ที่เพิ่งเพิ่ม', 'View the pet you added')}</Link>}
+        <Link href={`/farm-dashboard/${farm.id}/pets`}>{copy('กลับไปจัดการสัตว์ของฟาร์ม', 'Manage farm pets')}</Link>
+        <button type="button" style={{ padding: 14, borderRadius: 12, background: F.pink, color: F.paper, fontWeight: 700 }} onClick={() => window.location.reload()}>{copy('เพิ่มสัตว์ตัวถัดไป', 'Add another pet')}</button>
+      </nav>
+    </main>
+  );
+
   return (
     <>
       <style>{`
         * { box-sizing: border-box; }
         .fpc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; background: ${F.bg}; }
-        .fpc-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 32px; }
+        .fpc-body { max-width: 640px; margin: 0 auto; padding: 24px 20px 120px; }
         .fpc-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .fpc-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: white; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all .18s ease; flex-shrink: 0; }
         .fpc-back:hover { background: #F9FAFB; color: #111827; transform: translateX(-1px); }
@@ -246,180 +269,185 @@ export default function CreateFarmPetPage() {
       <div className="fpc-page">
         <div className="fpc-body">
           <div className="fpc-header">
-            <button className="fpc-back" onClick={() => router.back()} aria-label="ย้อนกลับ"><Icon.ArrowLeft /></button>
+            <button className="fpc-back" onClick={() => router.back()} aria-label={copy("ย้อนกลับ", "Back")}><Icon.ArrowLeft /></button>
             <div>
-              <h1 className="fpc-title">เพิ่มสมาชิกในฟาร์ม</h1>
-              <p className="fpc-sub">ลงทะเบียนเข้าสังกัด: {farm.farm_name}</p>
+              <h1 className="fpc-title">{copy("เพิ่มสัตว์เลี้ยง", "Add a pet")}</h1>
+              <p className="fpc-sub">{farm.farm_name}</p>
             </div>
           </div>
 
-          {/* รูปโปรไฟล์ */}
-          <div className="fpc-photo-wrap">
-            <div className="fpc-photo" onClick={() => fileInputRef.current?.click()}>
-              {croppedImage
-                ? <img src={croppedImage.url} alt="ตัวอย่าง" />
-                : <><Icon.Camera /><span className="fpc-photo-hint">ใส่รูปน้อง</span></>}
-            </div>
-            {croppedImage && (
-              <button type="button" className="fpc-photo-edit" onClick={() => fileInputRef.current?.click()}>เปลี่ยนรูป</button>
-            )}
-            <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileChange} onClick={e => (e.currentTarget.value = '')} />
-          </div>
-
+          <form onSubmit={handleSubmit} noValidate>
           {/* ข้อมูลพื้นฐาน */}
           <div className="fpc-card">
-            <p className="fpc-card-title">ข้อมูลพื้นฐาน</p>
+            <p className="fpc-card-title">{copy('ข้อมูลพื้นฐาน', 'Basic information')}</p>
             <div className="fpc-stack">
               <div className="fpc-field">
-                <label className="fpc-label">ชื่อ <span className="fpc-req">*</span></label>
-                <input type="text" className="fpc-input" placeholder="เช่น ลูน่า" value={form.name} onChange={e => set('name', e.target.value)} />
+                <label className="fpc-label">{copy("ชื่อ", "Name")} <span className="fpc-req">*</span></label>
+                <input type="text" className="fpc-input" placeholder={copy('เช่น ลูน่า', 'e.g. Luna')} aria-label={copy('ชื่อ', 'Name')} value={form.name} onChange={e => set('name', e.target.value)} />
               </div>
 
               <div className="fpc-field">
-                <label className="fpc-label">สายพันธุ์ <span className="fpc-req">*</span></label>
+                <label className="fpc-label">{copy("สายพันธุ์", "Breed")} <span className="fpc-req">*</span></label>
                 {availableBreeds ? (
-                  <select className="fpc-select" value={form.breed} onChange={e => set('breed', e.target.value)}>
-                    <option value="" disabled>เลือกสายพันธุ์</option>
+                  <select className="fpc-select" aria-label={copy('สายพันธุ์', 'Breed')} value={form.breed} onChange={e => set('breed', e.target.value)}>
+                    <option value="" disabled>{copy('เลือกสายพันธุ์', 'Select breed')}</option>
                     {availableBreeds.map((b, i) => <option key={i} value={b}>{b}</option>)}
-                    <option value="อื่นๆ">อื่นๆ</option>
+                    <option value="อื่นๆ">{copy('อื่นๆ', 'Other')}</option>
                   </select>
                 ) : (
-                  <input type="text" className="fpc-input" placeholder="ระบุสายพันธุ์..." value={form.breed} onChange={e => set('breed', e.target.value)} />
+                  <input type="text" className="fpc-input" placeholder={copy('ระบุสายพันธุ์...', 'Enter breed')} aria-label={copy('สายพันธุ์', 'Breed')} value={form.breed} onChange={e => set('breed', e.target.value)} />
                 )}
               </div>
 
               {form.breed === "อื่นๆ" && (
                 <div className="fpc-field">
-                  <label className="fpc-label">พิมพ์สายพันธุ์ <span className="fpc-req">*</span></label>
-                  <input type="text" className="fpc-input" placeholder="เช่น พันธุ์ผสม" value={form.customBreed} onChange={e => set('customBreed', e.target.value)} />
+                  <label className="fpc-label">{copy("พิมพ์สายพันธุ์", "Enter breed")} <span className="fpc-req">*</span></label>
+                  <input type="text" className="fpc-input" placeholder={copy('เช่น พันธุ์ผสม', 'e.g. Mixed breed')} aria-label={copy('พิมพ์สายพันธุ์', 'Enter breed')} value={form.customBreed} onChange={e => set('customBreed', e.target.value)} />
                 </div>
               )}
 
+          {/* รูปโปรไฟล์ */}
+          <div className="fpc-photo-wrap">
+            <button type="button" aria-label={copy("เลือกรูปสัตว์", "Choose pet photo")} className="fpc-photo" onClick={() => fileInputRef.current?.click()}>
+              {croppedImage
+                ? <img src={croppedImage.url} alt={copy("ตัวอย่างรูปสัตว์", "Pet photo preview")} />
+                : <><Icon.Camera /><span className="fpc-photo-hint">{copy('ใส่รูปน้อง', 'Add photo')}</span></>}
+            </button>
+            {croppedImage && (
+              <button type="button" className="fpc-photo-edit" onClick={() => fileInputRef.current?.click()}>{copy('เปลี่ยนรูป', 'Change photo')}</button>
+            )}
+            <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileChange} onClick={e => (e.currentTarget.value = '')} />
+          </div>
+
               <div className="fpc-grid2">
                 <div className="fpc-field">
-                  <label className="fpc-label">เพศ</label>
-                  <select className="fpc-select" value={form.gender} onChange={e => set('gender', e.target.value as PetGender)}>
-                    <option value={PET_GENDER.MALE}>ตัวผู้</option>
-                    <option value={PET_GENDER.FEMALE}>ตัวเมีย</option>
+                  <label className="fpc-label">{copy('เพศ', 'Sex')} <span className="fpc-req">*</span></label>
+                  <select className="fpc-select" aria-label={copy('เพศ', 'Sex')} value={form.gender} onChange={e => set('gender', e.target.value as PetGender)}>
+                    <option value="" disabled>{copy("เลือกเพศ", "Select sex")}</option>
+                    <option value={PET_GENDER.MALE}>{copy('ตัวผู้', 'Male')}</option>
+                    <option value={PET_GENDER.FEMALE}>{copy('ตัวเมีย', 'Female')}</option>
                   </select>
                 </div>
                 <div className="fpc-field">
-                  <label className="fpc-label">วันเกิด</label>
-                  <input type="date" className="fpc-input" value={form.birthDate} max={new Date().toISOString().split('T')[0]} onChange={e => set('birthDate', e.target.value)} />
+                  <label className="fpc-label">{copy('วันเกิด', 'Date of birth')}</label>
+                  <input type="date" className="fpc-input" aria-label={copy('วันเกิด', 'Date of birth')} value={form.birthDate} max={new Date().toISOString().split('T')[0]} onChange={e => set('birthDate', e.target.value)} />
                 </div>
               </div>
 
               <div className="fpc-grid2">
                 <div className="fpc-field">
-                  <label className="fpc-label">สถานะ</label>
-                  <select className="fpc-select" value={form.status} onChange={e => set('status', e.target.value as PetStatus)}>
-                    <option value={PET_STATUS.UNSPECIFIED}>-- ไม่ระบุ --</option>
-                    <option value={PET_STATUS.KID}>เด็ก</option>
-                    <option value={PET_STATUS.BREEDER}>พ่อพันธุ์ / แม่พันธุ์</option>
-                    <option value={PET_STATUS.AVAILABLE}>พร้อมย้ายบ้าน</option>
-                    <option value={PET_STATUS.OPEN_RESERVE}>เปิดจอง</option>
-                    <option value={PET_STATUS.RESERVED}>ติดจอง</option>
-                    <option value={PET_STATUS.RETIRED}>ทำหมัน / ปลดระวาง</option>
+                  <label className="fpc-label">{copy('สถานะ', 'Status')}</label>
+                  <select className="fpc-select" aria-label={copy('สถานะ', 'Status')} value={form.status} onChange={e => set('status', e.target.value as PetStatus)}>
+                    <option value={PET_STATUS.UNSPECIFIED}>{copy('-- ไม่ระบุ --', 'Unspecified')}</option>
+                    <option value={PET_STATUS.KID}>{copy('เด็ก', 'Young')}</option>
+                    <option value={PET_STATUS.BREEDER}>{copy('พ่อพันธุ์ / แม่พันธุ์', 'Breeder')}</option>
+                    <option value={PET_STATUS.AVAILABLE}>{copy('พร้อมย้ายบ้าน', 'Available')}</option>
+                    <option value={PET_STATUS.OPEN_RESERVE}>{copy('เปิดจอง', 'Open for reservation')}</option>
+                    <option value={PET_STATUS.RESERVED}>{copy('ติดจอง', 'Reserved')}</option>
+                    <option value={PET_STATUS.RETIRED}>{copy('ทำหมัน / ปลดระวาง', 'Neutered / retired')}</option>
                   </select>
                 </div>
                 <div className="fpc-field">
-                  <label className="fpc-label">ราคา (บาท)</label>
-                  <input type="number" className="fpc-input" placeholder="เช่น 15000" value={form.price} onChange={e => set('price', e.target.value)} />
+                  <label className="fpc-label">{copy('ราคา (บาท)', 'Price (THB)')}</label>
+                  <input type="number" className="fpc-input" placeholder={copy('เช่น 15000', 'e.g. 15000')} aria-label={copy('ราคา (บาท)', 'Price (THB)')} value={form.price} onChange={e => set('price', e.target.value)} />
                 </div>
               </div>
             </div>
           </div>
 
           {/* ลักษณะภายนอก */}
-          <div className="fpc-card">
-            <p className="fpc-card-title">ลักษณะภายนอก</p>
+          <details className="fpc-card">
+            <summary className="fpc-card-title" style={{ cursor: "pointer", fontSize: 13, color: F.inkSoft }}>{copy('ลักษณะภายนอก', 'Appearance (optional)')}</summary>
             <div className="fpc-stack">
               <div className="fpc-field">
-                <label className="fpc-label">สี</label>
-                <input type="text" className="fpc-input" placeholder="เช่น ดำ, ขาว, ส้ม, สามสี..." value={form.color} onChange={e => set('color', e.target.value)} />
+                <label className="fpc-label">{copy('สี', 'Colour')}</label>
+                <input type="text" className="fpc-input" placeholder={copy('เช่น ดำ, ขาว, ส้ม, สามสี...', 'e.g. Black, white, calico')} aria-label={copy('สี', 'Colour')} value={form.color} onChange={e => set('color', e.target.value)} />
               </div>
               <div className="fpc-grid3">
                 <div className="fpc-field">
-                  <label className="fpc-label">ลักษณะหู</label>
-                  <select className="fpc-select" value={form.ear} onChange={e => set('ear', e.target.value)}>
-                    <option value="">เลือก</option>
-                    {EAR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  <label className="fpc-label">{copy('ลักษณะหู', 'Ears')}</label>
+                  <select className="fpc-select" aria-label={copy('ลักษณะหู', 'Ears')} value={form.ear} onChange={e => set('ear', e.target.value)}>
+                    <option value="">{copy('เลือก', 'Select')}</option>
+                    {EAR_OPTIONS.map(o => <option key={o} value={o}>{copy(o, OPTION_LABELS[o] || o)}</option>)}
                   </select>
                 </div>
                 <div className="fpc-field">
-                  <label className="fpc-label">ลักษณะขา</label>
-                  <select className="fpc-select" value={form.leg} onChange={e => set('leg', e.target.value)}>
-                    <option value="">เลือก</option>
-                    {LEG_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  <label className="fpc-label">{copy('ลักษณะขา', 'Legs')}</label>
+                  <select className="fpc-select" aria-label={copy('ลักษณะขา', 'Legs')} value={form.leg} onChange={e => set('leg', e.target.value)}>
+                    <option value="">{copy('เลือก', 'Select')}</option>
+                    {LEG_OPTIONS.map(o => <option key={o} value={o}>{copy(o, OPTION_LABELS[o] || o)}</option>)}
                   </select>
                 </div>
                 <div className="fpc-field">
-                  <label className="fpc-label">ลักษณะขน</label>
-                  <select className="fpc-select" value={form.coat} onChange={e => set('coat', e.target.value)}>
-                    <option value="">เลือก</option>
-                    {COAT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  <label className="fpc-label">{copy('ลักษณะขน', 'Coat')}</label>
+                  <select className="fpc-select" aria-label={copy('ลักษณะขน', 'Coat')} value={form.coat} onChange={e => set('coat', e.target.value)}>
+                    <option value="">{copy('เลือก', 'Select')}</option>
+                    {COAT_OPTIONS.map(o => <option key={o} value={o}>{copy(o, OPTION_LABELS[o] || o)}</option>)}
                   </select>
                 </div>
               </div>
               <div className="fpc-field">
-                <label className="fpc-label">สีตา</label>
+                <label className="fpc-label">{copy('สีตา', 'Eye colour')}</label>
                 {farm.species === 'cat' ? (
                   <>
-                    <select className="fpc-select" value={form.eye_color} onChange={e => { set('eye_color', e.target.value); if (e.target.value !== 'อื่นๆ') set('custom_eye_color', ''); }}>
-                      <option value="">เลือกสีตา</option>
-                      {CAT_EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    <select className="fpc-select" aria-label={copy('สีตา', 'Eye colour')} value={form.eye_color} onChange={e => { set('eye_color', e.target.value); if (e.target.value !== 'อื่นๆ') set('custom_eye_color', ''); }}>
+                      <option value="">{copy('เลือกสีตา', 'Select eye colour')}</option>
+                      {CAT_EYE_OPTIONS.map(o => <option key={o} value={o}>{copy(o, OPTION_LABELS[o] || o)}</option>)}
                     </select>
                     {form.eye_color === 'อื่นๆ' && (
-                      <input type="text" className="fpc-input" style={{ marginTop: 8 }} placeholder="ระบุสีตา..." value={form.custom_eye_color} onChange={e => set('custom_eye_color', e.target.value)} />
+                      <input type="text" className="fpc-input" style={{ marginTop: 8 }} placeholder={copy('ระบุสีตา...', 'Enter eye colour')} aria-label={copy('ระบุสีตา', 'Enter eye colour')} value={form.custom_eye_color} onChange={e => set('custom_eye_color', e.target.value)} />
                     )}
                   </>
                 ) : (
-                  <input type="text" className="fpc-input" placeholder="เช่น ดำ, น้ำตาล, เหลือง..." value={form.eye_color} onChange={e => set('eye_color', e.target.value)} />
+                  <input type="text" className="fpc-input" placeholder={copy('เช่น ดำ, น้ำตาล, เหลือง...', 'e.g. Black, brown, yellow')} aria-label={copy('สีตา', 'Eye colour')} value={form.eye_color} onChange={e => set('eye_color', e.target.value)} />
                 )}
               </div>
             </div>
-          </div>
+          </details>
 
           {/* สายเลือด */}
-          <div className="fpc-card">
-            <p className="fpc-card-title">สายเลือด (ถ้ามี)</p>
+          <details className="fpc-card">
+            <summary className="fpc-card-title" style={{ cursor: "pointer", fontSize: 13, color: F.inkSoft }}>{copy('สายเลือด (ถ้ามี)', 'Parents (optional)')}</summary>
             <div className="fpc-stack">
               <div className="fpc-grid2">
                 <div className="fpc-field">
-                  <label className="fpc-label">พ่อ</label>
-                  <select className="fpc-select" value={form.sire_id} onChange={e => set('sire_id', e.target.value)} disabled={sireOptions.length === 0}>
-                    <option value="">{sireOptions.length === 0 ? 'ยังไม่มีตัวผู้ในฟาร์ม' : '— ไม่ระบุ —'}</option>
+                  <label className="fpc-label">{copy('พ่อ', 'Sire')}</label>
+                  <select className="fpc-select" aria-label={copy('พ่อ', 'Sire')} value={form.sire_id} onChange={e => set('sire_id', e.target.value)} disabled={sireOptions.length === 0}>
+                    <option value="">{sireOptions.length === 0 ? copy('ยังไม่มีตัวผู้ในฟาร์ม', 'No male pets in this farm') : copy('— ไม่ระบุ —', 'Unspecified')}</option>
                     {sireOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
                   </select>
                 </div>
                 <div className="fpc-field">
-                  <label className="fpc-label">แม่</label>
-                  <select className="fpc-select" value={form.dam_id} onChange={e => set('dam_id', e.target.value)} disabled={damOptions.length === 0}>
-                    <option value="">{damOptions.length === 0 ? 'ยังไม่มีตัวเมียในฟาร์ม' : '— ไม่ระบุ —'}</option>
+                  <label className="fpc-label">{copy('แม่', 'Dam')}</label>
+                  <select className="fpc-select" aria-label={copy('แม่', 'Dam')} value={form.dam_id} onChange={e => set('dam_id', e.target.value)} disabled={damOptions.length === 0}>
+                    <option value="">{damOptions.length === 0 ? copy('ยังไม่มีตัวเมียในฟาร์ม', 'No female pets in this farm') : copy('— ไม่ระบุ —', 'Unspecified')}</option>
                     {damOptions.map(p => <option key={p.id} value={p.id}>{p.name}{p.breed ? ` · ${p.breed.split('(')[0].trim()}` : ''}</option>)}
                   </select>
                 </div>
               </div>
               {existingPets.length === 0 && (
-                <p className="fpc-hint">แนะนำให้บันทึกพ่อแม่พันธุ์ก่อน เพื่อให้สามารถเลือกได้ในครั้งต่อไป</p>
+                <p className="fpc-hint">{copy("ไม่จำเป็นต้องเพิ่มพ่อแม่พันธุ์ก่อน สามารถเพิ่มข้อมูลสายเลือดภายหลังได้", "Parents are optional and can be added later.")}</p>
               )}
             </div>
-          </div>
+          </details>
 
           {/* หมายเหตุ */}
-          <div className="fpc-card">
-            <p className="fpc-card-title">หมายเหตุ</p>
+          <details className="fpc-card">
+            <summary className="fpc-card-title" style={{ cursor: "pointer", fontSize: 13, color: F.inkSoft }}>{copy('หมายเหตุ', 'Notes (optional)')}</summary>
             <div className="fpc-field">
-              <textarea className="fpc-textarea" rows={3} placeholder="บันทึกเพิ่มเติม เช่น ประวัติสุขภาพ, ลักษณะนิสัย..." value={form.note} onChange={e => set('note', e.target.value)} />
+              <textarea className="fpc-textarea" rows={3} placeholder={copy('บันทึกเพิ่มเติม เช่น ประวัติสุขภาพ, ลักษณะนิสัย...', 'Additional information, e.g. health history or temperament')} aria-label={copy('หมายเหตุ', 'Notes')} value={form.note} onChange={e => set('note', e.target.value)} />
             </div>
-          </div>
+          </details>
 
+          <p>{copy('ก่อนบันทึก: ข้อมูลนี้ไม่ใช่ร่างส่วนตัว และอาจแสดงต่อสาธารณะตามสิทธิ์และสถานะที่ระบบรองรับ โปรดตรวจข้อมูลและสิทธิ์ใช้รูปก่อนบันทึก', 'Before saving: this is not a private draft. Data may be publicly accessible under existing permissions and status rules. Check the information and your rights to use the photo.')}</p>
+          {saveError && <p role="alert">{saveError}</p>}
           <div className="fpc-actions">
-            <button type="button" className="fpc-cancel-btn" onClick={() => router.back()}>ยกเลิก</button>
-            <button type="button" className="fpc-btn" onClick={handleSubmit} disabled={saving}>
-              <Icon.Save /> {saving ? "กำลังบันทึกข้อมูล..." : "บันทึก"}
+            <button type="button" className="fpc-cancel-btn" onClick={() => router.back()}>{copy('ยกเลิก', 'Cancel')}</button>
+            <button type="submit" className="fpc-btn" disabled={saving}>
+              <Icon.Save /> {saving ? copy("กำลังบันทึกข้อมูล...", "Saving...") : copy("บันทึก", "Save")}
             </button>
           </div>
+          </form>
         </div>
       </div>
 
@@ -431,8 +459,8 @@ export default function CreateFarmPetPage() {
           <div className="fpc-crop-tools">
             <input type="range" className="fpc-zoom" min={1} max={3} step={0.1} value={zoom} onChange={e => setZoom(Number(e.target.value))} />
             <div className="fpc-crop-btns">
-              <button type="button" className="fpc-crop-cancel" onClick={() => setShowCropper(false)}>ยกเลิก</button>
-              <button type="button" className="fpc-crop-ok" onClick={handleCropImage}>ตกลง</button>
+              <button type="button" className="fpc-crop-cancel" onClick={() => setShowCropper(false)}>{copy('ยกเลิก', 'Cancel')}</button>
+              <button type="button" className="fpc-crop-ok" onClick={handleCropImage}>{copy('ตกลง', 'Confirm')}</button>
             </div>
           </div>
         </div>
