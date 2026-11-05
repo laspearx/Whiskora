@@ -21,19 +21,16 @@ export default function Footer() {
       title: t('sectionUsers'),
       links: [
         { label: t('findFarm'), href: '/farm-hub' },
-        { label: t('bookClinic'), href: '/service-hub' },
         { label: t('petIdCard'), href: '/pet-id-card' },
         { label: t('petKnowledge'), href: '/pet-knowledge' },
         { label: t('petTools'), href: '/pet-tools' },
-        { label: t('community'), href: '/community', badge: t('comingSoon') },
       ],
     },
     {
-      title: t('sectionPartners'),
+      title: t('betaFarmSection'),
       links: [
         { label: t('openFarm'), href: '/partner/register-farm' },
-        { label: t('openShop'), href: '/partner/register-shop' },
-        { label: t('genesisProgram'), href: '/partner' },
+        { label: t('betaManageFarm'), href: '/partner' },
       ],
     },
     {
@@ -76,9 +73,6 @@ export default function Footer() {
                     style={{ color: F.inkSoft }}
                   >
                     {link.label}
-                    {'badge' in link && link.badge && (
-                      <span className="ml-1.5 align-middle text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: '#FDF2F5', color: F.pink }}>{link.badge}</span>
-                    )}
                   </Link>
                 </li>
               ))}

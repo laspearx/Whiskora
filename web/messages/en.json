@@ -45,7 +45,22 @@
     "langEn": "English",
     "tabPets": "Pets",
     "tabQr": "Pet QR",
-    "tabWeigh": "Weigh-in"
+    "tabWeigh": "Weigh-in",
+    "betaBrowse": "Find pets & farms",
+    "betaFarms": "For farms",
+    "betaKnowledgeSub": "Read about caring for pets",
+    "betaPartnerFarm": "Pet farms",
+    "betaPartnerFarmSub": "Add pet profiles and manage your farm",
+    "betaPartnerShop": "Your shops",
+    "betaPartnerShopSub": "Manage your existing shops",
+    "betaPartnerService": "Your services",
+    "betaPartnerServiceSub": "Manage your existing services",
+    "betaFarmIntro": "Start with your first pet profile or choose a farm you manage. Team members can select their farm in the workspace menu with their existing permissions.",
+    "betaFarmStart": "Get started with your farm",
+    "betaYourBusinesses": "Your existing businesses",
+    "betaFarmRegister": "Create a farm",
+    "betaHaveAccount": "Already have an account?",
+    "betaBusinessLogin": "Sign in to manage your farm or existing business →"
   },
   "meta": {
     "siteTitle": "Whiskora | Pet ID, QR profiles and trusted pet farms",
@@ -214,7 +229,9 @@
     "ctaBandCopy": "Create a free Pet ID, add health records and documents over time, and share the QR code with the people who look after your pet when you're ready.",
     "orgDescription": "A pet-tech platform for Pet ID, QR profiles, health records, pedigrees, important documents, pet farms and trustworthy sharing of pet information.",
     "pageName": "Whiskora | Trusted Pet Identity, Health Records and QR Profile",
-    "pageDescription": "Whiskora connects Pet ID, QR profiles, health records, farms, pedigrees, documents and sharing of pet information in one platform."
+    "pageDescription": "Whiskora connects Pet ID, QR profiles, health records, farms, pedigrees, documents and sharing of pet information in one platform.",
+    "betaBrowse": "Find pets & farms",
+    "betaFarmStart": "For farms"
   },
   "farmHub": {
     "title": "Pet Market",
@@ -312,7 +329,9 @@
     "tagline": "The Hub for Every Pet Life",
     "taglineSub": "One platform, every pet life.",
     "copyright": "© 2026 Whiskora",
-    "madeIn": "Made in Bangkok"
+    "madeIn": "Made in Bangkok",
+    "betaFarmSection": "For farms",
+    "betaManageFarm": "Manage my farm"
   },
   "home": {
     "heroBadge": "🐾 WHISKORA PLATFORM",

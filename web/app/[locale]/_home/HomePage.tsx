@@ -68,7 +68,9 @@ const farmFeatures = [
 ] satisfies Array<{ key: string; icon: IconName }>;
 
 // ─── กำลังพัฒนา: แยกจากฟีเจอร์ที่ใช้ได้แล้วให้ชัด ───────────────────────────
+// Retain future-feature metadata without promoting it in the Public Beta.
 const roadmapItems = ["booking", "community", "articles"];
+const isBetaPromotion = (key: string) => !['transfer', ...roadmapItems].includes(key);
 const faqKeys = ["what", "cost", "scan", "verified", "gps", "clinics"];
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
@@ -128,13 +130,13 @@ function homeJsonLd(t: T, locale: string) {
         },
         featureList: [
           ...ownerFeatures.map((f) => t(`owner.${f.key}.title`)),
-          ...farmFeatures.map((f) => t(`farm.${f.key}.title`)),
+          ...farmFeatures.filter(feature => isBetaPromotion(feature.key)).map((f) => t(`farm.${f.key}.title`)),
         ],
       },
       {
         "@type": "FAQPage",
         "@id": `${page}#faq`,
-        mainEntity: faqKeys.map((k) => ({
+        mainEntity: faqKeys.filter(key => key !== "clinics").map((k) => ({
           "@type": "Question",
           name: t(`faq.${k}.q`),
           acceptedAnswer: {
@@ -1576,6 +1578,8 @@ export default function Home() {
                   <PawIcon color="#fff" />
                   {t("ctaCreate")}
                 </button>
+                <button className="secondary-btn" onClick={() => router.push('/farm-hub')}>{t('betaBrowse')}</button>
+                <button className="secondary-btn" onClick={() => router.push('/partner')}>{t('betaFarmStart')}</button>
                 {/* หน้า preview ไม่มี locale prefix (middleware ข้าม) จึงใช้ next/link ตรงๆ แทน router ที่เติม /th */}
                 <NextLink className="secondary-btn" href="/pet-id-card-preview" style={{ textDecoration: "none" }}>
                   {t("ctaPreview")}
@@ -1599,7 +1603,7 @@ export default function Home() {
               copy={t("problemsCopy")}
             />
             <div className="problem-grid">
-              {problemCards.map((problem) => (
+              {problemCards.filter(card => isBetaPromotion(card.key)).map((problem) => (
                 <article className="problem-card" key={problem.key} data-reveal>
                   <div className="icon-box">
                     <IconImg name={problem.icon} />
@@ -1705,7 +1709,7 @@ export default function Home() {
               copy={t("farmsCopy")}
             />
             <div className="audience-grid">
-              {farmFeatures.map((feature) => (
+              {farmFeatures.filter(feature => isBetaPromotion(feature.key)).map((feature) => (
                 <article className="audience-card" key={feature.key} data-reveal>
                   <div className="icon-box">
                     <IconImg name={feature.icon} />
@@ -1724,12 +1728,6 @@ export default function Home() {
                 {t("farmsRegister")}
               </button>
             </div>
-            <div className="roadmap-box" data-reveal>
-              <div className="roadmap-title">{t("roadmapTitle")}</div>
-              <ul>
-                {roadmapItems.map((item) => <li key={item}>{t(`roadmap.${item}`)}</li>)}
-              </ul>
-            </div>
           </div>
         </section>
 
@@ -1741,7 +1739,7 @@ export default function Home() {
             copy={t("faqCopy")}
           />
           <div className="faq-grid">
-            {faqKeys.map((k) => (
+            {faqKeys.filter(key => key !== "clinics").map((k) => (
               <article className="faq-card" key={k} data-reveal>
                 <h3>{t(`faq.${k}.q`)}</h3>
                 <p>{t(`faq.${k}.a`)}</p>

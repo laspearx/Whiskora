@@ -311,7 +311,7 @@ export default function FarmHubPage() {
             {filteredPets.map((pet) => (
               <Link
                 key={pet.id}
-                href={`/pets/${pet.id}`}
+                href={`/p/${pet.id}`}
                 className="premium-card flex flex-col overflow-hidden group"
               >
                 {/* Pet Image Wrapper (1:1 Square) */}

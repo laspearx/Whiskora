@@ -45,7 +45,22 @@
     "langEn": "ภาษาอังกฤษ",
     "tabPets": "สัตว์เลี้ยง",
     "tabQr": "QR สัตว์เลี้ยง",
-    "tabWeigh": "ชั่งน้ำหนัก"
+    "tabWeigh": "ชั่งน้ำหนัก",
+    "betaBrowse": "ค้นหาสัตว์และฟาร์ม",
+    "betaFarms": "สำหรับฟาร์ม",
+    "betaKnowledgeSub": "อ่านข้อมูลเกี่ยวกับสัตว์เลี้ยง",
+    "betaPartnerFarm": "ฟาร์มสัตว์เลี้ยง",
+    "betaPartnerFarmSub": "เพิ่มข้อมูลสัตว์และจัดการฟาร์มของคุณ",
+    "betaPartnerShop": "ร้านค้าของคุณ",
+    "betaPartnerShopSub": "จัดการร้านค้าเดิมของคุณ",
+    "betaPartnerService": "สถานบริการของคุณ",
+    "betaPartnerServiceSub": "จัดการสถานบริการเดิมของคุณ",
+    "betaFarmIntro": "เริ่มจากข้อมูลสัตว์ตัวแรก หรือเลือกฟาร์มที่คุณจัดการอยู่ สมาชิกทีมเลือกฟาร์มผ่านเมนูสลับพื้นที่ทำงานได้ตามสิทธิ์เดิม",
+    "betaFarmStart": "เริ่มใช้งานสำหรับฟาร์ม",
+    "betaYourBusinesses": "กิจการเดิมของคุณ",
+    "betaFarmRegister": "เริ่มสร้างฟาร์ม",
+    "betaHaveAccount": "มีบัญชีแล้ว?",
+    "betaBusinessLogin": "เข้าสู่ระบบเพื่อจัดการฟาร์มหรือกิจการเดิม →"
   },
   "meta": {
     "siteTitle": "Whiskora | Pet ID, QR Profile และฟาร์มสัตว์เลี้ยงคุณภาพ",
@@ -214,7 +229,9 @@
     "ctaBandCopy": "สร้าง Pet ID ฟรี แล้วค่อย ๆ เติมข้อมูลสุขภาพและเอกสาร เมื่อพร้อมก็แชร์ QR ให้คนที่ดูแลสัตว์เลี้ยงของคุณ",
     "orgDescription": "แพลตฟอร์ม pet-tech สำหรับ Pet ID, QR Profile, ประวัติสุขภาพ, เพ็ดดิกรี, เอกสารสำคัญ, ฟาร์มสัตว์เลี้ยง และการแชร์ข้อมูลสัตว์เลี้ยงที่เชื่อถือได้",
     "pageName": "Whiskora | Trusted Pet Identity, Health Records และ QR Profile",
-    "pageDescription": "Whiskora คือแพลตฟอร์มสัตว์เลี้ยงที่เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี, เอกสาร และการแชร์ข้อมูลสัตว์เลี้ยงไว้ในระบบเดียว"
+    "pageDescription": "Whiskora คือแพลตฟอร์มสัตว์เลี้ยงที่เชื่อม Pet ID, QR Profile, ประวัติสุขภาพ, ฟาร์ม, เพ็ดดิกรี, เอกสาร และการแชร์ข้อมูลสัตว์เลี้ยงไว้ในระบบเดียว",
+    "betaBrowse": "ค้นหาสัตว์และฟาร์ม",
+    "betaFarmStart": "เริ่มใช้งานสำหรับฟาร์ม"
   },
   "farmHub": {
     "title": "Pet Market",
@@ -312,7 +329,9 @@
     "tagline": "ศูนย์กลางของทุกชีวิตสัตว์เลี้ยง",
     "taglineSub": "One platform, every pet life.",
     "copyright": "© 2026 Whiskora",
-    "madeIn": "Made in Bangkok"
+    "madeIn": "Made in Bangkok",
+    "betaFarmSection": "สำหรับฟาร์ม",
+    "betaManageFarm": "จัดการฟาร์มของฉัน"
   },
   "home": {
     "heroBadge": "🐾 WHISKORA PLATFORM",

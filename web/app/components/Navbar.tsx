@@ -14,14 +14,17 @@ import type { Workspace } from '@/app/contexts/WorkspaceContext';
 type Href = string;
 
 // labels / subtitles are message keys of the `nav` namespace (messages/{th,en}.json)
+// Keep legacy route metadata; this is a promotion filter, not an access gate.
 const EXPLORE: { key: string; label: string; sub: string; href: Href; badge?: string }[] = [
-  { key: 'farm',        label: 'farmHub',       sub: 'farmHubSub',    href: '/farm-hub' },
-  { key: 'marketplace', label: 'petShop',       sub: 'petShopSub',    href: '/marketplace' },
-  { key: 'services',    label: 'clinics',       sub: 'clinicsSub',    href: '/service-hub' },
-  { key: 'community',   label: 'communityFull', sub: 'communitySub',  href: '/community', badge: 'soon' },
-  { key: 'tools',       label: 'toolsLabel',    sub: 'toolsSub',      href: '/pet-tools' },
-  { key: 'about',       label: 'aboutFull',     sub: 'aboutSub',      href: '/about' },
+  { key: 'farm', label: 'farmHub', sub: 'farmHubSub', href: '/farm-hub' },
+  { key: 'marketplace', label: 'petShop', sub: 'petShopSub', href: '/marketplace' },
+  { key: 'services', label: 'clinics', sub: 'clinicsSub', href: '/service-hub' },
+  { key: 'community', label: 'communityFull', sub: 'communitySub', href: '/community', badge: 'soon' },
+  { key: 'knowledge', label: 'knowledgeFull', sub: 'betaKnowledgeSub', href: '/pet-knowledge' },
+  { key: 'tools', label: 'toolsLabel', sub: 'toolsSub', href: '/pet-tools' },
+  { key: 'about', label: 'aboutFull', sub: 'aboutSub', href: '/about' },
 ];
+const PUBLIC_RESOURCES = EXPLORE.filter(item => ['knowledge', 'tools', 'about'].includes(item.key));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const ChevronDown = ({ open }: { open: boolean }) => (
@@ -54,7 +57,7 @@ export default function Navbar() {
   const navRef   = useRef<HTMLElement>(null);
 
   const active          = (h: Href) => pathname === h;
-  const exploreActive   = EXPLORE.some(i => pathname === i.href);
+  const exploreActive   = PUBLIC_RESOURCES.some(i => pathname === i.href);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -138,7 +141,7 @@ export default function Navbar() {
 
   // ── Shared class helpers ──────────────────────────────────────────────────
   const navLink = (isActive: boolean) =>
-    `text-sm font-medium whitespace-nowrap px-3 py-1.5 rounded-xl transition-colors ${
+    `text-sm font-medium whitespace-nowrap px-2 py-1.5 rounded-xl transition-colors ${
       isActive
         ? 'text-pink-700 bg-pink-50'
         : 'text-gray-600 hover:text-pink-700 hover:bg-gray-50'
@@ -164,7 +167,7 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[64px] gap-2">
+        <div className="flex flex-wrap items-center min-h-[64px] gap-2">
 
           {/* ── Logo ─────────────────────────────────────────────────── */}
           <Link href="/" className="shrink-0 mr-2 transition-transform hover:scale-[1.03]" style={{ overflow: 'visible' }}>
@@ -185,6 +188,14 @@ export default function Navbar() {
             {/* หน้าแรก */}
             <Link href="/" className={navLink(active('/'))}>{t('home')}</Link>
 
+            {/* Pet ID */}
+            <Link href="/pet-id-card" className={navLink(active('/pet-id-card'))}>{t('petId')}</Link>
+
+            {/* Buyer discovery */}
+            <Link href="/farm-hub" className={navLink(active('/farm-hub'))}>{t('betaBrowse')}</Link>
+
+            {/* Farm entry; legacy businesses remain available inside Partner. */}
+            <Link href="/partner" className={navLink(active('/partner'))}>{t('betaFarms')}</Link>
             {/* สำรวจ dropdown */}
             <div className="relative">
               <button
@@ -199,7 +210,7 @@ export default function Navbar() {
               {exploreOpen && (
                 <div className="absolute top-full left-0 mt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden py-1.5">
-                    {EXPLORE.map(item => (
+                    {PUBLIC_RESOURCES.map(item => (
                       <Link
                         key={item.key}
                         href={item.href as any}
@@ -220,14 +231,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Pet ID */}
-            <Link href="/pet-id-card" className={navLink(active('/pet-id-card'))}>{t('petId')}</Link>
-
-            {/* ความรู้ */}
-            <Link href="/pet-knowledge" className={navLink(active('/pet-knowledge'))}>{t('knowledge')}</Link>
-
-            {/* พาร์ทเนอร์ */}
-            <Link href="/partner" className={navLink(active('/partner'))}>{t('partnerShort')}</Link>
           </div>
 
           {/* ── Desktop right side ────────────────────────────────────── */}
@@ -305,6 +308,7 @@ export default function Navbar() {
                       <button onClick={() => go('/profile')} className={dropItem(active('/profile'))}>
                         {t('profile')}
                       </button>
+                      <button onClick={() => go('/profile/pets')} className={dropItem(active('/profile/pets'))}>{t('tabPets')}</button>
                     </div>
                   </div>
                 )}
@@ -390,13 +394,13 @@ export default function Navbar() {
             {/* Main links */}
             <button onClick={() => go('/')} className={dropItem(active('/'))}>{t('home')}</button>
             <button onClick={() => go('/pet-id-card')} className={dropItem(active('/pet-id-card'))}>{t('petIdCard')}</button>
-            <button onClick={() => go('/pet-knowledge')} className={dropItem(active('/pet-knowledge'))}>{t('knowledgeFull')}</button>
-            <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>{t('partnerShort')}</button>
+            <button onClick={() => go('/farm-hub')} className={dropItem(active('/farm-hub'))}>{t('betaBrowse')}</button>
+            <button onClick={() => go('/partner')} className={dropItem(active('/partner'))}>{t('betaFarms')}</button>
 
             {/* Explore group */}
             <div className="border-t border-gray-100 mt-1.5 pt-1.5">
               <div className="px-4 py-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('explore')}</div>
-              {EXPLORE.map(item => (
+              {PUBLIC_RESOURCES.map(item => (
                 <button
                   key={item.key}
                   onClick={() => go(item.href)}
@@ -430,8 +434,8 @@ export default function Navbar() {
 
     </nav>
 
-    {/* ── Floating Bottom Tab Bar (mobile only, hidden on farm dashboard) ── */}
-    {!pathname.includes('/farm-dashboard') && <nav
+    {/* Workspace layouts provide their own bottom navigation. */}
+    {!['/farm-dashboard', '/shop-dashboard', '/service-dashboard'].some(base => pathname.startsWith(base + '/')) && <nav
       aria-label={t('mainMenu')}
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{

@@ -111,21 +111,27 @@ test('scoped messages: a page ships only its namespaces', async ({ request }) =>
 
 test('client-side navigation between translated pages never shows raw keys', async ({ page }) => {
   const errors = await offline(page, 'ok');
-  await page.goto('/en/terms');
   const nav = page.locator('nav').first();
   const open = async () => {
     if (isMobile(page)) await page.getByRole('button', { name: 'Open menu' }).click();
     else await nav.getByRole('button', { name: 'Explore' }).click();
   };
-  await open();
-  await nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /Clinics & services/ }).first().click();
+  // Discovery promotion is hidden in Public Beta; legacy routes and their translations remain supported.
+  await page.goto('/en/service-hub');
   await expect(page).toHaveURL(/\/en\/service-hub$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Clinics & services' })).toBeVisible();
   await open();
-  await nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /Pet Shop/ }).first().click();
+  await expect(nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /Clinics & services/ })).toHaveCount(0);
+  await nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /About Whiskora/ }).first().click();
+  await expect(page.getByRole('heading', { level: 1, name: 'About Whiskora' })).toBeVisible();
+  await expect(main(page)).not.toContainText(/\b(subtitle|noteText|featuresLabel|category\.\w+)\b/);
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1, name: 'Clinics & services' })).toBeVisible();
+  await page.goto('/en/marketplace');
   await expect(page).toHaveURL(/\/en\/marketplace$/);
   await expect(page.getByText('Quality products for your pet from our partner shops')).toBeVisible();
   await open();
+  await expect(nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /Pet Shop/ })).toHaveCount(0);
   await nav.getByRole(isMobile(page) ? 'button' : 'link', { name: /About Whiskora/ }).first().click();
   await expect(page.getByRole('heading', { level: 1, name: 'About Whiskora' })).toBeVisible();
   await expect(main(page)).not.toContainText(/\b(subtitle|noteText|featuresLabel|category\.\w+)\b/);

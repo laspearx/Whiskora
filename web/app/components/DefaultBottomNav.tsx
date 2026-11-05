@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from '@/i18n/context';
 
 export default function DefaultBottomNav() {
   const router = useRouter();
+  const t = useTranslations('nav');
   const go = (path: string) => router.push(path);
 
   return (
     <nav
-      aria-label="เมนูหลัก"
+      aria-label={t('mainMenu')}
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: 'rgba(255,255,255,0.92)',
@@ -22,13 +24,13 @@ export default function DefaultBottomNav() {
       <div className="flex items-stretch h-[68px]">
 
         <TabBtn
-          label="หน้าแรก"
+          label={t('home')}
           onClick={() => go('/')}
           icon={<img src="/icons/icon-tab-home.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         <TabBtn
-          label="สัตว์เลี้ยง"
+          label={t('tabPets')}
           onClick={() => go('/profile/pets')}
           icon={<img src="/icons/icon-tab-pets.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
@@ -37,7 +39,7 @@ export default function DefaultBottomNav() {
         <div className="flex-1 flex flex-col items-center justify-center" style={{ position: 'relative' }}>
           <button
             onClick={() => go('/pet-id-card')}
-            aria-label="QR สัตว์เลี้ยง"
+            aria-label={t('tabQr')}
             style={{
               position: 'absolute',
               top: -22,
@@ -58,13 +60,13 @@ export default function DefaultBottomNav() {
         </div>
 
         <TabBtn
-          label="บริการ"
-          onClick={() => go('/service-hub')}
+          label={t('betaBrowse')}
+          onClick={() => go('/farm-hub')}
           icon={<img src="/icons/icon-tab-explore.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
 
         <TabBtn
-          label="โปรไฟล์"
+          label={t('profileShort')}
           onClick={() => go('/profile')}
           icon={<img src="/icons/icon-tab-profile.png" alt="" width={72} height={72} style={{ objectFit: 'contain' }} />}
         />
