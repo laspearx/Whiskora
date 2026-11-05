@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PET_COLUMNS } from '@/lib/columns';
 import { useParams, useRouter } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import { neuteredText } from '@/lib/trust';
+import QRCode from 'qrcode';
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -61,7 +62,7 @@ const CARD_THEMES: CardTheme[] = [
     petIdBg: 'linear-gradient(135deg, #C2844B 0%, #E8B873 100%)',
     preview: 'linear-gradient(135deg, #fffdf8 0%, #f3d8b8 100%)',
     shadow: '0 24px 64px rgba(194,132,75,0.19)' },
-  { id: 'rose-gold', name: 'Rose Gold', caption: 'Verified',
+  { id: 'rose-gold', name: 'Rose Gold', caption: 'Rose Gold',
     bg: '/id-card/pet-id-card-bg-rose-gold-v1.png',
     accent: '#CD7168', accent2: '#F0A39A', border: '#F8C9C3', soft: '#FFF2F0',
     petIdBg: 'linear-gradient(135deg, #CD7168 0%, #F0A39A 100%)',
@@ -79,6 +80,10 @@ export default function PetIdCardPage() {
   const [farm, setFarm] = useState<{ farm_name?: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [cardScale, setCardScale] = useState(1);
+  const [cardHeight, setCardHeight] = useState(580);
+  const [qrUrl, setQrUrl] = useState('');
+  const stageRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [selectedThemeId, setSelectedThemeId] = useState(() => {
     if (typeof window === 'undefined') return CARD_THEMES[0].id;
     const saved = window.localStorage.getItem(CARD_THEME_STORAGE_KEY);
@@ -87,16 +92,31 @@ export default function PetIdCardPage() {
 
   const selectedTheme = CARD_THEMES.find(t => t.id === selectedThemeId) || CARD_THEMES[0];
 
-  // Responsive scale
+  // Measure the real content area, including parent padding. Scale only the card.
   useEffect(() => {
-    const calc = () => {
-      const avail = Math.min(window.innerWidth - 40, 380);
-      setCardScale(avail / 380);
+    if (loading || !stageRef.current || !cardRef.current) return;
+    const stage = stageRef.current;
+    const card = cardRef.current;
+    const measure = () => {
+      setCardScale(Math.min(stage.clientWidth / 360, 1));
+      setCardHeight(card.offsetHeight);
     };
-    calc();
-    window.addEventListener('resize', calc);
-    return () => window.removeEventListener('resize', calc);
-  }, []);
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(card);
+    measure();
+    return () => observer.disconnect();
+  }, [loading]);
+
+  useEffect(() => {
+    let active = true;
+    setQrUrl('');
+    QRCode.toDataURL(`${window.location.origin}/p/${petId}`, {
+      width: 320, margin: 4, errorCorrectionLevel: 'H',
+      color: { dark: '#1f1a1c', light: '#FFFFFF' },
+    }).then(url => { if (active) setQrUrl(url); }).catch(() => { if (active) setQrUrl(''); });
+    return () => { active = false; };
+  }, [petId]);
 
   // Fetch pet
   useEffect(() => {
@@ -134,10 +154,6 @@ export default function PetIdCardPage() {
   // Helpers
   const isMale = pet?.gender === 'male' || pet?.gender === 'ตัวผู้';
   const petCode = pet ? (pet.pet_code || `WSK-${String(pet.id).padStart(5, '0')}`) : '';
-  const qrUrl = typeof window !== 'undefined'
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(window.location.origin + '/p/' + petId)}&margin=0&color=1f1a1c`
-    : '';
-
   const fmtDate = (d?: string | null) => {
     if (!d) return '-';
     return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -170,7 +186,7 @@ export default function PetIdCardPage() {
     <>
       <style>{`
         @keyframes page-rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes card-in   { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
+        @keyframes card-in   { from { opacity:0; } to { opacity:1; } }
 
         .idc-page { font-family: inherit; min-height: 100vh; color: ${F.ink}; }
         .idc-wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 80px; animation: page-rise .4s ease both; }
@@ -184,11 +200,11 @@ export default function PetIdCardPage() {
 
         /* ── card stage ── */
         .idc-stage { display: flex; justify-content: center; margin-bottom: 20px; }
-        .idc-card-scaler { position: relative; overflow: hidden; }
+        .idc-card-scaler { position: relative; flex-shrink: 0; overflow: hidden; }
 
         /* ── CARD — smooth gradient, no zone bands ── */
         .pet-card {
-          width: 360px; height: 580px;
+          width: 360px; min-height: 580px;
           border-radius: 22px;
           overflow: hidden;
           position: relative;
@@ -213,7 +229,7 @@ export default function PetIdCardPage() {
         /* ── BODY (photo 1:1 left, info right) ── */
         .pc-body {
           flex-shrink: 0;
-          display: grid; grid-template-columns: 130px 1fr;
+          display: grid; grid-template-columns: 130px minmax(0, 1fr);
           gap: 12px; padding: 12px 14px 10px;
           align-items: start;
         }
@@ -224,22 +240,22 @@ export default function PetIdCardPage() {
 
         /* ── INFO COL (right) ── */
         .pc-info-col { display: flex; flex-direction: column; min-width: 0; }
-        .pc-name { font-size: 19px; font-weight: 900; color: ${F.ink}; line-height: 1.05; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .pc-name { font-size: 19px; font-weight: 900; color: ${F.ink}; line-height: 1.2; letter-spacing: -.3px; white-space: normal; overflow-wrap: anywhere; margin-bottom: 4px; }
         .pc-badges-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 7px; }
         .pc-gender-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 999px; font-size: 8px; font-weight: 700; border: 1.5px solid ${T.border}; background: ${T.soft}; color: ${T.accent}; }
-        .pc-mini-tag { font-size: 7px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: ${T.soft}; border: 1px solid ${T.border}; color: ${F.inkSoft}; white-space: nowrap; }
+        .pc-mini-tag { font-size: 7px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: ${T.soft}; border: 1px solid ${T.border}; color: ${F.inkSoft}; max-width: 100%; overflow-wrap: anywhere; }
         .pc-divider { height: 1px; background: ${T.border}; margin-bottom: 5px; }
         .pc-compact-rows { display: flex; flex-direction: column; gap: 3px; }
         .pc-cr { display: flex; align-items: baseline; gap: 5px; }
         .pc-cr-label { font-size: 7.5px; color: ${F.muted}; white-space: nowrap; width: 44px; flex-shrink: 0; }
-        .pc-cr-val { font-size: 9px; font-weight: 700; color: ${F.ink}; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pc-cr-val { font-size: 9px; font-weight: 700; color: ${F.ink}; flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: normal; }
         .pc-pill { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; font-size: 8px; font-weight: 700; }
         .pc-pill-ok { background: #DCFCE7; color: #15803D; }
         .pc-pill-no { background: ${T.soft}; color: ${F.muted}; border: 1px solid ${T.border}; }
 
         /* ── QR SECTION — flex:1, no zone separation ── */
         .pc-qr-section {
-          flex: 1; min-height: 0;
+          flex: 1; min-height: 215px;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           gap: 6px; padding: 6px 20px;
         }
@@ -253,6 +269,7 @@ export default function PetIdCardPage() {
           box-sizing: border-box; flex-shrink: 0;
         }
         .pc-qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 5px; display: block; }
+        .pc-qr-box > img { image-rendering: pixelated; }
         .pc-qr-paw { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:22px; height:22px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.12); }
         .pc-qr-paw img { width:14px; height:14px; object-fit:contain; }
         .pc-scan-label { font-size: 8px; font-weight: 800; color: ${T.accent}; letter-spacing: .16em; flex-shrink: 0; }
@@ -314,9 +331,9 @@ export default function PetIdCardPage() {
           </div>
 
           {/* Card */}
-          <div className="idc-stage">
-            <div className="idc-card-scaler" style={{ width: 360 * cardScale, height: 580 * cardScale }}>
-              <div className="pet-card" style={{ transform: `scale(${cardScale})`, transformOrigin: 'top left' }}>
+          <div className="idc-stage" ref={stageRef}>
+            <div className="idc-card-scaler" style={{ width: 360 * cardScale, height: cardHeight * cardScale }}>
+              <div className="pet-card" ref={cardRef} style={{ transform: `scale(${cardScale})`, transformOrigin: 'top left' }}>
 
                 {/* Header */}
                 <div className="pc-header">

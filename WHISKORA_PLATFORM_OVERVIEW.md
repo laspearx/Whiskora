@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-11-02 (v1.14.1 live — `45b8bd7`; no direct API DELETE on businesses / workspaces (`docs/BUSINESS_DELETE_PRIVILEGES.md`); business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
+**Last updated:** 2026-11-03 (UI / i18n audit on `audit/ui-i18n-consistency`, not merged — `docs/UI_I18N_CONSISTENCY_AUDIT.md`; v1.14.1 live — `45b8bd7`; no direct API DELETE on businesses / workspaces (`docs/BUSINESS_DELETE_PRIVILEGES.md`); business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -123,6 +123,8 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - `app/[locale]/login/page.tsx` is the **live** sign-in page (not a shim); `app/login/page.tsx` is unreachable. The i18n router adds the locale itself — strip `/th|/en` from redirect targets (`stripLocale`).
 - Tests: `npm run test:e2e` (Playwright, desktop + mobile). Signed-in specs need staging test accounts (see `web/e2e/README.md`). Lint baseline 2026-10-30: 320 errors, mostly `no-explicit-any` (296); compare by file/rule/code, not by total.
 - Always verify current schema against the live Supabase project (via MCP tools) rather than trusting `web/lib/types.ts` or `supabase/migrations/` alone.
+- **Global CSS vs Tailwind v4**: `a { color: inherit }` and `h1–h3` sizes in `globals.css` are unlayered and override Tailwind utilities on links / headings (audit UI-12) — use inline style or fix with `@layer base`.
+- **i18n**: a page gets only the namespaces in its `<ScopedMessages ns>` (+ global `nav` / `footer` / `common`); system text via `useTranslations(ns)` (`t(key, vars)`), dates / prices via `lib/format.ts`, page metadata via `localeMetadata()` in the `[locale]` shim; `<html lang>` comes from the middleware header (`x-whiskora-locale`).
 - **Locale**: every page needs a `[locale]` shim (checked 2026-10-29: all present). Middleware remembers the last locale in cookie `NEXT_LOCALE`, so unprefixed `next/link` / `router.push('/x')` and the auth callbacks (`lib/locale.ts`) keep TH/EN instead of falling back to `/th`.
 - **Workspace members** (live since v1.12.0): never write `workspace_members` from the app — use the RPCs (`list_workspace_members`, `invite_workspace_member`, `respond_workspace_invitation`, `set_workspace_member_role`, `remove_workspace_member`, `ensure_workspace_owner_membership`); UI is `WorkspaceMembersPanel`, which reloads from the server after every action. Caller role = `is_me` row of `list_workspace_members`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
@@ -165,6 +167,11 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-11-03**
+- Prepared (not merged, `fix/i18n-phase2`): scoped messages per page (gzip HTML 23–49 % smaller), marketplace / clinics & services / community / about TH / EN — `docs/I18N_PHASE2.md`.
+- Prepared (not merged, `fix/i18n-foundation-phase1`): server `<html lang>`, locale metadata (canonical / hreflang), `lib/format.ts`, `t(key, vars)`; homepage, farm-hub, search fully TH / EN; farm-hub / search error states — `docs/I18N_PHASE1.md`.
+- Prepared (not merged): UI / i18n audit — Navbar TH/EN via `nav.*`, language switch keeps query / hash, branded TH/EN 404 (no hydration error), Navbar / farm-hub contrast + labels; 23 findings in `docs/UI_I18N_CONSISTENCY_AUDIT.md`.
 
 **2026-11-02**
 - v1.14.1 (PR #34) + migration `20261102060056 business_delete_privileges` (file `20261102100000`, sha256 `dea30431…8081`; staging `20261102040845`): no direct DELETE for anon / authenticated on farms / shops / services / workspaces; other rights, RLS, triggers, FKs, data unchanged (md5 pre/post).

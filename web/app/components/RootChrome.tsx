@@ -8,20 +8,21 @@ import Footer from "@/app/components/Footer";
 import HtmlLang from "@/app/components/HtmlLang";
 import Navbar from "@/app/components/Navbar";
 import ScrollToTop from "@/app/components/ScrollToTop";
-import thMessages from "@/messages/th.json";
 
 const localeRoutePattern = /^\/(th|en)(\/|$)/;
 const farmWorkspacePattern = /^\/farm-dashboard\//;
 
-export default function RootChrome({ children }: { children: ReactNode }) {
+export default function RootChrome({ children, messages }: { children: ReactNode; messages: Record<string, unknown> }) {
   const pathname = usePathname();
 
-  if (localeRoutePattern.test(pathname) || farmWorkspacePattern.test(pathname)) {
+  // '/_not-found' = the prerendered 404 (app/not-found.tsx): it brings its own TH / EN shell. Wrapping it in the Thai
+  // chrome here made the server HTML differ from the client (which sees the real /th|/en URL) → hydration error #418.
+  if (localeRoutePattern.test(pathname) || farmWorkspacePattern.test(pathname) || pathname === '/_not-found') {
     return <>{children}</>;
   }
 
   return (
-    <I18nProvider locale="th" messages={thMessages as Record<string, any>}>
+    <I18nProvider locale="th" messages={messages}>
       <HtmlLang />
       <BrowserChecker />
       <ScrollToTop />

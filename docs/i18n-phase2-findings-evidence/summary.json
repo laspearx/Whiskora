@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-04",
+  "branch": "fix/i18n-phase2-review-findings",
+  "phase2_base": "aa1b03e96e59f69a9667579bc686a55aaae32e21",
+  "shared_fix_reference": "cde9927f00d0bab709e50b9527a130c1bc95229e",
+  "shared_fix_application_commit": "e5e32732d1d4df9915da600ec330a0687832f232",
+  "findings_closed": 4,
+  "clean_production_build": {
+    "baseline_exit": 0,
+    "final_exit": 0,
+    "bundler": "webpack",
+    "full_type_validation": true,
+    "compile_only": false,
+    "baseline_clean_marker": {
+      "baseline_commit": "e5e3273",
+      "dist_absent_before_build": true,
+      "previous_generated_output_preserved_at": "/tmp/whiskora-i18n2-prebranch-next-1793779059"
+    },
+    "final_clean_marker": {
+      "dist_absent_before_build": true,
+      "baseline_output_preserved_at": "/tmp/whiskora-i18n2-baseline-next-1793779732",
+      "type_validation_disabled": false
+    }
+  },
+  "typescript_exit": 0,
+  "unit_total_passed": 50,
+  "browser": {
+    "startTime": "2026-11-04T08:11:46.985Z",
+    "duration": 405095.452,
+    "expected": 72,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browser_page_runner_errors": [],
+  "bundle_measurement_runs": {
+    "baseline": {
+      "startTime": "2026-11-04T08:03:56.835Z",
+      "duration": 24153.234,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "final": {
+      "startTime": "2026-11-04T08:11:24.551Z",
+      "duration": 21645.942,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "runtime": "full optimized production build, next start, one worker, Chromium 1248",
+  "data": "synthetic rows; loopback Supabase 127.0.0.1:9; external browser requests aborted; no real user data",
+  "source_hashes": {
+    "web/app/components/RootChrome.tsx": "d33320c281cc96b4c181699cec1757954c9a7608c571ad202fec07b9de13e17f",
+    "web/app/components/ScopedMessages.tsx": "9fdfc3fcd6eb3ff71e8bdb5f874486fb4925246ec8f3cc14b3c1aa8f04ac0186",
+    "web/app/layout.tsx": "050fb17ace3deae1eb8c8da40b9bc8e2e8b7135896ed505486079efb982744fe",
+    "web/app/marketplace/page.tsx": "2ba74ff0545af945ec6fbe819cd67a03cf61096d1c8dbf45b28a04f3ab9e2ff7",
+    "web/app/service-hub/page.tsx": "70be410c0c14c1595f21e1e0c4742b4ba4dc6a6e9e939a40a383569d151c4bc2",
+    "web/tests/i18n-namespaces.test.mjs": "46256af5bf66b56d5108920545589faa7252498dcd8e40bf7e2b8735c3c58b07",
+    "web/tests/catalogue-race.test.mjs": "c6cc5710de631a7b771a33b3ae9149279a2fc6db7aad3c0fc621331dbabeb6c3",
+    "web/e2e/i18n/bundle.spec.ts": "cf88e1207aa93c44f7c1cfcc54a5ddd0ecc16b060b93173a539e494f1940f841",
+    "web/e2e/i18n/findings.spec.ts": "80fd40373509c7db4730bd55f6becb1a1802fc4a18b7655c961f68f1946e034a",
+    "web/playwright.i18n-findings.config.ts": "1ea215c1edffcc3d5e3ad76c513a9326accafbadbb734e3fe0b3dca5617ad9a9",
+    "web/scripts/i18n-local-server.mjs": "2601e4c5e0726f9defb615755edc1e89751ab7845c2381e0ea1050cec0d05f91"
+  },
+  "limitations": [
+    "Static combined-source compatibility only; no actual branch merge or combined security runtime/DB test.",
+    "Explore needs the provided ScopedMessages adapter and a documentation conflict resolved at integration.",
+    "Default Turbopack bundler not tested.",
+    "Existing list-page ESLint errors: 2 no-explicit-any; existing warnings: 5; no added diagnostics."
+  ],
+  "no_push_merge_deploy_migration": true,
+  "worktree_count": 4,
+  "raw_evidence_directory": "local-evidence/i18n-phase2-findings-20261104"
+}

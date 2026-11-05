@@ -1,0 +1,42 @@
+[
+  {
+    "path": "app/components/RootChrome.tsx",
+    "baseline_errors": 1,
+    "final_errors": 0,
+    "baseline_warnings": 0,
+    "final_warnings": 0,
+    "added_diagnostics": []
+  },
+  {
+    "path": "app/components/ScopedMessages.tsx",
+    "baseline_errors": 0,
+    "final_errors": 0,
+    "baseline_warnings": 0,
+    "final_warnings": 0,
+    "added_diagnostics": []
+  },
+  {
+    "path": "app/layout.tsx",
+    "baseline_errors": 0,
+    "final_errors": 0,
+    "baseline_warnings": 1,
+    "final_warnings": 1,
+    "added_diagnostics": []
+  },
+  {
+    "path": "app/marketplace/page.tsx",
+    "baseline_errors": 1,
+    "final_errors": 1,
+    "baseline_warnings": 3,
+    "final_warnings": 2,
+    "added_diagnostics": []
+  },
+  {
+    "path": "app/service-hub/page.tsx",
+    "baseline_errors": 1,
+    "final_errors": 1,
+    "baseline_warnings": 3,
+    "final_warnings": 2,
+    "added_diagnostics": []
+  }
+]

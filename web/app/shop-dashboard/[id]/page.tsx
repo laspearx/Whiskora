@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
-import { useShopAccess } from "./layout";
+import { useShopAccess } from "@/lib/shop-access";
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 const F = {

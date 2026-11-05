@@ -1,26 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { ServiceAccessContext, type ServiceRole } from "@/lib/service-access";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import DefaultBottomNav from "@/app/components/DefaultBottomNav";
-
-export type ServiceRole = "owner" | "manager" | "staff" | "viewer";
-
-interface ServiceAccessContextValue {
-  serviceId: string;
-  myRole: ServiceRole;
-}
-
-const ServiceAccessContext = createContext<ServiceAccessContextValue | null>(null);
-
-export function useServiceAccess() {
-  const ctx = useContext(ServiceAccessContext);
-  if (!ctx) throw new Error("useServiceAccess must be used inside service-dashboard layout");
-  return ctx;
-}
 
 export default function ServiceDashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();

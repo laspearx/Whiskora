@@ -1,32 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { FarmAccessContext, type FarmRole } from "@/lib/farm-access";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageLoader from "@/app/components/PageLoader";
 import FarmBottomNav from "@/app/components/FarmBottomNav";
 
-export type FarmRole = "owner" | "manager" | "staff" | "viewer";
-
 // หน้าที่สร้าง/แก้ข้อมูลในนามเจ้าของฟาร์ม (insert ใช้ user_id ของผู้กด และหน้า edit/verify แก้ข้อมูลส่วนตัวของเจ้าของ)
 // จึงจำกัดเฉพาะ owner ไว้ก่อน — ไม่ขยายให้ทุกบทบาทเท่ากัน จนกว่า RLS/insert จะรองรับการทำแทนเจ้าของ
 const OWNER_ONLY_SUFFIXES = ["/edit", "/verify", "/pets/create", "/pets/bulk-create", "/litters/create"];
-
-export const canEditFarmProfile = (role: FarmRole) => role === "owner";
-
-interface FarmAccessContextValue {
-  farmId: string;
-  myRole: FarmRole;
-}
-
-const FarmAccessContext = createContext<FarmAccessContextValue | null>(null);
-
-export function useFarmAccess() {
-  const ctx = useContext(FarmAccessContext);
-  if (!ctx) throw new Error("useFarmAccess must be used inside farm-dashboard layout");
-  return ctx;
-}
 
 export default function FarmDashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();

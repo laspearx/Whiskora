@@ -8,8 +8,9 @@ import { PET_COLUMNS } from '@/lib/columns';
 import { speciesTh, getGestationConfig } from "@/lib/species";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useLocale } from '@/i18n/context';
 import PageLoader from '@/app/components/PageLoader';
-import { useFarmAccess, canEditFarmProfile } from '@/app/farm-dashboard/[id]/layout';
+import { useFarmAccess, canEditFarmProfile } from '@/lib/farm-access';
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 /* ── Design tokens ── */
@@ -121,6 +122,7 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area, maxDim = 1200):
 ───────────────────────────────────────────────────────────── */
 function FarmDashboardContent() {
   const { myRole } = useFarmAccess();
+  const firstListingLocale = useLocale();
   const canEdit = canEditFarmProfile(myRole);
   const router      = useRouter();
   const params      = useParams();
@@ -563,6 +565,13 @@ function FarmDashboardContent() {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) openCrop(f, "cover"); if (coverInputRef.current) coverInputRef.current.value = ""; }} />
         </div>
 
+        {canEdit && <section style={{ margin: '20px', padding: 20, background: '#FDF2F5', borderRadius: 16 }}>
+          <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ display: 'inline-block', padding: '12px 18px', background: '#E84677', color: '#fff', borderRadius: 12, fontWeight: 700 }}>
+            {firstListingLocale === 'en' ? 'Add a pet' : 'เพิ่มสัตว์เลี้ยง'}
+          </Link>
+          <Link href={`/farm-dashboard/${farmId}/pets/bulk-create`} style={{ display: 'inline-block', marginLeft: 16, padding: '12px 0', color: F.inkSoft }}>{firstListingLocale === 'en' ? 'Add multiple pets' : 'เพิ่มหลายตัว'}</Link>
+          <p style={{ marginTop: 10 }}>{firstListingLocale === 'en' ? 'Start with basic information. Parents and litter records are optional.' : 'เริ่มจากข้อมูลพื้นฐาน ไม่ต้องสร้างพ่อแม่พันธุ์หรือครอกก่อน'}</p>
+        </section>}
         {/* Identity */}
         <div className="fd-identity">
           <div className="fd-id-row">
@@ -690,7 +699,7 @@ function FarmDashboardContent() {
             {pets.length === 0 ? (
               <div className="fd-empty-sm">
                 ยังไม่มีสัตว์ในฟาร์ม —{' '}
-                <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ color: F.pink, fontWeight: 700 }}>เพิ่มสัตว์</Link>
+                {canEdit && <Link href={`/farm-dashboard/${farmId}/pets/create`} style={{ color: F.pink, fontWeight: 700 }}>{firstListingLocale === "en" ? "Add a pet" : "เพิ่มสัตว์เลี้ยง"}</Link>}
               </div>
             ) : (
               <div className="fd-ov-grid">

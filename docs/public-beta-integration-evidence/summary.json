@@ -1,0 +1,234 @@
+{
+  "status": "INTEGRATION PASSED \u2014 PENDING INDEPENDENT REVIEW",
+  "main": "a86b35a4548ff9edf26f94bf5e1d7059904f7a34",
+  "ux": "ce4be20c30401246ab5cf77dba4aad8421ff609b",
+  "i18n": "08b1a8990e2321c0dccd24701d526e3f9b524161",
+  "merge_commits": [
+    "2ef1dfe",
+    "fa740d6"
+  ],
+  "conflicts": [],
+  "build": {
+    "exit": 0,
+    "bundler": "webpack",
+    "node": "24.21.0",
+    "next": "16.2.10",
+    "clean": true,
+    "dummy_loopback_only": true
+  },
+  "typescript": {
+    "generated_build_validators": 0,
+    "after_restoring_next_env": 0
+  },
+  "unit": {
+    "passed": 72,
+    "failed": 0,
+    "skipped": 0,
+    "breakdown": {
+      "i18n_consistency": 6,
+      "format": 13,
+      "namespaces": 7,
+      "catalogue_race": 16,
+      "dashboard_layout": 8,
+      "vaccine_summary": 22
+    }
+  },
+  "browser": {
+    "ux_original": 36,
+    "integration_pet": 8,
+    "integration_farm": 2,
+    "i18n": 72,
+    "flow_total": 118,
+    "desktop": 59,
+    "mobile": 59,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "bundle_measurement": 1,
+    "exits": {
+      "ux-production": 0,
+      "farm-production": 0,
+      "i18n-production": 0,
+      "bundle": 0
+    },
+    "flaky": 0
+  },
+  "performance": {
+    "method": "Raw response bodies and independently gzipped JavaScript, unique URLs per fresh context. HTML/RSC/CSS excluded. Gzip sizes are computed comparison sizes, not claimed browser wire transfer sizes.",
+    "before_total_raw": 3460932,
+    "after_total_raw": 3463902,
+    "before_total_gzip": 1034430,
+    "after_total_gzip": 1035788,
+    "roots_before": [
+      {
+        "path": "static/chunks/app/layout-b2f219b72720427f.js",
+        "rawBytes": 2232,
+        "gzipBytes": 1027,
+        "catalogueSentinel": false
+      }
+    ],
+    "roots_after": [
+      {
+        "path": "static/chunks/app/layout-b2f219b72720427f.js",
+        "rawBytes": 2232,
+        "gzipBytes": 1027,
+        "catalogueSentinel": false
+      }
+    ],
+    "catalogue_chunks_after": [],
+    "routes": [
+      {
+        "path": "/en/terms",
+        "before_raw": 762346,
+        "after_raw": 762346,
+        "before_gzip": 219019,
+        "after_gzip": 219019
+      },
+      {
+        "path": "/th/terms",
+        "before_raw": 762346,
+        "after_raw": 762346,
+        "before_gzip": 219019,
+        "after_gzip": 219019
+      },
+      {
+        "path": "/en/marketplace",
+        "before_raw": 724735,
+        "after_raw": 724735,
+        "before_gzip": 212710,
+        "after_gzip": 212710
+      },
+      {
+        "path": "/th/marketplace",
+        "before_raw": 724735,
+        "after_raw": 724735,
+        "before_gzip": 212710,
+        "after_gzip": 212710
+      },
+      {
+        "path": "/en/service-hub",
+        "before_raw": 723638,
+        "after_raw": 723638,
+        "before_gzip": 212280,
+        "after_gzip": 212280
+      },
+      {
+        "path": "/th/service-hub",
+        "before_raw": 723638,
+        "after_raw": 723638,
+        "before_gzip": 212280,
+        "after_gzip": 212280
+      },
+      {
+        "path": "/en/about",
+        "before_raw": 720709,
+        "after_raw": 720709,
+        "before_gzip": 210476,
+        "after_gzip": 210476
+      },
+      {
+        "path": "/th/about",
+        "before_raw": 720709,
+        "after_raw": 720709,
+        "before_gzip": 210476,
+        "after_gzip": 210476
+      }
+    ],
+    "attribution": {
+      "pet_detail_chunk_before": {
+        "id": "1764",
+        "raw": 110545,
+        "gzip": 23725
+      },
+      "pet_detail_chunk_after": {
+        "id": "6074",
+        "raw": 113515,
+        "gzip": 25081
+      },
+      "raw_increase": 2970,
+      "gzip_chunk_increase": 1356,
+      "remaining_gzip_increase": 2,
+      "note": "Remaining 2 gzip bytes come from build manifests with different build IDs; manifest raw sizes unchanged. Pet chunk contains pet-name, health summary and pet RPC references. No root or measured cold-route JS growth."
+    }
+  },
+  "preservation": {
+    "original_evidence_files": 462,
+    "modified_or_missing_original_evidence": [],
+    "changed_original_refs": [],
+    "worktree_count": 4,
+    "protected_paths_unchanged": true,
+    "ux_source_byte_identical": true,
+    "i18n_shared_source_byte_identical": true
+  },
+  "limitations": [
+    "Pending Independent Review; no release approval",
+    "Synthetic APIs/session state only; no live DB, provider login, RLS or security validation",
+    "Dev attempt had 2 failures and 25 unrun; final production-mode suite passes without reduced assertions",
+    "Translation coverage unchanged: 13 complete, 1 partial, 65 pending"
+  ],
+  "artifacts": {
+    "browser-exits.json": "0d37dc6466ae63b6e820087ce8bc2fee64642212d2cc88ffd2a6d03214fd0d37",
+    "build.log": "a1ea209edb40683b2ba8dc63fb7a4d5a764d283b7ea5315dd49cbffcca30ed12",
+    "bundle.log": "0dbe1471c2901b36edaf4c2110b9ad66aa2e8a5dd3d29ab2fa19ba12b676352c",
+    "catalogue-race.test.log": "9c110effbd1c7f8cc638c516fb1e52ffb2cc469945e3011180584b231f6397a6",
+    "dashboard-layout-regression.test.log": "476f28eb7b40e0d5f079ab6ec05d3d4b97621a78a98292890f7fb1c89800eea5",
+    "farm-production.log": "6e304cb436d732d82c7650aa5b62ef3aee28a6d2a65f66320a9173d634f3ab2a",
+    "i18n-consistency.test.log": "32510aa2d65e2b47d54699acf69820a9cec3b8b856bd3e05c89c60d75e4dcd4c",
+    "i18n-format.test.log": "d792d822a2a334b64b50f601d08abbf12a8dd26c18dc23c0f8720267a547b4e8",
+    "i18n-namespaces.test.log": "8f1fa6ed0abd579fd9f0ad7bdc60c126828391d07787e51d748a2babbb580794",
+    "i18n-production.log": "1d20d70ab13be99598df25382ece2ab31c6b100171cea17d937d1c62e98b2676",
+    "integration-browser-artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "integration-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-desktop/service-hub-en.png": "f84902f2b765ca599fe16de73854800caf1c8b10b606c3c5b71d4892c0455326",
+    "integration-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-desktop/service-hub-th.png": "04d316ede612ce9dc10ba7af3898dbf6780c658d5ac4e25dd13d9450b6f4d658",
+    "integration-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-mobile/service-hub-en.png": "8ea03bb6469f2edde7618d04adab5d5cc93969704019693fd858d9b07002af9c",
+    "integration-browser-artifacts/findings-service-cards-in--4cb3b-ut-without-invented-reviews-mobile/service-hub-th.png": "8c5c9585d970c44b775303e05813bb9c10e4224e2667de93695f2e046da90b9b",
+    "integration-bundle-browser-artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "integration-bundle-javascript.json": "4ca14bb864cd08c7b01e85c34d7e0ffc874601425b12abc36a085e8474c25ac0",
+    "integration-bundle-playwright.json": "739ab766b619de45024ffb59d20817224a6fd431ae7b0d0ef4e9a2850bb6118e",
+    "integration-eslint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "integration-playwright.json": "6cec7a6518d88b93db0ca0940b279c36d7628304085faef0f8e88faee4ddad13",
+    "performance-comparison.json": "7ab240334130d5e74e684394e66c4334ae92d48f45a08e03442f82d7def9dd57",
+    "preservation-before.json": "2c3b529a76c3268cc9abbb84e27b226d25ef608e8a0bc3e42cf41465f6616952",
+    "preservation-final.json": "d36d85e7bd039f69aeae9d009af326394ad9ec1bda43abafb6b05888d68acd72",
+    "refs-before.txt": "3b8dcdef7b48405fe0c162ee7cda04922957a586476429141a925200da625804",
+    "run_browsers.py": "9ae30e295663aba7c149666018d182e6d9d71d5d2f0402f07de3e3a3734d3c6a",
+    "typescript-before-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typescript-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typescript-restored-env-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typescript-restored-env.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ux-attempts/2026-11-04T11-13-14-518Z-5/artifacts/.last-run.json": "e22df5d0991eb28c09093b1e678b3fa8cd1fab48185d38e67cf79fb6e63ad5ea",
+    "ux-attempts/2026-11-04T11-13-14-518Z-5/case-events.jsonl": "6dd7f6b27152103cb0b1b797dbdc2ee54d3783b874df87904b08a08c6d59e44e",
+    "ux-attempts/2026-11-04T11-13-14-518Z-5/results.json": "287ea59c3c18f68a4af577a86e81efeaf49e2fe2877134b4b1c716956cf9ce2c",
+    "ux-attempts/2026-11-04T11-13-14-518Z-5/server-events.jsonl": "72b5866daabc038d6f737a673e44b14d4d6855cad35dd8b7b474a2782eabfec7",
+    "ux-attempts/2026-11-04T11-13-40-634Z-180993/artifacts/.last-run.json": "3ddfff47c0c2ef4b3246d46c62dbd11f00f424a8e706c57a34de108f19c91f48",
+    "ux-attempts/2026-11-04T11-13-40-634Z-180993/case-events.jsonl": "52a7a0f94bdb327cc40a6a2dd8f251726173571db4d0208e5a97df0874b51dae",
+    "ux-attempts/2026-11-04T11-13-40-634Z-180993/results.json": "347f33d479bf919f6bcc77c28c5194058d96874a00c6d65fa4f78423cef0e399",
+    "ux-attempts/2026-11-04T11-13-40-634Z-180993/server-events.jsonl": "defbe4cdfb34e9cac57f0e7e9ff3ed9387fd5f2594ca47c2c8aa22c88e4fca69",
+    "ux-attempts/2026-11-04T11-14-15-826Z-181462/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/categories.png": "00bc23c796892a31671d5dbf5d460ddbd21e844bc0ce12d1fa947c8f1dbdb2b8",
+    "ux-attempts/2026-11-04T11-14-15-826Z-181462/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/summary.png": "b7376272629bce6b67724581d0b78aa79a20ec1daf99c5b2467c6b02d8b71e2a",
+    "ux-attempts/2026-11-04T11-14-15-826Z-181462/artifacts/vaccine-ux-transport-failu-2d08f-ut-leaving-the-loader-stuck-desktop/error-context.md": "149e446a3bc9b1a14fd731366d3e1551b6ab9521a1de23c1f5e3d92ad8333f8e",
+    "ux-attempts/2026-11-04T11-14-15-826Z-181462/artifacts/vaccine-ux-transport-failu-2d08f-ut-leaving-the-loader-stuck-desktop/trace.zip": "242e2de0c8cf3621cda7a4a8539c8dab76d0c6a212216b134207db6bc679df58",
+    "ux-attempts/2026-11-04T11-16-59-639Z-184285/artifacts/vaccine-ux-switching-accou-b693e-rechecks-private-pet-access-desktop/error-context.md": "5a69b8ca19e511c34ba2af8368f4ba1c8fcdd98fe15903af31fb112dcf7931ea",
+    "ux-attempts/2026-11-04T11-16-59-639Z-184285/artifacts/vaccine-ux-switching-accou-b693e-rechecks-private-pet-access-desktop/trace.zip": "50a687dfd942ca0a04770478f6c3f410f605ce7837e4bc5e498ca98583051384",
+    "ux-attempts/2026-11-04T11-21-00-763Z-187191/artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "ux-attempts/2026-11-04T11-21-00-763Z-187191/case-events.jsonl": "f414a424d501c099a5bf2e9987ae9b015513e54844fb52527bb92cedb5ce71f6",
+    "ux-attempts/2026-11-04T11-21-00-763Z-187191/results.json": "fce6f518baf7ea07e948c083b641d7953225ae9ea7d16d60fc7900cdf11ac2f6",
+    "ux-attempts/2026-11-04T11-21-00-763Z-187191/server-events.jsonl": "2907110217f0cbb9bc3881dfb9b8e270b8f72831c712bacad685234006769b19",
+    "ux-attempts/2026-11-04T11-21-07-185Z-187315/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/categories.png": "38c18b62693cbafec30e00db3ed81e2af5076b913677c5c1b6c8687ecc3765f0",
+    "ux-attempts/2026-11-04T11-21-07-185Z-187315/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-desktop/summary.png": "b7376272629bce6b67724581d0b78aa79a20ec1daf99c5b2467c6b02d8b71e2a",
+    "ux-attempts/2026-11-04T11-22-21-415Z-189093/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-mobile/categories.png": "073c8bb0dfe5eb5af73e42a8b47d0619494754afb1478df0b20e27f61870553e",
+    "ux-attempts/2026-11-04T11-22-21-415Z-189093/artifacts/vaccine-ux-owner-switches--d9491--create-link-opens-the-form-mobile/summary.png": "4b13ec035edf58733d48a2bad7cbd39f33f85190a76711fc19f02b43a97b29a9",
+    "ux-attempts/2026-11-04T11-23-37-756Z-190829/artifacts/.last-run.json": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+    "ux-attempts/2026-11-04T11-23-37-756Z-190829/case-events.jsonl": "ddea0e583d092867fa0a8e0fbec7887153e8c8fc26b9745010875d0db1fa0c3f",
+    "ux-attempts/2026-11-04T11-23-37-756Z-190829/results.json": "4473dac176bea7fcac180b291aacfa133d651c3bf566839d75b9bada1800db02",
+    "ux-attempts/2026-11-04T11-23-37-756Z-190829/server-events.jsonl": "838076a431427a305a4d092b5811db994541d69205c1faf4ebee23576ac6d973",
+    "ux-attempts/2026-11-04T11-23-43-152Z-190911/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-desktop/farm-en.png": "d7a78dd51754cc913242f10b1b0430ecf6a3b72561aa7ab20c67ec5fc080afb5",
+    "ux-attempts/2026-11-04T11-23-43-152Z-190911/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-desktop/farm-th.png": "d3bd505e839fc0ce3a4eb7c9b2b5392285ae1dc4de9a4374ff59b72a372e5f39",
+    "ux-attempts/2026-11-04T11-23-53-630Z-191151/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-mobile/farm-en.png": "d1e97e054bdffe566dd4255884e76fac839e5f0d0d69383313186923daf10199",
+    "ux-attempts/2026-11-04T11-23-53-630Z-191151/artifacts/integration-farm-integrati-65fa1-data-in-TH-EN-after-refresh-mobile/farm-th.png": "582424ef240a1f104175da5efec90413450b56df320b598abe6a900cfe8a65ba",
+    "ux-browser-authorized.log": "74c40b406ce17e415ed322d606dc67dec146ece1cae1d3fe33a07848b383ae6c",
+    "ux-browser.log": "39972a72dff0d728110d581ae471d57c5448aec843a34524fadab46d24a94310",
+    "ux-production.log": "8660e0db164f93eb00b8af72536942029bef2509f103096204506df3fa247097",
+    "vaccine-summary.test.log": "a78d44715ef3d9d469ed14f07086abad33ad843218db9161de5bd97f1fd5cb60"
+  }
+}

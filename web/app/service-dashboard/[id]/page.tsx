@@ -8,7 +8,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { speciesTh } from "@/lib/species";
 import PageLoader from '@/app/components/PageLoader';
-import { useServiceAccess } from "./layout";
+import { useServiceAccess } from "@/lib/service-access";
 import { updateBusinessProfile, errorMessage } from '@/lib/updateBusinessProfile';
 
 const F = {

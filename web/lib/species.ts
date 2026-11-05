@@ -48,6 +48,14 @@ export function speciesTh(value?: string | null): string {
   return value;                                            // ค่าที่ผู้ใช้พิมพ์เอง (custom)
 }
 
+/** species id (or legacy Thai value) → display name in the UI language; custom values are user data → unchanged */
+export function speciesName(value: string | null | undefined, locale: string): string {
+  if (!value) return '';
+  const id = SPECIES_MAP[value] ? value : TH_TO_ID[value];
+  if (!id) return value;
+  return locale === 'en' ? SPECIES_MAP[id].en : SPECIES_MAP[id].th;
+}
+
 /** แปลง species id → emoji */
 export function speciesEmoji(value?: string | null): string {
   if (!value) return '🐾';
