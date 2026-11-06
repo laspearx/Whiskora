@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useServiceAccess } from "@/app/service-dashboard/[id]/layout";
+import { useServiceAccess } from "@/lib/service-access";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import PageLoader from "@/app/components/PageLoader";
 import { Suspense } from "react";
