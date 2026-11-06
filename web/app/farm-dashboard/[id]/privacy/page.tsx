@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useFarmAccess } from "@/app/farm-dashboard/[id]/layout";
+import { useFarmAccess } from "@/lib/farm-access";
 import PageLoader from "@/app/components/PageLoader";
 
 const F = {
