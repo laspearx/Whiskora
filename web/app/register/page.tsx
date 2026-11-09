@@ -74,7 +74,11 @@ function RegisterContent() {
     if (!allPass) { setError(t("errWeak")); return; }
     if (!passwordsMatch) { setError(t("errMismatch")); return; }
     setLoading(true);
-    const { error: err } = await supabase.auth.signUp({ email, password });
+    // when "Confirm email" is on, the link must come back through our callback (internal path only)
+    const { error: err } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/profile')}` },
+    });
     setLoading(false);
     if (err) {
       if (err.message.includes("already registered")) setError(t("errExists"));

@@ -3,6 +3,11 @@ import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { isPreviewDeploy } from '@/lib/deploy-env'
 import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
+import { decideLine, decideLegacy, withLineId, type EvidenceRow } from '@/lib/lineAuth'
+
+class LineAuthError extends Error {
+  constructor(public code: string, public detail: string) { super(code) }
+}
 
 function makeAdmin() {
   return createClient(
@@ -41,11 +46,13 @@ export async function GET(request: Request) {
   const nextPath    = cookieStore.get('line_next')?.value || '/profile'
   const mode        = cookieStore.get('line_mode')?.value || 'login'
   const linkUid     = cookieStore.get('line_uid')?.value  || ''
+  const createConfirmed = cookieStore.get('line_create')?.value === '1'
   cookieStore.delete('line_state')
   cookieStore.delete('line_next')
   cookieStore.delete('line_origin')
   cookieStore.delete('line_mode')
   cookieStore.delete('line_uid')
+  cookieStore.delete('line_create')
 
   if (!savedState || savedState !== stateBack) return fail('state_mismatch')
 
@@ -64,9 +71,9 @@ export async function GET(request: Request) {
         client_secret: process.env.LINE_CHANNEL_SECRET!,
       }),
     })
-    if (!tokenRes.ok) throw new Error(`LINE token error: ${await tokenRes.text()}`)
+    if (!tokenRes.ok) throw new LineAuthError('LINE_TOKEN_FAILED', `token ${tokenRes.status}`)
     const tokenData = await tokenRes.json()
-    if (!tokenData.access_token) throw new Error('No access token from LINE')
+    if (!tokenData.access_token) throw new LineAuthError('LINE_TOKEN_FAILED', 'no access token')
 
     // ── 2. get LINE profile ──────────────────────────────────────────────────
     const profileRes = await fetch('https://api.line.me/v2/profile', {
@@ -75,71 +82,73 @@ export async function GET(request: Request) {
     const lineProfile = await profileRes.json()
     // { userId, displayName, pictureUrl }
 
-    // ── 3. extract email from id_token (OIDC) ────────────────────────────────
-    let email: string | null = null
-    if (tokenData.id_token) {
-      try {
-        const b64 = tokenData.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-        const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'))
-        email = payload.email || null
-      } catch {}
-    }
-    const userEmail = email ?? `line_${lineProfile.userId}@line.whiskora.internal`
+    if (!profileRes.ok) throw new LineAuthError('LINE_TOKEN_FAILED', `profile ${profileRes.status}`)
 
+    // ── 3. find the account by app_metadata.line_id ONLY (server-writable; any number of users) ──────────────
+    // Not by email (LINE does not state its email claim is verified) and not by user_metadata (user-writable).
     const admin = makeAdmin()
-    const { data: { users } } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    const { data: idRows, error: lookupErr } = await admin.rpc('find_auth_user_by_line_id', { p_line_id: lineProfile.userId })
+    if (lookupErr) throw new LineAuthError('auth_failed', `lookup ${lookupErr.code ?? ''}`)
+    const ids = ((idRows ?? []) as unknown[]).map(String)
+    const decision = decideLine({ lineUserId: lineProfile.userId, mode, linkUid, ids })
 
-    // ── 4a. LINK MODE — เชื่อม LINE เข้ากับ account ที่ล็อกอินอยู่ ────────────
-    if (mode === 'link' && linkUid) {
-      const alreadyOwned = users.find(
-        u => u.user_metadata?.line_id === lineProfile.userId && u.id !== linkUid,
-      )
-      if (alreadyOwned) {
-        return NextResponse.redirect(
-          `${siteUrl}/${locale}/profile/connections?link_error=${encodeURIComponent('LINE บัญชีนี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว')}`,
-        )
-      }
-
-      await admin.auth.admin.updateUserById(linkUid, {
-        user_metadata: {
-          ...users.find(u => u.id === linkUid)?.user_metadata,
-          line_id:           lineProfile.userId,
-          line_display_name: lineProfile.displayName,
-        },
+    // ── 4a. LINK MODE — the signed-in user (verified by POST /api/auth/line) adds LINE ─────────────────────────
+    if (mode === 'link') {
+      const linkFail = (code: string) => NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?link_error=${encodeURIComponent(code)}`)
+      if (decision.action === 'already_linked') return NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?linked=line`)
+      if (decision.action !== 'link') return linkFail(decision.action === 'error' ? decision.code : 'auth_failed')
+      const { data: cur, error: curErr } = await admin.auth.admin.getUserById(decision.userId)
+      if (curErr || !cur.user) return linkFail('auth_failed')
+      const { error: upErr } = await admin.auth.admin.updateUserById(decision.userId, {
+        app_metadata:  withLineId(cur.user.app_metadata, lineProfile.userId),
+        // user_metadata.line_id: compatibility copy for an app rollback only — never read by this code
+        user_metadata: { ...cur.user.user_metadata, line_id: lineProfile.userId, line_display_name: lineProfile.displayName },
       })
-
+      if (upErr) return linkFail('auth_failed')
       return NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?linked=line`)
     }
 
-    // ── 4b. LOGIN MODE — หา / สร้าง user แล้วสร้าง session ─────────────────
-    let target = users.find(
-      u => u.user_metadata?.line_id === lineProfile.userId || u.email === userEmail,
-    )
-
-    if (!target) {
+    // ── 4b. LOGIN MODE ───────────────────────────────────────────────────────────────────────────────────────
+    if (decision.action === 'error') return fail(decision.code)
+    let targetEmail: string
+    if (decision.action === 'login') {
+      const { data: found, error: getErr } = await admin.auth.admin.getUserById(decision.userId)
+      if (getErr || !found.user?.email) throw new LineAuthError('auth_failed', 'user')
+      targetEmail = found.user.email
+    } else if (decision.action === 'create') {
+      // a legacy account made by our own callback (verified server-side evidence) is adopted, not duplicated
+      const { data: evRows, error: evErr } = await admin.rpc('legacy_line_evidence', { p_line_id: lineProfile.userId })
+      if (evErr) throw new LineAuthError('auth_failed', `evidence ${evErr.code ?? ''}`)
+      const legacy = decideLegacy(lineProfile.userId, (evRows ?? []) as EvidenceRow[], createConfirmed)
+      if (legacy.action === 'error') return fail(legacy.code)
+      if (legacy.action === 'relink_suggested') return fail('LINE_RELINK_SUGGESTED')
+      if (legacy.action === 'adopt') {
+        const { data: old, error: oldErr } = await admin.auth.admin.getUserById(legacy.userId)
+        if (oldErr || !old.user?.email) throw new LineAuthError('auth_failed', 'adopt read')
+        const { error: adErr } = await admin.auth.admin.updateUserById(legacy.userId, { app_metadata: withLineId(old.user.app_metadata, lineProfile.userId) })
+        if (adErr) throw new LineAuthError('auth_failed', 'adopt write')
+        targetEmail = old.user.email
+      } else {
+      // new LINE user: placeholder email only — never a (possibly unverified) real address
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email: userEmail,
+        email: decision.email,
         email_confirm: true,
-        user_metadata: {
-          full_name:  lineProfile.displayName,
-          avatar_url: lineProfile.pictureUrl,
-          line_id:    lineProfile.userId,
-          provider:   'line',
-        },
+        app_metadata:  { line_id: lineProfile.userId, provider: 'line' },
+        // user_metadata.line_id: compatibility copy for an app rollback only — never read by this code
+        user_metadata: { full_name: lineProfile.displayName, avatar_url: lineProfile.pictureUrl, line_id: lineProfile.userId, line_display_name: lineProfile.displayName, provider: 'line' },
       })
-      if (createErr) throw createErr
-      target = created.user
-
+      // the placeholder already exists = a legacy LINE account not yet backfilled → never create a second one
+      if (createErr) throw new LineAuthError(/already|exists|registered/i.test(createErr.message) ? 'LINE_ACCOUNT_MIGRATION_PENDING' : 'auth_failed', 'create')
       await admin.from('profiles').upsert({
-        id:         target.id,
+        id:         created.user.id,
         full_name:  lineProfile.displayName,
         avatar_url: lineProfile.pictureUrl,
         updated_at: new Date(),
       })
-    } else if (!target.user_metadata?.line_id) {
-      await admin.auth.admin.updateUserById(target.id, {
-        user_metadata: { ...target.user_metadata, line_id: lineProfile.userId },
-      })
+      targetEmail = decision.email
+      }
+    } else {
+      throw new LineAuthError('auth_failed', 'decision')
     }
 
     // ── 5. generate OTP, verify server-side, redirect with session tokens ───────
@@ -147,9 +156,9 @@ export async function GET(request: Request) {
     // Vercel deployment URL (DEPLOYMENT_NOT_FOUND).
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type:  'magiclink',
-      email: target.email!,
+      email: targetEmail,
     })
-    if (linkErr) throw linkErr
+    if (linkErr) throw new LineAuthError('LINE_SESSION_FAILED', 'link')
 
     // Verify the OTP directly via Supabase REST API (server-to-server, returns JSON)
     const verifyRes = await fetch(
@@ -162,17 +171,17 @@ export async function GET(request: Request) {
           'apikey':        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         },
         body: JSON.stringify({
-          email: target.email!,
+          email: targetEmail,
           token: linkData.properties.email_otp,
           type:  'magiclink',
         }),
       },
     )
-    if (!verifyRes.ok) throw new Error(`session_create_failed: ${await verifyRes.text()}`)
+    if (!verifyRes.ok) throw new LineAuthError('LINE_SESSION_FAILED', `verify ${verifyRes.status}`)
     const sess = await verifyRes.json() as {
       access_token: string; token_type: string; expires_in: number; refresh_token: string
     }
-    if (!sess.access_token) throw new Error('no_session_returned')
+    if (!sess.access_token) throw new LineAuthError('LINE_SESSION_FAILED', 'no session')
 
     // Redirect browser to final page; supabase-js (detectSessionInUrl: true)
     // will detect the hash fragment and store the session in localStorage.
@@ -186,8 +195,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${siteUrl}${finalDest}#${hash.toString()}`)
 
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'auth_failed'
-    console.error('[LINE Auth]', msg)
-    return fail(msg)
+    // fixed code to the user; a short internal reason to the log — never upstream bodies, tokens or emails (L1)
+    const code = err instanceof LineAuthError ? err.code : 'auth_failed'
+    console.error('[LINE Auth]', code, err instanceof LineAuthError ? err.detail : (err instanceof Error ? err.name : 'error'))
+    return fail(code)
   }
 }
