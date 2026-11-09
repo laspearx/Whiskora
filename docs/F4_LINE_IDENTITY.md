@@ -1,4 +1,4 @@
-# F4 — LINE identity containment (branch `security/f4-line-identity`, PR #40, NOT live)
+# F4 — LINE identity containment (branch `security/f4-line-identity`, PR #40, rev. 3, NOT live)
 
 Base: `main` `c29c393` (v1.14.2). Revision 2 answers the independent review of `193d287` (Codex: NO-GO, High 2 /
 Medium 2 / Low 2). **Needs migration `20261110090000_line_identity_map`** — written and tested on a throwaway local
@@ -17,6 +17,16 @@ no Auth / env change.
   claim. Unlink: `line_identity_release` (same locks). Status for the UI: `GET /api/auth/line/status`. Notify:
   `line_identity_of`. No metadata is read for identity; `user_metadata.line_id` is only written as a rollback copy.
 - No `email` scope, id_token unused; fixed error codes (TH/EN in `lib/lineAuthMessages.ts`).
+
+## Re-review of 3da5844 → revision 3
+| # | Finding (preliminary, verified against the code) | Verdict | Fix | Proof |
+|---|---|---|---|---|
+| 1 | internal `f4_*` helpers callable directly by service_role (Supabase default privileges) — e.g. `f4_claim(…, 'recovery')` skips the reset, `f4_audit` forges audit rows; audit sequence writable by API roles | **confirmed** (reproduced with staging's default ACLs) | revoke every F4 function from public / anon / authenticated / service_role, grant only the 17 API functions; sequence revoked; migration guard fails on any deviation; test stub now reproduces Supabase default privileges | SQL: `permission denied` for f4_claim / f4_audit / f4_end_op / f4_freeze_grace / setval |
+| 2 | unlink then re-link: confirm was two RPCs (take, then claim) — an unlink between them returned ok and the older confirm then mapped the LINE id again | **confirmed** (any pending link while linked) | `line_link_confirm` = consume pending + claim (or legacy op begin) in ONE transaction under the LINE-id → account locks; unlink deletes pending links and ends ops under the same locks | race 8/8 incl. confirm-vs-unlink both orders; integration concurrent confirm + unlink |
+| 3 | in-flight Auth requests: GoTrue checks the session BEFORE its update transaction (`UserUpdate`: session in middleware, bcrypt, then tx) — a password / email change admitted before the rotation can commit after it, and the digest check accepted any change | **confirmed** (GoTrue v2.197.0 source) | per-account credential freeze from op begin until 10 min after commit / failure (triggers on `auth.users` credential columns, `auth.mfa_amr_claims` non-OTP sign-ins, `auth.identities`); exactly one password change is let through and recorded; `line_op_mark_reset` verifies it is the app's own rotation (bcrypt of a random secret); commit re-verifies digest / sessions / email_change / identities | SQL + race: attacker first → app rotation refused → abort; app first → attacker refused; after commit: password / email / password sign-in / OAuth link refused, owner OTP sign-in works |
+
+Residual of #3: the grace period assumes no Auth request runs longer than 10 minutes; access tokens issued before the
+reset stay valid until `exp` (data access, not credentials).
 
 ## Codex findings (193d287) → revision 2
 | ID | Finding | Fix | Proof |
@@ -39,6 +49,12 @@ LINE sign-in into a legacy account stops (`LINE_ACCOUNT_REVIEW` + reference) unt
 link (banner on Profile → Connections; user is signed out everywhere and signs in with LINE again) or (2) admin
 recovery (`docs/LINE_ACCOUNT_RECOVERY.md`). LINE notifications for unmigrated accounts stop (no trusted LINE id).
 No account is replaced by a new one.
+
+## Tests (revision 3, run 2026-11-10)
+SQL **100/100** (stub reproduces Supabase default privileges) · race **8/8** · unit **9/9** · dashboard regression 8/8 ·
+integration **67/67** · Playwright F4 40/40, security 42/42 · `tsc` OK, no lint errors in changed files.
+Staging kit (preflight / verify / rollback) exercised on local Postgres: apply → verify all ok → rollback refuses with
+data → rollback with ack → re-apply.
 
 ## Tests (revision 2, run 2026-11-10)
 SQL `supabase/tests/local/f4_line_identity_test.sql` 62/62 · race `web/scripts/line-identity-race.test.mjs` 5/5 ·

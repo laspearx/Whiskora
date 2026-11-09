@@ -27,11 +27,17 @@ the evidence shows — the script refuses an id that does not match the request.
 node … approve --request <ref8> --user <full uuid> --version <n> --actor <your name> \
   --reason "<how you verified>" --check "<check 1>" --check "<check 2>" --project <ref> [--production] [--apply]
 ```
-The script: begin (version, freshness ≤ 14 days, reviewer, ≥ 2 checks) → password rotated (every device signed
-out) → database verifies the reset → LINE id mapped. Everything is in `line_identity_audit`.
-- `rotation failed` → request back to open; run approve again with the new version.
-- `reset not verified` / crash after the reset → `node … resume --request <ref8> [--user <uuid>] --apply`.
-- `mapping refused` → request `failed`; investigate (another holder?) before anything else.
+The script: begin (version, freshness ≤ 14 days, reviewer, ≥ 2 checks; the account's credentials are frozen) →
+password rotated to a random secret (every device signed out) → database verifies the stored hash is that secret's
+and no session is left → LINE id mapped. Everything is in `line_identity_audit`.
+- `rotation failed` / `reset not verified` → request back to open (nothing mapped); check the account, then run approve
+  again with the new version. A refused rotation can mean a request from an old session changed the password first.
+- crash after the reset was verified → `node … resume --request <ref8> --apply` (commit only). Crash before it →
+  the same command backs the request out to open; approve again.
+- `mapping refused` (incl. `credentials_changed`, `email_changed`, `identity_added`, `sessions_remain`) → request
+  `failed`; investigate before anything else.
+- For 10 minutes after approval the account refuses password / email changes, password sign-ins and new OAuth
+  identities (in-flight requests from old sessions); LINE sign-in works.
 Access tokens issued before the reset stay valid until they expire — watch the account for that window.
 Optional local log: `F4_RECOVERY_LOG=/path/recovery.jsonl` (owner's machine only, never committed).
 

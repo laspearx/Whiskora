@@ -37,10 +37,14 @@ export async function userFromBearer(request: Request): Promise<User | null> {
 }
 
 // Rotating the password through the Auth admin API revokes every session and refresh token of the account
-// (GoTrue UpdatePassword with no session → Logout). Access tokens already issued stay valid until they expire.
-export async function rotatePassword(admin: SupabaseClient, userId: string): Promise<boolean> {
-  const { error } = await admin.auth.admin.updateUserById(userId, { password: crypto.randomBytes(32).toString('base64url') })
-  return !error
+// (GoTrue UpdatePassword with no session → Logout). Returns the random secret — only for line_op_mark_reset, which
+// verifies the stored bcrypt hash against it (proves the one change the credential freeze let through is this one);
+// it is never logged, stored or shown. null when Auth refused (e.g. an in-flight request changed the password first).
+// Access tokens already issued stay valid until they expire.
+export async function rotatePassword(admin: SupabaseClient, userId: string): Promise<string | null> {
+  const secret = crypto.randomBytes(32).toString('base64url')
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: secret })
+  return error ? null : secret
 }
 
 export const sha256hex = (v: string) => crypto.createHash('sha256').update(v).digest('hex')

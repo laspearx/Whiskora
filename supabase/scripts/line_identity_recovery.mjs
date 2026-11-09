@@ -10,12 +10,13 @@
 //   approve (dry run)             node … approve --request <ref8> --user <full-uuid> --version <n> --actor <name>
 //                                       --reason "<why>" --check "<owner check 1>" --check "<owner check 2>" --project <ref>
 //   approve (for real)            same + --apply
-//   resume after a crash          node … resume --request <ref8> [--user <full-uuid>] --apply --project <ref>
+//   resume after a crash          node … resume --request <ref8> --apply --project <ref>
 //   decline                       node … decline --request <ref8> --version <n> --actor <name> --reason "<why>" --apply --project <ref>
 //
 // Approve = (1) line_recovery_begin: request version + full user id + freshness (14 days) + reviewer + ≥2 checks,
-// records the current password digest → (2) password rotated via the Auth admin API (revokes every session and refresh
-// token) → (3) line_op_mark_reset: the database verifies the password changed AND no session is left → (4)
+// freezes the account's credentials → (2) password rotated to a random secret via the Auth admin API (revokes every
+// session and refresh token; the freeze lets exactly this one change through) → (3) line_op_mark_reset: the database
+// verifies the stored hash is that secret's AND no session is left → (4)
 // line_op_commit: maps the LINE id under the same lock/uniqueness as every other writer. Each step's result is checked;
 // a failure leaves a durable state ('open' before the reset, 'approving' + reset recorded → resume, 'failed' → review)
 // and every step is in line_identity_audit. Access tokens issued before the reset stay valid until they expire (JWT
@@ -45,9 +46,11 @@ async function rpc(fn, args = {}) {
   if (!r.ok) stop(`${fn} failed (${r.status}): ${typeof d === 'object' && d?.message ? d.message : 'see logs'}`, 5);
   return d;
 }
+// returns the random secret (only handed to line_op_mark_reset, never printed or logged) or null if Auth refused
 async function rotate(userId) {
-  const r = await fetch(`${url}/auth/v1/admin/users/${userId}`, { method: 'PUT', headers: H, body: JSON.stringify({ password: crypto.randomBytes(32).toString('base64url') }) });
-  return r.ok;
+  const secret = crypto.randomBytes(32).toString('base64url');
+  const r = await fetch(`${url}/auth/v1/admin/users/${userId}`, { method: 'PUT', headers: H, body: JSON.stringify({ password: secret }) });
+  return r.ok ? secret : null;
 }
 const log = (o) => { const f = process.env.F4_RECOVERY_LOG; if (f) fs.appendFileSync(f, JSON.stringify({ at: new Date().toISOString(), project, ...o }) + '\n'); };
 const findReq = async (ref) => {
@@ -84,14 +87,19 @@ if (cmd === 'decline') {
 
 async function finish(ref, token, userId, actor, resetAlready) {
   if (!resetAlready) {
-    if (!(await rotate(userId))) {
-      const ab = await rpc('line_op_abort', { p_ref: ref, p_token: token, p_actor: actor, p_reason: 'password rotation failed' });
+    const secret = await rotate(userId);
+    if (!secret) {
+      const ab = await rpc('line_op_abort', { p_ref: ref, p_token: token, p_actor: actor, p_reason: 'password rotation failed or refused' });
       log({ action: 'rotate_failed', ref, abort: ab });
       stop(`password rotation failed — request back to 'open' (abort: ${ab}); nothing was mapped`, 6);
     }
-    const mr = await rpc('line_op_mark_reset', { p_ref: ref, p_token: token, p_actor: actor });
+    const mr = await rpc('line_op_mark_reset', { p_ref: ref, p_token: token, p_actor: actor, p_secret: secret });
     log({ action: 'mark_reset', ref, res: mr });
-    if (mr !== 'ok') stop(`reset not verified (${mr}) — request stays 'approving'; run again with resume after checking sessions`, 7);
+    if (mr !== 'ok') {
+      const ab = await rpc('line_op_abort', { p_ref: ref, p_token: token, p_actor: actor, p_reason: `reset not verified: ${mr}` });
+      log({ action: 'reset_not_verified', ref, res: mr, abort: ab });
+      stop(`reset not verified (${mr}) — request back to 'open' (abort: ${ab}); nothing mapped. Check the account, then approve again`, 7);
+    }
   }
   const cm = await rpc('line_op_commit', { p_ref: ref, p_token: token, p_actor: actor });
   log({ action: 'commit', ref, res: cm });
@@ -122,11 +130,16 @@ if (cmd === 'approve') {
 if (cmd === 'resume') {
   const r = await findReq(one('--request'));
   if (r.status !== 'approving' || !r.lock_token) stop(`request is ${r.status}: nothing to resume`, 3);
-  const user = one('--user') || '';
-  if (!r.credentials_reset_at && !/^[0-9a-f-]{36}$/.test(user)) stop('reset not recorded: pass --user <full uuid> to retry the reset');
-  console.log(`resume ${r.ref}: ${r.credentials_reset_at ? 'commit only' : 'reset + commit'}`);
+  // without a recorded reset the secret of the rotation is gone (crash): back out; the reviewer approves again (the
+  // freeze then lets a fresh rotation through). With a recorded reset: commit only.
+  console.log(`resume ${r.ref}: ${r.credentials_reset_at ? 'commit only' : 'no verified reset — back to open, approve again'}`);
   if (!apply) { console.log('DRY RUN — add --apply'); process.exit(0); }
-  await finish(r.ref, r.lock_token, user, one('--actor') || 'resume', !!r.credentials_reset_at);
+  if (!r.credentials_reset_at) {
+    const ab = await rpc('line_op_abort', { p_ref: r.ref, p_token: r.lock_token, p_actor: one('--actor') || 'resume', p_reason: 'resume without verified reset' });
+    log({ action: 'resume_abort', ref: r.ref, abort: ab });
+    stop(`request back to 'open' (abort: ${ab}) — run approve again with the new version`, ab === 'ok' ? 0 : 6);
+  }
+  await finish(r.ref, r.lock_token, '', one('--actor') || 'resume', true);
   process.exit(0);
 }
 

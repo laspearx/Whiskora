@@ -109,6 +109,33 @@ async function scenarios() {
   const l4 = await lineLogin(H);
   ok('H1: owner signs in with LINE into the same account', (await whoami(l4.token)).data?.id === h.id && (await holder(H)) === h.id);
   ok('H1: audit has begin / reset / claim / approved', (await sqlq(`select count(*) from public.line_identity_audit where user_id = '${h.id}' and action in ('legacy_link_begin','credentials_reset','claim','op_approved')`)) === '4');
+  // re-review #3: an Auth request of the attacker's old session admitted before the rotation lands after the commit
+  const late = await sqlq(`update auth.users set encrypted_password = extensions.crypt('late-attacker', extensions.gen_salt('bf', 4)) where id = '${h.id}'`);
+  ok('#3: in-flight password change landing after the commit is refused (grace period)', late === undefined && (await pwLogin(h.email, 'late-attacker')).status === 400);
+  const lateEmail = await sqlq(`update auth.users set email_change = 'evil@example.invalid' where id = '${h.id}'`);
+  ok('#3: in-flight email change landing after the commit is refused', lateEmail === undefined && (await sqlq(`select coalesce(email_change, '') from auth.users where id = '${h.id}'`)) === '');
+  ok('#3: owner LINE sign-in still works during the grace period', !!(await whoami((await lineLogin(H)).token)).data?.id);
+
+  // re-review #3: the attacker's in-flight password change commits BEFORE the app's rotation
+  const I = lid(); const iPw = 'Attacker-' + hex(6);
+  const iu = await mkUser({ email: ph(I), password: iPw, __created_at: daysAgo(60) });
+  const iAtk = (await pwLogin(iu.email, iPw)).data.access_token;
+  const iOwner = await sessionFor(iu.email);
+  const li = await link(iOwner, I);
+  await sb('POST', '/__test/inflight-before-next-password-update', { password: 'attacker-chosen' });
+  const ci = await confirm(iOwner, li.jar);
+  ok('#3: app rotation refused after an in-flight change → reset failed, nothing mapped', ci.data?.error === 'LINE_CREDENTIAL_RESET_FAILED' && !(await holder(I)), ci.data);
+  ok('#3: the op is closed (no approving op left to resume)', (await sqlq(`select string_agg(status, ',') from public.line_identity_ops where user_id = '${iu.id}'`)) === 'failed');
+  ok('#3: LINE sign-in for that account still goes to review (no automatic sign-in)', (await lineLogin(I)).error === 'LINE_ACCOUNT_REVIEW');
+  ok('#3: the attacker gains nothing new: account still unmapped legacy', !(await holder(I)) && iAtk.length > 0);
+
+  // re-review #2: confirm and unlink sent together — whatever the order, unlink is never undone afterwards
+  const U2 = lid(); const gu = await mkUser({ email: `f4.gu.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const tu = await sessionFor(gu.email); const lu = await link(tu, U2);
+  const [cu, du] = await Promise.all([confirm(tu, lu.jar), hit('/api/auth/line', { method: 'DELETE', token: tu })]);
+  const unlinkLast = (await sqlq(`select action from public.line_identity_audit where user_id = '${gu.id}' order by id desc limit 1`)) === 'release';
+  ok('#2: concurrent confirm + unlink end consistently (mapped only if the unlink ran first and found nothing)',
+    du.status === 200 && ((await holder(U2)) === null ? (cu.status === 200 ? unlinkLast : cu.data?.error === 'LINK_PENDING_MISSING') : !unlinkLast), [cu.data, du.status]);
 
   // Google + LINE (V3)
   const V3 = lid(); const g = await mkUser({ email: `f4.v3.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }], user_metadata: { line_id: V3 } });
@@ -232,10 +259,21 @@ async function scenarios() {
   // resume after a crash between reset and commit
   const RS = lid(); const rs = await mkUser({ email: ph(RS), __created_at: daysAgo(100) }); const refRS = (await lineLogin(RS)).ref;
   const tok = await rpc('line_recovery_begin', { p_ref: refRS, p_user_id: rs.id, p_version: 1, p_actor: 'owner', p_reason: 'verified with the user', p_owner_checks: ['check one ok', 'check two ok'] });
-  await sb('PUT', `/auth/v1/admin/users/${rs.id}`, { password: 'rotated-' + hex(8) });
-  await rpc('line_op_mark_reset', { p_ref: refRS, p_token: tok, p_actor: 'owner' });
+  const rsSecret = 'rotated-' + hex(24);
+  await sb('PUT', `/auth/v1/admin/users/${rs.id}`, { password: rsSecret });
+  ok('recovery: mark_reset refuses a secret that is not the rotation', (await rpc('line_op_mark_reset', { p_ref: refRS, p_token: tok, p_actor: 'owner', p_secret: 'x'.repeat(48) })) === 'rotation_not_verified');
+  await rpc('line_op_mark_reset', { p_ref: refRS, p_token: tok, p_actor: 'owner', p_secret: rsSecret });
   const res = await script(['resume', '--request', refRS, '--apply']);
   ok('recovery (M2): resume finishes an approval that crashed after the reset', res.code === 0 && (await holder(RS)) === rs.id, res.out.slice(-200));
+  // crash before the reset was verified: resume backs out to open (the rotation secret is gone), approve again works
+  const RT = lid(); const rt = await mkUser({ email: ph(RT), __created_at: daysAgo(100) }); const refRT = (await lineLogin(RT)).ref;
+  await rpc('line_recovery_begin', { p_ref: refRT, p_user_id: rt.id, p_version: 1, p_actor: 'owner', p_reason: 'verified with the user', p_owner_checks: ['check one ok', 'check two ok'] });
+  await sb('PUT', `/auth/v1/admin/users/${rt.id}`, { password: 'lost-' + hex(24) });
+  const rtRes = await script(['resume', '--request', refRT, '--apply']);
+  const rtRow = (await rpc('line_recovery_list')).find((r) => r.ref === refRT);
+  ok('recovery (M2): resume without a verified reset → back to open, nothing mapped', rtRes.code === 0 && rtRow?.status === 'open' && !(await holder(RT)), rtRes.out.slice(-200));
+  const rtAgain = await script(['approve', '--request', refRT, '--user', rt.id, '--version', String(rtRow?.version), '--actor', 'owner', '--reason', 'verified with the user again', '--check', 'check one ok', '--check', 'check two ok', '--apply']);
+  ok('recovery: approve again after the back-out maps the account', rtAgain.code === 0 && (await holder(RT)) === rt.id, rtAgain.out.slice(-200));
   // decline
   const DL = lid(); await mkUser({ email: ph(DL), __created_at: daysAgo(100) }); const refDL = (await lineLogin(DL)).ref;
   const decl = await script(['decline', '--request', refDL, '--version', '1', '--actor', 'owner', '--reason', 'could not verify ownership', '--apply']);

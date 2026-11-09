@@ -85,10 +85,16 @@ test('static guards: identity only through the database functions (Codex H2 / C1
   const linkBlock = cb.slice(cb.indexOf("if (mode === 'link')"), cb.indexOf('3b. LOGIN MODE'));
   assert.match(linkBlock, /line_link_pending_put/);
   assert.doesNotMatch(linkBlock, /line_identity_claim|updateUserById/);
-  // confirm consumes the pending row atomically, legacy accounts reset credentials before the mapping (H1)
-  assert.match(confirm, /line_link_take/);
-  const legacy = confirm.slice(confirm.indexOf('line_legacy_link_begin'));
-  assert.ok(legacy.indexOf('rotatePassword') < legacy.indexOf('line_op_mark_reset') && legacy.indexOf('line_op_mark_reset') < legacy.indexOf('line_op_commit'));
+  // confirm = ONE database call (pending consumption + claim / legacy op begin in one transaction: re-review #2);
+  // no separate take / claim / begin calls that an unlink could slip between
+  assert.match(confirm, /'line_link_confirm'/);
+  assert.doesNotMatch(confirm, /line_link_take|line_identity_claim|line_legacy_link_begin/);
+  // legacy accounts: rotate to a secret → SQL verifies that secret's hash (re-review #3) → commit (H1)
+  const legacy = confirm.slice(confirm.indexOf("result !== 'legacy'"));
+  assert.ok(legacy.indexOf('rotatePassword') > 0 && legacy.indexOf('rotatePassword') < legacy.indexOf('line_op_mark_reset')
+    && legacy.indexOf('line_op_mark_reset') < legacy.indexOf('line_op_commit'));
+  assert.match(legacy, /line_op_mark_reset', \{ \.\.\.op, p_secret: secret \}/);
+  assert.doesNotMatch(src('lib/lineServer.ts'), /console\.[a-z]+\([^)]*secret/);
   // unlink through the database
   assert.match(route, /line_identity_release/);
   // L1: every rpc goes through the checked helper
@@ -105,7 +111,7 @@ test('static guards: recovery script (Codex M1 / M2 / L2)', () => {
   const s = fs.readFileSync(path.join(root, '../supabase/scripts/line_identity_recovery.mjs'), 'utf8');
   assert.match(s, /line_recovery_begin/);            // version + full user id + freshness + reviewer + ≥2 checks (enforced in SQL)
   assert.match(s, /many\('--check'\)/);
-  assert.match(s, /line_op_mark_reset/);            // reset verified in SQL before commit
+  assert.match(s, /line_op_mark_reset', \{ p_ref: ref, p_token: token, p_actor: actor, p_secret: secret \}/); // the app's own rotation verified in SQL
   assert.match(s, /line_op_abort/);                 // rotation failure → back to open
   assert.match(s, /resume/);
   assert.match(s, /--production/);
@@ -115,4 +121,17 @@ test('static guards: recovery script (Codex M1 / M2 / L2)', () => {
   assert.ok(order.every((v, i) => v > 0 && (i === 0 || v > order[i - 1])), 'rotate → mark_reset → commit');
   const appr = s.slice(s.indexOf("if (cmd === 'approve')"), s.indexOf("if (cmd === 'resume')"));
   assert.ok(appr.indexOf("'line_recovery_begin'") > 0 && appr.indexOf("'line_recovery_begin'") < appr.indexOf('await finish('), 'begin before finish');
+});
+
+test('static guards: migration privileges + credential freeze (re-review #1 / #3)', () => {
+  const m = fs.readFileSync(path.join(root, '../supabase/migrations/20261110090000_line_identity_map.sql'), 'utf8');
+  // internal helpers revoked from service_role too (Supabase default privileges), guard fails the migration otherwise
+  assert.match(m, /revoke all on function %s from public, anon, authenticated, service_role/);
+  assert.match(m, /revoke all on sequence public\.line_identity_audit_id_seq from public, anon, authenticated, service_role/);
+  assert.match(m, /STOP: F4 function privileges wrong/);
+  // freeze triggers on the Auth tables
+  for (const t of ['f4_credential_freeze before update on auth.users', 'f4_sign_in_freeze before insert on auth.mfa_amr_claims',
+    'f4_identity_freeze before insert or update of user_id on auth.identities']) assert.ok(m.includes(t), t);
+  // the old two-step API is gone
+  assert.doesNotMatch(m, /function public\.line_link_take|function public\.line_legacy_link_begin/);
 });
