@@ -1,48 +1,45 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
-import { createClient } from '@supabase/supabase-js'
 import { isPreviewDeploy } from '@/lib/deploy-env'
+import { isLineOnly, withoutLineId } from '@/lib/lineAuth'
+import { cookieOpts, makeAdmin, newNonce, userFromBearer } from '@/lib/lineServer'
 
-function makeAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  )
-}
-
-// POST — ใช้สำหรับ link mode เท่านั้น: ตรวจ session แล้วตั้ง cookie ที่ verified
+// POST — start linking LINE to the signed-in account (Bearer session required). The uid and a nonce go into short
+// httpOnly cookies; the callback stores the LINE id as a PENDING link on this account only, and nothing is linked
+// until POST /api/auth/line/confirm re-checks the session (F4: the old flow linked straight from the cookie).
 export async function POST(request: Request) {
   if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
-  const authHeader = request.headers.get('Authorization') || ''
-  const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  if (!accessToken) return Response.json({ error: 'unauthorized' }, { status: 401 })
-
-  let uid = ''
-  try {
-    const body = await request.json()
-    uid = body?.uid || ''
-  } catch {
-    return Response.json({ error: 'bad_request' }, { status: 400 })
-  }
-  if (!uid) return Response.json({ error: 'missing_uid' }, { status: 400 })
-
   const admin = makeAdmin()
-  const { data: { user }, error } = await admin.auth.getUser(accessToken)
-  if (error || !user || user.id !== uid) {
-    return Response.json({ error: 'forbidden' }, { status: 403 })
-  }
+  const user = await userFromBearer(admin, request)
+  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+  // body.uid (sent by older clients) must match the session when present
+  const body = await request.json().catch(() => ({} as Record<string, unknown>))
+  if (body?.uid && body.uid !== user.id) return Response.json({ error: 'forbidden' }, { status: 403 })
 
   const cookieStore = await cookies()
-  const opts = { httpOnly: true, secure: true, sameSite: 'lax' as const, maxAge: 600, path: '/' }
-  cookieStore.set('line_uid',          uid,    opts)
-  cookieStore.set('line_uid_verified', 'true', opts)
-
+  cookieStore.set('line_uid', user.id, cookieOpts(600))
+  cookieStore.set('line_link_nonce', newNonce(), cookieOpts(600))
   return Response.json({ ok: true })
 }
 
-// GET — redirect ไปยัง LINE OAuth
+// DELETE — unlink LINE from the signed-in account (server-side; app_metadata is not writable by the user).
+// Refused when LINE is the only way into the account (placeholder email, no OAuth identity) — no lock-out.
+export async function DELETE(request: Request) {
+  if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
+  const admin = makeAdmin()
+  const user = await userFromBearer(admin, request)
+  if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
+  if (isLineOnly(user)) return Response.json({ error: 'line_only_login' }, { status: 409 })
+  const { error } = await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: withoutLineId(user.app_metadata),
+    user_metadata: { ...(user.user_metadata || {}), line_id: null, line_display_name: null }, // rollback-compat copy too
+  })
+  if (error) return Response.json({ error: 'unlink_failed' }, { status: 500 })
+  return Response.json({ ok: true })
+}
+
+// GET — redirect to LINE OAuth (login, or link after POST above)
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
   // Preview ใช้ staging และไม่มี LINE channel สำหรับทดสอบ → ปิด LINE login และอยู่บนโดเมน Preview เดิม
@@ -60,48 +57,46 @@ export async function GET(request: Request) {
   }
 
   const next = searchParams.get('next') || '/profile'
-  const mode = searchParams.get('mode') || 'login'
+  const mode = searchParams.get('mode') === 'link' ? 'link' : 'login'
 
-  // ตรวจสอบ env vars ที่จำเป็น
   if (!process.env.LINE_CHANNEL_ID || !process.env.LINE_CHANNEL_SECRET) {
     console.error('[LINE Auth] Missing LINE_CHANNEL_ID or LINE_CHANNEL_SECRET env vars')
     return NextResponse.redirect(`${origin}/th/login?auth_error=${encodeURIComponent('LINE_CONFIG_MISSING')}`)
   }
 
-  // ใช้ NEXT_PUBLIC_SITE_URL เป็น base URL ของ redirect_uri เสมอ
-  // เพื่อให้ตรงกับที่ลงทะเบียนใน LINE Developers ไม่ว่า Vercel จะใช้ URL ไหน
-  // ห้ามใช้ `origin` จาก request.url เป็น fallback เพราะบน Vercel มันอาจเป็น
-  // internal compute-instance URL (เช่น whiskora-f74p5-...vercel.app) ที่หมดอายุ
-  // ก่อนที่ browser จะ follow redirect → DEPLOYMENT_NOT_FOUND
+  // redirect_uri ต้องตรงกับที่ลงทะเบียนใน LINE Developers เสมอ (ห้ามใช้ origin ของ request เป็น fallback บน Vercel)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.whiskora.pet').replace(/\/$/, '')
 
   const state = crypto.randomBytes(16).toString('hex')
   const cookieStore = await cookies()
 
-  // link mode: uid ต้องมาจาก POST ที่ verified แล้วเท่านั้น ไม่รับจาก URL
-  let uid = ''
+  // link mode: uid + nonce come only from the session-verified POST, never from the URL
   if (mode === 'link') {
-    const verified = cookieStore.get('line_uid_verified')?.value === 'true'
-    uid = cookieStore.get('line_uid')?.value || ''
-    cookieStore.delete('line_uid_verified')
-    if (!verified || !uid) {
-      return NextResponse.redirect(`${origin}/th/profile/connections?link_error=unauthorized`)
+    const uid = cookieStore.get('line_uid')?.value || ''
+    const nonce = cookieStore.get('line_link_nonce')?.value || ''
+    if (!uid || !nonce) {
+      return NextResponse.redirect(`${origin}/th/profile/connections?link_error=LINE_LINK_UNAUTHORIZED`)
     }
+  } else {
+    cookieStore.delete('line_uid')
+    cookieStore.delete('line_link_nonce')
   }
 
-  const opts = { httpOnly: true, secure: true, sameSite: 'lax' as const, maxAge: 600, path: '/' }
+  const opts = cookieOpts(600)
   cookieStore.set('line_state',  state,   opts)
   cookieStore.set('line_next',   next,    opts)
   cookieStore.set('line_origin', siteUrl, opts)
   cookieStore.set('line_mode',   mode,    opts)
-  cookieStore.set('line_uid',    uid,     opts)
+  // explicit "create a new LINE account" after LINE_RELINK_SUGGESTED (login mode only)
+  cookieStore.set('line_create', mode === 'login' && searchParams.get('create') === '1' ? '1' : '', opts)
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.LINE_CHANNEL_ID!,
     redirect_uri:  `${siteUrl}/api/auth/line/callback`,
     state,
-    scope: 'profile openid email',
+    // no email scope: an email from LINE never picks or creates an account (F4)
+    scope: 'profile openid',
   })
 
   return NextResponse.redirect(`https://access.line.me/oauth2/v2.1/authorize?${params}`)
