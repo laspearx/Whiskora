@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/lib/profile';
-import { useServiceAccess } from '@/app/service-dashboard/[id]/layout';
+import { useServiceAccess } from '@/lib/service-access';
 import { useRouter, useParams } from 'next/navigation';
 import PageLoader from '@/app/components/PageLoader';
 import AddressFields, { AddressValue, emptyAddress, composeAddress } from '@/app/components/AddressFields';
