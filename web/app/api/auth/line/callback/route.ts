@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import crypto from 'crypto'
 import { isPreviewDeploy } from '@/lib/deploy-env'
 import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
-import { decideLogin, isValidLineUserId, lookupLine, makePending, toUserErrorCode } from '@/lib/lineAuth'
-import { cookieOpts, listAllUsers, makeAdmin, sha256hex } from '@/lib/lineServer'
+import { decideLogin, isValidLineUserId, PENDING_TTL_SECONDS, placeholderEmail, toUserErrorCode } from '@/lib/lineAuth'
+import { cookieOpts, firstRow, makeAdmin, rpc, sha256hex } from '@/lib/lineServer'
 
 class LineAuthError extends Error {
   constructor(public code: string, public detail: string) { super(code) }
 }
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   for (const c of ['line_state', 'line_next', 'line_origin', 'line_mode', 'line_uid', 'line_link_nonce', 'line_create']) cookieStore.delete(c)
 
   // fixed codes only (never upstream bodies, tokens or emails)
-  const fail = (c: string) => NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(toUserErrorCode(c))}`)
+  const fail = (c: string, extra = '') => NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=${encodeURIComponent(toUserErrorCode(c))}${extra}`)
   const linkFail = (c: string) => NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?link_error=${encodeURIComponent(toUserErrorCode(c))}`)
 
   if (lineErr) return mode === 'link' ? linkFail(lineErr) : fail(lineErr)
@@ -72,60 +72,60 @@ export async function GET(request: Request) {
 
     const admin = makeAdmin()
 
-    // ── 3a. LINK MODE: store a pending link on the session-verified uid only; confirm re-checks the session ───────
+    // ── 3a. LINK MODE: only a pending row for the session-verified uid; never touches the mapping (Codex H2 #1) ──
     if (mode === 'link') {
       if (!linkUid || !linkNonce) return linkFail('LINE_LINK_UNAUTHORIZED')
-      const { data: cur, error: curErr } = await admin.auth.admin.getUserById(linkUid)
-      if (curErr || !cur.user) return linkFail('LINE_LINK_UNAUTHORIZED')
-      const pending = makePending(lineUserId, displayName, sha256hex(linkNonce), Date.now())
-      const { error: upErr } = await admin.auth.admin.updateUserById(linkUid, {
-        app_metadata: { ...(cur.user.app_metadata || {}), line_link_pending: pending },
+      const put = await rpc<string>(admin, 'line_link_pending_put', {
+        p_user_id: linkUid, p_line_id: lineUserId, p_display: displayName, p_nonce_hash: sha256hex(linkNonce), p_ttl_seconds: PENDING_TTL_SECONDS,
       })
-      if (upErr) return linkFail('auth_failed')
-      cookieStore.set('line_confirm', linkNonce, cookieOpts(300))
+      if (put !== 'ok') return linkFail('LINE_LINK_UNAUTHORIZED')
+      cookieStore.set('line_confirm', linkNonce, cookieOpts(PENDING_TTL_SECONDS))
       return NextResponse.redirect(`${siteUrl}/${locale}/profile/connections?confirm_line=1`)
     }
 
-    // ── 3b. LOGIN MODE: app_metadata.line_id only, across ALL users ──────────────────────────────────────────────
-    let decision = decideLogin(lineUserId, lookupLine(await listAllUsers(admin), lineUserId), createConfirmed)
-    if (decision.action === 'error') return fail(decision.code)
-    if (decision.action === 'relink_suggested') return fail('LINE_RELINK_SUGGESTED')
-
-    if (decision.action === 'review') {
-      // legacy LINE account (made before F4): no automatic sign-in. Record a server-side recovery request for an admin.
-      const ref = crypto.randomBytes(4).toString('hex')
-      const { data: old } = await admin.auth.admin.getUserById(decision.userId)
-      if (old?.user) {
-        await admin.auth.admin.updateUserById(decision.userId, {
-          app_metadata: { ...(old.user.app_metadata || {}), line_recovery_request: { line_id: lineUserId, ref, requested_at: new Date().toISOString() } },
-        })
+    // ── 3b. LOGIN MODE: the database decides (line_login_resolve) ─────────────────────────────────────────────────
+    const resolve = async () => firstRow(await rpc<{ kind: string; user_id: string | null }[]>(admin, 'line_login_resolve', { p_line_id: lineUserId }))
+    let userId: string | null = null
+    for (let attempt = 0; attempt < 6 && !userId; attempt++) {
+      const r = await resolve()
+      const d = decideLogin(r?.kind ?? 'invalid', r?.user_id ?? null, createConfirmed)
+      if (d.action === 'login') { userId = d.userId; break }
+      if (d.action === 'error') return fail(d.code)
+      if (d.action === 'relink_suggested') return fail('LINE_RELINK_SUGGESTED')
+      if (d.action === 'retry') { await sleep(400); continue }
+      if (d.action === 'review') {
+        // a signed-in legacy link that already reset the credentials is finished by this sign-in (proves LINE again)
+        const resumed = await rpc<string>(admin, 'line_legacy_link_resume', { p_line_id: lineUserId })
+        if (resumed === 'ok' || resumed === 'already') continue
+        // otherwise: no automatic sign-in — record an admin recovery request (reference shown only if recorded)
+        const ref = await rpc<string | null>(admin, 'line_recovery_record', { p_line_id: lineUserId, p_display: displayName })
+        console.warn('[LINE Auth] legacy account needs review', ref ?? 'request-not-recorded')
+        return fail('LINE_ACCOUNT_REVIEW', ref && /^[0-9a-f]{8}$/.test(ref) ? `&ref=${ref}` : '')
       }
-      console.warn('[LINE Auth] legacy account needs review', ref)
-      return NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=LINE_ACCOUNT_REVIEW&ref=${ref}`)
-    }
-
-    if (decision.action === 'create') {
+      // create: fresh placeholder account, then claim it in the database (UNIQUE LINE id / account)
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email: decision.email,
+        email: placeholderEmail(lineUserId),
         email_confirm: true,
-        app_metadata:  { line_id: lineUserId, provider: 'line' },
+        app_metadata:  { provider: 'line' },
         // user_metadata.line_id: compatibility copy for an app rollback only — never read by this code
         user_metadata: { full_name: displayName, avatar_url: lineProfile.pictureUrl, line_id: lineUserId, line_display_name: displayName, provider: 'line' },
       })
-      if (createErr || !created?.user) {
-        // e.g. the same LINE user signing in twice at once: the placeholder email is unique, re-read and decide again
-        decision = decideLogin(lineUserId, lookupLine(await listAllUsers(admin), lineUserId), createConfirmed)
-        if (decision.action !== 'login') {
-          if (decision.action === 'review') return NextResponse.redirect(`${siteUrl}/${locale}/login?auth_error=LINE_ACCOUNT_REVIEW`)
-          throw new LineAuthError('auth_failed', 'create')
-        }
-      } else {
-        await admin.from('profiles').upsert({ id: created.user.id, full_name: displayName, avatar_url: lineProfile.pictureUrl, updated_at: new Date() })
-        decision = { action: 'login', userId: created.user.id }
+      if (createErr || !created?.user) { await sleep(300); continue } // e.g. a concurrent first sign-in made it: resolve again
+      const claim = await rpc<string>(admin, 'line_identity_claim', { p_line_id: lineUserId, p_user_id: created.user.id, p_method: 'login_create', p_actor: 'system:line-callback' })
+      if (claim !== 'ok' && claim !== 'already') {
+        // never leave an unclaimed placeholder behind (it would look like a legacy account)
+        const { error: delErr } = await admin.auth.admin.deleteUser(created.user.id)
+        console.error('[LINE Auth] claim after create failed', claim, delErr ? 'cleanup-failed' : 'cleaned-up')
+        if (delErr) throw new LineAuthError('auth_failed', 'cleanup')
+        continue
       }
+      const { error: profErr } = await admin.from('profiles').upsert({ id: created.user.id, full_name: displayName, avatar_url: lineProfile.pictureUrl, updated_at: new Date() })
+      if (profErr) console.error('[LINE Auth] profile upsert failed (account is linked; profile can be edited later)')
+      userId = created.user.id
     }
+    if (!userId) return fail('LINE_TRY_AGAIN')
 
-    const { data: target, error: getErr } = await admin.auth.admin.getUserById(decision.userId)
+    const { data: target, error: getErr } = await admin.auth.admin.getUserById(userId)
     if (getErr || !target.user?.email) throw new LineAuthError('auth_failed', 'user')
 
     // ── 4. session: generate an OTP and verify it server-side (avoids the stale-deployment redirect chain) ─────────

@@ -1,54 +1,56 @@
-// F4 — end-to-end LINE login / linking against the built app (`next start`) with LINE mocked.
-//   LINE_AUTH_BACKEND=mock     → in-memory GoTrue (scripts/line-auth-mock-preload.mjs)
-//   LINE_AUTH_BACKEND=staging  → the real STAGING Supabase project (synthetic users, deleted at the end).
-// usage: node scripts/line-auth.integration.mjs <port>   (build first with NEXT_PUBLIC_SUPABASE_URL = the backend URL)
-import { spawn } from 'node:child_process';
+// F4 — end-to-end LINE login / linking / recovery against the built app (`next start`), LINE mocked, GoTrue mocked
+// in memory and mirrored into a THROWAWAY LOCAL Postgres that runs the real F4 migration (scripts/line-auth-mock-preload.mjs).
+// usage: F4_PG="-h 127.0.0.1 -p 54329 -U postgres" node scripts/line-auth.integration.mjs [port]
+// Build first with NEXT_PUBLIC_SUPABASE_URL = any URL (it is intercepted), e.g. http://127.0.0.1:9.
+import { spawn, execFileSync, execFile } from 'node:child_process';
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const port = Number(process.argv[2] || 3471);
-const backend = process.env.LINE_AUTH_BACKEND || 'mock';
-const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const STAGING_REF = 'wpxcukrwmegwzfccbbga';
-if (backend === 'staging' && SB !== `https://${STAGING_REF}.supabase.co`) { console.error('STOP: staging backend must be the staging project'); process.exit(2); }
+const PG = (process.env.F4_PG || '').split(' ').filter(Boolean);
+if (!PG.length) { console.error('STOP: set F4_PG to a throwaway local Postgres'); process.exit(2); }
+const DB = 'f4it';
+const here = path.dirname(fileURLToPath(import.meta.url));
+const cwd = path.resolve(here, '..'); const repo = path.resolve(cwd, '..');
 const controlPort = port + 1000;
-const ADMIN = backend === 'mock' ? `http://127.0.0.1:${controlPort}` : SB;
+const ADMIN = `http://127.0.0.1:${controlPort}`;
 const app = `http://127.0.0.1:${port}`;
-const cwd = fileURLToPath(new URL('../', import.meta.url));
-const results = []; const created = new Set();
+const results = [];
 const hex = (n) => crypto.randomBytes(n).toString('hex');
 const lid = () => 'U' + hex(16);
 const ph = (id) => `line_${id}@line.whiskora.internal`.toLowerCase();
+const daysAgo = (d) => new Date(Date.now() - d * 864e5).toISOString();
 
-// ── backend admin client (seeding / inspection) ─────────────────────────────────────────────────────────────────────
-async function sb(method, path, body, headers = {}) {
-  const h = { 'content-type': 'application/json', ...headers };
-  if (backend === 'staging' && !h.apikey) h.apikey = 'proxy-injected'; // the network proxy injects the staging key
-  const r = await fetch(ADMIN + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+// fresh database: stub + migration
+const psql = (args) => execFileSync('psql', ['-X', '-q', '-At', '-v', 'ON_ERROR_STOP=1', ...PG, ...args], { encoding: 'utf8' });
+psql(['-d', 'postgres', '-c', `drop database if exists ${DB}`, '-c', `create database ${DB}`]);
+psql(['-d', DB, '-f', path.join(repo, 'supabase/tests/local/f4_auth_stub.sql')]);
+psql(['-d', DB, '-f', path.join(repo, 'supabase/migrations/20261110090000_line_identity_map.sql')]);
+
+async function sb(method, p, body, headers = {}) {
+  const r = await fetch(ADMIN + p, { method, headers: { 'content-type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined });
   const t = await r.text(); let d; try { d = t ? JSON.parse(t) : null; } catch { d = t; } return { status: r.status, data: d };
 }
-const mkUser = async (o) => {
-  const r = await sb('POST', '/auth/v1/admin/users', { email_confirm: true, ...o, user_metadata: { f4_synthetic: true, ...(o.user_metadata || {}) } });
-  if (r.status !== 200) throw new Error('seed failed ' + r.status + ' ' + JSON.stringify(r.data)); created.add(r.data.id); return r.data;
-};
-const getUser = async (id) => (await sb('GET', `/auth/v1/admin/users/${id}`)).data;
-const setApp = (id, app_metadata) => sb('PUT', `/auth/v1/admin/users/${id}`, { app_metadata });
+const rpc = async (fn, args) => (await sb('POST', `/rest/v1/rpc/${fn}`, args)).data;
+const sqlq = async (q) => (await sb('POST', '/__test/sql', { sql: q })).data?.out;
+const mkUser = async (o) => { const r = await sb('POST', '/auth/v1/admin/users', { email_confirm: true, ...o }); if (r.status !== 200) throw new Error('seed ' + r.status); return r.data; };
 const sessionFor = async (email) => {
   const gl = await sb('POST', '/auth/v1/admin/generate_link', { type: 'magiclink', email });
-  const v = await sb('POST', '/auth/v1/verify', { email, token: gl.data.email_otp, type: 'magiclink' });
-  return v.data.access_token;
+  return (await sb('POST', '/auth/v1/verify', { email, token: gl.data.email_otp, type: 'magiclink' })).data.access_token;
 };
-const allUsers = async () => { const out = []; for (let p = 1; p < 60; p++) { const b = (await sb('GET', `/auth/v1/admin/users?page=${p}&per_page=1000`)).data.users; out.push(...b); if (b.length < 1000) break; } return out; };
-const holdersOf = async (id) => (await allUsers()).filter((u) => u.app_metadata?.line_id === id).map((u) => u.id);
+const pwLogin = async (email, password) => (await sb('POST', '/auth/v1/token?grant_type=password', { email, password }));
+const whoami = async (token) => (await sb('GET', '/auth/v1/user', null, { authorization: `Bearer ${token}` }));
+const holder = async (lineId) => { const r = (await rpc('line_login_resolve', { p_line_id: lineId }))?.[0]; return r?.kind === 'holder' ? r.user_id : null; };
 
-// ── app client with a tiny cookie jar ──────────────────────────────────────────────────────────────────────────────
 class Jar { constructor() { this.c = new Map(); }
   take(res) { for (const sc of res.headers.getSetCookie()) { const [kv] = sc.split(';'); const i = kv.indexOf('='); const k = kv.slice(0, i); const v = kv.slice(i + 1); if (!v || /Expires=Thu, 01 Jan 1970/.test(sc) || /Max-Age=0/.test(sc)) this.c.delete(k); else this.c.set(k, v); } }
-  header() { return [...this.c].map(([k, v]) => `${k}=${v}`).join('; '); } }
-async function hit(path, { jar, method = 'GET', token, body } = {}) {
+  header() { return [...this.c].map(([k, v]) => `${k}=${v}`).join('; '); }
+  clone() { const j = new Jar(); j.c = new Map(this.c); return j; } }
+async function hit(p, { jar, method = 'GET', token, body } = {}) {
   const headers = {}; if (jar?.c.size) headers.cookie = jar.header(); if (token) headers.authorization = `Bearer ${token}`;
   if (body) headers['content-type'] = 'application/json';
-  const r = await fetch(app + path, { method, redirect: 'manual', headers, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(app + p, { method, redirect: 'manual', headers, body: body ? JSON.stringify(body) : undefined });
   jar?.take(r); const loc = r.headers.get('location') || ''; let data = null; try { data = await r.json(); } catch {}
   return { status: r.status, loc, data };
 }
@@ -58,165 +60,199 @@ async function lineLogin(lineId, name = 'Syn', { create = false, code } = {}) {
   const state = new URL(start.loc).searchParams.get('state');
   const cb = await hit(`/api/auth/line/callback?code=${encodeURIComponent(code ?? `ok:${lineId}:${name}`)}&state=${state}`, { jar });
   const u = new URL(cb.loc); const hash = new URLSearchParams(u.hash.slice(1));
-  return { token: hash.get('access_token'), error: u.searchParams.get('auth_error'), ref: u.searchParams.get('ref'), loc: cb.loc, jar };
+  return { token: hash.get('access_token'), error: u.searchParams.get('auth_error'), ref: u.searchParams.get('ref'), loc: cb.loc };
 }
-async function startLink(token, lineId, name = 'Syn') {
-  const jar = new Jar();
+async function startLink(token, { jar = new Jar() } = {}) {
   const post = await hit('/api/auth/line', { jar, method: 'POST', token, body: {} });
-  if (post.status !== 200) return { post: post.status, jar };
   const g = await hit('/api/auth/line?mode=link&next=/profile/connections', { jar });
-  const state = new URL(g.loc).searchParams.get('state');
-  const cb = await hit(`/api/auth/line/callback?code=${encodeURIComponent(`ok:${lineId}:${name}`)}&state=${state}`, { jar });
-  return { post: post.status, loc: cb.loc, jar };
+  return { post: post.status, state: new URL(g.loc).searchParams.get('state'), jar };
 }
+const finishLink = async (s, lineId, name = 'Syn') =>
+  hit(`/api/auth/line/callback?code=${encodeURIComponent(`ok:${lineId}:${name}`)}&state=${s.state}`, { jar: s.jar });
+const link = async (token, lineId) => { const s = await startLink(token); const cb = await finishLink(s, lineId); return { ...s, cb }; };
 const confirm = (token, jar) => hit('/api/auth/line/confirm', { jar, method: 'POST', token });
-const ok = (name, cond, detail = '') => { results.push({ name, pass: !!cond, detail }); };
+const ok = (name, cond, detail = '') => results.push({ name, pass: !!cond, detail: typeof detail === 'string' ? detail : JSON.stringify(detail) });
+const script = (args, env = {}) => new Promise((resolve) => execFile(process.execPath, [path.join(repo, 'supabase/scripts/line_identity_recovery.mjs'), ...args, '--project', 'f4test'],
+  { env: { ...process.env, SUPABASE_URL: ADMIN, F4_TEST_URL: ADMIN, SUPABASE_SERVICE_ROLE_KEY: 'synthetic', ...env } },
+  (err, out, errOut) => resolve({ code: err ? err.code : 0, out: out + errOut })));
 
 async function scenarios() {
-  // 1 Normal LINE login: first sign-in creates a placeholder account with app_metadata; the next one signs into it
+  // normal LINE login
   const A = lid(); const l1 = await lineLogin(A, 'Normal');
-  const acct = (await allUsers()).find((u) => u.email === ph(A)); if (acct) created.add(acct.id);
-  ok('normal: first LINE sign-in creates account + session', !!l1.token && acct?.app_metadata?.line_id === A, l1.error || '');
+  const a1 = (await whoami(l1.token)).data;
+  ok('normal: first LINE sign-in creates the account and the mapping', !!l1.token && (await holder(A)) === a1?.id, l1.error);
+  ok('normal: account email is the placeholder (never an email from LINE)', a1?.email === ph(A));
   const l1b = await lineLogin(A, 'Normal');
-  ok('normal: second sign-in reaches the same account', !!l1b.token && (await holdersOf(A)).length === 1);
-  ok('normal: never stores an email from LINE (placeholder only)', acct?.email === ph(A));
+  ok('normal: second sign-in reaches the same account', (await whoami(l1b.token)).data?.id === a1?.id);
 
-  // 2 Legacy LINE-only (V1): placeholder account without app_metadata → review + recovery request, no session
-  const V1 = lid(); const v1 = await mkUser({ email: ph(V1), user_metadata: { line_id: V1, provider: 'line', full_name: 'Legacy' } });
-  const l2 = await lineLogin(V1);
-  const v1after = await getUser(v1.id);
-  ok('legacy V1: no automatic sign-in (LINE_ACCOUNT_REVIEW)', !l2.token && l2.error === 'LINE_ACCOUNT_REVIEW' && /^[0-9a-f]{8}$/.test(l2.ref || ''), l2.error);
-  ok('legacy V1: recovery request recorded server-side, mapping unchanged', v1after.app_metadata?.line_recovery_request?.line_id === V1 && !v1after.app_metadata?.line_id);
-  ok('legacy V1: no duplicate account created', (await allUsers()).filter((u) => u.email === ph(V1)).length === 1);
-  // legacy owner still signed in elsewhere migrates through the session-proven link
-  const v1tok = await sessionFor(ph(V1));
-  const lk = await startLink(v1tok, V1, 'Legacy');
-  const c2 = await confirm(v1tok, lk.jar);
-  ok('legacy V1: signed-in owner + LINE OAuth + confirm migrates the same account', c2.status === 200 && (await getUser(v1.id)).app_metadata?.line_id === V1, JSON.stringify(c2.data));
-  const l2b = await lineLogin(V1);
-  ok('legacy V1: after migration LINE sign-in works', !!l2b.token);
+  // legacy LINE-only: no automatic sign-in, durable recovery request
+  const V1 = lid(); await mkUser({ email: ph(V1), __created_at: daysAgo(90), user_metadata: { line_id: V1, provider: 'line' } });
+  const l3 = await lineLogin(V1);
+  ok('legacy: LINE sign-in alone does not sign in (LINE_ACCOUNT_REVIEW + reference)', !l3.token && l3.error === 'LINE_ACCOUNT_REVIEW' && /^[0-9a-f]{8}$/.test(l3.ref || ''), l3.loc);
+  ok('legacy: request recorded in the database, mapping unchanged', (await rpc('line_recovery_list')).some((r) => r.ref === l3.ref) && !(await holder(V1)));
+  ok('legacy: repeated sign-in keeps one request', (await lineLogin(V1)).ref === l3.ref);
 
-  // 3 Google + LINE (V3): untrusted claim → relink prompt; link while signed in → then LINE sign-in works
-  const V3 = lid(); const g = await mkUser({ email: `f4.v3.${hex(4)}@example.invalid`, password: 'Pw-' + hex(8), user_metadata: { line_id: V3 } });
-  const l3 = await lineLogin(V3);
-  ok('V3: LINE sign-in with only a user_metadata claim → relink prompt, no session', !l3.token && l3.error === 'LINE_RELINK_SUGGESTED', l3.error);
-  const gtok = await sessionFor(g.email); const lk3 = await startLink(gtok, V3, 'Google user');
-  ok('V3: link flow stops at a pending confirmation (nothing linked yet)', /confirm_line=1/.test(lk3.loc) && !(await getUser(g.id)).app_metadata?.line_id && !!(await getUser(g.id)).app_metadata?.line_link_pending);
-  const c3 = await confirm(gtok, lk3.jar);
-  ok('V3: confirm links the signed-in account', c3.status === 200 && (await getUser(g.id)).app_metadata?.line_id === V3, JSON.stringify(c3.data));
-  const l3b = await lineLogin(V3); ok('V3: LINE sign-in now reaches the Google account', !!l3b.token);
+  // Codex H1 — signed-in legacy link evicts credentials / sessions planted before F4
+  const H = lid(); const atkPw = 'Attacker-' + hex(6);
+  const h = await mkUser({ email: ph(H), password: atkPw, __created_at: daysAgo(60), user_metadata: { line_id: H } });
+  const atkTok = (await pwLogin(h.email, atkPw)).data.access_token;
+  const ownerTok = await sessionFor(h.email);
+  const st4 = (await hit('/api/auth/line/status', { token: ownerTok })).data;
+  ok('H1: status marks the account as legacy (banner)', st4?.legacy === true && st4?.linked === false, st4);
+  const lk4 = await link(ownerTok, H);
+  ok('H1: link callback stops at a pending confirmation', /confirm_line=1/.test(lk4.cb.loc) && !(await holder(H)));
+  const c4 = await confirm(ownerTok, lk4.jar);
+  ok('H1: confirm succeeds and asks to sign in again', c4.status === 200 && c4.data?.relogin === true, c4.data);
+  ok('H1: attacker password no longer works', (await pwLogin(h.email, atkPw)).status === 400);
+  ok('H1: attacker session revoked', (await whoami(atkTok)).status === 403);
+  ok('H1: owner session revoked too (re-login required)', (await whoami(ownerTok)).status === 403);
+  const l4 = await lineLogin(H);
+  ok('H1: owner signs in with LINE into the same account', (await whoami(l4.token)).data?.id === h.id && (await holder(H)) === h.id);
+  ok('H1: audit has begin / reset / claim / approved', (await sqlq(`select count(*) from public.line_identity_audit where user_id = '${h.id}' and action in ('legacy_link_begin','credentials_reset','claim','op_approved')`)) === '4');
 
-  // 4 Forged user_metadata.line_id cannot capture the real holder's login
-  const forger = await mkUser({ email: `f4.forger.${hex(4)}@example.invalid`, user_metadata: { line_id: A } });
-  const l4 = await lineLogin(A);
-  const whoId = !l4.token ? null : l4.token.split('.').length === 3
-    ? JSON.parse(Buffer.from(l4.token.split('.')[1], 'base64url')).sub            // staging: real JWT
-    : (await sb('GET', '/auth/v1/user', null, { authorization: `Bearer ${l4.token}` })).data?.id; // mock token
-  ok('forged claim: login still reaches the real holder', !!whoId && whoId === (await holdersOf(A))[0] && whoId !== forger.id, String(whoId));
+  // Google + LINE (V3)
+  const V3 = lid(); const g = await mkUser({ email: `f4.v3.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }], user_metadata: { line_id: V3 } });
+  const l5 = await lineLogin(V3);
+  ok('V3: only a user_metadata claim → relink prompt, no session', !l5.token && l5.error === 'LINE_RELINK_SUGGESTED', l5.error);
+  const gtok = await sessionFor(g.email); const lk5 = await link(gtok, V3); const c5 = await confirm(gtok, lk5.jar);
+  ok('V3: signed-in link + confirm maps the Google account (no relogin)', c5.status === 200 && !c5.data?.relogin && (await holder(V3)) === g.id, c5.data);
+  ok('V3: LINE sign-in now reaches the Google account', (await whoami((await lineLogin(V3)).token)).data?.id === g.id);
 
-  // 5 Email-based hijack: a victim with a real email is never chosen (LINE email is not even requested)
-  const victim = await mkUser({ email: `f4.victim.${hex(4)}@example.invalid`, password: 'Pw-' + hex(8) });
-  const W = lid(); const l5 = await lineLogin(W);
-  const wAcct = (await allUsers()).find((u) => u.email === ph(W)); if (wAcct) created.add(wAcct.id);
-  ok('email hijack: new LINE user gets its own placeholder account; victim untouched', !!l5.token && wAcct && !(await getUser(victim.id)).app_metadata?.line_id);
+  // forged claim / email hijack / pre-registration after deploy / legacy protection
+  const forger = await mkUser({ email: `f4.forger.${hex(3)}@example.invalid`, user_metadata: { line_id: A } });
+  ok('forged user_metadata claim cannot capture the holder\'s login', (await whoami((await lineLogin(A)).token)).data?.id === a1?.id && a1?.id !== forger.id);
+  const victim = await mkUser({ email: `f4.victim.${hex(3)}@example.invalid` });
+  const W = lid(); const l7 = await lineLogin(W);
+  ok('email hijack: a new LINE user gets its own placeholder account', (await whoami(l7.token)).data?.email === ph(W) && (await holder(W)) !== victim.id);
+  const P = lid(); await mkUser({ email: ph(P), password: 'Attacker-' + hex(6), __created_at: daysAgo(1) });
+  const l8 = await lineLogin(P);
+  ok('pre-registration: LINE owner is not signed into the attacker\'s placeholder', !l8.token && l8.error === 'LINE_ACCOUNT_REVIEW' && !(await holder(P)), l8.error);
+  const gp = await mkUser({ email: `f4.gp.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const tgp = await sessionFor(gp.email); const lk9 = await link(tgp, P); const c9 = await confirm(tgp, lk9.jar);
+  ok('a legacy account cannot be orphaned by another account\'s link', c9.data?.error === 'LINE_LEGACY_ACCOUNT_EXISTS' && !(await holder(P)), c9.data);
 
-  // 6 Placeholder pre-registration: attacker created line_<id>@… with a password first
-  const P = lid(); const pre = await mkUser({ email: ph(P), password: 'Attacker-' + hex(8) });
-  const l6 = await lineLogin(P);
-  ok('pre-registration: LINE owner is NOT signed into the attacker account', !l6.token && l6.error === 'LINE_ACCOUNT_REVIEW' && !(await getUser(pre.id)).app_metadata?.line_id, l6.error);
-  const lk6 = await startLink(await sessionFor(ph(A)), P, 'other');
-  const c6 = await confirm(await sessionFor(ph(A)), lk6.jar).catch(() => ({}));
-  ok('pre-registration: another account cannot take that LINE id either (legacy account exists)', c6.data?.error === 'LINE_LEGACY_ACCOUNT_EXISTS', JSON.stringify(c6.data));
+  // Codex H2 #1 — A's late callback after A unlinked and B confirmed
+  const X = lid(); const ga = await mkUser({ email: `f4.ga.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const gb = await mkUser({ email: `f4.gb.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const ta = await sessionFor(ga.email); const tb = await sessionFor(gb.email);
+  const la = await link(ta, X); await confirm(ta, la.jar);
+  ok('H2#1 setup: A holds X', (await holder(X)) === ga.id);
+  const lateA = await startLink(ta);                                       // A's callback starts…
+  ok('H2#1: A unlinks X', (await hit('/api/auth/line', { method: 'DELETE', token: ta })).status === 200 && !(await holder(X)));
+  const lb = await link(tb, X); const cb10 = await confirm(tb, lb.jar);
+  ok('H2#1: B confirms X', cb10.status === 200 && (await holder(X)) === gb.id, cb10.data);
+  await finishLink(lateA, X);                                              // …and only now finishes
+  ok('H2#1: the late callback does not bring X back to A', (await holder(X)) === gb.id);
+  const c10 = await confirm(ta, lateA.jar);
+  ok('H2#1: confirming the late pending link is refused (X taken)', c10.data?.error === 'LINE_LINKED_TO_OTHER' && (await holder(X)) === gb.id, c10.data);
 
-  // 7 Duplicate holders → conflict on login and on link
-  const D = lid(); const d1 = await mkUser({ email: `f4.d1.${hex(4)}@example.invalid` }); const d2 = await mkUser({ email: `f4.d2.${hex(4)}@example.invalid` });
-  await setApp(d1.id, { line_id: D }); await setApp(d2.id, { line_id: D });
-  const l7 = await lineLogin(D); ok('duplicate: login refused with LINE_ACCOUNT_CONFLICT (no first-pick)', !l7.token && l7.error === 'LINE_ACCOUNT_CONFLICT', l7.error);
+  // Codex H2 #2 — concurrent replay of one pending link
+  const R = lid(); const gr = await mkUser({ email: `f4.gr.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const tr = await sessionFor(gr.email); const lr = await link(tr, R); const replay = lr.jar.clone();
+  const [r1, r2] = await Promise.all([confirm(tr, lr.jar), confirm(tr, replay)]);
+  const okCount = [r1, r2].filter((r) => r.status === 200).length;
+  ok('H2#2: two concurrent confirms of one pending link → exactly one succeeds', okCount === 1 && [r1, r2].some((r) => r.data?.error === 'LINK_PENDING_MISSING'), [r1.data, r2.data]);
+  await hit('/api/auth/line', { method: 'DELETE', token: tr });
+  const r3 = await confirm(tr, replay);
+  ok('H2#2: after unlink the replayed confirm cannot re-link', r3.data?.error === 'LINK_PENDING_MISSING' && !(await holder(R)), r3.data);
 
-  // 8 Concurrent linking of one LINE id into two accounts → never two holders
-  const C = lid(); const ca = await mkUser({ email: `f4.ca.${hex(4)}@example.invalid` }); const cb = await mkUser({ email: `f4.cb.${hex(4)}@example.invalid` });
-  const ta = await sessionFor(ca.email); const tb = await sessionFor(cb.email);
-  const la = await startLink(ta, C); const lb = await startLink(tb, C);
-  const [ra, rb] = await Promise.all([confirm(ta, la.jar), confirm(tb, lb.jar)]);
-  const hc = await holdersOf(C);
-  ok('concurrent link: at most one holder afterwards', hc.length <= 1, `statuses ${ra.status}/${rb.status} holders ${hc.length}`);
-  ok('concurrent link: a losing request reports a conflict', [ra, rb].filter((r) => r.status === 200).length === hc.length);
+  // concurrent link of one LINE id into two accounts
+  const C = lid(); const gc = await mkUser({ email: `f4.gc.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const gd = await mkUser({ email: `f4.gd.${hex(3)}@example.invalid`, __identities: [{ provider: 'google' }] });
+  const tc = await sessionFor(gc.email); const td = await sessionFor(gd.email);
+  const lc = await link(tc, C); const ld = await link(td, C);
+  const [rc, rd] = await Promise.all([confirm(tc, lc.jar), confirm(td, ld.jar)]);
+  ok('concurrent link of one LINE id: exactly one holder', [rc, rd].filter((r) => r.status === 200).length === 1 && [rc, rd].some((r) => r.data?.error === 'LINE_LINKED_TO_OTHER'), [rc.data, rd.data]);
 
-  // 9 Expired pending
-  const E = lid(); const ea = await mkUser({ email: `f4.ea.${hex(4)}@example.invalid` }); const te = await sessionFor(ea.email);
-  const le = await startLink(te, E); const cur = await getUser(ea.id);
-  await setApp(ea.id, { line_link_pending: { ...cur.app_metadata.line_link_pending, exp: Date.now() - 1000 } });
+  // expired / session change / logout / unlink / decline
+  const E = lid(); const ge = await mkUser({ email: `f4.ge.${hex(3)}@example.invalid` }); const te = await sessionFor(ge.email);
+  const le = await link(te, E); await sqlq(`update public.line_link_pending set expires_at = now() - interval '1 second' where user_id = '${ge.id}'`);
   const ce = await confirm(te, le.jar);
-  ok('expired pending: refused and cleared', ce.data?.error === 'LINK_PENDING_EXPIRED' && !(await getUser(ea.id)).app_metadata?.line_link_pending && !(await getUser(ea.id)).app_metadata?.line_id, JSON.stringify(ce.data));
+  ok('expired pending link refused and consumed', ce.data?.error === 'LINK_PENDING_EXPIRED' && (await sqlq(`select count(*) from public.line_link_pending where user_id = '${ge.id}'`)) === '0', ce.data);
+  const F = lid(); const gf = await mkUser({ email: `f4.gf.${hex(3)}@example.invalid` }); const gh = await mkUser({ email: `f4.gh.${hex(3)}@example.invalid` });
+  const tf = await sessionFor(gf.email); const th = await sessionFor(gh.email); const lf = await link(tf, F);
+  const cf = await confirm(th, lf.jar.clone());
+  ok('session change: another signed-in user cannot confirm (no pending on that account)', cf.data?.error === 'LINK_PENDING_MISSING' && !(await holder(F)), cf.data);
+  await sb('POST', '/auth/v1/logout', null, { authorization: `Bearer ${tf}` });
+  const cf2 = await confirm(tf, lf.jar);
+  ok('logout: confirm with a signed-out session is refused', cf2.status === 401 && !(await holder(F)), cf2.status);
+  ok('unlink: Google account unlinks (database release)', (await hit('/api/auth/line', { method: 'DELETE', token: await sessionFor(g.email) })).status === 200 && !(await holder(V3)));
+  ok('unlink: LINE-only account cannot unlink its only sign-in', (await hit('/api/auth/line', { method: 'DELETE', token: await sessionFor(ph(A)) })).status === 409 && !!(await holder(A)));
+  const tg2 = await sessionFor(g.email); const ldec = await link(tg2, lid());
+  const dec = await hit('/api/auth/line/confirm', { jar: ldec.jar, method: 'DELETE', token: tg2 });
+  ok('decline: pending link removed (result checked)', dec.status === 200 && (await hit('/api/auth/line/status', { token: tg2 })).data?.pending === null);
+  ok('start link without a valid session is refused', (await hit('/api/auth/line', { jar: new Jar(), method: 'POST', token: 'not-a-session', body: {} })).status === 401);
 
-  // 10 Replay of a used confirmation
-  const R = lid(); const rr = await mkUser({ email: `f4.rr.${hex(4)}@example.invalid` }); const tr = await sessionFor(rr.email);
-  const lr = await startLink(tr, R); const saved = lr.jar.header();
-  const c10 = await confirm(tr, lr.jar);
-  const replayJar = new Jar(); for (const kv of saved.split('; ')) { const i = kv.indexOf('='); replayJar.c.set(kv.slice(0, i), kv.slice(i + 1)); }
-  const c10b = await confirm(tr, replayJar);
-  ok('replay: second confirm with the same nonce finds nothing', c10.status === 200 && c10b.data?.error === 'LINK_PENDING_MISSING', JSON.stringify(c10b.data));
+  // concurrent first sign-in of one new LINE id
+  const N = lid(); const [n1, n2] = await Promise.all([lineLogin(N), lineLogin(N)]);
+  const ids = await Promise.all([n1, n2].map(async (n) => (await whoami(n.token)).data?.id));
+  ok('concurrent first sign-in: one account, both signed in', ids[0] && ids[0] === ids[1] && (await holder(N)) === ids[0], [n1.error, n2.error]);
+  ok('concurrent first sign-in: no unclaimed placeholder left behind', (await sqlq(`select count(*) from auth.users where email = '${ph(N)}'`)) === '1');
 
-  // 11 Session change between start and confirm
-  const F = lid(); const fa = await mkUser({ email: `f4.fa.${hex(4)}@example.invalid` }); const fb = await mkUser({ email: `f4.fb.${hex(4)}@example.invalid` });
-  const tfa = await sessionFor(fa.email); const tfb = await sessionFor(fb.email);
-  const lf = await startLink(tfa, F);
-  const c11 = await confirm(tfb, lf.jar);
-  ok('session change: another signed-in user cannot confirm (no pending on their account)', c11.data?.error === 'LINK_PENDING_MISSING' && !(await getUser(fb.id)).app_metadata?.line_id, JSON.stringify(c11.data));
-  if (backend === 'mock') { // session revocation is not observable through the staging proxy credential (see preload)
-    const lf2 = await startLink(tfa, F);
-    await sb('POST', '/auth/v1/logout?scope=global', null, { authorization: `Bearer ${tfa}` });
-    const c11b = await confirm(tfa, lf2.jar);
-    ok('logout: confirm with the signed-out session is refused', c11b.status === 401 && !(await getUser(fa.id)).app_metadata?.line_id, `${c11b.status} ${JSON.stringify(c11b.data)}`);
-  }
-  const l11 = await hit('/api/auth/line', { jar: new Jar(), method: 'POST', token: 'not-a-session', body: {} });
-  ok('start link without a valid session is refused', l11.status === 401);
-
-  // 12 Unlink
-  const u12 = await hit('/api/auth/line', { jar: new Jar(), method: 'DELETE', token: await sessionFor(g.email) });
-  ok('unlink: Google account can unlink LINE (server-side)', u12.status === 200 && !(await getUser(g.id)).app_metadata?.line_id);
-  const u12b = await hit('/api/auth/line', { jar: new Jar(), method: 'DELETE', token: await sessionFor(ph(A)) });
-  ok('unlink: LINE-only account cannot unlink its only sign-in', u12b.status === 409 && (await holdersOf(A)).length === 1);
-
-  // 14 Errors
-  const e1 = await lineLogin(lid(), 'x', { code: 'token-fail' }); ok('error: LINE token failure → fixed code', e1.error === 'LINE_TOKEN_FAILED', e1.error);
-  const e2 = await lineLogin(lid(), 'x', { code: 'profile-bad' }); ok('error: invalid LINE profile → fixed code', e2.error === 'LINE_PROFILE_INVALID', e2.error);
+  // errors
+  ok('error: LINE token failure', (await lineLogin(lid(), 'x', { code: 'token-fail' })).error === 'LINE_TOKEN_FAILED');
+  ok('error: invalid LINE profile', (await lineLogin(lid(), 'x', { code: 'profile-bad' })).error === 'LINE_PROFILE_INVALID');
   const j = new Jar(); await hit('/api/auth/line?next=%2Fprofile', { jar: j });
-  const e3 = await hit(`/api/auth/line/callback?code=ok:${lid()}:x&state=forged`, { jar: j });
-  ok('error: state mismatch (OAuth CSRF) refused', /auth_error=state_mismatch/.test(e3.loc));
-  const e4 = await hit('/api/auth/line/callback?error=access_denied&state=x', { jar: new Jar() });
-  ok('error: user cancelled at LINE → fixed code', /auth_error=access_denied/.test(e4.loc));
-  const e5 = await hit('/api/auth/line?mode=link', { jar: new Jar() });
-  ok('error: link without the session-verified POST is refused', /link_error=LINE_LINK_UNAUTHORIZED/.test(e5.loc));
+  ok('error: state mismatch (OAuth CSRF)', /auth_error=state_mismatch/.test((await hit(`/api/auth/line/callback?code=ok:${lid()}:x&state=forged`, { jar: j })).loc));
+  ok('error: cancelled at LINE', /auth_error=access_denied/.test((await hit('/api/auth/line/callback?error=access_denied&state=x', { jar: new Jar() })).loc));
+  ok('error: link without the session-verified POST', /link_error=LINE_LINK_UNAUTHORIZED/.test((await hit('/api/auth/line?mode=link', { jar: new Jar() })).loc));
 
-  // 13 Pagination (mock only: thousands of users)
-  if (backend === 'mock') {
-    for (let i = 0; i < 2300; i++) await sb('POST', '/auth/v1/admin/users', { email: `bulk${i}@example.invalid`, email_confirm: true });
-    const G = lid(); const late = await mkUser({ email: `f4.late.${hex(4)}@example.invalid` }); await setApp(late.id, { line_id: G });
-    const l13 = await lineLogin(G);
-    ok('pagination: a holder beyond the first 1000 users is found', !!l13.token && (await holdersOf(G))[0] === late.id);
-  }
-}
-
-async function cleanup() {
-  if (backend !== 'staging') return;
-  // delete every synthetic account this run created (seeded + made by the app for our random LINE ids)
-  const mine = (await allUsers()).filter((u) => created.has(u.id) || u.user_metadata?.f4_synthetic === true);
-  for (const u of mine) await sb('DELETE', `/auth/v1/admin/users/${u.id}`);
-  results.push({ name: `cleanup: deleted ${mine.length} synthetic staging users`, pass: true });
+  // admin recovery (M1 / M2 / L1)
+  const RV = lid(); const rvPw = 'Planted-' + hex(6);
+  const rv = await mkUser({ email: ph(RV), password: rvPw, __created_at: daysAgo(120), user_metadata: { line_id: RV } });
+  const planted = (await pwLogin(rv.email, rvPw)).data.access_token;
+  const ref = (await lineLogin(RV)).ref;
+  const list = await script(['list']);
+  ok('recovery: list shows the request (short ids only)', list.code === 0 && list.out.includes(ref) && !list.out.includes(rv.id), list.out.slice(0, 200));
+  const base = ['approve', '--request', ref, '--user', rv.id, '--actor', 'owner', '--reason', 'verified with the user by phone'];
+  const oneCheck = await script([...base, '--version', '1', '--check', 'private pets count matches']);
+  ok('recovery: one owner check is refused', oneCheck.code === 4, oneCheck.out.slice(-200));
+  const wrongUser = await script(['approve', '--request', ref, '--user', crypto.randomUUID(), '--version', '1', '--actor', 'owner', '--reason', 'verified with the user', '--check', 'aaaaa', '--check', 'bbbbb']);
+  ok('recovery: wrong user id is refused', wrongUser.code === 3, wrongUser.out.slice(-200));
+  const checks = ['--check', 'private pets count matches', '--check', 'last finance entry matches'];
+  const dry = await script([...base, '--version', '1', ...checks]);
+  ok('recovery: dry run changes nothing', dry.code === 0 && /DRY RUN/.test(dry.out) && (await rpc('line_recovery_list')).find((r) => r.ref === ref)?.status === 'open');
+  const wrongV = await script([...base, '--version', '9', ...checks, '--apply']);
+  ok('recovery: wrong version is refused', wrongV.code === 5 && /version/.test(wrongV.out), wrongV.out.slice(-200));
+  await sb('POST', '/__test/fail-next-password-update', {});
+  const part = await script([...base, '--version', '1', ...checks, '--apply']);
+  const afterPart = (await rpc('line_recovery_list')).find((r) => r.ref === ref);
+  ok('recovery (M2): rotation failure → back to open, nothing mapped', part.code === 6 && afterPart?.status === 'open' && !(await holder(RV)), part.out.slice(-200));
+  await sqlq(`update public.line_identity_ops set last_requested_at = now() - interval '15 days' where ref = '${ref}'`);
+  const stale = await script([...base, '--version', String(afterPart?.version), ...checks, '--apply']);
+  ok('recovery: stale request (15 days) is refused', stale.code === 5 && /expired/.test(stale.out), stale.out.slice(-200));
+  await sqlq(`update public.line_identity_ops set last_requested_at = now() where ref = '${ref}'`);
+  const good = await script([...base, '--version', String(afterPart?.version), ...checks, '--apply']);
+  ok('recovery: approve resets credentials then maps', good.code === 0 && (await holder(RV)) === rv.id, good.out.slice(-200));
+  ok('recovery: planted password and session are gone (H1)', (await pwLogin(rv.email, rvPw)).status === 400 && (await whoami(planted)).status === 403);
+  ok('recovery: owner signs in with LINE', (await whoami((await lineLogin(RV)).token)).data?.id === rv.id);
+  ok('recovery: audit trail — both attempts (aborted + approved) with reviewer, reason and checks',
+    (await sqlq(`select count(*) from public.line_identity_audit where ref = '${ref}' and action = 'recovery_begin' and actor = 'owner' and detail ? 'owner_checks'`)) === '2'
+    && (await sqlq(`select string_agg(action, ',' order by id) from public.line_identity_audit where ref = '${ref}' and action in ('op_aborted', 'op_approved')`)) === 'op_aborted,op_approved');
+  // resume after a crash between reset and commit
+  const RS = lid(); const rs = await mkUser({ email: ph(RS), __created_at: daysAgo(100) }); const refRS = (await lineLogin(RS)).ref;
+  const tok = await rpc('line_recovery_begin', { p_ref: refRS, p_user_id: rs.id, p_version: 1, p_actor: 'owner', p_reason: 'verified with the user', p_owner_checks: ['check one ok', 'check two ok'] });
+  await sb('PUT', `/auth/v1/admin/users/${rs.id}`, { password: 'rotated-' + hex(8) });
+  await rpc('line_op_mark_reset', { p_ref: refRS, p_token: tok, p_actor: 'owner' });
+  const res = await script(['resume', '--request', refRS, '--apply']);
+  ok('recovery (M2): resume finishes an approval that crashed after the reset', res.code === 0 && (await holder(RS)) === rs.id, res.out.slice(-200));
+  // decline
+  const DL = lid(); await mkUser({ email: ph(DL), __created_at: daysAgo(100) }); const refDL = (await lineLogin(DL)).ref;
+  const decl = await script(['decline', '--request', refDL, '--version', '1', '--actor', 'owner', '--reason', 'could not verify ownership', '--apply']);
+  ok('recovery: decline recorded, nothing mapped', decl.code === 0 && !(await holder(DL)), decl.out.slice(-200));
 }
 
 const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '-H', '127.0.0.1', '-p', String(port)], { cwd, stdio: ['ignore', 'pipe', 'pipe'],
   env: { ...process.env, NODE_OPTIONS: `--import ${new URL('./line-auth-mock-preload.mjs', import.meta.url)}`, MOCK_CONTROL_PORT: String(controlPort),
-    LINE_CHANNEL_ID: 'synthetic-channel', LINE_CHANNEL_SECRET: 'synthetic-secret', SUPABASE_SERVICE_ROLE_KEY: 'proxy-injected' } });
+    F4_PG: PG.join(' '), F4_PG_DB: DB, LINE_CHANNEL_ID: 'synthetic-channel', LINE_CHANNEL_SECRET: 'synthetic-secret', SUPABASE_SERVICE_ROLE_KEY: 'synthetic' } });
 let logs = ''; child.stdout.on('data', (d) => (logs += d)); child.stderr.on('data', (d) => (logs += d));
 try {
-  for (let i = 0; i < 80; i++) { try { await fetch(app + '/th/login'); break; } catch { await new Promise((r) => setTimeout(r, 500)); } }
+  for (let i = 0; i < 80; i++) { try { await fetch(app + '/th/login'); await fetch(ADMIN + '/'); break; } catch { await new Promise((r) => setTimeout(r, 500)); } }
   await scenarios();
 } catch (e) { results.push({ name: 'harness error', pass: false, detail: e.stack?.split('\n').slice(0, 3).join(' | ') }); }
-finally { try { await cleanup(); } catch (e) { results.push({ name: 'cleanup error', pass: false, detail: e.message }); } child.kill('SIGTERM'); }
+finally { child.kill('SIGTERM'); }
 for (const r of results) console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.detail && !r.pass ? '  — ' + r.detail : ''}`);
 const failed = results.filter((r) => !r.pass).length;
-console.log(`\n${backend}: ${results.length - failed}/${results.length} passed`);
-if (failed && process.env.SHOW_LOGS) console.log(logs.slice(-3000));
+console.log(`\nintegration: ${results.length - failed}/${results.length} passed`);
+if (failed && process.env.SHOW_LOGS) console.log(logs.slice(-4000));
 process.exit(failed ? 1 : 0);

@@ -2,16 +2,15 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 import { isPreviewDeploy } from '@/lib/deploy-env'
-import { isLineOnly, withoutLineId } from '@/lib/lineAuth'
-import { cookieOpts, makeAdmin, newNonce, userFromBearer } from '@/lib/lineServer'
+import { isLineOnly } from '@/lib/lineAuth'
+import { cookieOpts, makeAdmin, newNonce, rpc, userFromBearer } from '@/lib/lineServer'
 
 // POST — start linking LINE to the signed-in account (Bearer session required). The uid and a nonce go into short
 // httpOnly cookies; the callback stores the LINE id as a PENDING link on this account only, and nothing is linked
 // until POST /api/auth/line/confirm re-checks the session (F4: the old flow linked straight from the cookie).
 export async function POST(request: Request) {
   if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
-  const admin = makeAdmin()
-  const user = await userFromBearer(admin, request)
+  const user = await userFromBearer(request)
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
   // body.uid (sent by older clients) must match the session when present
   const body = await request.json().catch(() => ({} as Record<string, unknown>))
@@ -23,19 +22,23 @@ export async function POST(request: Request) {
   return Response.json({ ok: true })
 }
 
-// DELETE — unlink LINE from the signed-in account (server-side; app_metadata is not writable by the user).
-// Refused when LINE is the only way into the account (placeholder email, no OAuth identity) — no lock-out.
+// DELETE — unlink LINE from the signed-in account: line_identity_release (same lock as every other writer, so an
+// in-flight confirm cannot bring the link back). Refused when LINE is the only way in (placeholder, no OAuth identity).
 export async function DELETE(request: Request) {
   if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
-  const admin = makeAdmin()
-  const user = await userFromBearer(admin, request)
+  const user = await userFromBearer(request)
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
   if (isLineOnly(user)) return Response.json({ error: 'line_only_login' }, { status: 409 })
-  const { error } = await admin.auth.admin.updateUserById(user.id, {
-    app_metadata: withoutLineId(user.app_metadata),
-    user_metadata: { ...(user.user_metadata || {}), line_id: null, line_display_name: null }, // rollback-compat copy too
-  })
-  if (error) return Response.json({ error: 'unlink_failed' }, { status: 500 })
+  const admin = makeAdmin()
+  try {
+    const r = await rpc<string>(admin, 'line_identity_release', { p_user_id: user.id, p_actor: `user:${user.id}` })
+    if (r !== 'ok' && r !== 'none') return Response.json({ error: 'unlink_failed' }, { status: 500 })
+  } catch {
+    return Response.json({ error: 'unlink_failed' }, { status: 500 })
+  }
+  // rollback-compat copy (never read by the new code); the mapping above is what counts
+  const { error } = await admin.auth.admin.updateUserById(user.id, { user_metadata: { line_id: null, line_display_name: null } })
+  if (error) console.error('[LINE unlink] rollback copy not cleared')
   return Response.json({ ok: true })
 }
 

@@ -1,49 +1,60 @@
-# F4 — LINE identity containment (branch `security/f4-line-identity`, NOT live)
+# F4 — LINE identity containment (branch `security/f4-line-identity`, PR #40, NOT live)
 
-Base: `main` `c29c393` (v1.14.2). App code + tests + one admin script. No migration, no backfill, no new secret,
-no Auth / env change. Production data was only read (aggregate audit round A, 2026-11-09).
+Base: `main` `c29c393` (v1.14.2). Revision 2 answers the independent review of `193d287` (Codex: NO-GO, High 2 /
+Medium 2 / Low 2). **Needs migration `20261110090000_line_identity_map`** — written and tested on a throwaway local
+Postgres only; not applied to staging or production (separate approval each). No backfill, no evidence stamping,
+no Auth / env change.
 
-## Findings fixed (v1.14.2 code)
-| ID | Before | After |
-|---|---|---|
-| C1 | login picked the first user whose **user_metadata.line_id** (user-writable) or email matched | only `app_metadata.line_id` (service role); >1 holder = `LINE_ACCOUNT_CONFLICT`; user_metadata never read (`lib/lineAuth.ts`) |
-| C1b | `notify.ts`, settings, connections read `user_metadata.line_id` | `app_metadata.line_id` |
-| C2 | `listUsers(page 1, 1000)` | `listAllUsers()` reads every page, fails closed past 50 pages |
-| C3 | `email` scope; LINE email matched any account and created confirmed users with it | no `email` scope, id_token unused, new users get `line_<id>@line.whiskora.internal` (lower case) |
-| C4 | link: session checked at POST only, uid carried by cookie, callback linked at once | callback stores `app_metadata.line_link_pending {line_id, display_name, nonce_hash, exp 5 min}` on the session-verified uid; `POST /api/auth/line/confirm` re-checks the session (Auth `GET /user`), the nonce cookie (same browser) and expiry, consumes the pending link, re-reads holders after writing (race → undo + conflict) |
-| — | unlink wrote user_metadata from the browser | `DELETE /api/auth/line` (server), refused for LINE-only accounts |
-| L1 | raw upstream error text in `auth_error` | fixed codes; TH/EN texts in `lib/lineAuthMessages.ts` |
+## Design
+- **Database = only source of truth.** `line_identities` (UNIQUE LINE id, UNIQUE account), `line_link_pending`,
+  `line_identity_ops` (legacy operations), `line_identity_audit` (append-only). RLS on, no grants to API roles —
+  service_role included; every change goes through SECURITY DEFINER functions (service_role EXECUTE only) that take
+  transaction advisory locks in a fixed order (LINE id → account).
+- App: login `line_login_resolve` → holder / legacy / creating / claims / none. New LINE user: placeholder account
+  (lower case) + `line_identity_claim(login_create)` (refused unless the placeholder of exactly that id, < 2 min old;
+  unclaimed account deleted on failure). Link: POST (Bearer) → LINE → callback writes ONLY `line_link_pending_put`
+  → `POST /api/auth/line/confirm` → `line_link_take` (DELETE … RETURNING under the account lock: consumed once) →
+  claim. Unlink: `line_identity_release` (same locks). Status for the UI: `GET /api/auth/line/status`. Notify:
+  `line_identity_of`. No metadata is read for identity; `user_metadata.line_id` is only written as a rollback copy.
+- No `email` scope, id_token unused; fixed error codes (TH/EN in `lib/lineAuthMessages.ts`).
 
-## Staging validation (project `wpxcukrwmegwzfccbbga`, synthetic users, all deleted)
-GoTrue v2.197.0 on staging and production. Staging has Confirm email ON, production autoconfirm ON.
-1. `admin.createUser` without a password stores a random bcrypt hash (GoTrue `admin.go`: `password.Generate(64…)`) — "no password" is no evidence.
-2. Public signup with a placeholder email: staging rejects it only because it tries to send a confirmation mail (DNS check in the mail path). With autoconfirm (production) GoTrue skips the mail → **anyone can pre-register `line_<id>@…` with a password**. Email change to a placeholder needs a mail → refused (except anonymous + autoconfirm; anonymous sign-ins are off).
-3. Emails are lower-cased (`validateEmail`), LINE ids are `U`+hex → placeholder ≠ id by case; compare lower case.
-4. `generateLink(magiclink)` sets `recovery_sent_at`; identities unchanged; verify → session amr `otp`.
-5. Admin-created vs password account: same `raw_app_meta_data`, same identity keys `{sub,email,email_verified,phone_verified}`, both bcrypt; audit log table empty in production. **No reliable server-side marker of "made by the LINE callback".**
-6. Admin password update revokes every session + refresh token (`UpdatePassword(tx, nil)` → `Logout`); access tokens already issued stay valid until `exp` (1 h). Do not rotate after creating the new session.
-7–10. Covered by `scripts/line-auth.integration.mjs` (below).
+## Codex findings (193d287) → revision 2
+| ID | Finding | Fix | Proof |
+|---|---|---|---|
+| H1 | signed-in legacy migration kept planted password / sessions | LINE-only accounts never plain-link (`legacy_needs_reset`); they go through an op: `line_legacy_link_begin` (records password digest) → Auth admin password rotation (revokes every session) → `line_op_mark_reset` (SQL verifies digest changed AND no session left) → `line_op_commit`. Same for admin recovery. | SQL 62/62; integration: planted password + session invalid after migration |
+| H2 | link lifecycle not atomic (stale callback write-back; concurrent replay) | callback writes only the pending row; take/claim/release under shared DB locks + UNIQUE constraints | race tests 5/5 (two real sessions, blocked-then-commit); integration H2#1 / H2#2 |
+| M1 | recovery without evidence / freshness / approver | `line_recovery_begin`: request ref + version + full user id + ≤ 14 days + reviewer + reason + ≥ 2 owner checks; server evidence snapshot stored; audit | SQL + integration (wrong version / user / stale / one check refused) |
+| M2 | partial failure between rotation and mapping | durable op states: rotation failure → `line_op_abort` (back to open); reset recorded → `resume`; mapping refused → `failed`; signed-in op finished by the next LINE sign-in (`line_legacy_link_resume`) | integration (synthetic rotation failure, resume) |
+| L1 | write results ignored | every RPC through `rpc()` (throws on error); decline / unlink / pending checked; reference shown only if recorded | unit static guards + integration |
+| L2 | recovery pagination not fail-closed | script no longer lists users at all (RPCs only); app no longer scans users | unit static guard |
 
-**Security gate result: automatic adoption of legacy accounts is NOT safe** (a LINE OAuth success proves the LINE id, not the old account). Legacy accounts are migrated only by
-- **signed-in link** — owner signed in to the old account (valid session) + LINE OAuth + confirm; or
-- **admin recovery** — a LINE sign-in for a legacy account answers `LINE_ACCOUNT_REVIEW` (+ 8-hex reference) and stores `app_metadata.line_recovery_request`; admin verifies with the user, then `supabase/scripts/line_identity_recovery.mjs --ref <ref> --approve <user> --apply` (sets `line_id`, rotates the password = revokes all sessions). No new account replaces the old one.
+## Production data (aggregate, read-only)
+Audit A (2026-11-09): 108 users; 25 LINE-related: 24 LINE-only placeholder, 1 Google + claim; 0 duplicates.
+Audit A2 (2026-11-10): all **24** placeholder accounts have a creation-time `otp` session (≤ 10 s), no non-otp session,
+original identity, no OAuth, no pending email change → "Tier A" signals; 1 of 24 had session activity in 30 days.
+Tier A is NOT used for any automatic change (needs its own review; no stamping).
 
-## Production audit round A (aggregate, read-only, 2026-11-09)
-108 users; 25 with a LINE claim: **24 legacy LINE-only placeholder accounts (V1)**, 1 Google account with a claim (V3), 0 duplicates, 0 app_metadata. All 24 have current sessions (amr `otp` only); 1 signed in within 30 days.
+## Impact on legacy LINE-only users
+LINE sign-in into a legacy account stops (`LINE_ACCOUNT_REVIEW` + reference) until migrated by (1) the signed-in
+link (banner on Profile → Connections; user is signed out everywhere and signs in with LINE again) or (2) admin
+recovery (`docs/LINE_ACCOUNT_RECOVERY.md`). LINE notifications for unmigrated accounts stop (no trusted LINE id).
+No account is replaced by a new one.
 
-## Tests (run 2026-11-09)
-- Unit `node --test scripts/line-auth.test.mjs` 20/20; existing `dashboard-layout-regression` 8/8; `tsc` OK; no new lint errors.
-- Integration `scripts/line-auth.integration.mjs`: mock GoTrue 32/32; **real staging GoTrue 31/31** (LINE mocked). On staging `GET /auth/v1/user` is emulated by ES256/JWKS verification (the sandbox proxy key in `apikey` makes the gateway ignore user JWTs) → session revocation + pagination are mock-only.
-- Playwright `playwright.f4.config.ts` 32/32 (TH/EN, desktop+mobile); security suite 42/42.
+## Tests (revision 2, run 2026-11-10)
+SQL `supabase/tests/local/f4_line_identity_test.sql` 62/62 · race `web/scripts/line-identity-race.test.mjs` 5/5 ·
+unit `web/scripts/line-auth.test.mjs` 8/8 · dashboard regression 8/8 · integration `web/scripts/line-auth.integration.mjs`
+56/56 (built app + mock GoTrue mirrored into local Postgres with the real migration) · Playwright F4 40/40,
+security 42/42 · `tsc` OK, no new lint errors. Not run: staging (migration not applied there), real LINE / Google OAuth.
 
-## Release blockers / decisions
-1. **Legacy LINE-only users (24)**: with F4 a NEW LINE sign-in into these accounts stops (`LINE_ACCOUNT_REVIEW`) until migrated. Users whose existing session is still valid keep using the app and see a banner on Profile → Connections to confirm LINE (signed-in link, no admin needed); users who are signed out need admin recovery (data kept, no new account). Owner decision: accept this, plus who answers recovery requests and through which contact channel.
-2. Admin recovery runbook owner + contact channel shown to users.
-3. Real LINE OAuth not testable on Preview (LINE off there) → production smoke with the owner's account.
+## Release order (each step needs approval)
+staging: apply migration → staging UAT (synthetic: new LINE user, V3 link, legacy signed-in link with planted
+password, admin recovery incl. failure + resume, unlink, concurrency) → production: apply migration (app v1.14.2
+unaffected: it never calls the new functions) → deploy F4 → owner LINE smoke → recovery queue watch.
+Rollback: app → v1.14.2 (reopens C1–C4; mapping tables stay, unused). Migration rollback = drop the four tables and
+functions (staging-only script to be written with the approval request).
 
-## Rollout (after approval)
-Draft PR → review → Preview build (`preview: ok`) → merge (merge commit) → bump → production build → smoke: new LINE user, owner's LINE login (likely `LINE_ACCOUNT_REVIEW` if legacy → migrate via signed-in link), Google login, link/confirm/unlink on a test account, notify off. Monitor `[LINE Auth]` logs (review refs, conflicts).
-Rollback: Instant Rollback to `dpl_B4tAELvQhkFzm48bP3kXVqZpzNbU` (v1.14.2) — safe: F4 writes `app_metadata` only additively and keeps the `user_metadata.line_id` copy that v1.14.2 reads (v1.14.2 reopens C1–C4).
-
-## Not in F4 (H2)
-DB-enforced one-holder-per-LINE-id table; Confirm email + SMTP; email signup → Google auto-link (path 1); block public signups on the placeholder domain (Auth hook); fix PR #37 evidence rule (case-sensitive compare + "no password" → would mark all 24 accounts unverified).
+## Residual / not in F4
+Access tokens issued before a reset stay valid until `exp` (production JWT expiry to confirm). Public signup can still
+create placeholder accounts (they can only cause review, never a sign-in; Auth hook blocking the domain = H2).
+Confirm email + SMTP, email-signup → Google auto-link (H2 path 1). PR #37 overlaps 7 app files and its evidence SQL is
+case-sensitive — must be reconciled with this design before reuse.
