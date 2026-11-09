@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "@/i18n/context";
 
 const F = {
   ink: '#1f1a1c', inkSoft: '#4a3f44', muted: '#8e7e84',
@@ -9,40 +10,27 @@ const F = {
   cream: '#fffafc', paper: '#fdf0f3', line: '#f3dde3', lineMid: '#E5E7EB',
 };
 
+// texts: messages `about` (mission.<key>.*, feature.<key>.*); icons and links stay here
 const missions = [
-  {
-    icon: '/icons/icon-paw-sparkle.png',
-    title: 'สร้างขึ้นเพื่อสัตว์เลี้ยงทุกตัว',
-    desc: 'Whiskora เกิดจากความเชื่อว่าสัตว์เลี้ยงทุกตัวสมควรได้รับการดูแลที่ดีที่สุด เราสร้างเครื่องมือที่ช่วยให้เจ้าของสัตว์เลี้ยงดูแลน้องๆ ได้อย่างมีระบบและมีข้อมูลรองรับ',
-  },
-  {
-    icon: '/icons/icon-co-owner.png',
-    title: 'ชุมชนที่เชื่อมต่อนักเพาะพันธุ์',
-    desc: 'เป็นพื้นที่กลางที่นักเพาะพันธุ์มืออาชีพ ฟาร์ม และเจ้าของสัตว์เลี้ยงทั่วไปสามารถเชื่อมต่อ แลกเปลี่ยนข้อมูล และหาสัตว์เลี้ยงที่ตรงใจได้อย่างโปร่งใส',
-  },
-  {
-    icon: '/icons/icon-verified-badge.png',
-    title: 'ความโปร่งใสและน่าเชื่อถือ',
-    desc: 'ระบบยืนยันตัวตนและประวัติสัตว์เลี้ยงที่ตรวจสอบได้ช่วยให้ทุกการซื้อขายและการรับเลี้ยงเกิดขึ้นบนพื้นฐานของข้อมูลที่ถูกต้องและไว้วางใจได้',
-  },
-  {
-    icon: '/icons/icon-pet-records.png',
-    title: 'ความรู้ที่เข้าถึงได้',
-    desc: 'รวบรวมองค์ความรู้ด้านสุขภาพ โภชนาการ และพฤติกรรมสัตว์เลี้ยงจากผู้เชี่ยวชาญ เพื่อให้ผู้เลี้ยงทุกคนสามารถตัดสินใจอย่างมีข้อมูลรองรับ',
-  },
+  { key: 'everyPet', icon: '/icons/icon-paw-sparkle.png' },
+  { key: 'community', icon: '/icons/icon-co-owner.png' },
+  { key: 'trust', icon: '/icons/icon-verified-badge.png' },
+  { key: 'knowledge', icon: '/icons/icon-pet-records.png' },
 ];
 
 const features = [
-  { icon: '/icons/icon-my-pets.png', title: 'Pet Profile', desc: 'สร้างโปรไฟล์ดิจิทัลสำหรับสัตว์เลี้ยงแต่ละตัว พร้อมประวัติสุขภาพและวัคซีน', href: '/pets/create' },
-  { icon: '/icons/icon-farm.png', title: 'Farm & Breeder', desc: 'สร้างหน้าฟาร์มและจัดการครอกเพาะพันธุ์ได้อย่างมืออาชีพ', href: '/partner' },
-  { icon: '/icons/icon-pet-id-card.png', title: 'Pet ID Card', desc: 'บัตรดิจิทัลพร้อม QR Code ที่ให้ผู้อื่นสแกนดูข้อมูลสัตว์เลี้ยงได้ทันที', href: '/pet-id-card' },
-  { icon: '/icons/icon-documents.png', title: 'Knowledge Base', desc: 'บทความและองค์ความรู้สำหรับผู้เลี้ยงสัตว์ทุกประเภท', href: '/pet-knowledge' },
-  { icon: '/icons/icon-health.png', title: 'Pet Tools', desc: 'เครื่องมือคำนวณและช่วยตัดสินใจสำหรับผู้เลี้ยง เช่น อาหาร วัคซีน และการผสมพันธุ์', href: '/pet-tools' },
-  { icon: '/icons/icon-wallet.png', title: 'Finance Tracker', desc: 'บันทึกค่าใช้จ่ายสำหรับสัตว์เลี้ยง ดูสรุปรายเดือนและรายปีได้ง่ายๆ', href: '/profile/finance' },
+  { key: 'profile', icon: '/icons/icon-my-pets.png', href: '/pets/create' },
+  { key: 'farm', icon: '/icons/icon-farm.png', href: '/partner' },
+  { key: 'idCard', icon: '/icons/icon-pet-id-card.png', href: '/pet-id-card' },
+  { key: 'knowledge', icon: '/icons/icon-documents.png', href: '/pet-knowledge' },
+  { key: 'tools', icon: '/icons/icon-health.png', href: '/pet-tools' },
+  { key: 'finance', icon: '/icons/icon-wallet.png', href: '/profile/finance' },
 ];
 
 export default function AboutPage() {
   const router = useRouter();
+  const t = useTranslations("about");
+  const tc = useTranslations("common");
 
   return (
     <>
@@ -149,14 +137,14 @@ export default function AboutPage() {
 
           {/* Header */}
           <div className="ab-header">
-            <button className="ab-back" onClick={() => router.back()} aria-label="ย้อนกลับ">
+            <button type="button" className="ab-back" onClick={() => router.back()} aria-label={tc("back")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m15 18-6-6 6-6"/>
               </svg>
             </button>
             <div className="ab-header-text">
-              <h1>เกี่ยวกับ Whiskora</h1>
-              <p>แพลตฟอร์มดิจิทัลสำหรับผู้รักสัตว์เลี้ยง</p>
+              <h1>{t("title")}</h1>
+              <p>{t("subtitle")}</p>
             </div>
           </div>
 
@@ -167,34 +155,34 @@ export default function AboutPage() {
               <span className="ab-hero-logo-text">whiskora</span>
             </div>
             <p className="ab-hero-tagline">
-              เชื่อมต่อ ดูแล และบริหารจัดการสัตว์เลี้ยงของคุณในที่เดียว
+              {t("tagline")}
             </p>
           </div>
 
           {/* Missions */}
-          <div className="ab-section-label">ทำไม Whiskora ถึงเกิดขึ้น</div>
-          {missions.map((m, i) => (
-            <div key={i} className="ab-mission">
+          <div className="ab-section-label">{t("whyLabel")}</div>
+          {missions.map((m) => (
+            <div key={m.key} className="ab-mission">
               <div className="ab-mission-icon">
                 <img src={m.icon} alt="" />
               </div>
               <div>
-                <div className="ab-mission-title">{m.title}</div>
-                <div className="ab-mission-desc">{m.desc}</div>
+                <div className="ab-mission-title">{t(`mission.${m.key}.title`)}</div>
+                <div className="ab-mission-desc">{t(`mission.${m.key}.desc`)}</div>
               </div>
             </div>
           ))}
 
           {/* Features */}
-          <div className="ab-section-label">สิ่งที่ทำได้บน Whiskora</div>
+          <div className="ab-section-label">{t("featuresLabel")}</div>
           <div className="ab-features">
-            {features.map((f, i) => (
-              <Link key={i} href={f.href} className="ab-feat">
+            {features.map((f) => (
+              <Link key={f.key} href={f.href} className="ab-feat">
                 <img src={f.icon} alt="" className="ab-feat-icon" />
-                <div className="ab-feat-title">{f.title}</div>
-                <div className="ab-feat-desc">{f.desc}</div>
+                <div className="ab-feat-title">{t(`feature.${f.key}.title`)}</div>
+                <div className="ab-feat-desc">{t(`feature.${f.key}.desc`)}</div>
                 <div className="ab-feat-link">
-                  ลองเลย
+                  {t("tryIt")}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                 </div>
               </Link>
@@ -206,18 +194,12 @@ export default function AboutPage() {
             <div className="ab-note-header">
               <img src="/icons/icon-paw-sparkle.png" alt="" />
               <div>
-                <div className="ab-note-header-text">จากทีมงาน Whiskora</div>
+                <div className="ab-note-header-text">{t("noteFrom")}</div>
                 <div className="ab-note-header-sub">Genesis Program</div>
               </div>
             </div>
-            <p className="ab-note-text">
-              Whiskora สร้างขึ้นจากความรักที่มีต่อสัตว์เลี้ยง เราเชื่อว่าทุกน้องแมว น้องหมา
-              และสัตว์เลี้ยงทุกชนิดสมควรได้รับการดูแลที่ดีที่สุด เราจึงสร้างเครื่องมือที่ช่วยให้
-              การดูแลสัตว์เลี้ยงเป็นเรื่องง่าย สนุก และมีระบบ
-              ไม่ว่าคุณจะเป็นเจ้าของสัตว์เลี้ยงมือใหม่ หรือนักเพาะพันธุ์มืออาชีพ
-              Whiskora พร้อมเป็นผู้ช่วยที่เชื่อถือได้ของคุณเสมอ
-            </p>
-            <div className="ab-note-sig">— ทีมงาน Whiskora</div>
+            <p className="ab-note-text">{t("noteText")}</p>
+            <div className="ab-note-sig">{t("noteSig")}</div>
           </div>
 
         </div>

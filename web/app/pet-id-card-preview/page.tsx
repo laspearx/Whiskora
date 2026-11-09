@@ -100,7 +100,7 @@ const CARD_THEMES: CardTheme[] = [
   {
     id: "rose-gold",
     name: "Rose Gold",
-    caption: "Verified",
+    caption: "Rose Gold",
     bg: "/id-card/pet-id-card-bg-rose-gold-v1.png",
     accent: "#CD7168",
     accent2: "#F0A39A",
@@ -157,6 +157,7 @@ export default function PetIdCardPreviewPage() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [cardImageUrl, setCardImageUrl] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const detailRows = rows;
 
@@ -169,9 +170,10 @@ export default function PetIdCardPreviewPage() {
     let active = true;
 
     // QR ตัวอย่างชี้กลับมาที่ส่วนโปรไฟล์สาธิตในหน้านี้ — ไม่ชี้ไปโปรไฟล์ของสัตว์จริง
-    QRCode.toDataURL("https://whiskora.pet/pet-id-card-preview#demo-profile", {
+    QRCode.toDataURL(`${window.location.origin}/pet-id-card-preview#demo-profile`, {
       width: 220,
-      margin: 1,
+      margin: 4,
+      errorCorrectionLevel: "H",
       color: { dark: "#111827", light: "#FFFFFF" },
     }).then((dataUrl) => {
       if (active) setQrDataUrl(dataUrl);
@@ -189,6 +191,7 @@ export default function PetIdCardPreviewPage() {
 
     const generateCardImage = async () => {
       setIsGeneratingImage(true);
+      setImageError(false);
       setCardImageUrl("");
       try {
         await new Promise((resolve) => window.setTimeout(resolve, 120));
@@ -196,6 +199,9 @@ export default function PetIdCardPreviewPage() {
 
         const dataUrl = await htmlToImage.toPng(cardRef.current, {
           cacheBust: true,
+          width: 400,
+          height: 600,
+          style: { position: 'relative', left: '0', top: '0', margin: '0', transform: 'none' },
           pixelRatio: 3,
           quality: 1,
           skipFonts: true,
@@ -204,6 +210,7 @@ export default function PetIdCardPreviewPage() {
         if (!cancelled) setCardImageUrl(dataUrl);
       } catch (error) {
         console.error("Error generating preview card:", error);
+        if (!cancelled) setImageError(true);
       } finally {
         if (!cancelled) setIsGeneratingImage(false);
       }
@@ -354,8 +361,8 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-card-rendered {
           display: block;
-          width: min(400px, calc(100vw - 32px));
-          max-width: none;
+          width: 400px;
+          max-width: 100%;
           aspect-ratio: 2 / 3;
           border-radius: 30px;
           box-shadow: 0 26px 70px rgba(232,70,119,0.14), 0 12px 30px rgba(17,24,39,0.08);
@@ -363,11 +370,15 @@ export default function PetIdCardPreviewPage() {
           -webkit-touch-callout: default;
           user-select: none;
         }
-        .sample-card.is-capture-source {
-          display: none;
+        .sample-card-capture {
+          position: fixed;
+          left: -10000px;
+          top: 0;
+          pointer-events: none;
         }
         .sample-card {
-          width: min(400px, calc(100vw - 32px));
+          width: 400px;
+          height: 600px;
           max-width: none;
           aspect-ratio: 2 / 3;
           box-sizing: border-box;
@@ -783,15 +794,15 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-card-inner {
           z-index: 1;
-          gap: clamp(5px, 1.8vw, 8px);
-          padding: clamp(13px, 4.2vw, 18px);
+          gap: 8px;
+          padding: 18px;
           justify-content: space-between;
         }
         .sample-card-head {
-          min-height: clamp(45px, 12.5vw, 60px);
+          min-height: 60px;
         }
         .sample-card-logo {
-          height: clamp(30px, 9.8vw, 42px);
+          height: 42px;
         }
         .sample-card-rule {
           margin-top: 4px;
@@ -801,12 +812,12 @@ export default function PetIdCardPreviewPage() {
           color: rgba(23,19,49,0.64);
         }
         .sample-media {
-          grid-template-columns: minmax(0, 1fr) clamp(86px, 27vw, 116px);
-          min-height: clamp(110px, 34vw, 136px);
-          gap: clamp(6px, 2.2vw, 10px);
-          padding: clamp(7px, 2.4vw, 9px);
+          grid-template-columns: minmax(0, 1fr) 116px;
+          min-height: 136px;
+          gap: 10px;
+          padding: 9px;
           border: 1px solid color-mix(in srgb, var(--card-border) 42%, white);
-          border-radius: clamp(18px, 6vw, 24px);
+          border-radius: 24px;
           background: linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58));
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.56), 0 10px 26px rgba(17,24,39,0.045);
         }
@@ -831,9 +842,9 @@ export default function PetIdCardPreviewPage() {
           display: none;
         }
         .sample-status {
-          min-height: clamp(17px, 5.2vw, 19px);
-          padding: 0 clamp(5px, 1.8vw, 7px);
-          font-size: clamp(6px, 1.9vw, 6.8px);
+          min-height: 19px;
+          padding: 0 7px;
+          font-size: 6.8px;
           background: color-mix(in srgb, var(--card-accent) 8%, white);
         }
         .sample-status svg {
@@ -842,19 +853,19 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-name {
           margin-top: 6px;
-          font-size: clamp(17px, 5.3vw, 20px);
+          font-size: 20px;
         }
         .sample-meta {
           margin-top: 4px;
-          font-size: clamp(7.7px, 2.5vw, 9px);
+          font-size: 9px;
         }
         .sample-mini-row {
           margin-top: 8px;
         }
         .sample-mini {
-          min-height: clamp(17px, 5.2vw, 20px);
-          padding: 0 clamp(5px, 1.8vw, 7px);
-          font-size: clamp(6.5px, 2vw, 7.5px);
+          min-height: 20px;
+          padding: 0 7px;
+          font-size: 7.5px;
         }
         .sample-qr {
           width: 100%;
@@ -878,21 +889,21 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-stamp {
           display: block;
-          width: clamp(122px, 39vw, 158px);
-          height: clamp(122px, 39vw, 158px);
+          width: 158px;
+          height: 158px;
         }
         .sample-info {
           gap: 0;
           overflow: hidden;
           border: 1px solid color-mix(in srgb, var(--card-border) 40%, white);
-          border-radius: clamp(16px, 5vw, 20px);
+          border-radius: 20px;
           background: rgba(255,255,255,0.68);
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.52);
         }
         .sample-row {
           grid-template-columns: minmax(0, 1fr);
-          min-height: clamp(39px, 10.8vw, 44px);
-          padding: clamp(4px, 1.25vw, 5px) clamp(8px, 2.6vw, 10px);
+          min-height: 44px;
+          padding: 5px 10px;
           border: 0;
           border-radius: 0;
           background: transparent;
@@ -915,7 +926,7 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-row.is-primary {
           grid-column: 1 / -1;
-          min-height: clamp(39px, 10.8vw, 44px);
+          min-height: 44px;
           border-right: 0;
           background: linear-gradient(90deg, rgba(255,255,255,0.62), color-mix(in srgb, var(--card-accent) 6%, white));
         }
@@ -924,34 +935,34 @@ export default function PetIdCardPreviewPage() {
         }
         .sample-icon {
           display: none;
-          width: clamp(18px, 5.8vw, 21px);
-          height: clamp(18px, 5.8vw, 21px);
+          width: 21px;
+          height: 21px;
           border-radius: 8px;
           border-color: color-mix(in srgb, var(--card-border) 46%, white);
           background: color-mix(in srgb, var(--card-accent) 6%, white);
         }
         .sample-label-th {
-          font-size: clamp(9.2px, 2.75vw, 10.6px);
+          font-size: 10.6px;
           font-weight: 800;
         }
         .sample-label-en {
-          font-size: clamp(6.4px, 1.95vw, 7.4px);
+          font-size: 7.4px;
         }
         .sample-value {
-          font-size: clamp(10.4px, 3.05vw, 12.2px);
+          font-size: 12.2px;
           font-weight: 800;
         }
         .sample-row.is-primary .sample-value {
           color: #171331;
-          font-size: clamp(10.4px, 3.05vw, 12.2px);
+          font-size: 12.2px;
           line-height: 1.08;
           letter-spacing: 0;
         }
         .sample-value-en {
-          font-size: clamp(6.8px, 2.08vw, 8px);
+          font-size: 8px;
         }
         .sample-row.is-primary .sample-value-en {
-          font-size: clamp(6.8px, 2.08vw, 8px);
+          font-size: 8px;
         }
         .sample-petid {
           min-height: 56px;
@@ -972,32 +983,32 @@ export default function PetIdCardPreviewPage() {
         .sample-bottom {
           position: relative;
           z-index: 1;
-          padding: clamp(6px, 2.2vw, 8px);
+          padding: 8px;
           border: 1px solid color-mix(in srgb, var(--card-border) 34%, white);
-          border-radius: clamp(18px, 6vw, 24px);
+          border-radius: 24px;
           background: linear-gradient(180deg, color-mix(in srgb, var(--card-accent) 8%, white) 0%, rgba(255,255,255,0.58) 100%);
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 10px 24px rgba(17,24,39,0.035);
         }
         .sample-bottom .sample-petid {
           width: 100%;
-          min-height: clamp(52px, 15.5vw, 62px);
-          border-radius: clamp(15px, 4.8vw, 18px);
-          padding: clamp(8px, 2.6vw, 10px) clamp(10px, 3.5vw, 14px);
+          min-height: 62px;
+          border-radius: 18px;
+          padding: 10px 14px;
         }
         .sample-bottom .sample-petid-label {
-          font-size: clamp(7px, 2.2vw, 8px);
+          font-size: 8px;
         }
         .sample-bottom .sample-petid-label-th {
-          font-size: clamp(6.8px, 2.05vw, 8px);
+          font-size: 8px;
         }
         .sample-bottom .sample-petid-label-en {
-          font-size: clamp(5.2px, 1.6vw, 6px);
+          font-size: 6px;
         }
         .sample-bottom .sample-petid-code {
-          font-size: clamp(11.5px, 3.6vw, 14px);
+          font-size: 14px;
         }
         .sample-bottom .sample-petid-date {
-          font-size: clamp(7px, 2.1vw, 8px);
+          font-size: 8px;
         }
         .sample-bottom .sample-footer {
           width: 100%;
@@ -1244,6 +1255,7 @@ export default function PetIdCardPreviewPage() {
             </div>
 
             <div className="preview-stage" aria-busy={isGeneratingImage}>
+              {imageError && <p role="alert">สร้างภาพบัตรไม่สำเร็จ กรุณาโหลดหน้าใหม่ / Unable to create the card image. Please reload.</p>}
               {cardImageUrl ? (
                 <img
                   src={cardImageUrl}
@@ -1252,11 +1264,12 @@ export default function PetIdCardPreviewPage() {
                 />
               ) : null}
 
+              <div className="sample-card-capture" aria-hidden="true">
               <article
                 ref={cardRef}
-                className={`sample-card${cardImageUrl ? " is-capture-source" : ""}`}
+                className="sample-card is-capture-source"
                 aria-label="Sample Whiskora Pet ID Card"
-                aria-hidden={cardImageUrl ? "true" : undefined}
+                aria-hidden="true"
               >
                 <div className="sample-card-inner">
                   <div className="sample-card-head">
@@ -1336,6 +1349,7 @@ export default function PetIdCardPreviewPage() {
                   </div>
                 </div>
               </article>
+              </div>
 
               <section className="theme-panel" aria-label="Card theme selector">
                 <div className="theme-panel-head">
@@ -1349,7 +1363,6 @@ export default function PetIdCardPreviewPage() {
                       type="button"
                       className={`theme-choice${theme.id === selectedTheme.id ? " active" : ""}`}
                       onClick={() => {
-                        setCardImageUrl("");
                         setSelectedThemeId(theme.id);
                       }}
                       aria-pressed={theme.id === selectedTheme.id}

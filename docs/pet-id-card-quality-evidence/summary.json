@@ -1,0 +1,218 @@
+{
+  "baseline": "dfd6bc1b3b6070ac9151aabc552c2066f6441a1b",
+  "integration_baseline": "0ded0682b80e7a78e5703e02f19179c01e13e943",
+  "quality_browser": {
+    "startTime": "2026-11-04T14:18:30.116Z",
+    "duration": 453424.862,
+    "expected": 13,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "rendering": [
+    {
+      "viewport_locale": "after-1440-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.390625
+    },
+    {
+      "viewport_locale": "after-1440-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.40625
+    },
+    {
+      "viewport_locale": "after-320-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.29168701171875
+    },
+    {
+      "viewport_locale": "after-320-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.27880859375
+    },
+    {
+      "viewport_locale": "after-360-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.3333740234375
+    },
+    {
+      "viewport_locale": "after-360-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.3326416015625
+    },
+    {
+      "viewport_locale": "after-375-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.33917236328125
+    },
+    {
+      "viewport_locale": "after-375-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.33917236328125
+    },
+    {
+      "viewport_locale": "after-390-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.36065673828125
+    },
+    {
+      "viewport_locale": "after-390-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.36126708984375
+    },
+    {
+      "viewport_locale": "after-430-en",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": 0.390625
+    },
+    {
+      "viewport_locale": "after-430-th",
+      "theme_checks": 6,
+      "max_horizontal_overflow": 0,
+      "max_right_clip": 0,
+      "max_bottom_clip": -0.40625
+    }
+  ],
+  "demo_exports": {
+    "count": 72,
+    "dimensions": [
+      1200,
+      1800
+    ],
+    "sha256_per_theme": {
+      "export-Cream Classic.png": [
+        "7684c664626060a433ede0d186da51138378226330e61e46f6e55fe4b03a4b42"
+      ],
+      "export-Lavender.png": [
+        "56f495a242f054fccb2664705119d027529d7986a580a948994d8a3ce8af295d"
+      ],
+      "export-Mint Care.png": [
+        "33bd28dc8fd52938d2bfdfedde0892bd62395f01650a528628ef3ef6034a2312"
+      ],
+      "export-Rose Gold.png": [
+        "7c77052ef597d0f5f21587a88f9e835ef4555b53960765eef2541834372b0fcb"
+      ],
+      "export-Soft Blue.png": [
+        "52c4285677e116874b46a3f85d0a96b82f76c1f77b7f50326cce92190c141115"
+      ],
+      "export-Whiskora Pink.png": [
+        "866c7471d390a73312716f7c312ff115d706d2fa56e46c1d5fb59d89bafb7580"
+      ]
+    }
+  },
+  "local_qr_decodes": {
+    "actual": 72,
+    "demo_export": 72
+  },
+  "units": {
+    "unit-catalogue-race.test.mjs.log": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0
+    },
+    "unit-dashboard-layout-regression.test.mjs.log": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0
+    },
+    "unit-i18n-consistency.test.mjs.log": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "unit-i18n-format.test.mjs.log": {
+      "tests": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "unit-i18n-namespaces.test.mjs.log": {
+      "tests": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "unit-vaccine-summary.test.mjs.log": {
+      "tests": 22,
+      "passed": 22,
+      "failed": 0
+    }
+  },
+  "typescript": "PASSED",
+  "clean_webpack_production_build": "PASSED (build-third.log)",
+  "test_eslint": "PASSED",
+  "regressions": {
+    "trust": {
+      "startTime": "2026-11-04T14:27:42.044Z",
+      "duration": 34350.89599999999,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "ux": {
+      "startTime": "2026-11-04T14:28:17.161Z",
+      "duration": 104996.57500000001,
+      "expected": 44,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "farm": {
+      "startTime": "2026-11-04T14:30:02.912Z",
+      "duration": 14831.187,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "i18n": {
+      "startTime": "2026-11-04T14:30:18.583Z",
+      "duration": 384707.56,
+      "expected": 72,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "preservation": {
+    "old_evidence_files": 605,
+    "missing": [],
+    "size_changed": [],
+    "original_refs_changed": {}
+  },
+  "pending_device_uat": [
+    "Android/iOS camera QR scan",
+    "save image to Photos",
+    "native share sheet",
+    "device fonts/rendering"
+  ],
+  "actual_card_image_export": "NOT AVAILABLE IN SOURCE; existing link share handler tested with mocked browser APIs",
+  "raw_evidence": "local-evidence/pet-id-mobile-card-20261104/",
+  "browser_total_passed": 135,
+  "application_sha256": {
+    "web/app/pets/[id]/id-card/page.tsx": "499300c62da087ad2770abf91531c3b576b531019bb839bd2bb52b918e5da5f6",
+    "web/app/pet-id-card-preview/page.tsx": "cf8c43694c122bc2ea024d8ecc7affa375e401ec030e3e2bcba5cb2828ed0918"
+  },
+  "status": "PASSED — PENDING INDEPENDENT REVIEW"
+}

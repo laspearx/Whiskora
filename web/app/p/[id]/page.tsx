@@ -520,7 +520,7 @@ export default function PublicPetProfilePage() {
         .pet-id-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: ${F.pink}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
         .pet-id-number { font-family: 'Prompt', monospace; font-size: 22px; font-weight: 700; color: #111827; letter-spacing: 0.5px; margin-bottom: 4px; word-break: break-all; }
         .pet-id-reg { font-size: 10px; color: ${F.muted}; }
-        .contact-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: 24px; background: ${F.pink}; color: white; font-size: 14px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .18s ease; }
+        .contact-btn { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border-radius: 24px; background: ${F.pink}; color: white; font-size: 14px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(232,70,119,0.3); transition: all .18s ease; }
         .contact-btn:hover { background: #D63F6A; box-shadow: 0 6px 20px rgba(232,70,119,0.4); transform: translateY(-1px); }
         .contact-btn:active { transform: scale(0.97); }
         .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
@@ -710,9 +710,13 @@ export default function PublicPetProfilePage() {
                 {sessionUserId === pet.user_id && pet.status === 'พร้อมย้ายบ้าน' && pet.is_public === false && (
                   <span className="status-pill" style={{ background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>{t('privateListedNotice')}</span>
                 )}
-                {pet.status === 'พร้อมย้ายบ้าน' && pet.price != null && Number(pet.price) > 0 && (
+                {(pet.status === 'พร้อมย้ายบ้าน' || pet.status === 'เปิดจอง') && pet.price != null && Number(pet.price) > 0 && (
                   <span className="price-pill"><Icon.Tag /> ฿{Number(pet.price).toLocaleString()}</span>
                 )}
+                {isFarmPet && isPublicListing(pet) && <p style={{ width: '100%', fontSize: 13, color: F.inkSoft }}>
+                  {locale === 'en' ? 'Status is provided by the farm. Contact the farm to confirm availability and price.' : 'สถานะเป็นข้อมูลจากฟาร์ม โปรดติดต่อฟาร์มเพื่อยืนยันความพร้อมและราคา'}
+                  {!(pet.price != null && Number(pet.price) > 0) && (locale === 'en' ? ' No price specified; this does not mean free.' : ' ยังไม่ระบุราคา ไม่ได้หมายถึงให้ฟรี')}
+                </p>}
                 {/* จองได้ตามกฎเดียวกับ DB (pet_is_reservable): สถานะเปิดขาย และไม่ได้ตั้งเป็นไม่สาธารณะ */}
                 {isPublicListing(pet) && sessionUserId && sessionUserId !== pet.user_id && (
                   myReservation ? (

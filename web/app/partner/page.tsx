@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from '@/i18n/context';
 import PageLoader from '@/app/components/PageLoader';
 
 const F = {
@@ -17,6 +18,7 @@ const F = {
 
 export default function PartnerHubPage() {
   const router = useRouter();
+  const t = useTranslations('nav');
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [myFarms, setMyFarms] = useState<any[]>([]);
@@ -46,8 +48,9 @@ export default function PartnerHubPage() {
 
   const categories = [
     {
-      title: 'ฟาร์มสัตว์เลี้ยง',
-      desc: 'จัดการระบบเพาะพันธุ์ ประวัติสายเลือด และวัคซีนสัตว์เลี้ยง',
+      key: 'farm',
+      title: t('betaPartnerFarm'),
+      desc: t('betaPartnerFarmSub'),
       icon: '/icons/icon-farm.png',
       accentColor: F.pink,
       softColor: F.pinkSoft,
@@ -59,8 +62,9 @@ export default function PartnerHubPage() {
       nameKey: 'farm_name',
     },
     {
-      title: 'ร้านค้าสัตว์เลี้ยง',
-      desc: 'เปิดร้านขายอาหาร ของเล่น และอุปกรณ์สำหรับสัตว์เลี้ยง',
+      key: 'shop',
+      title: t('betaPartnerShop'),
+      desc: t('betaPartnerShopSub'),
       icon: '/icons/icon-shop.png',
       accentColor: F.teal,
       softColor: F.tealSoft,
@@ -72,8 +76,9 @@ export default function PartnerHubPage() {
       nameKey: 'shop_name',
     },
     {
-      title: 'บริการสัตว์เลี้ยง',
-      desc: 'ระบบรับจองคิวอาบน้ำ ตัดขน คลินิก หรือโรงแรมรับฝากเลี้ยง',
+      key: 'service',
+      title: t('betaPartnerService'),
+      desc: t('betaPartnerServiceSub'),
       icon: '/icons/icon-service.png',
       accentColor: F.blue,
       softColor: F.blueSoft,
@@ -273,8 +278,8 @@ export default function PartnerHubPage() {
             <img src="/icons/icon-partner.png" alt="" />
           </div>
           <div className="pp-header-text">
-            <h1>{session ? 'ศูนย์รวมพาร์ทเนอร์' : 'เปิดธุรกิจกับ Whiskora'}</h1>
-            <p>{session ? 'จัดการกิจการสัตว์เลี้ยงทั้งหมดของคุณ' : 'ฟาร์ม ร้านค้า และบริการ ฟรีในโปรแกรม Genesis'}</p>
+            <h1>{t('betaFarms')}</h1>
+            <p>{t('betaFarmIntro')}</p>
           </div>
         </div>
 
@@ -285,14 +290,14 @@ export default function PartnerHubPage() {
               <img src="/icons/icon-partner.png" alt="" />
             </div>
             <div className="pp-banner-text">
-              <h2>เข้าถึงลูกค้าคนรักสัตว์เลี้ยง</h2>
-              <p>เปิดฟาร์ม ร้านค้า หรือบริการของคุณได้ฟรี ไม่มีค่าธรรมเนียม ในช่วง Genesis Program</p>
+              <h2>{t('betaFarmStart')}</h2>
+              <p>{t('betaFarmIntro')}</p>
             </div>
           </div>
         )}
 
         {/* Category cards */}
-        {categories.map((cat) => (
+        {categories.filter(cat => cat.key === 'farm' || cat.items.length > 0).map((cat) => (
           <div key={cat.title} className="pp-card">
             <div className="pp-card-head">
               <div className="pp-card-icon">
@@ -310,7 +315,7 @@ export default function PartnerHubPage() {
                   <>
                     <div className="pp-items-label">
                       <span className="pp-items-dot" style={{ background: cat.accentColor }} />
-                      กิจการของคุณ
+                      {t('betaYourBusinesses')}
                     </div>
                     <div className="pp-items">
                       {cat.items.map((item: any) => (
@@ -330,7 +335,7 @@ export default function PartnerHubPage() {
                 )}
                 {cat.items.length === 0 && (
                   <Link href={cat.registerUrl} className="pp-register-btn" style={{ background: cat.accentColor }}>
-                    สมัครเปิด{cat.title}
+                    {t('betaFarmRegister')}
                   </Link>
                 )}
               </>
@@ -340,7 +345,7 @@ export default function PartnerHubPage() {
                 className="pp-register-btn"
                 style={{ background: cat.accentColor }}
               >
-                สมัครเปิด{cat.title}
+                {t('betaFarmRegister')}
               </Link>
             )}
           </div>
@@ -349,8 +354,8 @@ export default function PartnerHubPage() {
         {/* Guest login hint */}
         {!session && (
           <div className="pp-login-hint">
-            <p>มีบัญชีแล้ว?</p>
-            <Link href="/login?redirect=/partner">เข้าสู่ระบบเพื่อจัดการกิจการ →</Link>
+            <p>{t('betaHaveAccount')}</p>
+            <Link href="/login?redirect=/partner">{t('betaBusinessLogin')}</Link>
           </div>
         )}
 

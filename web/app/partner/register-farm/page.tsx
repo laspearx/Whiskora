@@ -360,7 +360,7 @@ export default function RegisterFarmPage() {
                   ? <img src={imageUrl} alt="โลโก้ฟาร์ม" />
                   : <img src="/icons/icon-farm.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain', opacity: 0.4 }} />}
               </div>
-              <button type="button" className="pf-avatar-cam" onClick={() => avatarInputRef.current?.click()}><Icon.Camera /></button>
+              <button type="button" className="pf-avatar-cam" aria-label="อัปโหลดรูปโปรไฟล์ฟาร์ม" onClick={() => avatarInputRef.current?.click()}><Icon.Camera /></button>
               <input type="file" accept="image/*" ref={avatarInputRef} onChange={e => onFileChange(e, setAvatarSrc)} onClick={e => (e.currentTarget.value = '')} style={{ display: 'none' }} />
             </div>
             <p className="pf-avatar-hint">โลโก้ / รูปโปรไฟล์ฟาร์ม (ไม่บังคับ)</p>

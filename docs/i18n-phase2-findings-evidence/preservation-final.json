@@ -1,0 +1,31 @@
+{
+  "prior_evidence_files_checked": 172,
+  "prior_evidence_mismatches": [],
+  "unexpected_ref_changes": [],
+  "ux_doc_stash_sha": "6151c0079d4de7da47ad2710d2a6ebbf72228637",
+  "ux_doc_copy_matches_stash": true,
+  "other_worktrees": [
+    {
+      "path": "/workspaces/Whiskora",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "files_checked": 469,
+      "file_mismatches": []
+    },
+    {
+      "path": "/workspaces/Whiskora-f4",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "files_checked": 479,
+      "file_mismatches": []
+    },
+    {
+      "path": "/workspaces/Whiskora-f4-codex",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "files_checked": 573,
+      "file_mismatches": []
+    }
+  ],
+  "worktree_count": 4
+}

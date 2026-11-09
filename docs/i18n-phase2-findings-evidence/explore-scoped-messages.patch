@@ -1,0 +1,15 @@
+--- a/web/app/[locale]/explore/page.tsx
++++ b/web/app/[locale]/explore/page.tsx
+@@ -1,5 +1,11 @@
+ import type { Metadata } from 'next';
+-export { default } from '@/app/explore/page';
++import ExplorePage from '@/app/explore/page';
++import ScopedMessages from '@/app/components/ScopedMessages';
++
++export default async function ExploreRoute({ params }: { params: Promise<{ locale: string }> }) {
++  const { locale } = await params;
++  return <ScopedMessages locale={locale} ns={['explore']}><ExplorePage /></ScopedMessages>;
++}
+
+ // preview with sample data: keep it out of search engines until it shows real listings
+ export const metadata: Metadata = { title: 'Explore · Whiskora', robots: { index: false, follow: false } };

@@ -16,8 +16,10 @@ export function useRouter() {
     },
     replace: (href: string, options?: any) => {
       if (options?.locale) {
-        const currentPath = window.location.pathname.replace(new RegExp(`^/${locale}`), '') || '/';
-        return router.push(`/${options.locale}${currentPath}`);
+        // switch language on the same page: keep the query string (filters, ?next=…) and the hash
+        const currentPath = window.location.pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
+        const rest = currentPath === '/' ? '' : currentPath;
+        return router.push(`/${options.locale}${rest}${window.location.search}${window.location.hash}`);
       }
       const localizedHref = href.startsWith('/') ? `/${locale}${href}` : href;
       return router.replace(localizedHref, options);
@@ -28,7 +30,7 @@ export function useRouter() {
 export function usePathname() {
   const pathname = useNextPathname();
   const locale = useLocale();
-  return pathname.replace(new RegExp(`^/${locale}`), '') || '/';
+  return pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
 }
 
 export function Link({ href, ...props }: React.ComponentProps<typeof NextLink>) {
