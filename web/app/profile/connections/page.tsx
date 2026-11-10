@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { UserIdentity } from "@supabase/supabase-js";
 import PageLoader from "@/app/components/PageLoader";
+import { useLocale } from "@/i18n/context";
+import { lineErrorText, lineTexts } from "@/lib/lineAuthMessages";
 
 const F = {
   ink: '#111827', inkSoft: '#4B5563', muted: '#9CA3AF',
@@ -43,11 +45,41 @@ export default function ConnectionsPage() {
   const [unlinked, setUnlinked] = useState<string | null>(null);
 
   const [userMeta, setUserMeta] = React.useState<Record<string, any>>({});
+  // LINE link state comes from the server (database mapping, F4); metadata is never used for it
+  type LineStatus = { linked: boolean; pending: { display_name: string } | null; legacy: boolean };
+  const [lineStatus, setLineStatus] = React.useState<LineStatus>({ linked: false, pending: null, legacy: false });
+  const [confirmLine, setConfirmLine] = useState(false);
+  const locale = useLocale();
+  const lt = lineTexts(locale);
 
   const refreshIdentities = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIdentities(user?.identities ?? []);
     setUserMeta(user?.user_metadata ?? {});
+    const res = await fetch('/api/auth/line/status', { headers: await bearer() }).catch(() => null);
+    if (res?.ok) setLineStatus(await res.json());
+  };
+
+  const bearer = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return { Authorization: `Bearer ${session?.access_token ?? ''}` };
+  };
+
+  const answerConfirm = async (accept: boolean) => {
+    setError(""); setActionLoading('custom:line-login');
+    const res = await fetch('/api/auth/line/confirm', { method: accept ? 'POST' : 'DELETE', headers: await bearer() });
+    const body = await res.json().catch(() => ({}));
+    setConfirmLine(false);
+    if (body?.relogin) {
+      // LINE-only account: its password was rotated and every session revoked — sign in again with LINE
+      await supabase.auth.signOut({ scope: 'local' });
+      window.location.href = `/${locale}/login?auth_error=${res.ok ? 'LINE_RELOGIN' : encodeURIComponent(body?.error || 'auth_failed')}`;
+      return;
+    }
+    await refreshIdentities();
+    if (!res.ok) setError(lineErrorText(locale, body?.error));
+    else if (accept) setUnlinked('__line_linked__');
+    setActionLoading(null);
   };
 
   const [currentUserId, setCurrentUserId] = React.useState('');
@@ -57,8 +89,9 @@ export default function ConnectionsPage() {
     const linked = params.get('linked');
     const linkErr = params.get('link_error');
     if (linked) setUnlinked(''); // clear, show success below
-    if (linkErr) setError(decodeURIComponent(linkErr));
+    if (linkErr) setError(lineErrorText(locale, linkErr));
     if (linked === 'line') setUnlinked('__line_linked__');
+    if (params.get('confirm_line') === '1') setConfirmLine(true);
     window.history.replaceState({}, '', window.location.pathname);
   }, []);
 
@@ -105,19 +138,13 @@ export default function ConnectionsPage() {
     setError("");
     setUnlinked(null);
 
-    // LINE — ลบออกจาก user_metadata
+    // LINE — the server removes app_metadata.line_id and refuses when LINE is the only way in
     if (provider === 'custom:line-login') {
-      const linkedCount = PROVIDERS.filter(p => isLinked(p.id)).length;
-      if (linkedCount <= 1 && !hasEmailAuth) {
-        setError('ไม่สามารถยกเลิกได้ เนื่องจากเป็นช่องทางเข้าสู่ระบบเพียงช่องทางเดียว');
-        return;
-      }
       setActionLoading(provider);
-      const { error } = await supabase.auth.updateUser({
-        data: { line_id: null, line_display_name: null },
-      });
-      if (error) setError(error.message);
-      else { await refreshIdentities(); setUnlinked('LINE'); }
+      const res = await fetch('/api/auth/line', { method: 'DELETE', headers: await bearer() });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) setError(body?.error === 'line_only_login' ? lt.unlinkLineOnly : lt.unlinkFailed);
+      else { await supabase.auth.refreshSession(); await refreshIdentities(); setUnlinked('LINE'); }
       setActionLoading(null);
       return;
     }
@@ -142,11 +169,11 @@ export default function ConnectionsPage() {
   };
 
   const isLinked = (provider: string) => {
-    if (provider === 'custom:line-login') return !!userMeta.line_id;
+    if (provider === 'custom:line-login') return lineStatus.linked;
     return identities.some(i => i.provider === provider);
   };
   const getIdentityEmail = (provider: string) => {
-    if (provider === 'custom:line-login') return userMeta.line_display_name as string | undefined;
+    if (provider === 'custom:line-login') return lineStatus.linked ? userMeta.line_display_name as string | undefined : undefined;
     const id = identities.find(i => i.provider === provider);
     return id?.identity_data?.email as string | undefined;
   };
@@ -256,7 +283,7 @@ export default function ConnectionsPage() {
                                     },
                                     body: JSON.stringify({ uid: currentUserId }),
                                   })
-                                  if (!resp.ok) { setError('ไม่สามารถเริ่มการเชื่อมต่อได้ กรุณาลองใหม่'); setActionLoading(null); return; }
+                                  if (!resp.ok) { setError(lt.startFailed); setActionLoading(null); return; }
                                   window.location.href = `/api/auth/line?next=/profile/connections&mode=link`
                                 } catch { setError('เกิดข้อผิดพลาด กรุณาลองใหม่'); setActionLoading(null); }
                               } else {
@@ -274,8 +301,21 @@ export default function ConnectionsPage() {
                 })}
               </div>
 
+              {confirmLine && lineStatus.pending && (
+                <div className="cn-alert cn-note" data-testid="line-confirm" style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{lt.confirmTitle}</div>
+                  <div style={{ marginTop: 4 }}>{lt.confirmBody} <b>LINE: {String(lineStatus.pending.display_name || '')}</b></div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button className="cn-btn cn-btn-link" disabled={!!actionLoading} onClick={() => answerConfirm(true)}>{lt.confirmYes}</button>
+                    <button className="cn-btn cn-btn-unlink" disabled={!!actionLoading} onClick={() => answerConfirm(false)}>{lt.confirmNo}</button>
+                  </div>
+                </div>
+              )}
+              {!lineStatus.linked && lineStatus.legacy && !confirmLine && (
+                <div className="cn-note" data-testid="line-legacy-banner">{lt.legacyBanner}</div>
+              )}
               {error && <div className="cn-alert cn-alert-err">{error}</div>}
-              {unlinked === '__line_linked__' && <div className="cn-alert cn-alert-ok">เชื่อมต่อ LINE สำเร็จแล้ว</div>}
+              {unlinked === '__line_linked__' && <div className="cn-alert cn-alert-ok">{lt.linked}</div>}
               {unlinked && unlinked !== '__line_linked__' && <div className="cn-alert cn-alert-ok">ยกเลิกการเชื่อมต่อ {unlinked} สำเร็จ</div>}
 
               <div className="cn-note">

@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever a feature ships, a bug with structural implications gets fixed, or the data model changes. Keep the "Last updated" line and the Changelog section current — this is the primary reference for planning what to build next.
 
-**Last updated:** 2026-11-02 (v1.14.1 live — `45b8bd7`; no direct API DELETE on businesses / workspaces (`docs/BUSINESS_DELETE_PRIVILEGES.md`); business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
+**Last updated:** 2026-11-10 (v1.14.2 live — `c29c393`, Next.js 16.4.5 / Sharp 0.35.5 (PR #39); F4 LINE identity hotfix rev. 3 prepared on `security/f4-line-identity`, NOT live (`docs/F4_LINE_IDENTITY.md`); v1.14.1: no direct API DELETE on businesses / workspaces (`docs/BUSINESS_DELETE_PRIVILEGES.md`); business profiles edited only via `update_business_profile` (`docs/BUSINESS_PROFILE_PERMISSIONS.md`); businesses created only via `create_business` (`docs/PARTNER_CREATE_BUSINESS.md`); farm verification guard since v1.12.3; members via RPC + invitations since v1.12.0 — see `docs/STATUS.md`)
 
 ## What Whiskora is
 
@@ -27,6 +27,7 @@ Everything hangs off one core entity, `pets`, which carries lineage (`sire_id`/`
 ### Auth & identity
 - Google OAuth, custom LINE OAuth (`/api/auth/line`, `/api/auth/line/callback` — bridges into a Supabase session via server-verified magic-link OTP to dodge Vercel `DEPLOYMENT_NOT_FOUND` redirect issues), legacy email/password.
 - LINE identity can also be **linked** to an existing account from `/profile/connections`.
+- F4 (branch, not live; needs migration `20261110090000_line_identity_map`): LINE identity lives only in `line_identities` (UNIQUE LINE id / account), changed only by SQL functions under DB locks; link = POST (session) → LINE → pending row → `POST /api/auth/line/confirm` (one SQL call `line_link_confirm`: consume + map in one transaction); legacy LINE-only accounts migrate only with a verified credential reset (credentials frozen by triggers on `auth.users` / `auth.mfa_amr_claims` / `auth.identities` during the op + 10 min) (signed-in link or admin recovery, `docs/LINE_ACCOUNT_RECOVERY.md`) — `docs/F4_LINE_IDENTITY.md`.
 - Two independent role layers:
   - Platform admin: `profiles.role === 'admin'` gates `/admin/*`.
   - Workspace roles: `owner` / `manager` / `staff` / `viewer` per `workspaces` row (`personal`/`farm`/`shop`/`service` type), stored in `workspace_members`. Owner authority = the business owner (`farms|shops|services.user_id`), not an `owner` row. Since v1.12.0 (2026-11-01): members are added only by invitation (`workspace_invitations`, accept / decline at `/profile/invitations`, 14-day expiry) and changed only through RPCs; managers handle staff / viewer only.
@@ -127,12 +128,14 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 - **Workspace members** (live since v1.12.0): never write `workspace_members` from the app — use the RPCs (`list_workspace_members`, `invite_workspace_member`, `respond_workspace_invitation`, `set_workspace_member_role`, `remove_workspace_member`, `ensure_workspace_owner_membership`); UI is `WorkspaceMembersPanel`, which reloads from the server after every action. Caller role = `is_me` row of `list_workspace_members`.
 - **Farm workspace roles**: the layout verifies membership; pages must not re-filter `farms.user_id`. Owner-only routes are listed in `OWNER_ONLY_SUFFIXES` in `farm-dashboard/[id]/layout.tsx` (edit, verify, pet/litter create — inserts still use the caller's `user_id`). Service/shop edit pages allow owner/manager, matching their overview `canEdit`.
 - `/pet-id-card-preview` is the public demo (fake data "LUNA"); link it with plain `next/link`, its QR points back to its own `#demo-profile`.
+- **LINE identity (F4)**: the database mapping (`line_identities` via `line_login_resolve` / `line_identity_claim` / `line_identity_release` / `line_link_confirm` / `line_identity_of`) is the only source; internal `f4_*` helpers are not executable by any API role (service_role included — Supabase default privileges must be revoked explicitly in every migration); never read a LINE id from app_ or user_metadata, never read-modify-write metadata for it, check every RPC result (`rpc()` throws). No email matching, no `email` scope. A LINE-only account gets a LINE id only after a verified credential reset. LINE texts live in `lib/lineAuthMessages.ts` (not `messages/*.json`). LINE routes gate on `lineRoutesDisabled` (not `isPreviewDeploy`); never hard-code `www.whiskora.pet` in LINE routes — use `lib/lineOrigin.ts`. Validate user tokens with the anon client (`userFromBearer`).
 - Deploy env: `next.config.ts` runs `lib/deploy-env-guard.mjs` — Preview must use staging Supabase and no production service secrets (build fails otherwise, names only). Use `isPreviewDeploy` (`lib/deploy-env.ts`) to switch off anything that sends real messages on Preview.
 
 - **Builds / versions** (PR #25, live since v1.12.1): `web/scripts/build-scope.sh` decides `app` / `release` / `none`. Docs / tests-only pushes get no Vercel build and no version bump; Production builds only the bot `chore: bump version` commit; Preview builds when the app changed. Add new app paths outside `web/` to the classifier (unknown paths count as `app`). Force a build with `[force build]` in the commit message. Limit: a docs branch that merges main in can still get a Preview build (range includes main's app changes) — keep docs branches off main merges where possible. Also observed (cause not confirmed): the first push of a fresh docs-only branch got a Preview build (2026-11-01, see `docs/STATUS.md`).
 
 ## Known gaps / not-yet-built (candidates for future planning)
 
+- Security (LINE, live on v1.14.2 until F4 ships): login picks accounts by user-writable `user_metadata.line_id` / LINE email, `listUsers` page 1 only, link confirmed by cookie without a session re-check (C1–C4, `docs/F4_LINE_IDENTITY.md`). After F4: 24 legacy LINE-only accounts (audits A / A2, 2026-11-09/10) need the signed-in link or admin recovery and get no LINE notifications until then; production autoconfirm lets anyone create `line_<id>@line.whiskora.internal` (review only, never a sign-in); access tokens issued before a credential reset live until `exp`; email signup → Google auto-link (H2 path 1) still open.
 - Bug (open, separate): `/placeholder-pet.jpg` is used as the no-photo fallback in `app/pets/[id]/page.tsx` and `app/p/[id]/page.tsx` but the file does not exist in `web/public` → broken image for pets without a photo.
 - Vercel storage: no saving claimed yet after PR #25 / #26 — Usage not re-read and old deployments are still kept.
 
@@ -165,6 +168,14 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 ## Changelog
 
 Newest first. Keep entries short — one line per shipped item, grouped by date.
+
+**2026-11-09**
+- F4 Phase D1 (2026-11-10, PR #40, inert): build guard can allow LINE secrets on ONE Preview (branch `security/f4-line-identity` + `F4_PREVIEW_LINE_UAT=1` + staging URL + fixed UAT site URL + sha256-pinned staging key / channel id, lists empty for now); in that mode the LINE callback trusts only the UAT Preview, never production. Other Previews / Production unchanged; notifications off on every Preview (`lib/line-uat.mjs`, `lib/lineOrigin.ts`).
+- F4 staging synthetic UAT (2026-11-10): 51 pass / 0 fail / 7 not verified (user-session endpoints, email signup, real LINE) — next: browser UAT (`supabase/staging/f4_line_identity/BROWSER_UAT.md`).
+- F4 migration `20261110090000_line_identity_map` applied to STAGING only (2026-11-10, recorded as `20261110034009`; verify 14/14; rollback proven reversible on staging in a rolled-back transaction). Production: not applied.
+- F4 rev. 3 (2026-11-10, re-review of `3da5844`): internal helpers revoked from service_role + audit sequence; confirm atomic with unlink (`line_link_confirm`); in-flight Auth requests blocked by a per-account credential freeze (triggers on Auth tables) and the reset verified against the app's own rotation secret (bcrypt). Staging kit `supabase/staging/f4_line_identity/` (preflight / verify / rollback). Not applied anywhere.
+- F4 LINE identity hotfix prepared (branch `security/f4-line-identity`, Draft PR #40; not merged / not live). Rev. 2 (2026-11-10, after Codex NO-GO): DB mapping + atomic link lifecycle (migration `20261110090000`, local tests only), credential reset before any legacy migration, auditable / resumable admin recovery.
+- v1.14.2 (PR #39, `dpl_B4tAELvQhkFzm48bP3kXVqZpzNbU`): Next.js 16.4.5 + Sharp 0.35.5 security patch; dashboard access contexts moved to `lib/*-access.ts`.
 
 **2026-11-02**
 - v1.14.1 (PR #34) + migration `20261102060056 business_delete_privileges` (file `20261102100000`, sha256 `dea30431…8081`; staging `20261102040845`): no direct DELETE for anon / authenticated on farms / shops / services / workspaces; other rights, RLS, triggers, FKs, data unchanged (md5 pre/post).

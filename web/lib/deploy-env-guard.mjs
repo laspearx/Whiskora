@@ -2,6 +2,7 @@
 // และต้องไม่มี secret ของบริการจริง (LINE / Resend / service role / push)
 // ข้อความ error แสดงแค่ชื่อตัวแปร ไม่แสดงค่า
 import { createHash } from 'node:crypto'
+import { F4_LINE_UAT_BRANCH, F4_LINE_UAT_SITE_URL } from './line-uat.mjs'
 
 const PRODUCTION_SUPABASE_REF = 'vhudldcizmbpujedojei'
 const PREVIEW_SUPABASE_REFS = ['wpxcukrwmegwzfccbbga'] // staging
@@ -23,6 +24,15 @@ const PREVIEW_FORBIDDEN = [
   'VAPID_PRIVATE_KEY',
 ]
 
+// F4 Phase D: LINE Login on ONE staging Preview. The secrets below are allowed on a Preview only when every condition of
+// lineUatProblems() holds; their sha256 must be in these allow-lists (hashes of the STAGING values, added by a reviewed
+// commit — never the values, never an env setting). Empty = the allowance can never be granted.
+export const STAGING_SERVICE_KEY_SHA256 = []
+export const STAGING_LINE_CHANNEL_ID_SHA256 = []
+const LINE_UAT_SECRETS = ['SUPABASE_SERVICE_ROLE_KEY', 'LINE_CHANNEL_ID', 'LINE_CHANNEL_SECRET']
+// still forbidden on every Preview, the UAT one included
+const PREVIEW_ALWAYS_FORBIDDEN = PREVIEW_FORBIDDEN.filter((n) => !LINE_UAT_SECRETS.includes(n))
+
 const sha256 = (s) => createHash('sha256').update(s).digest('hex')
 
 function jwtPayload(token) {
@@ -39,8 +49,37 @@ function supabaseRef(url) {
   } catch { return null }
 }
 
+/** why the LINE UAT allowance is NOT granted (names / reasons only, never values) — empty = granted */
+export function lineUatProblems(env = process.env, lists = {}) {
+  const keyList = lists.serviceKeySha256 ?? STAGING_SERVICE_KEY_SHA256
+  const lineList = lists.lineChannelIdSha256 ?? STAGING_LINE_CHANNEL_ID_SHA256
+  const p = []
+  if ((env.VERCEL_ENV || 'local') !== 'preview') p.push('not a Preview build')
+  if (env.VERCEL_GIT_COMMIT_REF !== F4_LINE_UAT_BRANCH) p.push(`branch is not ${F4_LINE_UAT_BRANCH}`)
+  if (env.F4_PREVIEW_LINE_UAT !== '1') p.push('F4_PREVIEW_LINE_UAT is not 1')
+  if (!PREVIEW_SUPABASE_REFS.includes(supabaseRef(env.NEXT_PUBLIC_SUPABASE_URL || ''))) p.push('NEXT_PUBLIC_SUPABASE_URL is not staging')
+  if ((env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '') !== F4_LINE_UAT_SITE_URL) p.push('NEXT_PUBLIC_SITE_URL is not the UAT Preview URL')
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || ''
+  if (!key) p.push('SUPABASE_SERVICE_ROLE_KEY missing')
+  else {
+    if (!keyList.includes(sha256(key))) p.push('SUPABASE_SERVICE_ROLE_KEY is not an allow-listed staging key')
+    const claims = jwtPayload(key)
+    if (claims && (claims.role !== 'service_role' || !PREVIEW_SUPABASE_REFS.includes(claims.ref))) p.push('SUPABASE_SERVICE_ROLE_KEY is not a staging service key')
+    if (!claims && !key.startsWith('sb_secret_')) p.push('SUPABASE_SERVICE_ROLE_KEY has an unknown format')
+  }
+  if (!env.LINE_CHANNEL_ID) p.push('LINE_CHANNEL_ID missing')
+  else if (!lineList.includes(sha256(env.LINE_CHANNEL_ID))) p.push('LINE_CHANNEL_ID is not the allow-listed staging channel')
+  if (!env.LINE_CHANNEL_SECRET) p.push('LINE_CHANNEL_SECRET missing')
+  return p
+}
+
+/** true only on the UAT Preview with every condition met (and the rest of the guard passing) */
+export function previewLineUat(env = process.env, lists = {}) {
+  return lineUatProblems(env, lists).length === 0 && checkDeployEnv(env, lists).length === 0
+}
+
 /** คืนรายการปัญหา (ข้อความไม่มีค่า secret) — ว่าง = ผ่าน */
-export function checkDeployEnv(env = process.env) {
+export function checkDeployEnv(env = process.env, lists = {}) {
   const problems = []
   const target = env.VERCEL_ENV || 'local'
   const url = env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -75,8 +114,14 @@ export function checkDeployEnv(env = process.env) {
       try { host = new URL(site).hostname } catch { problems.push('NEXT_PUBLIC_SITE_URL is not a valid URL') }
       if (PRODUCTION_HOSTS.includes(host)) problems.push('NEXT_PUBLIC_SITE_URL points to production — leave it unset on Preview')
     }
-    for (const name of PREVIEW_FORBIDDEN) {
+    for (const name of PREVIEW_ALWAYS_FORBIDDEN) {
       if (env[name]) problems.push(`${name} must not be set for Preview (service disabled on Preview)`)
+    }
+    // LINE UAT secrets: only on the one allow-listed staging Preview (F4 Phase D); anywhere else the build stops
+    const uatSet = LINE_UAT_SECRETS.filter((n) => env[n])
+    if (uatSet.length) {
+      const why = lineUatProblems(env, lists)
+      if (why.length) problems.push(`${uatSet.join(', ')} must not be set for this Preview (LINE UAT not allowed: ${why.join('; ')})`)
     }
   }
   return problems

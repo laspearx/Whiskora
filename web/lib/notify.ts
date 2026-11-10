@@ -75,8 +75,9 @@ export async function notifyUser(
   if (userRes.error || !userRes.data.user) return
 
   const profile = profileRes.data
-  const user = userRes.data.user
-  const lineId: string | undefined = user.user_metadata?.line_id
+  // the LINE id comes only from the database mapping (F4); metadata is never trusted to pick a LINE recipient
+  const { data: mapped, error: mapErr } = await admin.rpc('line_identity_of', { p_user_id: userId })
+  const lineId: string | undefined = !mapErr && typeof mapped === 'string' ? mapped : undefined
   const realEmail =
     profile.email && !profile.email.includes('@line.whiskora.internal')
       ? profile.email

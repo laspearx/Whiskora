@@ -6,6 +6,7 @@ import { useTranslations } from '@/i18n/context';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useSearchParams } from "next/navigation";
 import PageLoader from '@/app/components/PageLoader';
+import LineAuthNotice from '@/app/components/LineAuthNotice';
 import { safeInternalPath, stripLocale } from '@/lib/locale';
 
 function LoginContent() {
@@ -86,11 +87,7 @@ function LoginContent() {
           </button>
         </div>
 
-        {authError && (
-          <div className="mt-4 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-xs font-semibold text-red-600 break-words">
-            {authError}
-          </div>
-        )}
+        {authError && <LineAuthNotice code={authError} refCode={searchParams.get('ref')} redirect={safeRedirect} />}
 
         {!showEmailLogin ? (
           <div className="mt-6 text-center">

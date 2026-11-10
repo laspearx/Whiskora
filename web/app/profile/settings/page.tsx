@@ -27,12 +27,16 @@ export default function SettingsPage() {
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushNote, setPushNote] = useState("");
+  const [lineLinked, setLineLinked] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push("/login?redirect=/profile/settings"); return; }
       setUser(session.user);
+      // LINE link state from the server (database mapping, F4)
+      const st = await fetch('/api/auth/line/status', { headers: { Authorization: `Bearer ${session.access_token}` } }).then((r) => r.ok ? r.json() : null).catch(() => null);
+      setLineLinked(!!st?.linked);
 
       // อีเมลและการตั้งค่าแจ้งเตือนเป็นข้อมูลส่วนตัว — อ่านผ่าน get_my_profile()
       const prof = await getMyProfile(session.user.id);
@@ -100,7 +104,7 @@ export default function SettingsPage() {
 
   if (loading) return <PageLoader />;
 
-  const lineId: string | undefined = user?.user_metadata?.line_id;
+  const lineId: string | undefined = lineLinked ? 'linked' : undefined; // from /api/auth/line/status (database mapping)
   const email: string | undefined = profile?.email ?? user?.email;
   const hasRealEmail = !!email && !email.includes("@line.whiskora.internal");
   const hasAnyChannel = !!lineId || hasRealEmail;

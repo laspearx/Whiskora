@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageLoader from '@/app/components/PageLoader';
+import LineAuthNotice from '@/app/components/LineAuthNotice';
 
 function LoginContent() {
   const [email, setEmail] = useState("");
@@ -90,11 +91,7 @@ function LoginContent() {
           </button>
         </div>
 
-        {authError && (
-          <div className="mt-4 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-xs font-semibold text-red-600 break-words">
-            {authError}
-          </div>
-        )}
+        {authError && <LineAuthNotice code={authError} refCode={searchParams.get('ref')} redirect={safeRedirect} />}
 
         {/* ทางเข้าด้วยอีเมล (สำหรับผู้ใช้เดิม) */}
         {!showEmailLogin ? (
