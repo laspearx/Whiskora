@@ -1,9 +1,9 @@
-import { isPreviewDeploy } from '@/lib/deploy-env'
+import { lineRoutesDisabled } from '@/lib/deploy-env'
 import { firstRow, makeAdmin, rpc, userFromBearer } from '@/lib/lineServer'
 
 // GET — LINE link state of the signed-in account, from the database (the only source of truth since F4).
 export async function GET(request: Request) {
-  if (isPreviewDeploy) return Response.json({ linked: false, pending: null, legacy: false, disabled: true })
+  if (lineRoutesDisabled) return Response.json({ linked: false, pending: null, legacy: false, disabled: true })
   const user = await userFromBearer(request)
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
   try {

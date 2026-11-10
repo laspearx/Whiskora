@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { isPreviewDeploy } from '@/lib/deploy-env'
+import { isLineUatPreview, lineRoutesDisabled } from '@/lib/deploy-env'
+import { lineCallbackSiteUrl } from '@/lib/lineOrigin'
 import { LOCALE_COOKIE, resolveLocale, safeInternalPath, withLocale } from '@/lib/locale'
 import { decideLogin, isValidLineUserId, PENDING_TTL_SECONDS, placeholderEmail, toUserErrorCode } from '@/lib/lineAuth'
 import { cookieOpts, firstRow, makeAdmin, rpc, sha256hex } from '@/lib/lineServer'
@@ -12,7 +13,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
-  if (isPreviewDeploy) {
+  if (lineRoutesDisabled) {
     return NextResponse.redirect(`${reqOrigin}/th/login?auth_error=${encodeURIComponent('LINE_DISABLED_ON_PREVIEW')}`)
   }
   const code      = searchParams.get('code')
@@ -21,11 +22,9 @@ export async function GET(request: Request) {
 
   const cookieStore = await cookies()
   const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value)
-  const PRODUCTION_URL = 'https://www.whiskora.pet'
-  const rawOrigin = (cookieStore.get('line_origin')?.value || '').replace(/\/$/, '')
-  // allow-list เฉพาะโดเมนของเรา — whiskora.vercel.app เป็นเว็บของคนอื่น และ Preview ปิด LINE ไว้แล้ว
-  const TRUSTED_ORIGINS = [PRODUCTION_URL, 'https://whiskora.pet']
-  const siteUrl = TRUSTED_ORIGINS.includes(rawOrigin) ? rawOrigin : PRODUCTION_URL
+  // allow-list เฉพาะโดเมนของเรา (whiskora.vercel.app เป็นเว็บของคนอื่น). Production: www.whiskora.pet / whiskora.pet.
+  // UAT Preview (F4 Phase D): ONLY its own fixed URL — never production (lib/lineOrigin.ts)
+  const siteUrl = lineCallbackSiteUrl(cookieStore.get('line_origin')?.value, isLineUatPreview)
 
   const savedState      = cookieStore.get('line_state')?.value
   const nextPath        = cookieStore.get('line_next')?.value || '/profile'

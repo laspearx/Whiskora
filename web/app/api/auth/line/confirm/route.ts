@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { isPreviewDeploy } from '@/lib/deploy-env'
+import { lineRoutesDisabled } from '@/lib/deploy-env'
 import { claimErrorCode, takeErrorCode } from '@/lib/lineAuth'
 import { firstRow, LineRpcError, makeAdmin, rotatePassword, rpc, sha256hex, userFromBearer } from '@/lib/lineServer'
 
@@ -13,7 +13,7 @@ const json = (body: object, status = 200) => Response.json(body, { status })
 //   rotated to a random secret (all sessions revoked); SQL verifies that the one change it let through is this secret,
 //   then commits. In-flight Auth requests admitted before the rotation cannot change credentials (re-review #3).
 export async function POST(request: Request) {
-  if (isPreviewDeploy) return json({ error: 'line_disabled_on_preview' }, 503)
+  if (lineRoutesDisabled) return json({ error: 'line_disabled_on_preview' }, 503)
   const user = await userFromBearer(request)
   if (!user) return json({ error: 'LINE_LINK_UNAUTHORIZED' }, 401)
   const cookieStore = await cookies()
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
 // DELETE — the user declines the pending link (result checked, Codex L1).
 export async function DELETE(request: Request) {
-  if (isPreviewDeploy) return json({ error: 'line_disabled_on_preview' }, 503)
+  if (lineRoutesDisabled) return json({ error: 'line_disabled_on_preview' }, 503)
   const user = await userFromBearer(request)
   if (!user) return json({ error: 'LINE_LINK_UNAUTHORIZED' }, 401)
   ;(await cookies()).delete('line_confirm')

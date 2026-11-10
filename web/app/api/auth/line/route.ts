@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
-import { isPreviewDeploy } from '@/lib/deploy-env'
+import { isLineUatPreview, lineRoutesDisabled } from '@/lib/deploy-env'
+import { lineAuthorizeSiteUrl } from '@/lib/lineOrigin'
 import { isLineOnly } from '@/lib/lineAuth'
 import { cookieOpts, makeAdmin, newNonce, rpc, userFromBearer } from '@/lib/lineServer'
 
@@ -9,7 +10,7 @@ import { cookieOpts, makeAdmin, newNonce, rpc, userFromBearer } from '@/lib/line
 // httpOnly cookies; the callback stores the LINE id as a PENDING link on this account only, and nothing is linked
 // until POST /api/auth/line/confirm re-checks the session (F4: the old flow linked straight from the cookie).
 export async function POST(request: Request) {
-  if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
+  if (lineRoutesDisabled) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
   const user = await userFromBearer(request)
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
   // body.uid (sent by older clients) must match the session when present
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 // DELETE — unlink LINE from the signed-in account: line_identity_release (same lock as every other writer, so an
 // in-flight confirm cannot bring the link back). Refused when LINE is the only way in (placeholder, no OAuth identity).
 export async function DELETE(request: Request) {
-  if (isPreviewDeploy) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
+  if (lineRoutesDisabled) return Response.json({ error: 'line_disabled_on_preview' }, { status: 503 })
   const user = await userFromBearer(request)
   if (!user) return Response.json({ error: 'unauthorized' }, { status: 401 })
   if (isLineOnly(user)) return Response.json({ error: 'line_only_login' }, { status: 409 })
@@ -46,7 +47,7 @@ export async function DELETE(request: Request) {
 export async function GET(request: Request) {
   const { searchParams, origin: reqOrigin } = new URL(request.url)
   // Preview ใช้ staging และไม่มี LINE channel สำหรับทดสอบ → ปิด LINE login และอยู่บนโดเมน Preview เดิม
-  if (isPreviewDeploy) {
+  if (lineRoutesDisabled) {
     return NextResponse.redirect(`${reqOrigin}/th/login?auth_error=${encodeURIComponent('LINE_DISABLED_ON_PREVIEW')}`)
   }
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || reqOrigin
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
   }
 
   // redirect_uri ต้องตรงกับที่ลงทะเบียนใน LINE Developers เสมอ (ห้ามใช้ origin ของ request เป็น fallback บน Vercel)
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.whiskora.pet').replace(/\/$/, '')
+  const siteUrl = lineAuthorizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL, isLineUatPreview)
 
   const state = crypto.randomBytes(16).toString('hex')
   const cookieStore = await cookies()
