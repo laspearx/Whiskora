@@ -30,6 +30,26 @@ Staging `wpxcukrwmegwzfccbbga` only — production untouched. Commit `b8b5720` (
   `f4_new_ref`, `line_identity_audit_immutable`; not executable by API roles); no new anon / authenticated warning.
 - Not yet proven: Auth flows through the triggers on staging (no Auth traffic since apply; needs synthetic UAT = C).
 
+## Staging synthetic UAT (Phase C, 2026-11-10)
+Real Supabase Auth on staging, synthetic accounts only (6 created, 6 deleted); 8 QA seed accounts untouched.
+**51 PASS / 0 FAIL / 7 NOT VERIFIED.**
+- Auth regression with the triggers installed: create user (users + identities insert, `handle_new_user`), unconfirmed
+  login refused, confirm, password login, refresh, admin password update (old refresh token revoked), magic-link OTP,
+  admin email change — all PASS.
+- F4 against real Auth: ordinary link / replay / unlink-then-old-confirm / two concurrent confirms; login_create + OTP;
+  legacy op with planted password → planted sign-in and email change refused by the triggers (Auth returns 500),
+  rotation accepted once, second change refused, planted session revoked, reset verified against the real bcrypt hash,
+  commit, grace (password sign-in / change refused, OTP sign-in OK); in-flight write first → app rotation refused →
+  abort, account stays legacy; admin recovery begin → rotate → reset → commit — all PASS.
+- NOT VERIFIED: public email signup (Confirm email ON; `@example.com` rejected by the mailer → signup rolls back),
+  `GET/PUT /auth/v1/user` and `/logout` with the user's session (egress proxy → `403 bad_jwt`), real LINE OAuth + app
+  routes + UI on staging, recovery script on staging → `supabase/staging/f4_line_identity/BROWSER_UAT.md`.
+- After cleanup 45 / 46 snapshot tables byte-identical (all Auth tables included); `line_identity_audit` keeps 16
+  synthetic rows (append-only by design).
+- Pre-UAT safety copy: schema `f4_uat_snapshot` inside the staging database (data + schema definitions, no password
+  hashes / tokens, not exposed to the Data API). **Not an independent backup** — staging is on the Free plan with no
+  platform backup / PITR.
+
 ## Re-review of 3da5844 → revision 3
 | # | Finding (preliminary, verified against the code) | Verdict | Fix | Proof |
 |---|---|---|---|---|
