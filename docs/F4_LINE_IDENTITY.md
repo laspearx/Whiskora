@@ -18,6 +18,18 @@ no Auth / env change.
   `line_identity_of`. No metadata is read for identity; `user_metadata.line_id` is only written as a rollback copy.
 - No `email` scope, id_token unused; fixed error codes (TH/EN in `lib/lineAuthMessages.ts`).
 
+## Staging apply record (2026-11-10, approval B)
+Staging `wpxcukrwmegwzfccbbga` only — production untouched. Commit `b8b5720` (file sha256 `54b52769…7842`).
+- Preflight 11/11 ok; pre-apply fingerprint recorded (`05_fingerprint_readonly.sql`).
+- Recovery proof on staging itself: migration + 14 verification checks + `40_rollback.sql` + fingerprint compare in ONE
+  transaction, then rolled back on purpose → after-rollback fingerprints identical to pre-apply; nothing persisted.
+- Applied 03:40 UTC via Supabase migrations (recorded as `20261110034009 line_identity_map` — the tool's own version,
+  not the file's `20261110090000`). Verification 14/14; smoke as service_role: API ok, every internal helper / table /
+  audit sequence denied. Auth rows unchanged (users / identities fingerprints identical).
+- Advisor: +5 INFO (RLS without policy, intended), +3 WARN search_path on invoker helpers (`f4_valid_line`,
+  `f4_new_ref`, `line_identity_audit_immutable`; not executable by API roles); no new anon / authenticated warning.
+- Not yet proven: Auth flows through the triggers on staging (no Auth traffic since apply; needs synthetic UAT = C).
+
 ## Re-review of 3da5844 → revision 3
 | # | Finding (preliminary, verified against the code) | Verdict | Fix | Proof |
 |---|---|---|---|---|

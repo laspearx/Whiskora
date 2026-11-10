@@ -170,6 +170,7 @@ Access-control heavy lifting lives in Postgres RPCs, not raw selects: `get_pet_p
 Newest first. Keep entries short — one line per shipped item, grouped by date.
 
 **2026-11-09**
+- F4 migration `20261110090000_line_identity_map` applied to STAGING only (2026-11-10, recorded as `20261110034009`; verify 14/14; rollback proven reversible on staging in a rolled-back transaction). Production: not applied.
 - F4 rev. 3 (2026-11-10, re-review of `3da5844`): internal helpers revoked from service_role + audit sequence; confirm atomic with unlink (`line_link_confirm`); in-flight Auth requests blocked by a per-account credential freeze (triggers on Auth tables) and the reset verified against the app's own rotation secret (bcrypt). Staging kit `supabase/staging/f4_line_identity/` (preflight / verify / rollback). Not applied anywhere.
 - F4 LINE identity hotfix prepared (branch `security/f4-line-identity`, Draft PR #40; not merged / not live). Rev. 2 (2026-11-10, after Codex NO-GO): DB mapping + atomic link lifecycle (migration `20261110090000`, local tests only), credential reset before any legacy migration, auditable / resumable admin recovery.
 - v1.14.2 (PR #39, `dpl_B4tAELvQhkFzm48bP3kXVqZpzNbU`): Next.js 16.4.5 + Sharp 0.35.5 security patch; dashboard access contexts moved to `lib/*-access.ts`.

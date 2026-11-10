@@ -1,11 +1,10 @@
 # F4 LINE identity — staging migration kit (rev. 3)
 
-Migration: `supabase/migrations/20261110090000_line_identity_map.sql`. **Nothing here has been run on staging or
-production.** Each step below needs its own owner approval. Target first: staging `wpxcukrwmegwzfccbbga`.
+Migration: `supabase/migrations/20261110090000_line_identity_map.sql`. **Staging: applied 2026-11-10 (see `docs/F4_LINE_IDENTITY.md`, staging apply record). Production: not applied.** Each step below needs its own owner approval. Target first: staging `wpxcukrwmegwzfccbbga`.
 
 | Step | File | Writes? |
 |---|---|---|
-| 1. Preflight | `00_preflight_readonly.sql` — every row `ok = true`, else stop | no |
+| 1. Preflight | `00_preflight_readonly.sql` — every row `ok = true`, else stop; `05_fingerprint_readonly.sql` before / after | no |
 | 2. Backup | owner: Dashboard → Database → Backups (confirm a recent backup / PITR) + `pg_dump --schema-only --schema=public` kept locally | no |
 | 3. Apply | the migration file in ONE transaction with `set local lock_timeout = '5s'` (FKs and triggers take short locks on `auth.users`, `auth.identities`, `auth.mfa_amr_claims`) | **yes** |
 | 4. Verify | `20_verify_after_apply.sql` (all `ok = true`) + smoke block in its comments + security advisor | no |
