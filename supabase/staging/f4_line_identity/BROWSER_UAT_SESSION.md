@@ -29,3 +29,30 @@ email `f4uat+browser-<today>@example.com`, a password of your choice, tick **Aut
 
 When done: tell me the account email prefix (not the password). I delete that synthetic account and confirm the 8 QA
 seed accounts, mappings, pending links, ops and freezes are untouched.
+
+---
+## Results — Owner Browser UAT, Part A (2026-11-10, Preview `a22f1b0` / `b048cb1`, Supabase staging)
+Tested by the owner in their own browser. Kept separate from automated tests. Account: one new staging account made
+through the site's signup (address not recorded here).
+
+| # | Item | Owner result | Server evidence (staging auth / DB logs, read-only) |
+|---|---|---|---|
+| 1 | Email signup on the site | PASS | 08:01:10 `user_confirmation_requested` + `mail.send confirmation` |
+| 2 | Login refused before confirmation | PASS | 08:01:26, 08:02:05 `/token` 400 `email_not_confirmed` |
+| 3 | Confirmation mail received + confirmed | PASS | 08:03:00 `user_signedup` (303) |
+| 4 | Login after confirmation | PASS | 08:03:00 implicit login; 08:07:11 password login |
+| 5 | Profile page | PASS | — |
+| 6 | Connections page | PASS | — |
+| 7 | Dashboard | PASS | — |
+| 8 | Logout | PASS | 08:06:00 `logout` 204; the pre-logout session row is gone (only the 08:07 password session remains) |
+| 9 | Login again | PASS | 08:07:11 `login` (password) 200 |
+
+Other log lines in the window: 4 × `/authorize` 400 `provider is not enabled` (07:57–07:59) = the Google button —
+Google is disabled on staging (expected). Postgres: no errors. F4 tables: no mapping / pending / op / freeze.
+
+Server-only evidence (not yet observed by the owner): `GET /auth/v1/user` 200 with the user's session at 08:03:02 from
+the Preview. Still **NOT VERIFIED**: session refresh, password update with the user's session, refresh-token refusal
+after logout (owner-observed), Google OAuth (disabled on staging), all LINE items (Part B).
+
+Product note: the app has no in-app "change password" or "forgot password" screen (no `updateUser({ password })` /
+`resetPasswordForEmail` in the code) — the password test below uses the browser console.
